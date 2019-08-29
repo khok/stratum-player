@@ -30,4 +30,6 @@ export default class BinaryStream {
     readString(): string;
 
     readPoint2D(): { x: number; y: number };
+
+    readIntegerPoint2D(): { x: number; y: number };
 }

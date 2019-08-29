@@ -113,7 +113,7 @@ function readLinks(stream: BinaryStream): StratumLinkInfo[] {
     return links;
 }
 
-function readChilds(stream: BinaryStream): StratumChildInfo[] {
+function readChilds(stream: BinaryStream, version: number): StratumChildInfo[] {
     const childCount = stream.readWord();
 
     const childs = new Array<StratumChildInfo>(childCount);
@@ -122,7 +122,8 @@ function readChilds(stream: BinaryStream): StratumChildInfo[] {
         const localHandle = stream.readWord();
         const name = stream.readString();
 
-        const position = stream.readPoint2D();
+        //class.cpp:5952
+        const position = version < 0x3002 ? stream.readIntegerPoint2D() : stream.readPoint2D();
 
         // const flag =  0 | stream.readBytes(1)[0];
         const flag = stream.readBytes(1)[0];
@@ -190,8 +191,8 @@ function readStratumClassBody(
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_CHILDSnameXY) {
-        res.childs = readChilds(stream);
+    if (next == RecordType.CR_CHILDSnameXY || next == RecordType.CR_CHILDSname || next == RecordType.CR_CHILDS) {
+        res.childs = readChilds(stream, version);
         next = stream.readWord();
     }
 

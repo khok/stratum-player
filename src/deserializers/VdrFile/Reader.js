@@ -6,9 +6,11 @@ function readOldFormat(stream, res, _pos){
     const mainpos = stream.readLong() + _pos;
     const toolPos = stream.readLong() + _pos;
 
-    res.org = stream.readPoint2D();
-    res.scale_div = stream.readPoint2D();
-    res.scale_mul = stream.readPoint2D();
+    const readPoint = () => stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D();
+
+    res.org = readPoint();
+    res.scale_div = readPoint();
+    res.scale_mul = readPoint();
 
     stream.readString(); //path
 
@@ -22,11 +24,16 @@ function readOldFormat(stream, res, _pos){
 
     stream.seek(mainpos);
 
+    // console.dir(res);
+    // if(stream.fileversion == 0x103) throw 'stop'
+
     const {data: primData} = readNext(stream, true, consts.otPRIMARYCOLLECTION);
     const {data: objData} = readNext(stream, true, consts.otOBJECTCOLLECTION);
+    try{
 
     res.otPRIMARYCOLLECTION = primData;
     res.otOBJECTCOLLECTION = objData;
+
 
     stream.seek(toolPos);
     const cc = stream.readWord();
@@ -34,6 +41,10 @@ function readOldFormat(stream, res, _pos){
     for(let i = 0; i < cc; i++) {
         const { type, data } = readNext(stream, true);
         res[type] = data;
+    }
+    }catch(e) {
+        console.log('huita');
+        throw e;
     }
 
     //Здесь еще не доделано, см space2d: 1908

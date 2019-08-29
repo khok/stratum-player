@@ -106,4 +106,11 @@ export default class BinaryStream {
             y: this.readDouble()
         }
     }
+
+    readIntegerPoint2D() {
+        return {
+            x: this.readWord(),
+            y: this.readWord()
+        }
+    }
 }

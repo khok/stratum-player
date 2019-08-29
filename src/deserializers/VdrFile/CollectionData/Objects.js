@@ -17,8 +17,8 @@ function readObject(stream) {
 function readObject2D(stream) {
     return {
         ...readObject(stream),
-        position: stream.readPoint2D(),
-        size: stream.readPoint2D()
+        position: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
+        size: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D()
     }
 }
 
@@ -59,7 +59,7 @@ function read_otLINE2D(stream) {
 
     data.points = new Array(pointCount);
     for(let i = 0; i < pointCount; i++)
-        data.points[i] = stream.readPoint2D();
+        data.points[i] = stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D();
 
     if(stream.fileversion <= 0x0200)
         return data;
@@ -76,8 +76,8 @@ function read_otBITMAP2D(stream) {
     return {
         ...readObject2D(stream),
         data: {
-            origin: stream.readPoint2D(),
-            size: stream.readPoint2D(),
+            origin: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
+            size: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
             angle: stream.readWord(),
             sourceHandle: stream.readWord(),
         }
@@ -92,7 +92,7 @@ function read_otTEXT2D(stream) {
     return {
         ...readObject2D(stream),
         textHandle: stream.readWord(),
-        delta: stream.readPoint2D(),
+        delta: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
         angle : stream.readWord()
     }
 }
@@ -118,10 +118,7 @@ function read_otCONTROL2D(stream) {
             dwStyle: stream.readLong(),
             exStyle: stream.readLong(),
             id: stream.readWord(),
-            size: {
-                x: stream.readWord(),
-                y: stream.readWord(),
-            },
+            size: stream.readIntegerPoint2D(),
         }
     };
     if(!allKeys[res.data.className]){
