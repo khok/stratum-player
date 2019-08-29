@@ -12,6 +12,12 @@ export interface IWindow {
 
 export interface IGraphicObject {
     setPosition(x: number, y: number): boolean;
+    rotate(centerX: number, centerY: number, angleRad: number): boolean;
+    setSize(width: number, height: number): boolean;
+    setZOrder(order: number): boolean;
+    setVisible(visible: boolean): boolean;
+    readonly parentHandle: number;
+    readonly zOrder: number;
     readonly position: point;
     readonly size: point;
 }
@@ -62,6 +68,7 @@ export interface IProject {
     getClassesByProtoName(className: string): IClassInstance[];
     hasClass(className: string): boolean;
     createSchemeInstance(className: string): SchemeResolver | undefined;
+    stop(): void;
 }
 
 export interface IVirtualMachine {

@@ -91,7 +91,13 @@ export class Project implements IProject {
         return classes;
     }
 
+    private stopped = false;
+    stop() {
+        this.stopped = true;
+    }
+
     compute() {
+        if (this.stopped) return;
         this.tree.compute(this.vm, true);
         this.vm.reset();
         this.allVars.forEach(v => (v.old = v.new));

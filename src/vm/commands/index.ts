@@ -5,6 +5,7 @@ import initAdvanced from "./advanced";
 import initBase from "./base";
 import initGSpace from "./graphicSpace";
 import initWindows from "./windows";
+import initSystem from "./system";
 
 export const commands = new Array<VmCommand>(Opcode.VM_MAXIMUM_code + 1);
 export type VmCommand = (ctx: IVirtualMachine, operand: OneOfVmOperand) => void;
@@ -19,8 +20,5 @@ export type VmCommand = (ctx: IVirtualMachine, operand: OneOfVmOperand) => void;
     initWindows(ac);
     initAdvanced(ac);
     initGSpace(ac);
-    // initAdvanced(ac, aa);
-    // initWindows(ac, aa);
-    // initGspace(ac, aa);
-    // initSystem(ac, aa);
+    initSystem(ac);
 })();

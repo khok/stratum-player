@@ -10,6 +10,76 @@ function GetObject2dByName(ctx: IVirtualMachine) {
     ctx.stackPush(space ? space.findObjectHandle(groupHandle, objectName) : 0);
 }
 
+//args: "HANDLE,HANDLE,FLOAT ret FLOAT"
+function SetShowObject2d(ctx: IVirtualMachine) {
+    const visible = <number>ctx.stackPop();
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObject(objectHandle);
+    ctx.stackPush(obj ? Number(obj.setVisible(Boolean(visible))) : 0);
+}
+
+// args: "HANDLE,HANDLE  ret HANDLE"
+function GetObjectParent2d(ctx: IVirtualMachine) {
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObject(objectHandle);
+    ctx.stackPush(obj ? obj.parentHandle : 0);
+}
+
+//args: "HANDLE,HANDLE ret FLOAT "
+function GetZOrder2d(ctx: IVirtualMachine) {
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObject(objectHandle);
+    ctx.stackPush(obj ? obj.zOrder : 0);
+}
+
+//args: "HANDLE,HANDLE ret FLOAT "
+function SetZOrder2d(ctx: IVirtualMachine) {
+    const zOrder = <number>ctx.stackPop();
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObject(objectHandle);
+    ctx.stackPush(obj ? Number(obj.setZOrder(zOrder)) : 0);
+}
+
+args: "HANDLE,HANDLE,FLOAT,FLOAT,FLOAT  ret FLOAT";
+function RotateObject2d(ctx: IVirtualMachine) {
+    const angle = <number>ctx.stackPop();
+    const centerY = <number>ctx.stackPop();
+    const centerX = <number>ctx.stackPop();
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObject(objectHandle);
+    ctx.stackPush(obj ? Number(obj.rotate(centerX, centerY, angle)) : 0);
+}
+
 //SETOBJECTORG2D, name "SetObjectOrg2d"      arg "HANDLE","HANDLE","FLOAT","FLOAT"  ret "FLOAT" out 331
 function SetObjectOrg2d(ctx: IVirtualMachine) {
     const y = <number>ctx.stackPop();
@@ -24,6 +94,22 @@ function SetObjectOrg2d(ctx: IVirtualMachine) {
     const obj = space.getObject(objHandle);
     ctx.stackPush(obj ? Number(obj.setPosition(x, y)) : 0);
 }
+
+//"HANDLE,HANDLE,FLOAT,FLOAT  ret FLOAT"
+function SetObjectSize2d(ctx: IVirtualMachine) {
+    const height = <number>ctx.stackPop();
+    const width = <number>ctx.stackPop();
+    const objHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObject(objHandle);
+    ctx.stackPush(obj ? Number(obj.setSize(width, height)) : 0);
+}
+
 //GETOBJECTFROMPOINT2D, name "GetObjectFromPoint2d"  arg "HANDLE","FLOAT","FLOAT" ret "HANDLE" out 380
 function GetObjectFromPoint2d(ctx: IVirtualMachine) {
     const y = <number>ctx.stackPop();
@@ -126,4 +212,11 @@ export default function init(addCommand: (opcode: number, command: VmCommand) =>
     addCommand(Opcode.SETSPACEORG2D, SetSpaceOrg2d);
     addCommand(Opcode.SETSCALESPACE2D, SetScaleSpace2d);
     addCommand(Opcode.GETSCALESPACE2D, GetScaleSpace2d);
+
+    addCommand(Opcode.GETOBJECTPARENT2D, GetObjectParent2d);
+    addCommand(Opcode.ROTATEOBJECT2D, RotateObject2d);
+    addCommand(Opcode.SETOBJECTSIZE2D, SetObjectSize2d);
+    addCommand(Opcode.SETSHOWOBJECT2D, SetShowObject2d);
+    addCommand(Opcode.SETZORDER2D, SetZOrder2d);
+    addCommand(Opcode.GETZORDER2D, GetZOrder2d);
 }
