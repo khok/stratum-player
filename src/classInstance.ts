@@ -25,9 +25,11 @@ function getDefaultTypeValue(type: StratumVarInfo["type"]) {
 
 export default class ClassInstance implements IClassInstance {
     private static specialVars = new Map<string, (ci: ClassInstance) => string | number | undefined>([
-        ["HANDLE _hobject", ({ onSchemeData: osd }) => osd && osd.data.handle],
         ["FLOAT orgx", ({ onSchemeData: osd }) => osd && osd.data.position.x],
-        ["FLOAT orgy", ({ onSchemeData: osd }) => osd && osd.data.position.y]
+        ["FLOAT orgy", ({ onSchemeData: osd }) => osd && osd.data.position.y],
+        ["HANDLE _hobject", ({ onSchemeData: osd }) => osd && osd.data.handle],
+        ["STRING _objname", ({ onSchemeData: osd }) => osd && osd.data.name],
+        ["STRING _classname", ({ protoName }) => protoName]
     ]);
 
     // private readonly debugName: string;
@@ -40,6 +42,8 @@ export default class ClassInstance implements IClassInstance {
     };
 
     private varNameIdMap = new Map<string, number>();
+
+    private isDisabled = () => false;
 
     /**
      * Создает новый экземпляр класса по указанному прототипу.
@@ -61,6 +65,11 @@ export default class ClassInstance implements IClassInstance {
                 nodeConnectionInfo: varsInfo.map(v => ({ connected: [], type: v.type }))
             };
             for (let i = 0; i < varsInfo.length; i++) this.varNameIdMap.set(varsInfo[i].name.toLowerCase(), i);
+            const enableVarid = this.getVarIdByName("_enable");
+            const disableVarId = this.getVarIdByName("_disable");
+            if (enableVarid != undefined) this.isDisabled = () => this.varValues![enableVarid].new < 1;
+            if (disableVarId != undefined && (enableVarid == undefined || disableVarId < enableVarid))
+                this.isDisabled = () => this.varValues![disableVarId].new > 0;
         }
     }
 
@@ -88,6 +97,7 @@ export default class ClassInstance implements IClassInstance {
     }
 
     compute(vm: IVirtualMachine, computeChilds: boolean) {
+        if (this.isDisabled()) return;
         if (computeChilds && this.childs) for (const c of this.childs) c.compute(vm, true);
         if (this.code) vm.computeClass(this.code, this);
     }
