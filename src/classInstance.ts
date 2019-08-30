@@ -189,19 +189,10 @@ export default class ClassInstance implements IClassInstance {
         }
     }
 
-    // private fillEmptyVars() {
-    //     if (this.childs) this.childs.forEach(c => c.fillEmptyVars());
-    //     if (!this.varValues) return;
-    //     this.varValues.forEach((v, idx) => {
-    //         if (v.def === undefined) v.def = getDefaultTypeValue(this.tempVarInfo!.varsInfo[2].type);
-    //     });
-    // }
-
     setDefaultValues(varSet?: StratumVarSet) {
         const allVars: VarValue[] = [];
         this.connectVars(allVars);
         this.createVars();
-        // this.fillEmptyVars();
         if (varSet) this.setCustomValues(varSet);
         const delTemp = (ci: ClassInstance) => {
             delete ci.tempVarInfo;
@@ -212,7 +203,7 @@ export default class ClassInstance implements IClassInstance {
     }
 
     setChilds(childs: ClassInstance[]) {
-        //Костыли над типами.
+        //Костыли над типами (чтобы добавить свойство byHandle).
         this.childs = <ClassChilds>childs;
         //prettier-ignore
         (<ClassChilds>this.childs).byHandle = new Map<number, ClassInstance>(childs.map(c => [c.handle, c])).set(0, this);

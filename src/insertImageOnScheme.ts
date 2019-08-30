@@ -85,6 +85,12 @@ function insertChildInGroup(
     return { stubIconHandle, childOrder };
 }
 
+/**
+ * Вставляет изображение дочернего имиджа на схему
+ * @param scheme схема имиджа
+ * @param image изображение дочернего имиджа
+ * @param groupHandle handle группы на схеме, в которую будут добавлены дочерние элементы
+ */
 export default function insertImageOnScheme(scheme: MutableStratumScheme, image: StratumImage, groupHandle: number) {
     if (image.elements.size == 0) return;
     // console.dir(scheme);
