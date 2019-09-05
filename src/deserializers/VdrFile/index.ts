@@ -7,7 +7,7 @@ type VectorDraw = Readonly<{
     topLeft: Readonly<{ x: number; y: number }>;
     brushHandle?: number;
     brushes?: HandleMap<Readonly<{ color: string; style: number }>>;
-    pens?: HandleMap<Readonly<{ color: string; style: number }>>;
+    pens?: HandleMap<Readonly<{ color: string; style: number; width: number; rop2: number }>>;
     imageSources?: HandleMap<string>;
     fonts?: HandleMap<Readonly<{ OldLogfont: any; fontSize: number }>>;
     strings?: HandleMap<string>;

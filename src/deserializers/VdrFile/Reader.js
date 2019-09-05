@@ -122,7 +122,7 @@ function convertScheme(scheme) {
     };
 
     arrayThis('otBRUSHCOLLECTION', 'brushes', ({handle, color, style}) => ({handle, color, style}));
-    arrayThis('otPENCOLLECTION', 'pens', ({handle, color, style}) => ({handle, color, style}));
+    arrayThis('otPENCOLLECTION', 'pens', ({handle, color, style, width, rop2}) => ({handle, color, style, width, rop2}));
     arrayThis('otDOUBLEDIBCOLLECTION', 'imageSources', ({handle, path}) => ({handle, path}), 'path');
     arrayThis('otSTRINGCOLLECTION', 'strings', ({handle, text}) => ({handle, text}), 'text');
     arrayThis('otFONTCOLLECTION', 'fonts', ({handle, OldLogfont, fontSize}) => ({handle, OldLogfont, fontSize}));
