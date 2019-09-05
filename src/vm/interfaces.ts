@@ -18,7 +18,8 @@ export interface IGraphicObject {
     setVisible(visible: boolean): boolean;
     readonly parentHandle: number;
     readonly zOrder: number;
-    readonly position: point;
+    readonly top: number;
+    readonly left: number;
     readonly size: point;
 }
 

@@ -129,7 +129,7 @@ function GetObjectOrg2dx(ctx: IVirtualMachine) {
         return;
     }
     const obj = space.getObject(objHandle);
-    ctx.stackPush(obj ? obj.position.x : 0);
+    ctx.stackPush(obj ? obj.left : 0);
 }
 //GETOBJECTORG2DY, name "GetObjectOrg2dy"     arg "HANDLE","HANDLE"  ret "FLOAT" out 325
 function GetObjectOrg2dy(ctx: IVirtualMachine) {
@@ -141,7 +141,7 @@ function GetObjectOrg2dy(ctx: IVirtualMachine) {
         return;
     }
     const obj = space.getObject(objHandle);
-    ctx.stackPush(obj ? obj.position.y : 0);
+    ctx.stackPush(obj ? obj.top : 0);
 }
 //GETOBJECTSIZE2DX, name "GetObjectWidth2d"    arg "HANDLE","HANDLE"  ret "FLOAT" out 328
 function GetObjectWidth2d(ctx: IVirtualMachine) {
