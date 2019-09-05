@@ -24,8 +24,10 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
+    "@types/fabric": "^3.0.1",
     "@types/jszip": "^3.1.6",
     "bops": "^1.0.0",
+    "fabric": "^3.4.0",
     "iconv-lite": "^0.5.0",
     "jszip": "^3.2.2",
     "regenerator-runtime": "^0.13.3"

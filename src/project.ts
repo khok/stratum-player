@@ -8,7 +8,7 @@ import {
 } from "./deserializers";
 import { StratumError } from "./errors";
 import insertImageOnScheme from "./insertImageOnScheme";
-import SchemeInstance from "./schemeInstance";
+import SchemeInstance from "./graphics/schemeInstance";
 import { IClassInstance, IProject, ISchemeInstance, VirtualMachine } from "./vm";
 
 type VarValue = { new: number | string; old: number | string; def: number | string };
