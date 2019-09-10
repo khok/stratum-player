@@ -47,7 +47,7 @@ export interface IClassInstance {
     compute(vm: IVirtualMachine, computeChilds: boolean): void;
 }
 
-type SchemeResolver = (canvas: HTMLCanvasElement) => ISchemeInstance;
+export type SchemeResolver = (canvas: HTMLCanvasElement) => ISchemeInstance;
 
 export interface IWindowSystem {
     readonly workAreaTopLeft: point;

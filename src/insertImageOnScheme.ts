@@ -7,7 +7,7 @@ import {
     Group
 } from "./deserializers/graphicElements";
 
-function elementInGroup(elements: Map<number, GraphicElement>, handle: number) {
+function isElementInGroup(elements: Map<number, GraphicElement>, handle: number) {
     const iterator = elements.values();
     for (let iter = iterator.next(); !iter.done; iter = iterator.next())
         if (iter.value.type == "group" && iter.value.items.includes(handle)) return true;
@@ -28,7 +28,7 @@ function moveChilds(
         const [handle, element] = iter.value;
         while (parentElements.has(++freeHandle));
         newHandleMap.set(handle, freeHandle);
-        if (!elementInGroup(childElements, handle)) newGroupHandles.push(freeHandle);
+        if (!isElementInGroup(childElements, handle)) newGroupHandles.push(freeHandle);
         const newElement: GraphicElement =
             element.type == "group"
                 ? {

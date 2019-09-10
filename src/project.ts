@@ -9,7 +9,7 @@ import {
 import { StratumError } from "./errors";
 import insertImageOnScheme from "./insertImageOnScheme";
 import SchemeInstance from "./graphics/schemeInstance";
-import { IClassInstance, IProject, ISchemeInstance, VirtualMachine } from "./vm";
+import { IClassInstance, IProject, VirtualMachine, SchemeResolver } from "./vm";
 
 type VarValue = { new: number | string; old: number | string; def: number | string };
 
@@ -35,6 +35,17 @@ function createNodeChilds(
     if (links) node.setLinks(links);
 }
 
+function composeScheme(
+    scheme: MutableStratumScheme,
+    collection: Map<string, StratumClassInfo>,
+    childs: readonly StratumChildInfo[]
+) {
+    for (const { className, onSchemeData } of childs) {
+        const childProto = collection.get(className);
+        if (childProto && childProto.image) insertImageOnScheme(scheme, childProto.image, onSchemeData.handle);
+    }
+}
+
 export class Project implements IProject {
     //private
     collection: Map<string, StratumClassInfo>;
@@ -57,24 +68,17 @@ export class Project implements IProject {
         this.allVars = allVars;
     }
 
-    createSchemeInstance(className: string): ((canvas: HTMLCanvasElement) => ISchemeInstance) | undefined {
+    createSchemeInstance(className: string): SchemeResolver | undefined {
         const proto = this.collection.get(className);
         if (!proto || !proto.scheme) return undefined;
 
-        const { scheme, childs } = proto;
-        const result = (canvas: HTMLCanvasElement) => new SchemeInstance(scheme, canvas);
+        const { scheme } = proto;
 
-        if (scheme.composed) return result;
-
-        if (childs) {
-            for (const { className, onSchemeData } of childs) {
-                const childProto = this.collection.get(className);
-                if (!childProto) throw new StratumError(`Прототип класса ${className} не найден`);
-                if (childProto.image) insertImageOnScheme(scheme, childProto.image, onSchemeData.handle);
-            }
+        if (!scheme.composed) {
+            if (proto.childs) composeScheme(scheme, this.collection, proto.childs);
+            (<MutableStratumScheme>scheme).composed = true;
         }
-        (<MutableStratumScheme>scheme).composed = true;
-        return result;
+        return canvas => new SchemeInstance(scheme, canvas);
     }
 
     hasClass(className: string) {
