@@ -1,6 +1,6 @@
 import { BinaryStream } from ".";
 import { FileSignatureError } from "../errors";
-import RecordType from "./RecordType";
+import RecordType from "./recordType";
 
 export default function readStratumProject(stream: BinaryStream) {
     const sign = stream.readWord();

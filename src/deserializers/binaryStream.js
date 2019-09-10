@@ -1,4 +1,4 @@
-import bops from 'bops'
+import bops from 'bops';
 import {decode, encode} from "iconv-lite";
 
 function decodeString(bytes) {

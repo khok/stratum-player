@@ -2,7 +2,7 @@
  */
 import { BinaryStream, parseStratumVar, readStratumVectorDraw, StratumImage, StratumScheme } from ".";
 import { FileSignatureError, NotImplementedError, StratumError } from "../errors";
-import RecordType from "./RecordType";
+import RecordType from "./recordType";
 import { convertVmCode, VmCode } from "./vmCode";
 
 type StratumVarInfo = Readonly<{

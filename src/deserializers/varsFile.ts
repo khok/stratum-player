@@ -1,6 +1,6 @@
 import { BinaryStream, parseStratumVar, StratumClassInfo, StratumVarInfo } from ".";
 import { StratumError } from "../errors";
-import RecordType from "./RecordType";
+import RecordType from "./recordType";
 
 type StratumVarSet = Readonly<{
     // handle: number;

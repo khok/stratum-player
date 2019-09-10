@@ -1,10 +1,7 @@
-export { default as BinaryStream } from "./BinaryStream";
-export * from "./ClassFile";
+export { default as BinaryStream } from "./binaryStream";
+export * from "./classFile";
 export { default as parseStratumVar } from "./parseStratumVar";
-export { default as readStratumProject } from "./ProjectFile";
-export * from "./VarsFile";
-export * from "./VdrFile";
-// export {default as readStratumVectorDraw} from './VectorFile';
-// export {default as readStratumProject} from './ProjectFile';
-// export {default as readStratumVars} from './VarsFile';
-// export {default as readStratumMatrix} from './MatrixFile';
+export { default as readStratumProject } from "./projectFile";
+export * from "./varsFile";
+export * from "./vdrFile";
+// export {default as readStratumMatrix} from './matrixFile';
