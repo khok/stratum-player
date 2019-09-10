@@ -153,7 +153,7 @@ function GetObjectWidth2d(ctx: IVirtualMachine) {
         return;
     }
     const obj = space.getObject(objHandle);
-    ctx.stackPush(obj ? obj.size.x : 0);
+    ctx.stackPush(obj ? obj.width : 0);
 }
 //GETOBJECTSIZE2DY, name "GetObjectHeight2d"    arg "HANDLE","HANDLE"  ret "FLOAT" out 329
 function GetObjectHeight2d(ctx: IVirtualMachine) {
@@ -165,7 +165,7 @@ function GetObjectHeight2d(ctx: IVirtualMachine) {
         return;
     }
     const obj = space.getObject(objHandle);
-    ctx.stackPush(obj ? obj.size.y : 0);
+    ctx.stackPush(obj ? obj.height : 0);
 }
 
 //GETSPACEORGY, name "GetSpaceOrg2dy"        arg "HANDLE" ret "FLOAT" out 341

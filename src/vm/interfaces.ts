@@ -20,7 +20,8 @@ export interface IGraphicObject {
     readonly zOrder: number;
     readonly top: number;
     readonly left: number;
-    readonly size: point;
+    readonly width: number;
+    readonly height: number;
 }
 
 export interface ISchemeInstance {
