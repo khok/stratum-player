@@ -11,7 +11,7 @@ function assert(condition){
     const mainClassName = await readProjectFile(zipFiles);
     const collection = await readClassFiles(zipFiles, mainClassName);
     const vars = await readVarsFile(zipFiles, collection);
-    const prj = Project.fromClassCollection(mainClassName, collection, vars);
+    const prj = new Project(mainClassName, collection, vars);
     const values = prj.tree.childs[0].varValues;
     assert(values[1].def == 21 && values[1].new == 21);
     prj.compute();

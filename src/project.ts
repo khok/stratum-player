@@ -14,45 +14,47 @@ import { IClassInstance, IProject, ISchemeInstance, VirtualMachine } from "./vm"
 type VarValue = { new: number | string; old: number | string; def: number | string };
 
 function createNodeChilds(
-    parent: ClassInstance,
+    node: ClassInstance,
     collection: Map<string, StratumClassInfo>,
-    proto: { childs?: readonly StratumChildInfo[]; links?: readonly StratumLinkInfo[] }
+    { childs, links }: { childs?: readonly StratumChildInfo[]; links?: readonly StratumLinkInfo[] }
 ) {
-    const { childs, links } = proto;
-
     if (childs) {
         const nodeChilds = childs.map(({ className, onSchemeData: data }) => {
             const childProto = collection.get(className);
             if (!childProto) throw new StratumError(`Прототип класса ${className} не найден`);
-            const child = new ClassInstance(className, childProto.convertedCode, childProto.vars, { parent, data });
+            const child = new ClassInstance(className, childProto.convertedCode, childProto.vars, {
+                parent: node,
+                data
+            });
             createNodeChilds(child, collection, childProto);
             return child;
         });
-        parent.setChilds(nodeChilds);
+        node.setChilds(nodeChilds);
     }
 
-    if (links) parent.setLinks(links);
+    if (links) node.setLinks(links);
 }
 
 export class Project implements IProject {
-    private constructor(
-        public collection: Map<string, StratumClassInfo>,
-        public tree: ClassInstance,
-        private allVars: VarValue[]
-    ) {}
+    //private
+    collection: Map<string, StratumClassInfo>;
+    tree: ClassInstance;
+
+    private allVars: VarValue[];
     private vm = new VirtualMachine(<any>{}, <any>{}, this);
-    static fromClassCollection(
-        rootName: string,
-        classCollection: Map<string, StratumClassInfo>,
-        varSet?: StratumVarSet
-    ): Project {
+
+    constructor(rootName: string, classCollection: Map<string, StratumClassInfo>, varSet?: StratumVarSet) {
         const proto = classCollection.get(rootName);
         if (!proto) throw new StratumError(`Прототип класса ${rootName} не найден`);
+
         const root = new ClassInstance(rootName, proto.convertedCode, proto.vars);
         createNodeChilds(root, classCollection, proto);
-        const allVars = <VarValue[]>root.setDefaultValues(varSet);
+
+        const allVars = <VarValue[]>root.initVarsRecursive(varSet);
         allVars.forEach(v => (v.new = v.old = v.def));
-        return new Project(classCollection, root, allVars);
+        this.collection = classCollection;
+        this.tree = root;
+        this.allVars = allVars;
     }
 
     createSchemeInstance(className: string): ((canvas: HTMLCanvasElement) => ISchemeInstance) | undefined {

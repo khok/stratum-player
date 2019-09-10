@@ -189,16 +189,16 @@ export default class ClassInstance implements IClassInstance {
         }
     }
 
-    setDefaultValues(varSet?: StratumVarSet) {
+    initVarsRecursive(varSet?: StratumVarSet) {
         const allVars: VarValue[] = [];
         this.connectVars(allVars);
         this.createVars();
         if (varSet) this.setCustomValues(varSet);
-        const delTemp = (ci: ClassInstance) => {
+        const delTempInfo = (ci: ClassInstance) => {
             delete ci.tempVarInfo;
-            if (ci.childs) ci.childs.forEach(c => delTemp(c));
+            if (ci.childs) ci.childs.forEach(c => delTempInfo(c));
         };
-        delTemp(this);
+        delTempInfo(this);
         return allVars;
     }
 

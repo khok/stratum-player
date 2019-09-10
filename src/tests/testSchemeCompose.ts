@@ -64,7 +64,7 @@ const test_result = [
     const mainClassName = await readProjectFile(zipFiles);
     const collection = await readClassFiles(zipFiles, mainClassName);
     const vars = await readVarsFile(zipFiles, collection);
-    const prj = Project.fromClassCollection(mainClassName, collection, vars);
+    const prj = new Project(mainClassName, collection, vars);
     prj.createSchemeInstance(mainClassName);
     if (
         JSON.stringify(toJson((<StratumImage>prj.collection.get(mainClassName)!.scheme).elements)) ==
