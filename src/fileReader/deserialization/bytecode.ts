@@ -62,7 +62,8 @@ function readOperand(stream: BinaryStream, type: OperandType): Operand {
 }
 
 export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode {
-    const code: { operation: Operation; opcode: number; operand?: Operand; isCodePoint?: boolean }[] = [];
+    type OperationData = { operation: Operation; operand?: Operand; isCodePoint?: boolean };
+    const code: OperationData[] = [];
     const codepoints: number[] = [];
 
     const start = stream.position;
@@ -76,9 +77,13 @@ export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode 
         const operation = operations[opcode]; // || operations[Opcode.V_END];
 
         const operandType = operandTypes[opcode];
-        const operand = operandType && readOperand(stream, operandType);
+        const res: OperationData = { operation };
+        if (operandType) {
+            res.operand = readOperand(stream, operandType);
+            if (operandType == "codepoint") res.isCodePoint = true;
+        }
 
-        code.push({ operation, operand, opcode, isCodePoint: operandType == "codepoint" });
+        code.push(res);
         //Раскоментить в случае ошибок с считыванием кода
         // console.log(Opcode[opcode] + (operand !== undefined ? (', ' + operand) : ''));
     }

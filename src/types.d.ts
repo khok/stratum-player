@@ -46,7 +46,7 @@ export interface ClassData {
     childs?: ChildData[];
     scheme?: VectorDrawData;
     image?: VectorDrawData;
-    byteсode?: Bytecode;
+    bytecode?: Bytecode;
     // __scheme?: any; //(выбросить)
     // __image?: any; //(выбросить)
     // sourceCode?: string;

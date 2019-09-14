@@ -20,7 +20,7 @@ export type OperandType =
 export type Operation = (ctx: VmContext, operand?: Operand) => void;
 
 export interface Bytecode {
-    [index: number]: { operation: Operation; opcode: number; operand?: Operand };
+    [index: number]: { operation: Operation; operand?: Operand };
     // code: readonly number[];
     // operands: readonly OneOfOperand[];
     // missingCommands: readonly string[];
