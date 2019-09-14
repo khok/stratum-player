@@ -1,4 +1,4 @@
-import { StratumError, FileSignatureError } from "../../errors";
+import { StratumError, FileSignatureError, NotImplementedError } from "../../errors";
 import { ClassData, VarData, VarSet } from "../../types";
 import { BinaryStream } from "../binaryStream";
 import { parseVarValue } from "./parseVarValue";
@@ -78,7 +78,7 @@ export function readVarSet(stream: BinaryStream, collection: Map<string, ClassDa
 
     let next = stream.readWord();
     if (next == RecordType.VR_CLASSES) {
-        throw Error("Not implemented yet");
+        throw new NotImplementedError("Чтение stt: блок VR_CLASSES не реализован.");
         // const itemCount = stream.readWord();
 
         // for(let i = 0; i < itemCount; i++){

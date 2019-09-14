@@ -79,8 +79,8 @@ export class ClassInstance implements ClassFunctions {
     getClassesByPath(path: string): ClassFunctions | ClassFunctions[] | undefined {
         throw new Error("Method not implemented.");
     }
-    compute(ctx: VmContext, computeChilds: boolean): void {
-        if (this.isDisabled()) return;
+    compute(ctx: VmContext, respectDisableVar = true): void {
+        if (respectDisableVar && this.isDisabled()) return;
         // if (computeChilds && this.childs) for (const c of this.childs) c.compute(vm, true);
         if (this.code) ctx.compute(this.code, this);
     }

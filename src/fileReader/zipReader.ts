@@ -69,7 +69,7 @@ async function loadProjectClasses(
     classes: Map<string, ClassData>
 ) {
     const root = headers.get(className);
-    if (!root) throw new Error(`Класс ${className} не найден`);
+    if (!root) throw new StratumError(`Класс ${className} не найден`);
 
     //prettier-ignore
     const rootBody = classes.get(root.name) || (() => {

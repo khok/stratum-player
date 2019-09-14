@@ -6,7 +6,10 @@ function SendMessage(ctx: VmContext, count: number) {
     for (let i = count - 1; i >= 0; i--) vars[i] = <string>ctx.stackPop();
     const className = <string>ctx.stackPop();
     const path = <string>ctx.stackPop();
-    if (path !== "") throw Error(`Вызов SendMessage с path=${path} не реализован.`);
+    if (path !== "") {
+        ctx.error(`Вызов SendMessage с path=${path} не реализован.`);
+        return;
+    }
 
     if (!ctx.canComputeClass) return;
 

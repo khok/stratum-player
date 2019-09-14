@@ -105,7 +105,7 @@ export interface ClassFunctions {
     getOldVarValue(id: number): string | number;
 
     getClassesByPath(path: string): ClassFunctions | ClassFunctions[] | undefined;
-    compute(ctx: VmContext, computeChilds: boolean): void;
+    compute(ctx: VmContext, respectDisableVar: boolean): void;
 }
 
 export interface InputFunctions {
@@ -124,7 +124,7 @@ export interface VmContext {
     readonly input: InputFunctions;
     readonly project: ProjectFunctions;
 
-    compute(code: Bytecode, classData: ClassFunctions): void;
+    compute(code: Bytecode, theClass: ClassFunctions): void;
     break(): void;
     error(message?: string): void;
 }
