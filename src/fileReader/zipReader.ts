@@ -149,6 +149,12 @@ export async function zipFromFileList(files: FileList): Promise<ZipData> {
     return new Array<JSZipObject>().concat(...zipData);
 }
 
+export async function openStreamFromUrl(url: string) {
+    const resp = await fetch(url);
+    const file = await resp.arrayBuffer();
+    return new BinaryStream(file);
+}
+
 export async function zipFromUrl(url: string | string[]): Promise<ZipData> {
     if (typeof url === "string") url = [url];
 
