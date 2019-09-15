@@ -1,87 +1,66 @@
-import { ChildData, ClassData, VarData } from "./types";
+import { ChildFactory, ClassBase, OnSchemeData } from "./classBase";
+import { ClassData } from "./types";
 import { Bytecode, ClassFunctions, VmContext } from "./vm/types";
 
-function getDefaultValue(type: VarData["type"]) {
-    switch (type) {
-        case "FLOAT":
-            return 0;
-        case "HANDLE":
-            return 0;
-        case "STRING":
-            return "";
-        case "COLORREF":
-            return "rgb(0, 0, 0)";
-    }
-}
+// function createDefaultValue(type: VarData["type"]) {
+//     switch (type) {
+//         case "FLOAT":
+//             return 0;
+//         case "HANDLE":
+//             return 0;
+//         case "STRING":
+//             return "";
+//         case "COLORREF":
+//             return "rgb(0, 0, 0)";
+//     }
+// }
 
-interface VarValue {
-    new: number | string;
-    old: number | string;
-    def?: number | string;
-}
-
-export class ClassInstance implements ClassFunctions {
-    private static specialVars = new Map<string, (ci: ClassInstance) => string | number | undefined>([
-        ["FLOAT orgx", ({ onSchemeData: osd }) => osd && osd.position.x],
-        ["FLOAT orgy", ({ onSchemeData: osd }) => osd && osd.position.y],
-        ["HANDLE _hobject", ({ onSchemeData: osd }) => osd && osd.handle],
-        ["STRING _objname", ({ onSchemeData: osd }) => osd && osd.name],
-        ["STRING _classname", ({ protoName }) => protoName]
-    ]);
-
+export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunctions {
     private code?: Bytecode;
-
-    private varValues: VarValue[];
-    private varNameIndexMap: Map<string, number>;
-
-    // private childs: ClassInstance[] = [];
-    // private childHandleMap = new Map<number, ClassInstance>();
-
     private isDisabled = () => false;
 
     constructor(
         public readonly protoName: string,
-        { vars, bytecode }: ClassData,
-        private onSchemeData?: ChildData["onSchemeData"] & { parent: ClassInstance }
+        classData: ClassData,
+        childFactory: ChildFactory<ClassInstance>,
+        onSchemeData?: OnSchemeData<ClassInstance>
     ) {
-        this.code = bytecode;
-        this.varNameIndexMap = new Map<string, number>();
-        //prettier-ignore
-        this.varValues = vars ? vars.map((v, i) => {
-            this.varNameIndexMap.set(v.name.toLowerCase(), i);
-            const value = v.defaultValue || getDefaultValue(v.type);
-            return { new: value, old: value, def: v.defaultValue };
-        }) : [];
+        super(protoName, classData, childFactory, onSchemeData);
+        this.code = classData.bytecode;
+
+        const enableVarid = this.getVarId("_enable");
+        const disableVarId = this.getVarId("_disable");
+
+        if (enableVarid != undefined) this.isDisabled = () => this.getNewVarValue(enableVarid) < 1;
+
+        if (disableVarId != undefined) {
+            const disableVarPriority = enableVarid == undefined || disableVarId < enableVarid;
+            if (disableVarPriority) this.isDisabled = () => this.getNewVarValue(disableVarId) > 0;
+        }
     }
 
-    // setChilds(childs: ClassInstance[]) {
-    //     const hMap = this.childHandleMap = new Map<number, ClassInstance>();
-    //     childs.forEach(c => {
-    //         c.onSchemeData.
-    //     })
-    // }
-
-    getVarIndex(varName: string): number {
-        return this.varNameIndexMap.get(varName.toLowerCase())!;
+    getVarId(varName: string): number | undefined {
+        return this.varNameIndexMap && this.varNameIndexMap.get(varName.toLowerCase());
     }
+
     setNewVarValue(id: number, value: string | number): void {
-        this.varValues[id].new = value;
+        this.variables![id].newValue = value;
     }
     setOldVarValue(id: number, value: string | number): void {
-        this.varValues[id].old = value;
+        this.variables![id].oldValue = value;
     }
     getNewVarValue(id: number): string | number {
-        return this.varValues[id].new;
+        return this.variables![id].newValue;
     }
     getOldVarValue(id: number): string | number {
-        return this.varValues[id].old;
+        return this.variables![id].oldValue;
     }
     getClassesByPath(path: string): ClassFunctions | ClassFunctions[] | undefined {
         throw new Error("Method not implemented.");
     }
     compute(ctx: VmContext, respectDisableVar = true): void {
         if (respectDisableVar && this.isDisabled()) return;
-        // if (computeChilds && this.childs) for (const c of this.childs) c.compute(vm, true);
+        if (this.childs) this.childs.forEach(c => c.compute(ctx, true));
         if (this.code) ctx.compute(this.code, this);
     }
 }

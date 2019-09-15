@@ -2,7 +2,7 @@ import { Opcode } from "../opcode";
 import { Operation, VmContext } from "../types";
 
 function SendMessage(ctx: VmContext, count: number) {
-    const vars = new Array<string | number>(count);
+    const vars = new Array<string | number | undefined>(count);
     for (let i = count - 1; i >= 0; i--) vars[i] = <string>ctx.stackPop();
     const className = <string>ctx.stackPop();
     const path = <string>ctx.stackPop();
@@ -19,19 +19,20 @@ function SendMessage(ctx: VmContext, count: number) {
         if (other == current) continue;
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = (vars[i] = current.getVarIndex(<string>vars[i]));
-            if (idCurrent < 0) continue;
-            const idOther = (vars[i + 1] = other.getVarIndex(<string>vars[i + 1]));
-            if (idOther < 0) continue;
+            const idCurrent = (vars[i] = current.getVarId(<string>vars[i]));
+            if (idCurrent == undefined) continue;
+            const idOther = (vars[i + 1] = other.getVarId(<string>vars[i + 1]));
+            if (idOther == undefined) continue;
             other.setNewVarValue(idOther, current.getNewVarValue(idCurrent));
         }
 
         other.compute(ctx, false);
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = <number>vars[i];
-            const idOther = <number>vars[i + 1];
-            if (idCurrent > -1 && idOther > -1) current.setNewVarValue(idCurrent, other.getNewVarValue(idOther));
+            const idCurrent = <number | undefined>vars[i];
+            const idOther = <number | undefined>vars[i + 1];
+            if (idCurrent != undefined && idOther != undefined)
+                current.setNewVarValue(idCurrent, other.getNewVarValue(idOther));
         }
     }
 }

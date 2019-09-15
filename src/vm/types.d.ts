@@ -97,7 +97,7 @@ export interface ProjectFunctions {
 
 export interface ClassFunctions {
     readonly protoName: string;
-    getVarIndex(varName: string): number;
+    getVarId(varName: string): number | undefined;
 
     setNewVarValue(id: number, value: string | number): void;
     setOldVarValue(id: number, value: string | number): void;
