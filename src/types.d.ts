@@ -5,10 +5,10 @@ import { Bytecode } from "./vm/types";
 
 export interface VarSet {
     handle: number;
-    className: string;
+    classname: string;
     // classId: number;
     varData: { name: string; value: number | string }[];
-    childs: { handle: number; set: VarSet }[];
+    childs: VarSet[];
 }
 
 export interface VarData {

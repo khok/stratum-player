@@ -13,9 +13,9 @@ export type ChildFactory<T extends ClassBase<T>> = (childName: string, onSchemeD
 class VariableNode {
     private propagated = false;
     private connectedNodes: VariableNode[] = [];
-    private value: object;
+    private value: Variable;
     constructor(public readonly data?: string | number) {
-        this.value = {};
+        this.value = {} as Variable;
     }
 
     static connect(first: VariableNode, second: VariableNode) {
@@ -27,7 +27,7 @@ class VariableNode {
     propagateValue() {
         this.propagate(this.value);
     }
-    private propagate(value: object) {
+    private propagate(value: Variable) {
         if (this.propagated) return;
         this.propagated = true;
         this.value = value;
@@ -38,8 +38,8 @@ class VariableNode {
      */
     extractAsVariable(): Variable {
         if (!this.propagated) throw Error("propagate first");
-        if (this.data != undefined) (<any>this.value).def = this.data;
-        return this.value as Variable;
+        if (this.data != undefined) this.value.defaultValue = this.data;
+        return this.value;
     }
 }
 
@@ -48,9 +48,10 @@ function errMsg(handle1: any, handle2: any) {
 }
 
 export abstract class ClassBase<T extends ClassBase<T>> {
-    protected variables?: Variable[];
     private variableInfo?: VariableNode[];
-    protected varNameIndexMap?: Map<string, number>;
+    private varNameIndexMap?: Map<string, number>;
+
+    protected variables?: Variable[];
     protected childs?: Map<number, T>;
 
     //Значение по умолчанию > спец. значение > пустое значение
@@ -74,7 +75,7 @@ export abstract class ClassBase<T extends ClassBase<T>> {
         public readonly protoName: string,
         { vars, childs, links }: ClassData,
         childFactory: ChildFactory<T>,
-        private onSchemeData?: OnSchemeData<T>
+        protected onSchemeData?: OnSchemeData<T>
     ) {
         if (vars) this.setVars(vars);
         if (childs) this.setChilds(childs, childFactory);
@@ -96,6 +97,10 @@ export abstract class ClassBase<T extends ClassBase<T>> {
             ci.variables = vInfo && vInfo.map(v => v.extractAsVariable());
         };
         extractVariables(this);
+    }
+
+    getVarId(varName: string): number | undefined {
+        return this.varNameIndexMap && this.varNameIndexMap.get(varName.toLowerCase());
     }
 
     private setVars(vars: VarData[]) {
@@ -121,8 +126,8 @@ export abstract class ClassBase<T extends ClassBase<T>> {
             if (!first || !second || !first.variableInfo || !second.variableInfo)
                 throw new StratumError(errMsg(handle1, handle2));
             for (const { name1, name2 } of vars) {
-                const varId1 = first.varNameIndexMap!.get(name1.toLowerCase());
-                const varId2 = second.varNameIndexMap!.get(name2.toLowerCase());
+                const varId1 = first.getVarId(name1);
+                const varId2 = second.getVarId(name2);
                 if (varId1 == undefined || varId2 == undefined)
                     throw new StratumError(errMsg(handle1, handle2) + `: ${name1}-${name2}`);
                 VariableNode.connect(first.variableInfo[varId1], second.variableInfo[varId2]);

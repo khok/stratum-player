@@ -16,7 +16,7 @@ function loadVarSet(stream: BinaryStream, collection: Map<string, ClassData>) {
 
     const set: any = {
         handle: stream.readWord(),
-        className: stream.readString(),
+        classname: stream.readString(),
         classId: stream.readLong() //    но считать надо
     };
 
@@ -25,13 +25,13 @@ function loadVarSet(stream: BinaryStream, collection: Map<string, ClassData>) {
         data: stream.readString()
     }));
 
-    const classInfo = collection.get(set.className);
+    const classInfo = collection.get(set.classname);
     if (!classInfo) {
-        console.warn(`Объект ${set.className} #${set.handle} не существует, но для него присвоены переменные`);
+        console.warn(`Объект ${set.classname} #${set.handle} не существует, но для него присвоены переменные`);
         return <VarSet>set;
     }
     const { vars } = classInfo;
-    if (!vars && varData.length != 0) throw new StratumError(`Класс ${set.className} не имеет переменных`);
+    if (!vars && varData.length != 0) throw new StratumError(`Класс ${set.classname} не имеет переменных`);
 
     set.varData = vars
         ? varData.map(({ name, data }) => {
@@ -44,7 +44,7 @@ function loadVarSet(stream: BinaryStream, collection: Map<string, ClassData>) {
           })
         : [];
 
-    // delete set.className;
+    // delete set.classname;
     delete set.classId; //считали - удалили
 
     const childs: VarSet[] = [];
@@ -121,7 +121,7 @@ export function readVarSet(stream: BinaryStream, collection: Map<string, ClassDa
         // next = stream.readWord();
     }
 
-    return { varData: [], childs: [], handle: 0, className: "" };
+    return { varData: [], childs: [], handle: 0, classname: "" };
     // if (next !== 0) throw "Someting wrong here";
     // return res;
 }
