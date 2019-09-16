@@ -14,10 +14,9 @@ function getVarIdByName(vars: VarData[], name: string) {
 function loadVarSet(stream: BinaryStream, collection: Map<string, ClassData>) {
     const end = stream.readLong();
 
-    const handle = stream.readWord();
-
     const set: any = {
-        className: stream.readString(), //бесполезная информация,
+        handle: stream.readWord(),
+        className: stream.readString(),
         classId: stream.readLong() //    но считать надо
     };
 
@@ -28,8 +27,8 @@ function loadVarSet(stream: BinaryStream, collection: Map<string, ClassData>) {
 
     const classInfo = collection.get(set.className);
     if (!classInfo) {
-        console.warn(`Объект ${set.className} #${handle} не существует, но для него присвоены переменные`);
-        return { handle, set: <VarSet>set };
+        console.warn(`Объект ${set.className} #${set.handle} не существует, но для него присвоены переменные`);
+        return <VarSet>set;
     }
     const { vars } = classInfo;
     if (!vars && varData.length != 0) throw new StratumError(`Класс ${set.className} не имеет переменных`);
@@ -45,18 +44,18 @@ function loadVarSet(stream: BinaryStream, collection: Map<string, ClassData>) {
           })
         : [];
 
-    delete set.className; //считали - удалили
-    delete set.classId;
+    // delete set.className;
+    delete set.classId; //считали - удалили
 
-    const childs: { handle: number; set: VarSet }[] = [];
+    const childs: VarSet[] = [];
 
     while (stream.position < end) {
         childs.push(loadVarSet(stream, collection));
-        delete set.handle;
+        // delete set.handle;
     }
     set.childs = childs;
 
-    return { handle, set: <VarSet>set };
+    return <VarSet>set;
 }
 
 //class.cpp::3623
@@ -117,12 +116,12 @@ export function readVarSet(stream: BinaryStream, collection: Map<string, ClassDa
 
     //class.cpp::5165
     if (next == RecordType.VR_SETVAR) {
-        return loadVarSet(stream, collection).set;
+        return loadVarSet(stream, collection);
         // res.varSet = loadVarSet(stream, collection);
-        next = stream.readWord();
+        // next = stream.readWord();
     }
 
-    return { varData: [], childs: [] };
+    return { varData: [], childs: [], handle: 0, className: "" };
     // if (next !== 0) throw "Someting wrong here";
     // return res;
 }

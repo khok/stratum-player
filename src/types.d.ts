@@ -4,8 +4,8 @@ import { Bytecode } from "./vm/types";
 //Закоменнчеые поля - не используются
 
 export interface VarSet {
-    // handle: number;
-    // className: string;
+    handle: number;
+    className: string;
     // classId: number;
     varData: { name: string; value: number | string }[];
     childs: { handle: number; set: VarSet }[];
