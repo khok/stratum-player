@@ -1,5 +1,5 @@
 import { ChildFactory, ClassBase, OnSchemeData } from "./classBase";
-import { ClassData } from "./types";
+import { ClassData, VarSet } from "./types";
 import { Bytecode, ClassFunctions, VmContext } from "./vm/types";
 
 // function createDefaultValue(type: VarData["type"]) {
@@ -39,8 +39,22 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
         }
     }
 
-    getVarId(varName: string): number | undefined {
-        return this.varNameIndexMap && this.varNameIndexMap.get(varName.toLowerCase());
+    applyVariables(varSet: VarSet) {
+        if (this.protoName == varSet.classname) {
+            const { varData } = varSet;
+            varData.forEach(({ name, value }) => {
+                if (!this.variables) return;
+                const varId = this.getVarId(name);
+                if (varId != undefined && this.variables[varId]) this.variables[varId].defaultValue = value;
+            });
+        }
+
+        const myChilds = this.childs;
+        if (myChilds)
+            varSet.childs.forEach(set => {
+                const child = myChilds.get(set.handle);
+                if (child) child.applyVariables(set);
+            });
     }
 
     setNewVarValue(id: number, value: string | number): void {

@@ -16,6 +16,7 @@ export class Project implements ProjectFunctions {
         const factory: ChildFactory<ClassInstance> = (pName, osd) =>
             new ClassInstance(pName, getClass(pName), factory, osd);
         this.tree = new ClassInstance(rootName, getClass(rootName), factory);
+        if (varSet) this.tree.applyVariables(varSet);
 
         // createNodeChilds(root, classCollection, rootProto);
 
