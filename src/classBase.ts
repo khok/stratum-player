@@ -2,6 +2,7 @@ import { StratumError } from "./errors";
 import { ChildData, ClassData, LinkData, VarData } from "./types";
 
 export interface Variable {
+    readonly type: VarData["type"];
     newValue: number | string;
     oldValue: number | string;
     defaultValue?: number | string;
@@ -12,17 +13,17 @@ export type ChildFactory<T extends ClassBase<T>> = (childName: string, onSchemeD
 
 class VariableNode {
     private propagated = false;
-    private connectedNodes: VariableNode[] = [];
+    private connectedNodes = new Set<VariableNode>();
     private value: Variable;
-    constructor(public readonly data?: string | number) {
-        this.value = {} as Variable;
+    constructor(type: VarData["type"], private data?: string | number) {
+        this.value = { type } as Variable;
     }
 
     static connect(first: VariableNode, second: VariableNode) {
         if (first.propagated) throw Error("first propagated");
         if (second.propagated) throw Error("second propagated");
-        first.connectedNodes.push(second);
-        second.connectedNodes.push(first);
+        first.connectedNodes.add(second);
+        second.connectedNodes.add(first);
     }
     propagateValue() {
         this.propagate(this.value);
@@ -31,7 +32,7 @@ class VariableNode {
         if (this.propagated) return;
         this.propagated = true;
         this.value = value;
-        for (const n of this.connectedNodes) n.propagate(value);
+        this.connectedNodes.forEach(n => n.propagate(value));
     }
     /**
      * Следует вызывать в порядке вычислений
@@ -74,40 +75,45 @@ export abstract class ClassBase<T extends ClassBase<T>> {
     constructor(
         public readonly protoName: string,
         { vars, childs, links }: ClassData,
-        childFactory: ChildFactory<T>,
-        protected onSchemeData?: OnSchemeData<T>
+        childFactory?: ChildFactory<T>,
+        private onSchemeData?: OnSchemeData<T>
     ) {
         if (vars) this.setVars(vars);
-        if (childs) this.setChilds(childs, childFactory);
+        if (childs && childFactory) this.setChilds(childs, childFactory);
         if (links) this.setLinks(links);
 
         const isRoot = !onSchemeData;
-        if (!isRoot) return;
+        if (isRoot) {
+            this.callRecursive(({ variableInfo }) => variableInfo && variableInfo.forEach(c => c.propagateValue()));
 
-        const propagateVariables = (ci: ClassBase<T>) => {
-            ci.variableInfo && ci.variableInfo.forEach(c => c.propagateValue());
-            ci.childs && ci.childs.forEach(propagateVariables);
-        };
-        propagateVariables(this);
+            this.callRecursive(ci => {
+                const vInfo = ci.variableInfo;
+                delete ci.variableInfo;
+                ci.variables = vInfo && vInfo.map(v => v.extractAsVariable());
+            });
+        }
+    }
 
-        const extractVariables = (ci: ClassBase<T>) => {
-            ci.childs && ci.childs.forEach(extractVariables);
-            const vInfo = ci.variableInfo;
-            delete ci.variableInfo;
-            ci.variables = vInfo && vInfo.map(v => v.extractAsVariable());
-        };
-        extractVariables(this);
+    protected callRecursive(func: (theClass: T) => any) {
+        this.childs && this.childs.forEach(c => c.callRecursive(func));
+        func((this as ClassBase<T>) as T);
     }
 
     getVarId(varName: string): number | undefined {
         return this.varNameIndexMap && this.varNameIndexMap.get(varName.toLowerCase());
     }
 
+    extractVariables() {
+        const vars = new Set<Variable>();
+        this.callRecursive(({ variables }) => variables && variables.forEach(v => vars.add(v)));
+        return vars;
+    }
+
     private setVars(vars: VarData[]) {
         const mp = (this.varNameIndexMap = new Map<string, number>());
         this.variableInfo = vars.map((v, varId) => {
             mp.set(v.name.toLowerCase(), varId);
-            return new VariableNode(this.getVarValue(v));
+            return new VariableNode(v.type, this.getVarValue(v));
         });
     }
 
@@ -121,8 +127,8 @@ export abstract class ClassBase<T extends ClassBase<T>> {
 
     private setLinks(links: LinkData[]) {
         for (const { handle1, handle2, vars } of links) {
-            const first: ClassBase<T> | undefined = handle1 ? this.childs && this.childs.get(handle1) : this;
-            const second: ClassBase<T> | undefined = handle2 ? this.childs && this.childs.get(handle2) : this;
+            const first = handle1 ? this.childs && this.childs.get(handle1) : (this as ClassBase<T>);
+            const second = handle2 ? this.childs && this.childs.get(handle2) : (this as ClassBase<T>);
             if (!first || !second || !first.variableInfo || !second.variableInfo)
                 throw new StratumError(errMsg(handle1, handle2));
             for (const { name1, name2 } of vars) {

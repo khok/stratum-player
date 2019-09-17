@@ -1,10 +1,10 @@
 /* Основано на class.cpp:6100
  */
 import { FileSignatureError, NotImplementedError, StratumError } from "../../errors";
+import { parseVarValue } from "../../helpers";
 import { ChildData, ClassData, ClassHeaderData, LinkData, VarData } from "../../types";
 import { BinaryStream } from "../binaryStream";
 import { parseBytecode } from "./bytecode";
-import { parseVarValue } from "./parseVarValue";
 import { RecordType } from "./recordType";
 import { readVectorDrawData } from "./vdrFile/reader";
 

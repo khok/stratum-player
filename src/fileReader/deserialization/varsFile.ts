@@ -1,7 +1,7 @@
-import { StratumError, FileSignatureError, NotImplementedError } from "../../errors";
+import { FileSignatureError, NotImplementedError, StratumError } from "../../errors";
+import { parseVarValue } from "../../helpers";
 import { ClassData, VarData, VarSet } from "../../types";
 import { BinaryStream } from "../binaryStream";
-import { parseVarValue } from "./parseVarValue";
 import { RecordType } from "./recordType";
 
 function getVarIdByName(vars: VarData[], name: string) {

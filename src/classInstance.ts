@@ -2,19 +2,6 @@ import { ChildFactory, ClassBase, OnSchemeData } from "./classBase";
 import { ClassData, VarSet } from "./types";
 import { Bytecode, ClassFunctions, VmContext } from "./vm/types";
 
-// function createDefaultValue(type: VarData["type"]) {
-//     switch (type) {
-//         case "FLOAT":
-//             return 0;
-//         case "HANDLE":
-//             return 0;
-//         case "STRING":
-//             return "";
-//         case "COLORREF":
-//             return "rgb(0, 0, 0)";
-//     }
-// }
-
 export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunctions {
     private code?: Bytecode;
     private isDisabled = () => false;
@@ -22,7 +9,7 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
     constructor(
         public readonly protoName: string,
         classData: ClassData,
-        childFactory: ChildFactory<ClassInstance>,
+        childFactory?: ChildFactory<ClassInstance>,
         onSchemeData?: OnSchemeData<ClassInstance>
     ) {
         super(protoName, classData, childFactory, onSchemeData);
@@ -74,7 +61,6 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
     }
     compute(ctx: VmContext, respectDisableVar = true): void {
         if (respectDisableVar && this.isDisabled()) return;
-        if (this.childs) this.childs.forEach(c => c.compute(ctx, true));
-        if (this.code) ctx.compute(this.code, this);
+        this.callRecursive(c => c.code && ctx.compute(c.code, c));
     }
 }

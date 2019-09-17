@@ -1,6 +1,20 @@
-import { StratumError } from "../../errors";
+import { StratumError } from "./errors";
+import { VarData } from "./types";
 
-export function parseVarValue(type: string, value: string): string | number {
+export function createDefaultValue(type: VarData["type"]) {
+    switch (type) {
+        case "FLOAT":
+            return 0;
+        case "HANDLE":
+            return 0;
+        case "STRING":
+            return "";
+        case "COLORREF":
+            return "rgb(0, 0, 0)";
+    }
+}
+
+export function parseVarValue(type: VarData["type"], value: string): string | number {
     switch (type) {
         case "STRING":
             return value;
