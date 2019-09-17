@@ -7,8 +7,8 @@ export interface VarSet {
     handle: number;
     classname: string;
     // classId: number;
-    varData: { name: string; value: number | string }[];
-    childs: VarSet[];
+    varData: { name: string; data: string }[];
+    childSets: VarSet[];
 }
 
 export interface VarData {

@@ -1,4 +1,5 @@
 import { ChildFactory, ClassBase, OnSchemeData } from "./classBase";
+import { parseVarValue } from "./helpers";
 import { ClassData, VarSet } from "./types";
 import { Bytecode, ClassFunctions, VmContext } from "./vm/types";
 
@@ -29,16 +30,18 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
     applyVariables(varSet: VarSet) {
         if (this.protoName == varSet.classname) {
             const { varData } = varSet;
-            varData.forEach(({ name, value }) => {
+            varData.forEach(({ name, data }) => {
                 if (!this.variables) return;
                 const varId = this.getVarId(name);
-                if (varId != undefined && this.variables[varId]) this.variables[varId].defaultValue = value;
+                const variable = varId != undefined && this.variables[varId];
+                if (!variable) return;
+                variable.defaultValue = parseVarValue(variable.type, data);
             });
         }
 
         const myChilds = this.childs;
         if (myChilds)
-            varSet.childs.forEach(set => {
+            varSet.childSets.forEach(set => {
                 const child = myChilds.get(set.handle);
                 if (child) child.applyVariables(set);
             });

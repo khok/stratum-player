@@ -26,10 +26,10 @@ import { VirtualMachine } from "../../vm/virtualMachine";
     equal(ci.getNewVarValue(3), "-0.4-i1.2");
 
     ci.applyVariables({
-        childs: [],
+        childSets: [],
         classname: "StratumClass_11202814_a13",
         handle: 0,
-        varData: [{ name: "a", value: 1 }, { name: "b", value: -70 }, { name: "c", value: 600 }]
+        varData: [{ name: "a", data: "1" }, { name: "b", data: "-70" }, { name: "c", data: "600" }]
     });
     allVars.forEach(v => (v.newValue = v.oldValue = v.defaultValue!));
 
