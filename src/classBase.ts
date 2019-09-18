@@ -103,6 +103,16 @@ export abstract class ClassBase<T extends ClassBase<T>> {
         return this.varNameIndexMap && this.varNameIndexMap.get(varName.toLowerCase());
     }
 
+    getClassesByPath(path: string): T | T[] | undefined {
+        console.log(`getClassesByPath(${path})`);
+        if (path === "") return (this as ClassBase<T>) as T;
+        if (path === "..") return this.onSchemeData && (this.onSchemeData.parent as T);
+        if (path === "\\")
+            return (this.onSchemeData ? this.onSchemeData.parent.getClassesByPath("\\") : (this as ClassBase<T>)) as T;
+
+        throw Error(`getClassesByPath() для пути ${path} не реализован`);
+    }
+
     extractVariables() {
         const vars = new Set<Variable>();
         this.callRecursive(({ variables }) => variables && variables.forEach(v => vars.add(v)));

@@ -59,9 +59,6 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
     getOldVarValue(id: number): string | number {
         return this.variables![id].oldValue;
     }
-    getClassesByPath(path: string): ClassFunctions | ClassFunctions[] | undefined {
-        throw new Error("Method not implemented.");
-    }
     compute(ctx: VmContext, respectDisableVar = true): void {
         if (respectDisableVar && this.isDisabled()) return;
         this.callRecursive(c => c.code && ctx.compute(c.code, c));
