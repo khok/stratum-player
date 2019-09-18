@@ -52,8 +52,8 @@ export interface GraphicSpaceFunctions {
     readonly originY: number;
     setOrigin(x: number, y: number): VmBool;
 
-    readonly scale: number;
-    setScale(scale: number): VmBool;
+    // readonly scale: number;
+    // setScale(scale: number): VmBool;
 
     getObjectHandleFromPoint(x: number, y: number): number;
     findObjectHandleByName(groupHandle: number, objectName: string): number;

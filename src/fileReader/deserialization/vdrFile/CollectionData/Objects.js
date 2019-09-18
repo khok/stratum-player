@@ -25,7 +25,7 @@ function readObject2D(stream) {
 function read_otGROUP(stream) {
     return {
         ...readObject(stream),
-        items: readNext(stream, true, consts.otPRIMARYCOLLECTION).data,
+        childHandles: readNext(stream, true, consts.otPRIMARYCOLLECTION).data,
     }
 }
 function read_otGROUP2D(stream) {

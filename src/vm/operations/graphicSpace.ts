@@ -138,12 +138,14 @@ function SetScaleSpace2d(ctx: VmContext) {
     const scale = <number>ctx.stackPop();
     const hspace = <number>ctx.stackPop();
     const space = ctx.windows.getSpace(hspace);
-    ctx.stackPush(space ? space.setScale(scale) : 0);
+    ctx.stackPush(space ? 1 : 0);
+    // ctx.stackPush(space ? space.setScale(scale) : 0);
 }
 //GETSCALESPACE2D, name "GetScaleSpace2d"       arg "HANDLE" ret "FLOAT" out 345
 function GetScaleSpace2d(ctx: VmContext) {
     const space = ctx.windows.getSpace(<number>ctx.stackPop());
-    ctx.stackPush(space ? space.scale : 0);
+    ctx.stackPush(space ? 1 : 0);
+    // ctx.stackPush(space ? space.scale : 0);
 }
 
 export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {

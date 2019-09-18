@@ -10,12 +10,12 @@ export interface PenTool {
     rop2: number;
 }
 
-export interface Font {
+export interface FontTool {
     OldLogfont: any;
     fontSize: number;
 }
 
-export interface TextData {
+export interface TextDataTool {
     ltFgColor: string;
     ltBgColor: string;
     fontHandle: number;
@@ -49,7 +49,7 @@ interface Element2dBase extends ElementBase {
     size: Point2d;
 }
 
-export interface GroupData extends ElementBase {
+export interface Group extends ElementBase {
     type: "group";
     childHandles: number[];
 }
@@ -98,7 +98,7 @@ export interface Control extends Element2dBase {
 }
 
 export type Element2d = Line | Bitmap | DoubleBitmap | Text | Control;
-export type Element = Element2d | GroupData;
+export type Element = Element2d | Group;
 
 export type HandleMap<T> = Map<number, T>;
 
@@ -109,9 +109,9 @@ export interface VectorDrawData {
     pens?: HandleMap<PenTool>;
     bitmaps?: HandleMap<BitmapRefTool | BitmapDataTool>;
     doubleBitmaps?: HandleMap<BitmapRefTool | DoubleBitmapDataTool>;
-    fonts?: HandleMap<Font>;
+    fonts?: HandleMap<FontTool>;
     strings?: HandleMap<string>;
-    texts?: HandleMap<TextData>;
+    texts?: HandleMap<TextDataTool>;
     elements?: HandleMap<Element>;
     elementOrder?: number[];
 }
