@@ -1,13 +1,9 @@
 import { Opcode } from "../opcode";
 import { Operation, VmContext } from "../types";
 
-//GETOBJECTBYNAME, name "GetObject2dByName"   arg "HANDLE","HANDLE","STRING" ret "HANDLE" out 224
-function GetObject2dByName(ctx: VmContext) {
-    const objectName = <string>ctx.stackPop();
-    const groupHandle = <number>ctx.stackPop();
-    const spaceHandle = <number>ctx.stackPop();
+function getObject(ctx: VmContext, spaceHandle: number, objectHandle: number) {
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.findObjectHandleByName(groupHandle, objectName) : 0);
+    return space && space.getObject(objectHandle);
 }
 
 //args: "HANDLE,HANDLE,FLOAT ret FLOAT"
@@ -15,24 +11,24 @@ function SetShowObject2d(ctx: VmContext) {
     const visibility = <number>ctx.stackPop();
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.setObjectVisibility(objectHandle, visibility) : 0);
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.setVisibility(visibility) : 0);
 }
 
 // args: "HANDLE,HANDLE  ret HANDLE"
 function GetObjectParent2d(ctx: VmContext) {
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectParentHandle(objectHandle) : 0);
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.parentHandle : 0);
 }
 
 //args: "HANDLE,HANDLE ret FLOAT "
 function GetZOrder2d(ctx: VmContext) {
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectZOrder(objectHandle) : 0);
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.zOrder : 0);
 }
 
 //args: "HANDLE,HANDLE ret FLOAT "
@@ -40,8 +36,8 @@ function SetZOrder2d(ctx: VmContext) {
     const zOrder = <number>ctx.stackPop();
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.setObjectZOrder(objectHandle, zOrder) : 0);
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.setZOrder(zOrder) : 0);
 }
 
 args: "HANDLE,HANDLE,FLOAT,FLOAT,FLOAT  ret FLOAT";
@@ -51,8 +47,8 @@ function RotateObject2d(ctx: VmContext) {
     const centerX = <number>ctx.stackPop();
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.rotateObject(objectHandle, centerX, centerY, angle) : 0);
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.rotate(centerX, centerY, angle) : 0);
 }
 
 //SETOBJECTORG2D, name "SetObjectOrg2d"      arg "HANDLE","HANDLE","FLOAT","FLOAT"  ret "FLOAT" out 331
@@ -61,8 +57,8 @@ function SetObjectOrg2d(ctx: VmContext) {
     const x = <number>ctx.stackPop();
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.setObjectPosition(objectHandle, x, y) : 0);
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.setPosition(x, y) : 0);
 }
 
 //"HANDLE,HANDLE,FLOAT,FLOAT  ret FLOAT"
@@ -71,8 +67,46 @@ function SetObjectSize2d(ctx: VmContext) {
     const width = <number>ctx.stackPop();
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.setSize(width, height) : 0);
+}
+
+//GETOBJECTORG2DX, name "GetObjectOrg2dx"     arg "HANDLE","HANDLE"  ret "FLOAT" out 324
+function GetObjectOrg2dx(ctx: VmContext) {
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.positionX : 0);
+}
+//GETOBJECTORG2DY, name "GetObjectOrg2dy"     arg "HANDLE","HANDLE"  ret "FLOAT" out 325
+function GetObjectOrg2dy(ctx: VmContext) {
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.positionY : 0);
+}
+//GETOBJECTSIZE2DX, name "GetObjectWidth2d"    arg "HANDLE","HANDLE"  ret "FLOAT" out 328
+function GetObjectWidth2d(ctx: VmContext) {
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.width : 0);
+}
+//GETOBJECTSIZE2DY, name "GetObjectHeight2d"    arg "HANDLE","HANDLE"  ret "FLOAT" out 329
+function GetObjectHeight2d(ctx: VmContext) {
+    const objectHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
+    const obj = getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.height : 0);
+}
+
+//GETOBJECTBYNAME, name "GetObject2dByName"   arg "HANDLE","HANDLE","STRING" ret "HANDLE" out 224
+function GetObject2dByName(ctx: VmContext) {
+    const objectName = <string>ctx.stackPop();
+    const groupHandle = <number>ctx.stackPop();
+    const spaceHandle = <number>ctx.stackPop();
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.setObjectSize(objectHandle, width, height) : 0);
+    ctx.stackPush(space ? space.findObjectHandleByName(groupHandle, objectName) : 0);
 }
 
 //GETOBJECTFROMPOINT2D, name "GetObjectFromPoint2d"  arg "HANDLE","FLOAT","FLOAT" ret "HANDLE" out 380
@@ -82,35 +116,6 @@ function GetObjectFromPoint2d(ctx: VmContext) {
     const spaceHandle = <number>ctx.stackPop();
     const space = ctx.windows.getSpace(spaceHandle);
     ctx.stackPush(space ? space.getObjectHandleFromPoint(x, y) : 0);
-}
-
-//GETOBJECTORG2DX, name "GetObjectOrg2dx"     arg "HANDLE","HANDLE"  ret "FLOAT" out 324
-function GetObjectOrg2dx(ctx: VmContext) {
-    const objectHandle = <number>ctx.stackPop();
-    const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectPositionX(objectHandle) : 0);
-}
-//GETOBJECTORG2DY, name "GetObjectOrg2dy"     arg "HANDLE","HANDLE"  ret "FLOAT" out 325
-function GetObjectOrg2dy(ctx: VmContext) {
-    const objectHandle = <number>ctx.stackPop();
-    const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectPositionY(objectHandle) : 0);
-}
-//GETOBJECTSIZE2DX, name "GetObjectWidth2d"    arg "HANDLE","HANDLE"  ret "FLOAT" out 328
-function GetObjectWidth2d(ctx: VmContext) {
-    const objectHandle = <number>ctx.stackPop();
-    const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectWidth(objectHandle) : 0);
-}
-//GETOBJECTSIZE2DY, name "GetObjectHeight2d"    arg "HANDLE","HANDLE"  ret "FLOAT" out 329
-function GetObjectHeight2d(ctx: VmContext) {
-    const objectHandle = <number>ctx.stackPop();
-    const spaceHandle = <number>ctx.stackPop();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectHeight(objectHandle) : 0);
 }
 
 //GETSPACEORGX, name "GetSpaceOrg2dx"        arg "HANDLE" ret "FLOAT" out 342
@@ -144,6 +149,8 @@ function SetScaleSpace2d(ctx: VmContext) {
 //GETSCALESPACE2D, name "GetScaleSpace2d"       arg "HANDLE" ret "FLOAT" out 345
 function GetScaleSpace2d(ctx: VmContext) {
     const space = ctx.windows.getSpace(<number>ctx.stackPop());
+    ctx.error("GetScaleSpace2d не реализована");
+    return;
     ctx.stackPush(space ? 1 : 0);
     // ctx.stackPush(space ? space.scale : 0);
 }

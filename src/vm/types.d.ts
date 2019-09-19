@@ -31,23 +31,27 @@ export const enum VmBool {
     True = 1
 }
 
+export interface GraphicObjectFunctions {
+    readonly name: string;
+    readonly parentHandle: number;
+
+    readonly positionX: number;
+    readonly positionY: number;
+    setPosition(x: number, y: number): VmBool;
+
+    rotate(centerX: number, centerY: number, angleRad: number): VmBool;
+
+    readonly width: number;
+    readonly height: number;
+    setSize(width: number, height: number): VmBool;
+
+    readonly zOrder: number;
+    setZOrder(zOrder: number): VmBool;
+
+    setVisibility(visible: VmBool): VmBool;
+}
+
 export interface GraphicSpaceFunctions {
-    getObjectPositionX(objectHandle: number): number;
-    getObjectPositionY(objectHandle: number): number;
-    setObjectPosition(objectHandle: number, x: number, y: number): VmBool;
-
-    getObjectWidth(objectHandle: number): number;
-    getObjectHeight(objectHandle: number): number;
-    setObjectSize(objectHandle: number, width: number, height: number): VmBool;
-
-    getObjectZOrder(objectHandle: number): number;
-    setObjectZOrder(objectHandle: number, zOrder: number): VmBool;
-
-    setObjectVisibility(objectHandle: number, visible: VmBool): VmBool;
-    rotateObject(objectHandle: number, centerX: number, centerY: number, angleRad: number): VmBool;
-
-    getObjectParentHandle(objectHandle: number): number;
-
     readonly originX: number;
     readonly originY: number;
     setOrigin(x: number, y: number): VmBool;
@@ -55,8 +59,10 @@ export interface GraphicSpaceFunctions {
     // readonly scale: number;
     // setScale(scale: number): VmBool;
 
-    getObjectHandleFromPoint(x: number, y: number): number;
+    getObject(objectHandle: number): GraphicObjectFunctions | undefined;
+
     findObjectHandleByName(groupHandle: number, objectName: string): number;
+    getObjectHandleFromPoint(x: number, y: number): number;
 }
 
 export type SchemeResolver = (canvas: HTMLCanvasElement) => GraphicSpaceFunctions;
