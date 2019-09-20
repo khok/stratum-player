@@ -1,16 +1,19 @@
 import { ChildFactory, Variable } from "./classBase";
 import { ClassInstance } from "./classInstance";
 import { StratumError } from "./errors";
+import { VectorDrawInstance } from "./graphics/vectorDrawInstance";
+import { WindowSystem } from "./graphics/windowSystem";
 import { createDefaultValue } from "./helpers";
 import { ClassData, VarSet } from "./types";
-import { ClassFunctions, ProjectFunctions, SchemeResolver, VmBool } from "./vm/types";
+import { ClassFunctions, GraphicSpaceResolver, ProjectFunctions, VmBool } from "./vm/types";
 import { VirtualMachine } from "./vm/virtualMachine";
 
 export class Project implements ProjectFunctions {
     private tree: ClassInstance;
-    private vm: VirtualMachine;
     private allVars: Set<Variable>;
-    constructor(rootName: string, classCollection: Map<string, ClassData>, varSet?: VarSet) {
+    windows = new WindowSystem();
+    private vm = new VirtualMachine(this.windows, <any>{}, this);
+    constructor(rootName: string, private classCollection: Map<string, ClassData>, varSet?: VarSet) {
         const getClass = (protoName: string) => {
             const proto = classCollection.get(protoName);
             if (!proto) throw new StratumError(`Прототип класса ${protoName} не найден`);
@@ -27,11 +30,17 @@ export class Project implements ProjectFunctions {
             v.newValue = v.oldValue = v.defaultValue;
         });
         this.allVars = allVars;
-        this.vm = new VirtualMachine(<any>{}, <any>{}, this);
     }
 
-    createSchemeInstance(className: string): SchemeResolver | undefined {
-        throw new Error("Method not implemented.");
+    createSchemeInstance(className: string): GraphicSpaceResolver | undefined {
+        const proto = this.classCollection.get(className);
+        if (!proto || !proto.scheme) return undefined;
+        const { scheme } = proto;
+        // if (!scheme.composed) {
+        //     if (proto.childs) composeScheme(scheme, this.classCollection, proto.childs);
+        //     (<MutableStratumScheme>scheme).composed = true;
+        // }
+        return canvas => new VectorDrawInstance(scheme, canvas);
     }
     hasClass(className: string): VmBool {
         throw new Error("Method not implemented.");
