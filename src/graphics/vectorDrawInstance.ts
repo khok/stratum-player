@@ -1,42 +1,8 @@
 import { fabric } from "fabric";
-import { GraphicObjectFunctions, GraphicSpaceFunctions, VmBool } from "../vm/types";
+import { GraphicSpaceFunctions, VmBool } from "../vm/types";
 import { Element2dInstance, ElementInstance, GroupInstance } from "./graphicObject";
-import { Element2d, HandleMap, VectorDrawData } from "./types";
-
-function instantiateObject(
-    element: Element2d,
-    { bitmaps, brushes, pens, doubleBitmaps, fonts, strings, texts }: VectorDrawData
-): fabric.Object {
-    switch (element.type) {
-        case "line":
-            const opts: fabric.IObjectOptions = {};
-            const { brushHandle, penHandle, points } = element;
-            if (brushHandle) opts.fill = brushes!.get(brushHandle)!.color;
-            if (penHandle) {
-                const pen = pens!.get(penHandle)!;
-                opts.strokeWidth = pen.width || 0.5; //минимально возможная толщина (придумал сам)
-                opts.stroke = pen.color;
-            }
-            /*
-             * По идее, здесь должен быть lazy-slice -
-             * т.е. копирование происходит только при попытке
-             * изменения контура полилинии.
-             */
-            return new fabric.Polyline(points, opts);
-        case "text":
-            throw new Error("Text Not implemented.");
-        case "doubleBitmap": {
-            const { size, sourceHandle } = element.data;
-            return new fabric.Rect({ fill: "gray", width: size.x, height: size.y });
-        }
-        case "bitmap": {
-            const { size } = element.data;
-            return new fabric.Rect({ fill: "gray", width: size.x, height: size.y });
-        }
-        case "control":
-            throw new Error("Control Not implemented.");
-    }
-}
+import { instantiateObject } from "./instantiateObject";
+import { HandleMap, VectorDrawData } from "./types";
 
 export class VectorDrawInstance implements GraphicSpaceFunctions {
     getObjectData(object: ElementInstance) {
@@ -81,7 +47,7 @@ export class VectorDrawInstance implements GraphicSpaceFunctions {
         this.shouldRedraw = true;
     }
 
-    getObject(objectHandle: number): GraphicObjectFunctions | undefined {
+    getObject(objectHandle: number): ElementInstance | undefined {
         return this.objects.get(objectHandle);
     }
 
