@@ -62,6 +62,7 @@ export class VirtualMachine implements VmContext {
 
     error(message = "") {
         this.break();
+        console.dir(this.currentClass);
         throw new StratumError("Ошибка в работе виртуальной машины:\n" + message);
     }
 

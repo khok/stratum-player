@@ -26,10 +26,7 @@ export interface Bytecode {
     // missingCommands: readonly string[];
 }
 
-export const enum VmBool {
-    False = 0,
-    True = 1
-}
+export type VmBool = 0 | 1;
 
 export interface GraphicObjectFunctions {
     readonly name: string;
@@ -65,7 +62,7 @@ export interface GraphicSpaceFunctions {
     getObjectHandleFromPoint(x: number, y: number): number;
 }
 
-export type SchemeResolver = (canvas: HTMLCanvasElement) => GraphicSpaceFunctions;
+export type GraphicSpaceResolver = (canvas: HTMLCanvasElement) => GraphicSpaceFunctions;
 
 export interface WindowFunctions {
     readonly spaceHandle: number;
@@ -88,14 +85,14 @@ export interface WindowingFunctions {
     readonly screenHeight: number;
     readonly screenWidth: number;
 
-    createSchemeWindow(windowName: string, flags: string, schemeResolver: SchemeResolver): number;
+    createSchemeWindow(windowName: string, flags: string, schemeResolver: GraphicSpaceResolver): number;
     hasWindow(windowName: string): VmBool;
     getWindow(windowName: string): WindowFunctions | undefined;
     getSpace(spaceHandle: number): GraphicSpaceFunctions | undefined;
 }
 
 export interface ProjectFunctions {
-    createSchemeInstance(className: string): SchemeResolver | undefined;
+    createSchemeInstance(className: string): GraphicSpaceResolver | undefined;
     hasClass(className: string): VmBool;
     getClassesByProtoName(className: string): ClassFunctions[];
     stopComputing(): void;

@@ -2,7 +2,7 @@ import { Opcode } from "../opcode";
 import { Operation, VmContext } from "../types";
 
 function SendMessage(ctx: VmContext, count: number) {
-    const vars = new Array<string | number | undefined>(count);
+    const vars = new Array<string>(count);
     for (let i = count - 1; i >= 0; i--) vars[i] = <string>ctx.stackPop();
     const className = <string>ctx.stackPop();
     const path = <string>ctx.stackPop();
@@ -15,24 +15,30 @@ function SendMessage(ctx: VmContext, count: number) {
 
     const current = ctx.currentClass;
 
+    let bb = 0;
     for (const other of ctx.project.getClassesByProtoName(className)) {
+        bb++;
         if (other == current) continue;
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = (vars[i] = current.getVarId(<string>vars[i]));
+            const idCurrent = current.getVarId(<string>vars[i]);
             if (idCurrent == undefined) continue;
-            const idOther = (vars[i + 1] = other.getVarId(<string>vars[i + 1]));
+            const idOther = other.getVarId(<string>vars[i + 1]);
             if (idOther == undefined) continue;
-            other.setNewVarValue(idOther, current.getNewVarValue(idCurrent));
+            const curValue = current.getNewVarValue(idCurrent);
+            other.setOldVarValue(idOther, curValue);
+            other.setNewVarValue(idOther, curValue);
         }
 
         other.compute(ctx, false);
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = <number | undefined>vars[i];
-            const idOther = <number | undefined>vars[i + 1];
-            if (idCurrent != undefined && idOther != undefined)
-                current.setNewVarValue(idCurrent, other.getNewVarValue(idOther));
+            const idCurrent = current.getVarId(<string>vars[i]);
+            if (idCurrent == undefined) continue;
+            const idOther = other.getVarId(<string>vars[i + 1]);
+            if (idOther == undefined) continue;
+            const otherValue = other.getNewVarValue(idOther);
+            current.setNewVarValue(idCurrent, otherValue);
         }
     }
 }
@@ -44,7 +50,7 @@ function RegisterObject(ctx: VmContext) {
     const path = ctx.stackPop();
     const objectHandle = ctx.stackPop();
     const hspaceOrWinName = ctx.stackPop();
-    console.log(`RegisterObject(${hspaceOrWinName}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
+    // console.log(`RegisterObject(${hspaceOrWinName}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
     return;
 }
 

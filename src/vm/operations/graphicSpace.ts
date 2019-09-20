@@ -12,7 +12,7 @@ function SetShowObject2d(ctx: VmContext) {
     const objectHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
     const obj = getObject(ctx, spaceHandle, objectHandle);
-    ctx.stackPush(obj ? obj.setVisibility(visibility) : 0);
+    ctx.stackPush(obj ? obj.setVisibility(visibility && 1) : 0);
 }
 
 // args: "HANDLE,HANDLE  ret HANDLE"
@@ -149,8 +149,8 @@ function SetScaleSpace2d(ctx: VmContext) {
 //GETSCALESPACE2D, name "GetScaleSpace2d"       arg "HANDLE" ret "FLOAT" out 345
 function GetScaleSpace2d(ctx: VmContext) {
     const space = ctx.windows.getSpace(<number>ctx.stackPop());
-    ctx.error("GetScaleSpace2d не реализована");
-    return;
+    // ctx.error("GetScaleSpace2d не реализована");
+    // return;
     ctx.stackPush(space ? 1 : 0);
     // ctx.stackPush(space ? space.scale : 0);
 }
