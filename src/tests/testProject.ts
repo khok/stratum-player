@@ -9,7 +9,7 @@ import { Project } from "../project";
     //Подгружаем
     const mainClassName = await readProjectFile(zipFiles);
     const classes = await readClassFiles(zipFiles, mainClassName);
-    const vars = await readVarsFile(zipFiles, classes);
+    const vars = await readVarsFile(zipFiles);
     const prj = new Project(mainClassName, classes, vars);
     let enough = false;
     const req = () =>

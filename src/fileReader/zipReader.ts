@@ -15,11 +15,11 @@ function findFiles(files: ZipData, ending: string) {
     return files.filter(({ name }) => name.toLowerCase().endsWith(ending.toLowerCase()));
 }
 
-function findSingleFile(zipFiles: ZipData, fileName: string, mustExist = true): JSZipObject {
-    const files = findFiles(zipFiles, fileName);
+function findSingleFile(zipFiles: ZipData, filename: string, mustExist = true): JSZipObject {
+    const files = findFiles(zipFiles, filename);
 
-    if (mustExist && files.length === 0) throw new StratumError(`Файл "${fileName}" не найден`);
-    if (files.length > 1) throw new StratumError(`Найдено несколько файлов с именем: "${fileName}"`);
+    if (mustExist && files.length === 0) throw new StratumError(`Файл "${filename}" не найден`);
+    if (files.length > 1) throw new StratumError(`Найдено несколько файлов с именем: "${filename}"`);
 
     return files[0];
 }
@@ -115,20 +115,19 @@ export async function readAllClassFiles(files: ZipData, silent = false) {
 }
 
 //Ищет файл проекта и читает его данные
-export async function readProjectFile(files: ZipData, projectFileName: string = "project.spj") {
-    const prjBytes = await unzipFile(findSingleFile(files, projectFileName));
+export async function readProjectFile(files: ZipData, filename: string = "project.spj") {
+    const prjBytes = await unzipFile(findSingleFile(files, filename));
     return readProjectName(new BinaryStream(prjBytes));
 }
 
 export async function readVarsFile(
     files: ZipData,
-    collection: Map<string, ClassData>,
-    preloadFile: string = "_preload.stt"
+    filename: string = "_preload.stt"
 ) {
-    const file = findSingleFile(files, preloadFile, false);
+    const file = findSingleFile(files, filename, false);
     if (!file) return undefined;
     const preloadBytes = await unzipFile(file);
-    return readVarSet(new BinaryStream(preloadBytes), collection);
+    return readVarSet(new BinaryStream(preloadBytes));
 }
 
 //Возвращает содержимое ZIP указанного файла
