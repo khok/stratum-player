@@ -134,7 +134,7 @@ export async function readVarsFile(
 //Возвращает содержимое ZIP указанного файла
 async function loadZipData(file: Blob | File) {
     const { files } = await loadAsync(file);
-    return Object.values(files);
+    return Object.keys(files).map(key => files[key]);
 }
 
 async function loadFromUrl(url: string) {
