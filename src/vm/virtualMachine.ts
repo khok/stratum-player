@@ -18,11 +18,6 @@ export class VirtualMachine implements VmContext {
         public readonly project: ProjectFunctions
     ) {}
 
-    reset() {
-        if (this.depth != 0) throw Error("Стек классов не пуст в конце вычислений");
-        this.valueP = -1;
-    }
-
     get canComputeClass() {
         //именно такой максимальный уровень вложенности указан в оригинальных исходниках
         return this.depth < 60;
@@ -52,6 +47,7 @@ export class VirtualMachine implements VmContext {
         this.breakFlag = false;
 
         this.depth--;
+        if (this.depth == 0) this.valueP = -1;
         this.currentClass = prevClass;
         this.cmdIndex = prevCmdIndex;
     }
