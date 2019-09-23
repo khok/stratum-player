@@ -94,13 +94,18 @@ export abstract class ClassBase<T extends ClassBase<T>> {
         }
     }
 
-    protected callRecursive(func: (theClass: T) => any) {
+    private callRecursive(func: (theClass: T) => any) {
         this.childs && this.childs.forEach(c => c.callRecursive(func));
         func((this as ClassBase<T>) as T);
     }
 
+    /**
+     * Возращает id переменной или undefined.
+     * *Не забывайте предварительно лоуэркейзить аргумент.*
+     */
     getVarId(varName: string): number | undefined {
-        return this.varNameIndexMap && this.varNameIndexMap.get(varName.toLowerCase());
+        const vars = this.varNameIndexMap;
+        return vars && vars.get(varName);
     }
 
     getClassesByPath(path: string): T | T[] | undefined {
@@ -142,8 +147,8 @@ export abstract class ClassBase<T extends ClassBase<T>> {
             if (!first || !second || !first.variableInfo || !second.variableInfo)
                 throw new StratumError(errMsg(handle1, handle2));
             for (const { name1, name2 } of vars) {
-                const varId1 = first.getVarId(name1);
-                const varId2 = second.getVarId(name2);
+                const varId1 = first.getVarId(name1.toLowerCase());
+                const varId2 = second.getVarId(name2.toLowerCase());
                 if (varId1 == undefined || varId2 == undefined)
                     throw new StratumError(errMsg(handle1, handle2) + `: ${name1}-${name2}`);
                 VariableNode.connect(first.variableInfo[varId1], second.variableInfo[varId2]);

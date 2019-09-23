@@ -3,7 +3,7 @@ import { Operation, VmContext } from "../types";
 
 function SendMessage(ctx: VmContext, count: number) {
     const vars = new Array<string>(count);
-    for (let i = count - 1; i >= 0; i--) vars[i] = <string>ctx.stackPop();
+    for (let i = count - 1; i >= 0; i--) vars[i] = (<string>ctx.stackPop()).toLowerCase();
     const className = <string>ctx.stackPop();
     const path = <string>ctx.stackPop();
     if (path !== "") {
@@ -15,30 +15,28 @@ function SendMessage(ctx: VmContext, count: number) {
 
     const current = ctx.currentClass;
 
-    let bb = 0;
     for (const other of ctx.project.getClassesByProtoName(className)) {
-        bb++;
         if (other == current) continue;
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = current.getVarId(<string>vars[i]);
-            if (idCurrent == undefined) continue;
-            const idOther = other.getVarId(<string>vars[i + 1]);
-            if (idOther == undefined) continue;
-            const curValue = current.getNewVarValue(idCurrent);
-            other.setOldVarValue(idOther, curValue);
-            other.setNewVarValue(idOther, curValue);
+            const idCurrent = current.getVarId(<string>vars[i]) as number;
+            const idOther = other.getVarId(<string>vars[i + 1]) as number;
+            if (idCurrent > -1 && idOther > -1) {
+                const curValue = current.getNewVarValue(idCurrent);
+                other.setOldVarValue(idOther, curValue);
+                other.setNewVarValue(idOther, curValue);
+            }
         }
 
         other.compute(ctx, false);
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = current.getVarId(<string>vars[i]);
-            if (idCurrent == undefined) continue;
-            const idOther = other.getVarId(<string>vars[i + 1]);
-            if (idOther == undefined) continue;
-            const otherValue = other.getNewVarValue(idOther);
-            current.setNewVarValue(idCurrent, otherValue);
+            const idCurrent = current.getVarId(<string>vars[i]) as number;
+            const idOther = other.getVarId(<string>vars[i + 1]) as number;
+            if (idCurrent > -1 && idOther > -1) {
+                const otherValue = other.getNewVarValue(idOther);
+                current.setNewVarValue(idCurrent, otherValue);
+            }
         }
     }
 }

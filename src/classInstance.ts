@@ -32,7 +32,7 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
             const { varData } = varSet;
             varData.forEach(({ name, data }) => {
                 if (!this.variables) return;
-                const varId = this.getVarId(name);
+                const varId = this.getVarId(name.toLowerCase());
                 const variable = varId != undefined && this.variables[varId];
                 if (!variable) return;
                 variable.defaultValue = parseVarValue(variable.type, data);
@@ -61,6 +61,7 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
     }
     compute(ctx: VmContext, respectDisableVar = true): void {
         if (respectDisableVar && this.isDisabled()) return;
-        this.callRecursive(c => c.code && ctx.compute(c.code, c));
+        if (this.code) ctx.compute(this.code, this);
+        if (this.childs) for (const child of this.childs.values()) child.compute(ctx);
     }
 }
