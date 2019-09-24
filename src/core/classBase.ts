@@ -1,5 +1,5 @@
-import { StratumError } from "./errors";
-import { ChildData, ClassData, LinkData, VarData } from "./types";
+import { StratumError } from "../errors";
+import { ChildData, ClassData, LinkData, VarData } from "../types";
 
 export interface Variable {
     readonly type: VarData["type"];

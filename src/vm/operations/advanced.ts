@@ -28,7 +28,7 @@ function SendMessage(ctx: VmContext, count: number) {
             }
         }
 
-        other.compute(ctx, false);
+        other.computeScheme(ctx, false);
 
         for (let i = 0; i < count; i += 2) {
             const idCurrent = current.getVarId(<string>vars[i]) as number;

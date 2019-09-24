@@ -26,7 +26,7 @@ export class VirtualMachine implements VmContext {
     //что сделать:
     // 1) Использовать массив опкодов для Bytecode вместо ссылок на функции (зачем)
     // 2) Сделать читабельным свитч subcontext-а
-    compute(code: Bytecode, theClass: ClassFunctions) {
+    executeCode(code: Bytecode, theClass: ClassFunctions) {
         if (!this.canComputeClass) throw Error("Достигнула макс. вложенность");
 
         const prevClass = this.currentClass;

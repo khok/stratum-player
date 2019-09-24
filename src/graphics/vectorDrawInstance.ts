@@ -75,7 +75,7 @@ export class VectorDrawInstance implements GraphicSpaceFunctions {
     setOrigin(x: number, y: number): VmBool {
         this.originX = x;
         this.originY = y;
-        this.objects.forEach(ob => ob instanceof Element2dInstance && ob.updateVisualPosition());
+        for (const obj of this.objects) obj instanceof Element2dInstance && obj.updateVisualPosition();
         return 1;
     }
     render() {

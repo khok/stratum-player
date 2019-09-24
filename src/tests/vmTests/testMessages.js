@@ -1,7 +1,7 @@
 import { ok } from "assert";
 import "regenerator-runtime";
 import { readClassFiles, readProjectFile, readVarsFile, zipFromUrl } from "../../fileReader/zipReader";
-import { Project } from "../../project";
+import { Project } from "../../core/project";
 
 (async function() {
     const zipFiles = await zipFromUrl("/projects/test_messages.zip");

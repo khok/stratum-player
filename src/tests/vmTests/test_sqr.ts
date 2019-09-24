@@ -1,5 +1,5 @@
 import { equal } from "assert";
-import { ClassInstance } from "../../classInstance";
+import { ClassInstance } from "../../core/classInstance";
 import { readClassData, readClassHeaderData } from "../../fileReader/deserialization/classFile";
 import { openStreamFromUrl } from "../../fileReader/zipReader";
 import { createDefaultValue } from "../../helpers";
@@ -20,8 +20,8 @@ import { VirtualMachine } from "../../vm/virtualMachine";
     const vm = new VirtualMachine(<any>{}, <any>{}, <any>{});
 
     //Есть два способа вычислить класс:
-    //vm.compute(data.bytecode!, ci); //1
-    ci.compute(vm); // 2
+    // vm.executeCode(data.bytecode!, ci); //1
+    ci.computeScheme(vm); // 2
     equal(ci.getNewVarValue(2), "-0.4+i1.2");
     equal(ci.getNewVarValue(3), "-0.4-i1.2");
 
@@ -33,7 +33,7 @@ import { VirtualMachine } from "../../vm/virtualMachine";
     });
     allVars.forEach(v => (v.newValue = v.oldValue = v.defaultValue!));
 
-    ci.compute(vm);
+    ci.computeScheme(vm);
     equal(ci.getNewVarValue(0), 60);
     equal(ci.getNewVarValue(1), 10);
     equal(ci.getNewVarValue(2), "60");

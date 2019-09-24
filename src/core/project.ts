@@ -1,12 +1,12 @@
+import { StratumError } from "../errors";
+import { VectorDrawInstance } from "../graphics/vectorDrawInstance";
+import { WindowSystem } from "../graphics/windowSystem";
+import { createDefaultValue } from "../helpers";
+import { ClassData, VarSet } from "../types";
+import { ClassFunctions, GraphicSpaceResolver, ProjectFunctions, VmBool } from "../vm/types";
+import { VirtualMachine } from "../vm/virtualMachine";
 import { ChildFactory, Variable } from "./classBase";
 import { ClassInstance } from "./classInstance";
-import { StratumError } from "./errors";
-import { VectorDrawInstance } from "./graphics/vectorDrawInstance";
-import { WindowSystem } from "./graphics/windowSystem";
-import { createDefaultValue } from "./helpers";
-import { ClassData, VarSet } from "./types";
-import { ClassFunctions, GraphicSpaceResolver, ProjectFunctions, VmBool } from "./vm/types";
-import { VirtualMachine } from "./vm/virtualMachine";
 
 export class Project implements ProjectFunctions {
     private tree: ClassInstance;
@@ -57,7 +57,7 @@ export class Project implements ProjectFunctions {
         return classes;
     }
     compute() {
-        this.tree.compute(this.vm);
+        this.tree.computeScheme(this.vm);
         this.allVars.forEach(v => (v.oldValue = v.newValue));
     }
     stopComputing(): void {

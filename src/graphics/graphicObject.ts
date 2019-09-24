@@ -126,7 +126,7 @@ export class GroupInstance implements GraphicObjectFunctions {
         const dx = x - this.positionX;
         const dy = y - this.positionY;
         this.handleChildChanges = false;
-        this.items.forEach(c => c.setPosition(c.positionX + dx, c.positionY + dy));
+        for (const item of this.items) item.setPosition(item.positionX + dx, item.positionY + dy);
         this.positionX = x;
         this.positionY = y;
         this.handleChildChanges = true;

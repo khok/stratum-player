@@ -1,7 +1,7 @@
+import { parseVarValue } from "../helpers";
+import { ClassData, VarSet } from "../types";
+import { Bytecode, ClassFunctions, VmContext } from "../vm/types";
 import { ChildFactory, ClassBase, OnSchemeData } from "./classBase";
-import { parseVarValue } from "./helpers";
-import { ClassData, VarSet } from "./types";
-import { Bytecode, ClassFunctions, VmContext } from "./vm/types";
 
 export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunctions {
     private code?: Bytecode;
@@ -59,9 +59,9 @@ export class ClassInstance extends ClassBase<ClassInstance> implements ClassFunc
     getOldVarValue(id: number): string | number {
         return this.variables![id].oldValue;
     }
-    compute(ctx: VmContext, respectDisableVar = true): void {
+    computeScheme(ctx: VmContext, respectDisableVar = true): void {
         if (respectDisableVar && this.isDisabled()) return;
-        if (this.code) ctx.compute(this.code, this);
-        if (this.childs) for (const child of this.childs.values()) child.compute(ctx);
+        if (this.code) ctx.executeCode(this.code, this);
+        if (this.childs) for (const child of this.childs.values()) child.computeScheme(ctx);
     }
 }
