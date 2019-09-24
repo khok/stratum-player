@@ -61,7 +61,7 @@ export interface Line extends Element2dBase {
     points: Point2d[];
 }
 
-interface BitmapBase extends Element2dBase {
+export interface BitmapBase extends Element2dBase {
     data: {
         origin: Point2d;
         size: Point2d;

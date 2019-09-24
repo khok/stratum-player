@@ -1,5 +1,17 @@
 import { fabric } from "fabric";
-import { Element2d, VectorDrawData } from "./types";
+import { Element2d, VectorDrawData, BitmapBase } from "./types";
+
+const urlCache = new Map<string, any>();
+const iconsPath = "data/icons";
+
+function createImage(src: string, element: BitmapBase) {
+    //prettier-ignore
+    const { size: {x: width, y: height} } = element.data;
+    const image = new Image(width, height);
+    image.src = src;
+    return new fabric.Image(image, { width, height });
+    // const stub = new fabric.Rect({ fill: "gray", width: size.x, height: size.y });
+}
 
 export function instantiateObject(
     element: Element2d,
@@ -24,12 +36,14 @@ export function instantiateObject(
         case "text":
             throw new Error("Text Not implemented.");
         case "doubleBitmap": {
-            const { size, sourceHandle } = element.data;
-            return new fabric.Rect({ fill: "gray", width: size.x, height: size.y });
+            const bmp = doubleBitmaps!.get(element.data.sourceHandle)!;
+            const src = bmp.type == "bitmapRef" ? `${iconsPath}/${bmp.filename.toUpperCase()}` : bmp.images[0];
+            return createImage(src, element);
         }
         case "bitmap": {
-            const { size } = element.data;
-            return new fabric.Rect({ fill: "gray", width: size.x, height: size.y });
+            const bmp = bitmaps!.get(element.data.sourceHandle)!;
+            const src = bmp.type == "bitmapRef" ? `${iconsPath}/${bmp.filename.toUpperCase()}` : bmp.image;
+            return createImage(src, element);
         }
         case "control":
             throw new Error("Control Not implemented.");
