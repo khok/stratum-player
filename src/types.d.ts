@@ -47,14 +47,14 @@ export interface ClassData {
     scheme?: VectorDrawData;
     image?: VectorDrawData;
     bytecode?: Bytecode;
+    iconRef?: string;
+    iconIndex?: number;
     // __scheme?: any; //(выбросить)
     // __image?: any; //(выбросить)
     // sourceCode?: string;
     // description?: string;
     // varsize?: number;
     // flags?: number;
-    // defaultIcon?: number;
-    // iconName?: string;
     // classId?: number;
     // date?: {
     //     //не нужно

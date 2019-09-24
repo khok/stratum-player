@@ -8,7 +8,7 @@ import { parseBytecode } from "./bytecode";
 import { RecordType } from "./recordType";
 import { readVectorDrawData } from "./vdrFile/reader";
 
-function readVars(stream: BinaryStream): readonly VarData[] {
+function readVars(stream: BinaryStream): VarData[] {
     const varCount = stream.readWord();
 
     const vars = new Array<VarData>(varCount);
@@ -102,6 +102,17 @@ export function readClassHeaderData(stream: BinaryStream): ClassHeaderData {
     return { name, version };
 }
 
+type ExtendedClassFields = {
+    __scheme?: any;
+    __image?: any;
+    sourceCode?: string;
+    description?: string;
+    flags?: number;
+    varsize?: number;
+    classId?: number;
+    date?: any;
+};
+
 export function readClassData(
     stream: BinaryStream,
     version: number,
@@ -111,7 +122,7 @@ export function readClassData(
         parseBytecode?: boolean;
     }
 ): ClassData {
-    const res: any = {};
+    const res: ClassData & ExtendedClassFields = {};
     const errs: string[] = [];
 
     let next = stream.readWord();
@@ -189,12 +200,12 @@ export function readClassData(
     }
 
     if (next == RecordType.CR_DEFICON) {
-        res.defaultIcon = stream.readWord();
+        res.iconIndex = stream.readWord();
         next = stream.readWord();
     }
 
     if (next == RecordType.CR_ICONFILE) {
-        res.iconName = stream.readString();
+        res.iconRef = stream.readString();
         next = stream.readWord();
     }
 
