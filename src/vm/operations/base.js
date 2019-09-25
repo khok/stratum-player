@@ -2,9 +2,7 @@ import { Opcode } from "../opcode";
 
 //Пока работает - переписывать на TS не буду
 
-function V_END (ctx) {
-    ctx.break();
-}
+function V_END (ctx) {}
 
 function PUSH_FLOAT (ctx, varId) {
     ctx.stackPush(ctx.currentClass.getOldVarValue(varId));

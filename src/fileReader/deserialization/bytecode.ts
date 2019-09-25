@@ -1,8 +1,8 @@
-import { Opcode } from "../../vm/opcode";
-import { operandTypes, operations } from "../../vm/operations";
-import { Bytecode, FunctionOperand, Operand, OperandType, Operation } from "../../vm/types";
-import { BinaryStream } from "../binaryStream";
 import { StratumError } from "../../errors";
+import { Opcode } from "../../vm/opcode";
+import { operandTypes } from "../../vm/operations";
+import { Bytecode, FunctionOperand, Operand, OperandType } from "../../vm/types";
+import { BinaryStream } from "../binaryStream";
 
 function readFunctionData(stream: BinaryStream): FunctionOperand {
     const offset = stream.readWord() * 2;
@@ -62,8 +62,8 @@ function readOperand(stream: BinaryStream, type: OperandType): Operand {
 }
 
 export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode {
-    type OperationData = { operation: Operation; operand?: Operand; isCodePoint?: boolean };
-    const code: OperationData[] = [];
+    type OperationData = { opcode: number; operand?: Operand; operandType?: OperandType };
+    const opData: OperationData[] = [];
     const codepoints: number[] = [];
 
     const start = stream.position;
@@ -74,28 +74,51 @@ export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode 
 
         const opcode = stream.readWord();
         if (!Opcode[opcode]) throw new StratumError(`Неизвестный опкод: ${opcode}`);
-        const operation = operations[opcode]; // || operations[Opcode.V_END];
-
         const operandType = operandTypes[opcode];
-        const res: OperationData = { operation };
-        if (operandType) {
-            res.operand = readOperand(stream, operandType);
-            if (operandType == "codepoint") res.isCodePoint = true;
-        }
+        const res: OperationData = { opcode, operandType };
+        if (operandType) res.operand = readOperand(stream, operandType);
 
-        code.push(res);
+        opData.push(res);
         //Раскоментить в случае ошибок с считыванием кода
         // console.log(Opcode[opcode] + (operand !== undefined ? (', ' + operand) : ''));
     }
 
     //трансформируем кодпоинты в идексы и удаляем типы
-    for (let i = 0; i < code.length; i++) {
-        const { operand, isCodePoint } = code[i];
-        if (!isCodePoint) continue;
-        delete code[i].isCodePoint;
+    for (let i = 0; i < opData.length; i++) {
+        const { operand, operandType } = opData[i];
+        if (operandType != "codepoint") continue;
         const target = (operand as number) * 2;
-        code[i].operand = codepoints.indexOf(target);
+        opData[i].operand = codepoints.indexOf(target);
     }
 
-    return code;
+    const code = new Uint16Array(opData.map(c => c.opcode));
+    // const haveOperands = new Uint8Array(opData.map(c => (c.operand != undefined ? 1 : 0)));
+    // const operands = opData.map(c => c.operand);
+    const numberOperands = new Float32Array(code.length);
+    const stringOperands = new Array<string>(code.length);
+    const otherOperands = new Array<Operand | undefined>(code.length);
+    for (let i = 0; i < code.length; i++) {
+        const { operand, operandType } = opData[i];
+        if (operandType == undefined) continue;
+        switch (operandType) {
+            case "double":
+            case "codepoint":
+            case "uint":
+            case "varId":
+            case "word":
+                numberOperands[i] = <number>operand;
+                code[i] |= 1 << 14;
+                break;
+            case "string":
+                stringOperands[i] = <string>operand;
+                code[i] |= 2 << 14;
+                break;
+            default:
+                otherOperands[i] = operand;
+                code[i] |= 3 << 14;
+                break;
+        }
+    }
+
+    return { code, /*haveOperands,*/ numberOperands, stringOperands, otherOperands };
 }

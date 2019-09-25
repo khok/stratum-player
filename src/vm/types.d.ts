@@ -20,10 +20,11 @@ export type OperandType =
 export type Operation = (ctx: VmContext, operand?: Operand) => void;
 
 export interface Bytecode {
-    [index: number]: { operation: Operation; operand?: Operand };
-    // code: readonly number[];
-    // operands: readonly OneOfOperand[];
-    // missingCommands: readonly string[];
+    code: Uint16Array;
+    // haveOperands: Uint8Array;
+    numberOperands: Float32Array;
+    stringOperands: string[];
+    otherOperands: (Operand | undefined)[];
 }
 
 export type VmBool = 0 | 1;
@@ -128,6 +129,5 @@ export interface VmContext {
     readonly project: ProjectFunctions;
 
     executeCode(code: Bytecode, theClass: ClassFunctions): void;
-    break(): void;
     error(message?: string): void;
 }

@@ -1,10 +1,10 @@
-import { Bytecode, ClassFunctions, InputFunctions, ProjectFunctions, VmContext, WindowingFunctions } from "./types";
 import { StratumError } from "../errors";
+import { operations } from "./operations";
+import { Bytecode, ClassFunctions, InputFunctions, ProjectFunctions, VmContext, WindowingFunctions } from "./types";
 
 export class VirtualMachine implements VmContext {
     // private ctxStack = new Array<Context>(60);
     private depth = 0;
-    private breakFlag = false;
 
     private values = new Array<number | string>(2000);
     private valueP = -1;
@@ -24,9 +24,7 @@ export class VirtualMachine implements VmContext {
     }
 
     //что сделать:
-    // 1) Использовать массив опкодов для Bytecode вместо ссылок на функции (зачем)
-    // 2) Сделать читабельным свитч subcontext-а
-    executeCode(code: Bytecode, theClass: ClassFunctions) {
+    executeCode({ code, numberOperands, stringOperands, otherOperands }: Bytecode, theClass: ClassFunctions) {
         if (!this.canComputeClass) throw Error("Достигнула макс. вложенность");
 
         const prevClass = this.currentClass;
@@ -38,13 +36,28 @@ export class VirtualMachine implements VmContext {
         // let cmd: { operation: Operation; opcode: number; operand?: Operand } | undefined = undefined;
         let iterCount = 0;
 
-        while (!this.breakFlag) {
-            const cmd = code[this.cmdIndex++];
-            cmd.operation(this, cmd.operand);
+        let cmd;
+        let ci = -1;
+        while ((cmd = code[(ci = this.cmdIndex++)]) & 2047) {
             iterCount++;
             if (iterCount > 10000) this.error("Число итераций перевалило за 10000");
+
+            const op = operations[cmd & 2047];
+            if (cmd < 16384) {
+                op(this);
+                continue;
+            }
+            if (cmd < 32768) {
+                const oper = numberOperands[ci];
+                op(this, oper);
+                continue;
+            }
+            if (cmd < 49152) {
+                op(this, stringOperands[ci]);
+                continue;
+            }
+            op(this, otherOperands[ci]);
         }
-        this.breakFlag = false;
 
         this.depth--;
         if (this.depth == 0) this.valueP = -1;
@@ -52,12 +65,7 @@ export class VirtualMachine implements VmContext {
         this.cmdIndex = prevCmdIndex;
     }
 
-    break() {
-        this.breakFlag = true;
-    }
-
     error(message = "") {
-        this.break();
         console.dir(this.currentClass);
         throw new StratumError("Ошибка в работе виртуальной машины:\n" + message);
     }
