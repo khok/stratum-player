@@ -1,6 +1,6 @@
 import { equal } from "assert";
 import { ClassInstance } from "../../core/classInstance";
-import { readClassData, readClassHeaderData } from "../../fileReader/deserialization/classFile";
+import { readClassData, readClassHeaderData } from "../../fileReader/deserialization";
 import { openStreamFromUrl } from "../../fileReader/zipReader";
 import { createDefaultValue } from "../../helpers";
 import { VirtualMachine } from "../../vm/virtualMachine";

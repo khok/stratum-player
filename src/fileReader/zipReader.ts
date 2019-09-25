@@ -2,9 +2,7 @@ import { JSZipObject, loadAsync } from "jszip";
 import { StratumError } from "../errors";
 import { ClassData, ClassHeaderData } from "../types";
 import { BinaryStream } from "./binaryStream";
-import { readClassData, readClassHeaderData } from "./deserialization/classFile";
-import { readProjectName } from "./deserialization/projectFile";
-import { readVarSet } from "./deserialization/varsFile";
+import { readClassData, readClassHeaderData, readProjectName, readVarSet } from "./deserialization";
 
 type ZipData = JSZipObject[];
 
@@ -120,10 +118,7 @@ export async function readProjectFile(files: ZipData, filename: string = "projec
     return readProjectName(new BinaryStream(prjBytes));
 }
 
-export async function readVarsFile(
-    files: ZipData,
-    filename: string = "_preload.stt"
-) {
+export async function readVarsFile(files: ZipData, filename: string = "_preload.stt") {
     const file = findSingleFile(files, filename, false);
     if (!file) return undefined;
     const preloadBytes = await unzipFile(file);
