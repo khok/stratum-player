@@ -135,6 +135,7 @@ function mergeToolCollections(scheme: VectorDrawData, image: VectorDrawData) {
             (<typeof childTools>scheme[k]) = childTools;
             continue;
         }
+        if (parentTools == childTools) continue;
         mergeTools(parentTools, childTools, selectToolHandleMapper(image, k));
     }
 }
