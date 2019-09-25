@@ -2,7 +2,7 @@ import { fabric } from "fabric";
 import { GraphicSpaceFunctions, VmBool } from "../vm/types";
 import { Element2dInstance, ElementInstance, GroupInstance } from "./graphicObject";
 import { instantiateObject } from "./instantiateObject";
-import { HandleMap, VectorDrawData } from "./types";
+import { Group, HandleMap, VectorDrawData } from "./types";
 
 export class VectorDrawInstance implements GraphicSpaceFunctions {
     getObjectData(object: ElementInstance) {
@@ -17,19 +17,30 @@ export class VectorDrawInstance implements GraphicSpaceFunctions {
         this.setOrigin(image.origin.x, image.origin.y);
         if (image.elements) {
             //делим на два цикла, т.к. сперва надо создать все объекты, только затем - группы
+            const groups: { handle: number; group: Group }[] = [];
             for (const [handle, value] of image.elements) {
-                if (value.type == "group") continue;
+                if (value.type == "group") {
+                    groups.push({ handle, group: value });
+                    continue;
+                }
                 const visual = instantiateObject(value, image);
                 this.visuals.set(handle, visual);
                 const obj = new Element2dInstance(this, visual, value);
                 this.objects.set(handle, obj);
                 this.objectDataMap.set(obj, { handle });
             }
-            for (const [handle, value] of image.elements) {
-                if (value.type != "group") continue;
-                const obj = new GroupInstance(value, this.objects);
-                this.objects.set(handle, obj);
-                this.objectDataMap.set(obj, { handle });
+            let allGroupsCreated = false;
+            while (!allGroupsCreated) {
+                allGroupsCreated = true;
+                for (const { handle, group } of groups) {
+                    if (group.childHandles.some(h => !this.objects.has(h))) {
+                        allGroupsCreated = false;
+                        continue;
+                    }
+                    const obj = new GroupInstance(group, this.objects);
+                    this.objects.set(handle, obj);
+                    this.objectDataMap.set(obj, { handle });
+                }
             }
         }
         this.canvas = new fabric.Canvas(htmlCanvas, {
