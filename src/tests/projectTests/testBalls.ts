@@ -1,5 +1,6 @@
-import { Project } from "../core/project";
-import { readClassFiles, readProjectFile, readVarsFile, zipFromUrl } from "../fileReader/zipReader";
+import { Project } from "../../core/project";
+import { readClassFiles, readProjectFile, readVarsFile, zipFromUrl } from "../../fileReader/zipReader";
+
 (async function() {
     const zipFiles = await zipFromUrl([
         // "projects/moving_test.zip",

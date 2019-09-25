@@ -1,3 +1,4 @@
+import { StratumError } from "../errors";
 import { GraphicSpaceResolver, VmBool, WindowFunctions, WindowingFunctions } from "../vm/types";
 import { VectorDrawInstance } from "./vectorDrawInstance";
 
@@ -17,7 +18,7 @@ class Window implements WindowFunctions {
         return window.innerHeight;
     }
     setSize(width: number, height: number): VmBool {
-        console.log("ресайз пока не поддерживается");
+        console.warn("Ресайз окна пока не поддерживается");
         // this.width = width;
         // this.height = height;
         return 1;
@@ -34,24 +35,31 @@ export class WindowSystem implements WindowingFunctions {
 
     private spaces = new Map<number, VectorDrawInstance>();
     private windows = new Map<string, Window>();
-    private canvas: HTMLCanvasElement;
-    constructor() {
-        this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        this.canvas.width = document.body.clientWidth;
-        this.canvas.height = document.body.clientHeight;
-        if (!this.canvas) throw Error("Canvas не найден");
+    private globalCanvas: HTMLCanvasElement;
+    constructor(private multiwindow = false) {
+        this.globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
+        this.globalCanvas.width = document.body.clientWidth;
+        this.globalCanvas.height = document.body.clientHeight;
+        if (!this.globalCanvas) throw Error("Canvas не найден");
         this.areaOriginX = this.areaOriginY = 0;
         this.screenHeight = this.areaWidth = 1920;
         this.screenWidth = this.areaHeight = 1080;
     }
 
     createSchemeWindow(windowName: string, flags: string, schemeResolver: GraphicSpaceResolver): number {
-        // if (!this.multiwindow && !this.canvas) throw new Error("Canvas не назначен!");
-        document.title = windowName;
+        if (!this.multiwindow) {
+            if (this.windows.size > 0) throw new StratumError("Невозможно создать более одного окна");
+            document.title = windowName;
+        }
 
         const spaceHandle = this.spaces.size + 1; //поменять
-        this.spaces.set(spaceHandle, schemeResolver(this.canvas) as VectorDrawInstance);
         this.windows.set(windowName, new Window(spaceHandle));
+        const canvas = this.multiwindow
+            ? (() => {
+                  throw new StratumError("Мультиоконность не реализована");
+              })()
+            : this.globalCanvas;
+        this.spaces.set(spaceHandle, schemeResolver(canvas) as VectorDrawInstance);
         return spaceHandle;
     }
 
