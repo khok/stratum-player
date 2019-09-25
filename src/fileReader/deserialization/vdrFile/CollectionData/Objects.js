@@ -104,10 +104,6 @@ function read_otTEXT2D(stream) {
 //     return readObject2D(stream);
 // }
 
-const allKeys = {};
-
-setTimeout(() => console.log(allKeys), 5000);
-
 //WINOBJ2D.cpp -> 29
 function read_otCONTROL2D(stream) {
     const res = {
@@ -121,9 +117,7 @@ function read_otCONTROL2D(stream) {
             size: stream.readIntegerPoint2D(),
         }
     };
-    if(!allKeys[res.data.className]){
-        allKeys[res.data.className] = res;
-    }
+    if(!["Edit", "Button", "ComboBox"].includes(res.data.className)) throw new Error(`Неизвестный тип контрола: ${res.data.className}`);
     stream.readWord(); //unused
     return res;
 }

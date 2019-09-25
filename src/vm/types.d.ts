@@ -20,6 +20,9 @@ export type OperandType =
 export type Operation = (ctx: VmContext, operand?: Operand) => void;
 
 export interface Bytecode {
+    /**
+     * Масссив специализированных опкодов (specCmd), где опкод = `specCmd & 2047`
+     */
     code: Uint16Array;
     // haveOperands: Uint8Array;
     numberOperands: Float32Array;

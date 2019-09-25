@@ -73,7 +73,6 @@ export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode 
         codepoints.push(stream.position - start);
 
         const opcode = stream.readWord();
-        if (!Opcode[opcode]) throw new StratumError(`Неизвестный опкод: ${opcode}`);
         const operandType = operandTypes[opcode];
         const res: OperationData = { opcode, operandType };
         if (operandType) res.operand = readOperand(stream, operandType);
