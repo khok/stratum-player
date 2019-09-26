@@ -1,5 +1,5 @@
 import { equal } from "assert";
-import { Project } from "../core/project";
+import { Project } from "../core/projectInstance";
 import { readClassFiles, readProjectFile, readVarsFile, zipFromUrl } from "../fileReader/zipReader";
 import { Element, HandleMap } from "../graphics/types";
 

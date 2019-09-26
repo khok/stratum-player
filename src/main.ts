@@ -1,6 +1,6 @@
 import { readClassFiles, readProjectFile, readVarsFile, zipFromFileList, zipFromUrl } from "./fileReader/zipReader";
 import { showMissingCommands } from "./utils/showMissingCommands";
-import { Project } from "./core/project";
+import { Project } from "./core/projectInstance";
 
 var libFiles: any;
 (async function() {
