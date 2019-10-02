@@ -1,5 +1,5 @@
 import { FileSignatureError, StratumError } from "../../errors";
-import { VarSet } from "../../types";
+import { VarSet } from "../../core/types";
 import { BinaryStream } from "../binaryStream";
 import { RecordType } from "./recordType";
 

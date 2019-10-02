@@ -1,6 +1,6 @@
 import { JSZipObject, loadAsync } from "jszip";
 import { StratumError } from "../errors";
-import { ClassData, ClassHeaderData } from "../types";
+import { ClassData, ClassHeaderData } from "../core/types";
 import { BinaryStream } from "./binaryStream";
 import { readClassData, readClassHeaderData, readProjectName, readVarSet } from "./deserialization";
 

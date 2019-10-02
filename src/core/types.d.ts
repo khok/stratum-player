@@ -1,5 +1,5 @@
-import { VectorDrawData } from "./graphics/types";
-import { Bytecode } from "./vm/types";
+import { VectorDrawData } from "../graphics/types";
+import { Bytecode } from "../vm/types";
 
 //Закоменнчеые поля - не используются
 

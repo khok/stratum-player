@@ -1,8 +1,8 @@
 /* Основано на class.cpp:6100
  */
 import { FileSignatureError, NotImplementedError, StratumError } from "../../errors";
-import { parseVarValue } from "../../helpers";
-import { ChildData, ClassData, ClassHeaderData, LinkData, VarData } from "../../types";
+import { parseVarValue } from "../../core/helpers";
+import { ChildData, ClassData, ClassHeaderData, LinkData, VarData } from "../../core/types";
 import { BinaryStream } from "../binaryStream";
 import { parseBytecode } from "./bytecode";
 import { RecordType } from "./recordType";

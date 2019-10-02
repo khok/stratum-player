@@ -1,7 +1,7 @@
 import { StratumError } from "../errors";
-import { ChildData, ClassData, LinkData, VarData, VarSet } from "../types";
+import { ChildData, ClassData, LinkData, VarData, VarSet } from "./types";
 import { ClassFunctions, Bytecode, VmContext } from "../vm/types";
-import { parseVarValue } from "../helpers";
+import { parseVarValue } from "./helpers";
 
 export interface Variable {
     readonly type: VarData["type"];

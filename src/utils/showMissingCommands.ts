@@ -1,4 +1,4 @@
-import { ClassData } from "../types";
+import { ClassData } from "../core/types";
 import { Opcode } from "../vm/opcode";
 import { operations } from "../vm/operations";
 import { Bytecode } from "../vm/types";
