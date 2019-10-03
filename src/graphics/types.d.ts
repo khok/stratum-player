@@ -15,12 +15,13 @@ export interface FontTool {
     fontSize: number;
 }
 
-export interface TextDataTool {
-    ltFgColor: string;
-    ltBgColor: string;
-    fontHandle: number;
-    stringHandle: number;
-}
+export interface TextDataTool
+    extends Array<{
+        ltFgColor: string;
+        ltBgColor: string;
+        fontHandle: number;
+        stringHandle: number;
+    }> {}
 
 export interface BitmapRefTool {
     type: "bitmapRef";

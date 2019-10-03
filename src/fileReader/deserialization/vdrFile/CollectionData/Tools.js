@@ -61,6 +61,9 @@ function read_ttFONT2D(stream) {
     if(stream.fileversion >= 0x0203) {
         data.fontSize = stream.readLong();
         data.fontStyle = stream.readLong();
+    } else {
+        data.fontSize = 22;
+        data.fontStyle = 0;
     }
     return data;
 }
