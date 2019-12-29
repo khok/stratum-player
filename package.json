@@ -1,34 +1,32 @@
 {
-  "author": "Maxim Khokhryakov",
-  "license": "MIT",
-  "name": "stratum-player",
-  "version": "0.3.1",
-  "scripts": {
-    "start": "parcel src/index.html",
-    "test": "parcel src/tests/test.html",
-    "build": "cross-env NODE_ENV=production parcel build src/index.html --public-url .",
-    "watch": "parcel watch src/index.html",
-    "predeploy": "npm run build"
-  },
-  "devDependencies": {
-    "parcel-plugin-static-files-copy": "^2.2.0",
-    "typescript": "^3.5.3"
-  },
-  "dependencies": {
-    "@types/fabric": "^3.0.1",
-    "@types/jszip": "^3.1.6",
-    "bops": "^1.0.0",
-    "fabric": "^3.4.0",
-    "iconv-lite": "^0.5.0",
-    "jszip": "^3.2.2",
-    "regenerator-runtime": "^0.13.3"
-  },
-  "prettier": {
-    "endOfLine": "lf",
-    "tabWidth": 4,
-    "printWidth": 120
-  },
-  "staticFiles": {
-    "watcherGlob": "**/*.zip"
-  }
+    "author": "Maxim Khokhryakov",
+    "license": "MIT",
+    "name": "stratum-player",
+    "version": "0.4.0",
+    "scripts": {
+        "test": "parcel src/stratum/testLoader-single.html",
+        "test-all": "parcel src/stratum/testLoader-all.html",
+        "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global StratumPlayer --out-file player.js"
+    },
+    "devDependencies": {
+        "parcel-plugin-static-files-copy": "^2.2.0",
+        "typescript": "^3.5.3"
+    },
+    "dependencies": {
+        "@types/fabric": "^3.0.1",
+        "@types/jszip": "^3.1.6",
+        "bops": "^1.0.0",
+        "fabric": "^3.4.0",
+        "iconv-lite": "^0.5.0",
+        "jszip": "^3.2.2",
+        "regenerator-runtime": "^0.13.3"
+    },
+    "prettier": {
+        "endOfLine": "lf",
+        "tabWidth": 4,
+        "printWidth": 120
+    },
+    "staticFiles": {
+        "watcherGlob": "**/*.zip"
+    }
 }

@@ -1,22 +1,24 @@
 {
-  "compilerOptions": {
-    "module": "ES6",
-    "moduleResolution": "node",
-    "newLine": "LF",
-    "outDir": "./lib/",
-    "target": "es5",
-    "sourceMap": true,
-    "declaration": true,
-    "lib": [
-      "es2017",
-      "dom"
-    ],
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noEmitOnError": true,
-    "downlevelIteration": true
-  }
+    "compilerOptions": {
+        "module": "ES6",
+        "moduleResolution": "node",
+        "newLine": "LF",
+        "target": "es5",
+        "sourceMap": true,
+        "declaration": true,
+        "lib": ["es2017", "dom"],
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noEmitOnError": true,
+        "downlevelIteration": true,
+        "baseUrl": ".",
+        "paths": {
+            "~/*": ["./stratum/*"]
+        }
+    }
 }
