@@ -72,9 +72,8 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
 
     removeAll(): VmBool {
         this.myItems.forEach(o => (o.parent = undefined));
-        this.myItems = new Set();
+        // this.myItems = new Set(); уже не нужно
         this.recalcCoords();
-        // this.myItems.forEach(o => this.removeItem(o)); //slow
         return 1;
     }
 

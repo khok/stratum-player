@@ -104,10 +104,6 @@ declare module "vm-interfaces-graphics" {
     export interface BitmapObjectState extends _BmpBase {
         readonly type: BitmapElementData["type"];
         bmpTool: BitmapToolState | undefined;
-        //TODO:
-        // открыть доки стратума и почитать про функции двойной и одиночной битовой карты, реализовать их.
-        //затем сделать соответственно элемент, его визуал и тулзу
-        //ENDSHERE
     }
     export interface DoubleBitmapObjectState extends _BmpBase {
         readonly type: DoubleBitmapElementData["type"];
@@ -135,26 +131,6 @@ declare module "vm-interfaces-graphics" {
         readonly originX: number;
         readonly originY: number;
         setOrigin(x: number, y: number): VmBool;
-
-        // createTool(type: "pen" | "brush" | "bitmap"): number;
-        // createObject(type: never): number;
-        // readonly scale: number;
-        // setScale(scale: number): VmBool;
-        // addPenTool(handle: number, pen: PenToolState): void;
-        // getPenTool(handle: number): PenToolState | undefined;
-        // deletePenTool(handle: number): VmBool;
-
-        // addBrushTool(handle: number, brush: BrushToolState): void;
-        // getBrushTool(handle: number): BrushToolState | undefined;
-        // deleteBrushTool(handle: number): VmBool;
-
-        // addBitmapTool(handle: number, bmp: BitmapToolState | ExternalBitmapToolState): void;
-        // getBitmapTool(handle: number): BitmapToolState | ExternalBitmapToolState;
-        // deleteBitmapTool(handle: number): VmBool;
-
-        // addDoubleBitmapTool(handle: number, bmp: DoubleBitmapToolState | ExternalBitmapToolState): void;
-        // getDoubleBitmapTool(handle: number): DoubleBitmapToolState | ExternalBitmapToolState;
-        // deleteDoubleBitmapTool(handle: number): VmBool;
 
         addObject(obj: GraphicObjectState): number;
         getObject(handle: number): GraphicObjectState | undefined;

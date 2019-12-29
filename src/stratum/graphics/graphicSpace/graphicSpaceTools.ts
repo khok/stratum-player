@@ -22,15 +22,6 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         this.pens = (data && data.pens) || HandleMap.create<PenTool>();
         this.bitmaps = (data && data.bitmaps) || HandleMap.create<BitmapTool>();
         this.doubleBitmaps = (data && data.doubleBitmaps) || HandleMap.create<DoubleBitmapTool>();
-
-        // const allObjs: [number, ToolState][] = [
-        //     ...this.brushes.entries(),
-        //     ...this.pens.entries(),
-        //     ...this.bitmaps.entries(),
-        //     ...this.doubleBitmaps.entries()
-        // ];
-        // const objsConverted = allObjs.map(o => [o[1], { handle: o[0] }] as [ToolState, { handle: number }]);
-        // this.toolData = new WeakMap(objsConverted);
     }
     addTool(handle: number, tool: PenTool | BrushTool): void {
         switch (tool.type) {

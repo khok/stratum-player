@@ -73,19 +73,18 @@ export class GraphicSpace implements GraphicSpaceState {
 
     addObject(obj: GraphicObject): number {
         throw new Error("Method not implemented.");
-        // this.deleteObject(handle);
-        // else handle = this.allObjects.getFreeHandle();
-        const handle = HandleMap.getFreeHandle(this.allObjects);
-        this.addObjectFast(obj, handle);
-        //TODO: object zOrder???
-        // if (obj.type !== "otGROUP2D") this.scene.
-        return handle;
+        // // this.deleteObject(handle);
+        // // else handle = this.allObjects.getFreeHandle();
+        // const handle = HandleMap.getFreeHandle(this.allObjects);
+        // this.addObjectFast(obj, handle);
+        // //TODO: object zOrder???
+        // // if (obj.type !== "otGROUP2D") this.scene.
+        // return handle;
     }
 
     private addObjectFast(obj: GraphicObject, handle: number) {
         obj.handle = handle;
         this.allObjects.set(handle, obj);
-        // if (obj.type !== "otGROUP2D") this.objectVisuals.set(handle, obj.visual);
     }
 
     getObject(handle: number): GraphicObject | undefined {

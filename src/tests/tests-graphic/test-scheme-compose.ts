@@ -5,9 +5,6 @@ import { createComposedScheme } from "~/helpers/graphics";
 
 function isElementInGroup(elements: ElementData[], handle: number) {
     return elements.some(el => el.type === "otGROUP2D" && el.childHandles.includes(handle));
-    // for(const element of elements)
-    //     if (element.type === "otGROUP2D" && element.childHandles.includes(handle)) return element;
-    // return undefined;
 }
 
 function collect(elements: ElementData[], element: ElementData): unknown {
@@ -24,10 +21,6 @@ function collect(elements: ElementData[], element: ElementData): unknown {
 function toJson(elements: ElementData[]) {
     const topLevelElements = elements.filter(el => !isElementInGroup(elements, el.handle));
     return topLevelElements.map(el => collect(elements, el));
-    // for(const element of elements) {
-    //     if (getElementGroup(elements, element.handle) === undefined) res.push(collect(elements, element.handle));
-    // }
-    // return res;
 }
 
 const test_result = [

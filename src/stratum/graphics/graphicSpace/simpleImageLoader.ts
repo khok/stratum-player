@@ -8,7 +8,6 @@ export class SimpleImageLoader implements ImageResolver {
     private data = new Map<string, HTMLImageElement>();
     private promises = new Set<Promise<void>>();
     private loadImg(iconUrl: string) {
-        // console.log(iconName);
         const element = this.data.get(iconUrl);
         if (element) return element;
 

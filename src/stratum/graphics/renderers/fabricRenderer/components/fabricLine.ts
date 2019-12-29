@@ -9,7 +9,7 @@ export class FabricLine implements LineElementVisual {
     private posY: number;
     obj: fabric.Polyline;
     constructor(
-        { points, handle, isVisible, position, size, arrows, brush, pen }: LineVisualOptions,
+        { points, isVisible, position, brush, pen }: LineVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void

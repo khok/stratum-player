@@ -1,5 +1,4 @@
 import { VarData } from "data-types-base";
-// import { StratumError } from "./errors";
 
 export function createDefaultValue(type: VarData["type"]) {
     switch (type) {
@@ -25,5 +24,4 @@ export function parseVarValue(type: VarData["type"], value: string): string | nu
         case "COLORREF":
             return value;
     }
-    // throw new StratumError(`Не удалось распарсить переменную: неизвестный тип "${type}"`);
 }

@@ -9,7 +9,7 @@ export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
     private posY: number;
     obj: fabric.Image;
     constructor(
-        { handle, isVisible, position, size, doubleBitmapTool }: DoubleBitmapVisualOptions,
+        { isVisible, position, size, doubleBitmapTool }: DoubleBitmapVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void

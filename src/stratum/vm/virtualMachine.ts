@@ -36,10 +36,3 @@ export function executeCode(ctx: VmContext, { code, numberOperands, stringOperan
         op(ctx, otherOperands[ci]);
     }
 }
-
-// export function computeClass(ctx: VmStateContainer, code: Bytecode, classState: ClassState) {
-//     const prevClass = ctx.currentClass;
-//     const retPoint = ctx.call(classState);
-//     executeCode(ctx, code);
-//     ctx.return(prevClass, retPoint);
-// }

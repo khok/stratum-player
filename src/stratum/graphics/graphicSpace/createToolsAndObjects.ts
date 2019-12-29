@@ -8,16 +8,6 @@ import { BrushTool, PenTool, BitmapTool, DoubleBitmapTool } from "./tools";
 import { ImageResolver } from "internal-graphic-types";
 import { GraphicObject, GroupObject, LineObject, BitmapObject, DoubleBitmapObject, ControlObject } from "./objects";
 
-// export function tryCreateGroup(allObjects: HandleMap<GraphicObject>, groupData: GroupElementData) {
-//     const groupObjects = new Set<GraphicObject>();
-//     for (const handle of groupData.childHandles) {
-//         const obj = allObjects.get(handle);
-//         if (!obj) return undefined;
-//         groupObjects.add(obj);
-//     }
-//     return new GroupObject({ name: groupData.name, items: groupObjects.values() });
-// }
-
 // function assemblyText(
 //     textHandle: number,
 //     fonts: HandleMap<FontTool>,
@@ -63,8 +53,8 @@ export function create2dObject(data: Element2dData, tools: GraphicSpaceToolsStat
 
 export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
     const allObjects = HandleMap.create<GraphicObject>();
-    const groups: { obj: GroupObject; handle: number; data: number[] }[] = [];
 
+    const groups: { obj: GroupObject; handle: number; data: number[] }[] = [];
     for (const elementData of elements) {
         const { handle } = elementData;
         let obj: GraphicObject;
@@ -87,17 +77,6 @@ export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsS
         });
         obj.addItems(childs.values());
     }
-    // let allDepsCreated = false;
-    // while (!allDepsCreated) {
-    //     allDepsCreated = true;
-    //     for (const groupData of groups) {
-    //         const group = tryCreateGroup(allObjects, groupData);
-    //         if (!group) {
-    //             allDepsCreated = false;
-    //             continue;
-    //         }
-    //         allObjects.set(groupData.handle, group);
-    //     }
-    // }
+
     return allObjects;
 }

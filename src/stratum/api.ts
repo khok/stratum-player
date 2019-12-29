@@ -7,14 +7,6 @@ import { loadProjectData, openZipFromUrl, ReadOptions } from "~/fileReader/fileR
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { StratumError } from "./helpers/errors";
 
-// const size = { x: window.innerWidth - 40, y: window.innerHeight - 40 };
-// const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-// canvas.width = size.x;
-// canvas.height = size.y;
-// this.areaOriginX = this.areaOriginY = 0;
-// this.screenHeight = this.areaWidth = 1920;
-// this.screenWidth = this.areaHeight = 1080;
-
 export class Player {
     constructor(public project: Project, public windows: WindowSystem) {}
     private paused: boolean = false;

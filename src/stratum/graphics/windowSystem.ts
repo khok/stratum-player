@@ -23,7 +23,6 @@ class Window implements WindowState {
         console.warn("Ресайз окна пока не поддерживается");
         this.size.x = width;
         this.size.y = height;
-        // this.height = height;
         return 1;
     }
 }

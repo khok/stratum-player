@@ -9,7 +9,6 @@ import { WindowSystem } from "~/graphics/windowSystem";
     const ws = new WindowSystem({ globalCanvas: canvas });
     const prj = Project.create(rootName, collection, ws, varSet);
     let num: number;
-    // let start = 0;
     const req = () =>
         (num = window.requestAnimationFrame(() => {
             prj.oneStep();
@@ -18,16 +17,15 @@ import { WindowSystem } from "~/graphics/windowSystem";
         }));
     req();
     setTimeout(() => window.cancelAnimationFrame(num), 5000);
-    return;
-    let timeoutOn = false;
-    const req2 = () => {
-        if (timeoutOn) return;
-        timeoutOn = true;
-        setTimeout(() => {
-            timeoutOn = false;
-            req2();
-        }, 16);
-        prj.oneStep();
-    };
-    req2();
+    // let timeoutOn = false;
+    // const req2 = () => {
+    //     if (timeoutOn) return;
+    //     timeoutOn = true;
+    //     setTimeout(() => {
+    //         timeoutOn = false;
+    //         req2();
+    //     }, 16);
+    //     prj.oneStep();
+    // };
+    // req2();
 })();

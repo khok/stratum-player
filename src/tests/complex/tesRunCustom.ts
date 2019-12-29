@@ -17,7 +17,7 @@ export async function loadZippedProject(fList: FileList) {
 
 export async function runProject(zipFiles: JSZipObject[]) {
     if (!libFiles) await new Promise(res => (resolveLib = res));
-    const { collection: allClasses, rootName, varSet: vars } = await loadProjectData(zipFiles.concat(libFiles));
+    const { collection: allClasses } = await loadProjectData(zipFiles.concat(libFiles));
     const { errors, missingOperations } = showMissingCommands(allClasses, VmOperations);
     if (errors.length > 0 || missingOperations.length > 0) {
         if (errors.length > 0) console.log(errors.concat(";\n"));

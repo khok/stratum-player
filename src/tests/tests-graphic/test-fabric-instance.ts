@@ -7,7 +7,6 @@ import { FabricScene } from "~/graphics/renderers/fabricRenderer/fabricScene";
 import { createComposedScheme } from "~/helpers/graphics";
 import { WindowSystem } from "~/graphics/windowSystem";
 
-//ENDSHERE: теперь дело за реализацией сцены при помощи фабрик. После чего надо запустить этот тест.
 (async function() {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
     const { collection } = await loadProjectData(zip);
@@ -15,11 +14,6 @@ import { WindowSystem } from "~/graphics/windowSystem";
     const cdata = cl.childs!;
     const oldvdr = cl.scheme!;
     const vdr = createComposedScheme(oldvdr, cdata, collection);
-    // console.dir(vdr);
-    // const tools = createTools(vdr);
-    // console.dir(tools);
-    // const objects = vdr.elements && createObjects(vdr.elements, tools, new Factory());
-    // console.dir(objects);
     const cv = document.getElementById("canvas") as HTMLCanvasElement;
     const ws = new WindowSystem({ onWindowCreated: wname => (document.title = wname), globalCanvas: cv });
     const globalImgLoader = new SimpleImageLoader();
@@ -49,7 +43,5 @@ import { WindowSystem } from "~/graphics/windowSystem";
             }
         }
     }
-    // console.dir(space);
     console.log("graphic instance test completed");
-    // const instance = new GraphicSpace()
 })();
