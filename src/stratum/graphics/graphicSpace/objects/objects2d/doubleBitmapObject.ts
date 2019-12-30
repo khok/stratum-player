@@ -23,6 +23,7 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
             position: data.position,
             size: data.size,
             isVisible: !!this.isVisible,
+            selectable: !!this.selectable,
             bmpOrigin: data.bmpOrigin,
             bmpiSize: data.bmpSize,
             doubleBitmapTool

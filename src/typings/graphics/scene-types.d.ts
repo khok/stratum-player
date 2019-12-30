@@ -35,6 +35,7 @@ declare module "scene-types" {
         position: Point2D;
         size: Point2D;
         isVisible: boolean;
+        selectable: boolean;
     }
 
     export interface LineVisualOptions extends VisualOptions {

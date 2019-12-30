@@ -12,6 +12,7 @@ export abstract class Object2dMixin extends BaseObjectMixin {
     abstract readonly type: Element2dData["type"];
     abstract visual: Visual2D;
     private _isVisible: VmBool;
+    private _selectable: VmBool;
     positionX: number = 0;
     positionY: number = 0;
     angle = 0;
@@ -22,7 +23,8 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         super(data);
         const { name, position, size, options } = data;
         this.name = name;
-        this._isVisible = options & 0x0001 ? 0 : 1;
+        this._isVisible = options & 0b0001 ? 0 : 1;
+        this._selectable = options & 0b1000 ? 0 : 1;
         this.positionX = position.x;
         this.positionY = position.y;
         this.width = size.x;
@@ -81,6 +83,10 @@ export abstract class Object2dMixin extends BaseObjectMixin {
 
     get isVisible(): VmBool {
         return this._isVisible;
+    }
+
+    get selectable(): VmBool {
+        return this._selectable;
     }
 
     set isVisible(value) {

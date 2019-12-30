@@ -8,12 +8,17 @@ export class FabricLine implements LineElementVisual {
     private posX: number;
     private posY: number;
     obj: fabric.Polyline;
+    readonly handle: number;
+    private size: Point2D;
+    readonly selectable: boolean;
+
     constructor(
-        { points, isVisible, position, brush, pen }: LineVisualOptions,
+        { handle, points, isVisible, selectable, position, brush, pen }: LineVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
     ) {
+        this.handle = handle;
         this.posX = position.x;
         this.posY = position.y;
         const opts: fabric.IPolylineOptions = {
@@ -25,11 +30,29 @@ export class FabricLine implements LineElementVisual {
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible
         };
+        const sizes = points.reduce(
+            (a, c) => ({
+                minX: Math.min(a.minX, c.x),
+                maxX: Math.max(a.maxX, c.x),
+                minY: Math.min(a.minY, c.y),
+                maxY: Math.max(a.maxY, c.y)
+            }),
+            { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+        );
+        this.selectable = selectable;
+        this.size = { x: sizes.maxX - sizes.minX, y: sizes.maxX - sizes.minY };
         this.obj = new fabric.Polyline(points, opts);
     }
     setPoints(points: Point2D[]): void {
         throw new Error("Method not implemented.");
     }
+
+    testIntersect(x: number, y: number) {
+        const diffX = x - this.posX;
+        const diffY = y - this.posY;
+        return diffX > 0 && diffX <= this.size.x && diffY > 0 && diffY <= this.size.y;
+    }
+
     updatePen(pen: PenToolState): void {
         this.obj.set({ strokeWidth: pen.width, stroke: pen.color });
         this.requestRedraw();

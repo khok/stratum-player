@@ -20,6 +20,7 @@ export class LineObject extends Object2dMixin implements LineObjectState {
             size: data.size,
             points: data.points,
             isVisible: !!this.isVisible,
+            selectable: !!this.selectable,
             pen,
             brush
         });

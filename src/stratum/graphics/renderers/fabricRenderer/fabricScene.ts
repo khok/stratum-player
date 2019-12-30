@@ -18,9 +18,12 @@ import { FabricBitmap } from "./components/fabricBitmap";
 import { FabricDoubleBitmap } from "./components/fabricDoubleBitmap";
 import { fabricConfigCanvasOptions } from "./fabricConfig";
 
+type VisualObject = FabricLine | FabricBitmap | FabricDoubleBitmap;
+
 export class FabricScene implements Scene {
     private canvas: fabric.StaticCanvas;
-    private objects: HandleMap<FabricLine | FabricBitmap | FabricDoubleBitmap> = HandleMap.create();
+    private objects: HandleMap<VisualObject> = HandleMap.create();
+    private objectsByZReversed: VisualObject[] = [];
     private view: Point2D;
     private _redraw = false;
     constructor({ canvas, view }: { canvas: HTMLCanvasElement; view: Point2D }) {
@@ -35,11 +38,14 @@ export class FabricScene implements Scene {
         this._redraw = true;
     }
     placeObjects(order: number[]): void {
+        const objsByZ = [];
         for (const handle of order) {
             const obj = this.objects.get(handle);
             if (!obj) throw new StratumError(`Объект #${handle} не найден на сцене`);
             this.canvas.add(obj.obj);
+            objsByZ.push(obj);
         }
+        this.objectsByZReversed = objsByZ.reverse();
         this.requestRedraw();
     }
     translateView(x: number, y: number): void {
@@ -49,7 +55,10 @@ export class FabricScene implements Scene {
         this.requestRedraw();
     }
     getVisualHandleFromPoint(x: number, y: number): number {
-        throw new Error("Method not implemented.");
+        for (const obj of this.objectsByZReversed) {
+            if (obj.selectable && obj.testIntersect(x, y)) return obj.handle;
+        }
+        return 0;
     }
     render() {
         if (this._redraw) this.forceRender();
