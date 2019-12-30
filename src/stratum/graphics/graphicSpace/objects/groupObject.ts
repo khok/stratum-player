@@ -109,7 +109,7 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     }
 
     set zOrder(value) {
-        throw new Error("Method not implemented.");
+        // throw new Error("Method not implemented.");
     }
 
     get isVisible(): VmBool {

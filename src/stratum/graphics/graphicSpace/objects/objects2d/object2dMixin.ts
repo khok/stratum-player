@@ -74,11 +74,12 @@ export abstract class Object2dMixin extends BaseObjectMixin {
     }
 
     get zOrder(): number {
-        throw new Error("Method not implemented.");
+        //TODO: fix;
+        return 1;
     }
 
     set zOrder(value) {
-        throw new Error("Method not implemented.");
+        // throw new Error("Method not implemented.");
     }
 
     get isVisible(): VmBool {
