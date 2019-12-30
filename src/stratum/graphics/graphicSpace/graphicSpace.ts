@@ -95,6 +95,7 @@ export class GraphicSpace implements GraphicSpaceState {
     deleteObject(handle: number): VmBool {
         const obj = this.allObjects.get(handle);
         if (!obj) return 0;
+        obj.destroy();
         this.allObjects.delete(handle);
         return 1;
     }
