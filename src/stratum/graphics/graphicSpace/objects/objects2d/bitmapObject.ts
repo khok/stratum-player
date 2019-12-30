@@ -23,6 +23,8 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             position: data.position,
             size: data.size,
             isVisible: !!this.isVisible,
+            bmpOrigin: data.bmpOrigin,
+            bmpiSize: data.bmpSize,
             bitmapTool: bmpTool
         });
         this.bmpTool = bmpTool;

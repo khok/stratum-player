@@ -9,7 +9,7 @@ export class FabricBitmap implements BitmapElementVisual {
     private posY: number;
     obj: fabric.Image;
     constructor(
-        { isVisible, position, size, bitmapTool }: BitmapVisualOptions,
+        { isVisible, position, bmpOrigin, bmpiSize, bitmapTool }: BitmapVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
@@ -20,8 +20,10 @@ export class FabricBitmap implements BitmapElementVisual {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
-            width: size.x,
-            height: size.y,
+            cropX: bmpOrigin.x,
+            cropY: bmpOrigin.y,
+            width: bmpiSize.x,
+            height: bmpiSize.y,
             visible: isVisible
         };
         this.obj = new fabric.Image(bitmapTool.image, opts);
