@@ -267,7 +267,7 @@ export class VdrMerger {
             : imageCopy.elementOrder;
     }
 
-    replaceIcon(rootGroupHandle: number, iconRef: string, iconIndex: number) {
+    replaceIcon(rootGroupHandle: number, iconRef: string) {
         const { scheme } = this;
 
         const parentGroup = scheme.elements.find(el => el.handle === rootGroupHandle);

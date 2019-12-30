@@ -7,12 +7,8 @@ export function createComposedScheme(scheme: VectorDrawData, childs: ChildData[]
     for (const childInfo of childs) {
         const childClassData = collection.get(childInfo.classname)!;
         const { handle: rootGroupHandle, position } = childInfo;
-        if (childClassData.image) {
-            merger.insertChildImage(rootGroupHandle, childClassData.image, position);
-        } else {
-            const { iconRef, iconIndex } = childClassData;
-            if (iconRef) merger.replaceIcon(rootGroupHandle, iconRef, iconIndex || 0);
-        }
+        if (childClassData.iconRef) merger.replaceIcon(rootGroupHandle, childClassData.iconRef);
+        if (childClassData.image) merger.insertChildImage(rootGroupHandle, childClassData.image, position);
     }
     return merger.data;
 }
