@@ -35,7 +35,7 @@ export abstract class Object2dMixin extends BaseObjectMixin {
     setPosition(x: number, y: number): VmBool {
         this.positionX = x;
         this.positionY = y;
-        this.visual.setPosition(x, y);
+        if (this.isVisible) this.visual.setPosition(x, y);
         if (this.parent) this.parent.handleChildPositionChange(x, y);
         return 1;
     }
@@ -84,7 +84,11 @@ export abstract class Object2dMixin extends BaseObjectMixin {
     }
 
     set isVisible(value) {
-        if (value) this.visual.show();
-        else this.visual.hide();
+        if (value) {
+            this.visual.show();
+            this.visual.setPosition(this.positionX, this.positionY);
+        } else {
+            this.visual.hide();
+        }
     }
 }

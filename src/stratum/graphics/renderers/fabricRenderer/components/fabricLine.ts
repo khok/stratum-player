@@ -22,7 +22,7 @@ export class FabricLine implements LineElementVisual {
             top: position.y - viewRef.y,
             fill: brush && brush.color,
             stroke: pen && pen.color,
-            strokeWidth: pen && pen.width,
+            strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible
         };
         this.obj = new fabric.Polyline(points, opts);

@@ -2,10 +2,11 @@
  * Все функции экспортируется в неймспейс 'StratumPlayer' (см package.json -> yarn build)
  */
 
-import { Project } from "~/core/project";
+import { Project, ProjectDebugOptions } from "~/core/project";
 import { loadProjectData, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { StratumError } from "./helpers/errors";
+import { ClassData, VarSetData } from "data-types-base";
 
 export class Player {
     constructor(public project: Project, public windows: WindowSystem) {}
@@ -53,13 +54,22 @@ export class Player {
         if (this.project.error) throw new StratumError(this.project.error);
     }
 }
+export type PlayerOptions = ReadOptions & { projectOptions?: ProjectDebugOptions } & {
+    graphicOptions?: WindowSystemOptions;
+};
 
-export async function fromUrl(
-    url: string | string[],
-    options?: ReadOptions & { graphicOptions?: WindowSystemOptions }
+function createPlayer(
+    rootName: string,
+    collection: Map<string, ClassData>,
+    varSet?: VarSetData,
+    options?: PlayerOptions
 ) {
+    const ws = new WindowSystem(options && options.graphicOptions);
+    return new Player(Project.create(rootName, collection, ws, varSet, options && options.projectOptions), ws);
+}
+
+export async function fromUrl(url: string | string[], options?: PlayerOptions) {
     const zip = await openZipFromUrl(url);
     const { rootName, collection, varSet } = await loadProjectData(zip, options);
-    const ws = new WindowSystem(options && options.graphicOptions);
-    return new Player(Project.create(rootName, collection, ws, varSet), ws);
+    return createPlayer(rootName, collection, varSet, options);
 }

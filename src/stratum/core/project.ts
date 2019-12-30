@@ -10,12 +10,22 @@ import { ClassSchemeNode } from "./classSchemeNode";
 import { createClassScheme } from "./createClassScheme";
 import { MemoryManager } from "./memoryManager";
 
+export interface ProjectDebugOptions {
+    disableSchemeComposition?: boolean;
+}
+
 export class Project implements ProjectController {
-    static create(rootName: string, classes: Map<string, ClassData>, windowSystem: WindowSystem, varSet?: VarSetData) {
+    static create(
+        rootName: string,
+        classes: Map<string, ClassData>,
+        windowSystem: WindowSystem,
+        varSet?: VarSetData,
+        debugOptions?: ProjectDebugOptions
+    ) {
         const { root, mmanager } = createClassScheme(rootName, classes);
         if (varSet) root.applyVarSetRecursive(varSet);
         mmanager.initValues();
-        return new Project({ scheme: root, classes, mmanager, windowSystem });
+        return new Project({ scheme: root, classes, mmanager, windowSystem }, debugOptions);
     }
 
     private scheme: ClassSchemeNode;
@@ -26,12 +36,15 @@ export class Project implements ProjectController {
     private _internallyStopped = true;
     private globalImgLoader = new SimpleImageLoader();
 
-    constructor(data: {
-        scheme: ClassSchemeNode;
-        classes: Map<string, ClassData>;
-        windowSystem: WindowSystem;
-        mmanager: MemoryManager;
-    }) {
+    constructor(
+        data: {
+            scheme: ClassSchemeNode;
+            classes: Map<string, ClassData>;
+            windowSystem: WindowSystem;
+            mmanager: MemoryManager;
+        },
+        private debugOptions?: ProjectDebugOptions
+    ) {
         this.classCollection = data.classes;
         this.scheme = data.scheme;
         this.mmanager = data.mmanager;
@@ -67,7 +80,10 @@ export class Project implements ProjectController {
         const data = this.classCollection.get(className);
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
-        const vdr = data.childs ? createComposedScheme(data.scheme, data.childs, this.classCollection) : data.scheme;
+        const vdr =
+            (!this.debugOptions || !this.debugOptions.disableSchemeComposition) && data.childs
+                ? createComposedScheme(data.scheme, data.childs, this.classCollection)
+                : data.scheme;
         return canvas => {
             const space = GraphicSpace.fromVdr(
                 vdr,
