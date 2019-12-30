@@ -9,7 +9,9 @@ import {
     DoubleBitmapVisualOptions,
     LineElementVisual,
     LineVisualOptions,
-    Scene
+    Scene,
+    TextVisualOptions,
+    TextElementVisual
 } from "scene-types";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
@@ -17,8 +19,9 @@ import { FabricLine } from "./components/fabricLine";
 import { FabricBitmap } from "./components/fabricBitmap";
 import { FabricDoubleBitmap } from "./components/fabricDoubleBitmap";
 import { fabricConfigCanvasOptions } from "./fabricConfig";
+import { FabricText } from "./components/fabricText";
 
-type VisualObject = FabricLine | FabricBitmap | FabricDoubleBitmap;
+type VisualObject = FabricLine | FabricBitmap | FabricDoubleBitmap | FabricText;
 
 export class FabricScene implements Scene {
     private canvas: fabric.StaticCanvas;
@@ -74,22 +77,48 @@ export class FabricScene implements Scene {
     }
     createLine(data: LineVisualOptions): LineElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricLine(data, this.view, () => this.requestRedraw(), this.canvas.remove);
+        const obj = new FabricLine(
+            data,
+            this.view,
+            () => this.requestRedraw(),
+            o => this.canvas.remove(o)
+        );
         this.objects.set(data.handle, obj);
         return obj;
     }
     createControl(data: ControlVisualOptions): ControlElementVisual {
         throw new Error("Method not implemented.");
     }
+    createText(data: TextVisualOptions): TextElementVisual {
+        this.assertNoObject(data.handle);
+        const obj = new FabricText(
+            data,
+            this.view,
+            () => this.requestRedraw(),
+            o => this.canvas.remove(o)
+        );
+        this.objects.set(data.handle, obj);
+        return obj;
+    }
     createBitmap(data: BitmapVisualOptions): BitmapElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricBitmap(data, this.view, () => this.requestRedraw(), this.canvas.remove);
+        const obj = new FabricBitmap(
+            data,
+            this.view,
+            () => this.requestRedraw(),
+            o => this.canvas.remove(o)
+        );
         this.objects.set(data.handle, obj);
         return obj;
     }
     createDoubleBitmap(data: DoubleBitmapVisualOptions): DoubleBitmapElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricDoubleBitmap(data, this.view, () => this.requestRedraw(), this.canvas.remove);
+        const obj = new FabricDoubleBitmap(
+            data,
+            this.view,
+            () => this.requestRedraw(),
+            o => this.canvas.remove(o)
+        );
         this.objects.set(data.handle, obj);
         return obj;
     }

@@ -1,6 +1,12 @@
 declare module "scene-types" {
     import { ControlElementData, Point2D } from "data-types-graphics";
-    import { BitmapToolState, BrushToolState, PenToolState, DoubleBitmapToolState } from "vm-interfaces-graphics";
+    import {
+        BitmapToolState,
+        BrushToolState,
+        PenToolState,
+        DoubleBitmapToolState,
+        TextToolState
+    } from "vm-interfaces-graphics";
 
     interface _VisualBase {
         setPosition(x: number, y: number): void;
@@ -16,6 +22,10 @@ declare module "scene-types" {
         updateBrush(brush: BrushToolState): void;
     }
 
+    export interface TextElementVisual extends _VisualBase {
+        updateText(text: TextToolState): void;
+    }
+
     export interface ControlElementVisual extends _VisualBase {
         setText(text: string): void;
     }
@@ -28,7 +38,12 @@ declare module "scene-types" {
         updateBitmap(bmp: DoubleBitmapToolState): void;
     }
 
-    export type Visual2D = LineElementVisual | ControlElementVisual | BitmapElementVisual | DoubleBitmapElementVisual;
+    export type Visual2D =
+        | LineElementVisual
+        | ControlElementVisual
+        | TextElementVisual
+        | BitmapElementVisual
+        | DoubleBitmapElementVisual;
 
     export interface VisualOptions {
         handle: number;
@@ -43,6 +58,10 @@ declare module "scene-types" {
         pen?: PenToolState;
         brush?: BrushToolState;
         arrows?: unknown;
+    }
+
+    export interface TextVisualOptions extends VisualOptions {
+        text: TextToolState;
     }
 
     export interface ControlVisualOptions extends VisualOptions {
@@ -65,6 +84,7 @@ declare module "scene-types" {
     export interface VisualFactory {
         createLine(data: LineVisualOptions): LineElementVisual;
         createControl(data: ControlVisualOptions): ControlElementVisual;
+        createText(data: TextVisualOptions): TextElementVisual;
         createBitmap(data: BitmapVisualOptions): BitmapElementVisual;
         createDoubleBitmap(data: DoubleBitmapVisualOptions): DoubleBitmapElementVisual;
     }

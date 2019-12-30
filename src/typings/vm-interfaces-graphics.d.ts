@@ -15,7 +15,9 @@ declare module "vm-interfaces-graphics" {
         FontToolData,
         TextToolData,
         BitmapElementData,
-        DoubleBitmapElementData
+        DoubleBitmapElementData,
+        StringToolData,
+        TextElementData
     } from "data-types-graphics";
 
     export interface PenToolState {
@@ -49,10 +51,29 @@ declare module "vm-interfaces-graphics" {
     export interface FontToolState {
         readonly handle: number;
         readonly type: FontToolData["type"];
+        readonly name: string;
+        readonly size: number;
+        readonly style: number;
     }
-    export interface TextDataToolState {
+    export interface StringToolState {
+        readonly handle: number;
+        readonly type: StringToolData["type"];
+        text: string;
+    }
+
+    export interface TextFragment {
+        font: FontToolState;
+        stringFragment: StringToolState;
+        foregroundColor: StringColor;
+        backgroundColor: StringColor;
+    }
+
+    export interface TextToolState {
         readonly handle: number;
         readonly type: TextToolData["type"];
+        readonly textCount: number;
+        getFragment(index: number): TextFragment;
+        readonly assembledText: { text: string; size: number };
     }
 
     export type ToolState =
@@ -61,10 +82,11 @@ declare module "vm-interfaces-graphics" {
         | BitmapToolState
         | DoubleBitmapToolState
         | FontToolState
-        | TextDataToolState;
+        | StringToolState
+        | TextToolState;
 
     export interface GraphicSpaceToolsState {
-        addTool(handle: number, tool: ToolState): void;
+        addTool(tool: ToolState): number;
         getTool<T extends ToolState>(type: T["type"], handle: number): T | undefined;
         deleteTool<T extends ToolState>(type: T["type"], handle: number): VmBool;
     }
@@ -98,6 +120,10 @@ declare module "vm-interfaces-graphics" {
         readonly type: ControlElementData["type"];
         text: string;
     }
+    export interface TextObjectState extends GraphicObjectStateBase {
+        readonly type: TextElementData["type"];
+        text: TextToolState;
+    }
     interface _BmpBase extends GraphicObjectStateBase {
         setRect(x: number, y: number, width: number, height: number): VmBool;
     }
@@ -121,6 +147,7 @@ declare module "vm-interfaces-graphics" {
     export type GraphicObjectState =
         | LineObjectState
         | ControlObjectState
+        | TextObjectState
         | BitmapObjectState
         | DoubleBitmapObjectState
         | GroupObjectState;

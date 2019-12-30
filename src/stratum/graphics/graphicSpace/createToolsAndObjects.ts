@@ -1,29 +1,13 @@
-import { ElementData, VectorDrawToolsData, Element2dData } from "data-types-graphics";
+import { Element2dData, ElementData, VectorDrawToolsData } from "data-types-graphics";
+import { ImageResolver } from "internal-graphic-types";
 import { VisualFactory } from "scene-types";
 import { GraphicSpaceToolsState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
-import { BrushTool, PenTool, BitmapTool, DoubleBitmapTool } from "./tools";
-import { ImageResolver } from "internal-graphic-types";
-import { GraphicObject, GroupObject, LineObject, BitmapObject, DoubleBitmapObject, ControlObject } from "./objects";
-
-// function assemblyText(
-//     textHandle: number,
-//     fonts: HandleMap<FontTool>,
-//     strings: HandleMap<string>,
-//     texts: HandleMap<TextDataTool>
-// ) {
-//     const textData = texts.get(textHandle)!;
-//     let res = "";
-//     let fontSizeSum = 0;
-//     for (const { fontHandle, stringHandle } of textData) {
-//         const font = fonts.get(fontHandle)!;
-//         fontSizeSum += font.fontSize;
-//         res += strings.get(stringHandle)!;
-//     }
-//     return new fabric.Text(res, { fontSize: fontSizeSum / textData.length / 1.55, fontFamily: "Arial" });
-// }
+import { BitmapObject, DoubleBitmapObject, GraphicObject, GroupObject, LineObject, TextObject } from "./objects";
+import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool } from "./tools";
+import { FontTool } from "./tools/fontTool";
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
@@ -33,7 +17,21 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
     const doubleBitmaps =
         tools.doubleBitmapTools &&
         HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(b, imageLoader)]));
-    return new GraphicSpaceTools({ brushes, pens, bitmaps, doubleBitmaps });
+    const fonts =
+        tools.fontTools &&
+        HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));
+    const strings =
+        tools.stringTools && HandleMap.create(tools.stringTools.map(s => [s.handle, new StringTool(s.data)]));
+    //prettier-ignore
+    const texts =
+        tools.textTools &&
+        HandleMap.create(tools.textTools.map(t => [t.handle, new TextTool( t.textCollection.map(tt => ({
+            font: fonts!.get(tt.fontHandle)!,
+            stringFragment: strings!.get(tt.stringHandle)!,
+            foregroundColor: tt.ltFgColor,
+            backgroundColor: tt.ltBgColor,
+        })) )]));
+    return new GraphicSpaceTools({ brushes, pens, bitmaps, doubleBitmaps, fonts, strings, texts });
 }
 
 export function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
@@ -45,9 +43,10 @@ export function create2dObject(data: Element2dData, tools: GraphicSpaceToolsStat
         case "otDOUBLEBITMAP2D":
             return new DoubleBitmapObject(data, tools, visualFactory);
         case "otTEXT2D":
-            throw Error("Текст не реализован");
+            return new TextObject(data, tools, visualFactory);
         case "otCONTROL2D":
-            return new ControlObject(data, tools, visualFactory);
+            throw new Error("Контролы не реализованы");
+        // return new ControlObject(data, tools, visualFactory);
     }
 }
 

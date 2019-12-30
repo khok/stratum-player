@@ -3,10 +3,12 @@ import { ControlObject } from "./objects2d/controlObject";
 import { LineObject } from "./objects2d/lineObject";
 import { BitmapObject } from "./objects2d/bitmapObject";
 import { DoubleBitmapObject } from "./objects2d/doubleBitmapObject";
+import { TextObject } from "./objects2d/textObject";
 
 export { GroupObject };
-export { ControlObject };
 export { LineObject };
+export { TextObject };
+export { ControlObject };
 export { BitmapObject };
 export { DoubleBitmapObject };
-export type GraphicObject = GroupObject | ControlObject | LineObject | BitmapObject | DoubleBitmapObject;
+export type GraphicObject = GroupObject | ControlObject | LineObject | TextObject | BitmapObject | DoubleBitmapObject;
