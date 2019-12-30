@@ -9,7 +9,6 @@ import { VmContext } from "~/vm/vmContext";
 import { ClassSchemeNode } from "./classSchemeNode";
 import { createClassScheme } from "./createClassScheme";
 import { MemoryManager } from "./memoryManager";
-import { StratumError } from "~/helpers/errors";
 
 export class Project implements ProjectController {
     static create(rootName: string, classes: Map<string, ClassData>, windowSystem: WindowSystem, varSet?: VarSetData) {
@@ -23,7 +22,6 @@ export class Project implements ProjectController {
     private cachedNodes: ClassSchemeNode[];
     private classCollection: Map<string, ClassData>;
     private vm: VmContext;
-    // private windows: WindowSystem;
     private mmanager: MemoryManager;
     private _internallyStopped = true;
     private globalImgLoader = new SimpleImageLoader();
@@ -36,7 +34,6 @@ export class Project implements ProjectController {
     }) {
         this.classCollection = data.classes;
         this.scheme = data.scheme;
-        // this.windows = data.windowSystem;
         this.mmanager = data.mmanager;
         this.vm = new VmContext(data.windowSystem, {} as any, this);
         this.cachedNodes = this.scheme.collectNodes();
@@ -71,7 +68,15 @@ export class Project implements ProjectController {
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const vdr = data.childs ? createComposedScheme(data.scheme, data.childs, this.classCollection) : data.scheme;
-        return canvas => GraphicSpace.fromVdr(vdr, this.globalImgLoader, new FabricScene({ canvas, view: vdr.origin }));
+        return canvas => {
+            const space = GraphicSpace.fromVdr(
+                vdr,
+                this.globalImgLoader,
+                new FabricScene({ canvas, view: vdr.origin })
+            );
+            this.globalImgLoader.getPromise().then(() => space.scene.forceRender());
+            return space;
+        };
     }
     hasClass(className: string): VmBool {
         return this.classCollection.get(className) ? 1 : 0;

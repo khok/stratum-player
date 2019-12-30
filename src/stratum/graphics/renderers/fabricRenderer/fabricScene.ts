@@ -19,12 +19,12 @@ import { FabricDoubleBitmap } from "./components/fabricDoubleBitmap";
 import { fabricConfigCanvasOptions } from "./fabricConfig";
 
 export class FabricScene implements Scene {
-    private canvas: fabric.Canvas;
+    private canvas: fabric.StaticCanvas;
     private objects: HandleMap<FabricLine | FabricBitmap | FabricDoubleBitmap> = HandleMap.create();
     private view: Point2D;
     private _redraw = false;
     constructor({ canvas, view }: { canvas: HTMLCanvasElement; view: Point2D }) {
-        this.canvas = new fabric.Canvas(canvas, {
+        this.canvas = new fabric.StaticCanvas(canvas, {
             ...fabricConfigCanvasOptions,
             preserveObjectStacking: true,
             renderOnAddRemove: false
