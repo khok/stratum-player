@@ -26,8 +26,11 @@ import { WindowSystem } from "~/graphics/windowSystem";
     });
     setTimeout(() => {
         space.setOrigin(30, 30);
+        equal(space.getObjectHandleFromPoint(40, 40), 0);
         space.getObject(33)!.setPosition(32, 32);
+        equal(space.getObjectHandleFromPoint(40, 40), 33);
         space.scene.render();
+        console.log("graphic instance test 2/2 completed");
     }, 1500);
     space.scene.render();
     const elements = vdr.elements!;
@@ -43,5 +46,5 @@ import { WindowSystem } from "~/graphics/windowSystem";
             }
         }
     }
-    console.log("graphic instance test completed");
+    console.log("graphic instance test 1/2 completed");
 })();
