@@ -16,13 +16,33 @@
 yarn global add parcel
 ```
 
-Для сборки и запуска выполнить команды:
+### Сборка
+
+Сборка файла `dist/player.js`:
+
+```
+yarn build
+```
+
+### Использование
+
+см. `src/stratum/api.ts`
+
+### Тесты
+
+Для запуска специального теста выполнить команды:
 
 ```
 git clone https://github.com/khok/stratum-player
 cd stratum-player
 yarn install
-yarn start
+yarn test
 ```
 
 Приложение будет доступно на `localhost:1234`
+
+Запуск всех юнит-тестов:
+
+```
+yarn test-all
+```
