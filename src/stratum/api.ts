@@ -2,74 +2,89 @@
  * Все функции экспортируется в неймспейс 'StratumPlayer' (см package.json -> yarn build)
  */
 
+import { JSZipObject } from "jszip";
 import { Project, ProjectDebugOptions } from "~/core/project";
-import { loadProjectData, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
+import { loadProjectData, openZipFromFileList, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { StratumError } from "./helpers/errors";
-import { ClassData, VarSetData } from "data-types-base";
+import { formatMissingCommands, showMissingCommands } from "./helpers/showMissingCommands";
+import { VmOperations } from "./vm/operations";
+import { ClassData } from "data-types-base";
 
 export class Player {
     constructor(public project: Project, public windows: WindowSystem) {}
     private paused: boolean = false;
-    private reseted: boolean = true;
-    get playState() {
-        return this.reseted ? "stopped" : this.paused ? "paused" : "playing";
-    }
     setGraphicOptions(options: WindowSystemOptions) {
         this.windows.set(options);
     }
-    play() {
-        this.reseted = false;
+    get playing() {
+        return !this.paused;
+    }
+    play(caller?: (fn: () => void) => void) {
+        if (!caller) caller = window.requestAnimationFrame;
         this.paused = false;
-        const promise = new Promise((res, rej) => {
-            const req = () => {
-                window.requestAnimationFrame(() => {
-                    const running = this.project.oneStep() && !this.paused;
-                    this.windows.renderAll();
-                    if (running) {
-                        req();
-                    } else {
-                        if (this.project.error) rej(new StratumError(this.project.error));
-                        else res();
-                    }
-                });
+        return new Promise((resolve, reject) => {
+            const callback = () => {
+                const stepResult = this.project.oneStep();
+                this.windows.renderAll();
+                if (!stepResult) {
+                    if (this.project.error) reject(new StratumError(this.project.error));
+                    else resolve();
+                    this.pause();
+                }
+                if (!this.paused) caller!(callback);
             };
-            req();
+            caller!(callback);
         });
-        return promise;
     }
     stop() {
+        console.warn("Пока не умею возвращать проекты в исходное состояние");
+        return;
         this.pause();
-        this.reseted = true;
         this.project.reset();
     }
     pause() {
         this.paused = true;
     }
     oneStep() {
-        this.reseted = false;
         this.paused = true;
         this.project.oneStep();
         this.windows.renderAll();
         if (this.project.error) throw new StratumError(this.project.error);
     }
 }
+
 export type PlayerOptions = ReadOptions & { projectOptions?: ProjectDebugOptions } & {
     graphicOptions?: WindowSystemOptions;
-};
+} & { preloadedLibs?: JSZipObject[] };
 
-function createPlayer(
-    rootName: string,
-    collection: Map<string, ClassData>,
-    varSet?: VarSetData,
-    options?: PlayerOptions
-) {
+function handlePossibleErrors(collection: Map<string, ClassData>) {
+    const { errors, missingOperations } = showMissingCommands(collection, VmOperations);
+    if (errors.length === 0 && missingOperations.length === 0) return true;
+
+    if (errors.length > 0) console.log(errors.concat(";\n"));
+    if (missingOperations.length > 0) console.log(formatMissingCommands(missingOperations));
+    alert("Возникли ошибки (см в консоли (F12))");
+    return window.confirm("В работе проекта могут возникнуть ошибки.\nВсе равно запустить?");
+}
+
+export async function fromZip(zip: JSZipObject[], options?: PlayerOptions) {
+    const { rootName, collection, varSet } = await loadProjectData(zip, options);
+    if (!handlePossibleErrors(collection)) return undefined;
     const ws = new WindowSystem(options && options.graphicOptions);
     return new Player(Project.create(rootName, collection, ws, varSet, options && options.projectOptions), ws);
 }
 
 export async function fromUrl(url: string | string[], options?: PlayerOptions) {
     const zip = await openZipFromUrl(url);
-    const { rootName, collection, varSet } = await loadProjectData(zip, options);
-    return createPlayer(rootName, collection, varSet, options);
+    const addLibs = options && options.preloadedLibs;
+    return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
 }
+
+export async function fromFileList(files: FileList, options?: PlayerOptions) {
+    const zip = await openZipFromFileList(files);
+    const addLibs = options && options.preloadedLibs;
+    return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
+}
+
+export { openZipFromUrl as loadLibraryFromUrl, openZipFromFileList as loadLibraryFromFileList };
