@@ -26,7 +26,7 @@ export class SimpleImageLoader implements ImageResolver {
         return this.loadImg(base64Data);
     }
     fromFile(filename: string): HTMLImageElement {
-        return this.loadImg(`${this.iconsPath}/${filename}`);
+        return this.loadImg(`${this.iconsPath}/${filename.toUpperCase()}`);
     }
     getPromise() {
         return Promise.all(this.promises);
