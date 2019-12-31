@@ -1,0 +1,55 @@
+<head>
+    <meta charset="utf-8" />
+    <script src="stratum.js"></script>
+    <script>
+        let player;
+        const stdlibPromise = StratumPlayer.loadLibraryFromUrl("/data/library.zip");
+        window.onload = () => {
+            const canvas = document.getElementById("canvas");
+            canvas.width = window.innerWidth - 40;
+            canvas.height = window.innerHeight - 100;
+            document.getElementById("file_drop").addEventListener("change", play);
+        };
+        async function play({ target }) {
+            const fList = target.files;
+            if (!fList) return;
+            const stdLib = await stdlibPromise;
+            console.log("Стандартная библиотека имиджей загружена");
+            const globalCanvas = document.getElementById("canvas");
+            const contoller = document.getElementById("controller");
+            const one_step = document.getElementById("one_step");
+            controller.removeAttribute("hidden");
+            one_step.removeAttribute("hidden");
+            StratumPlayer.fromFileList(fList, { graphicOptions: { globalCanvas }, preloadedLibs: stdLib })
+                .then(p => {
+                    controller.innerHTML = "Пауза";
+                    if (player) player.pause();
+                    player = p;
+                    if (!player) return;
+                    let playing = true;
+                    controller.addEventListener("click", () => {
+                        if (playing) player.pause();
+                        else player.play();
+                        controller.innerHTML = playing ? "Продолжить" : "Пауза";
+                        playing = !playing;
+                    });
+                    one_step.addEventListener("click", () => {
+                        player.oneStep();
+                        controller.innerHTML = "Продолжить";
+                        playing = false;
+                    });
+                    player.play();
+                })
+                .catch(e => {
+                    console.error(e);
+                    alert("Возникли ошибки, см. в консоли (F12)");
+                });
+        }
+    </script>
+</head>
+<body>
+    <input id="file_drop" type="file" accept=".zip" />
+    <button id="one_step" hidden style="height: 50px">Один шаг</button>
+    <button id="controller" hidden style="height: 50px">Пауза</button>
+    <canvas id="canvas" style="border:1px solid #000000;" />
+</body>
