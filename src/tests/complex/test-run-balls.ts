@@ -2,6 +2,7 @@ import { fromUrl } from "~/api";
 
 (async function() {
     const player = await fromUrl(["test_projects/balls_stress_test.zip", "/data/library.zip"]);
+    if (!player) return;
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     player.setGraphicOptions({ globalCanvas: canvas });
     setTimeout(() => player.pause(), 5000);
