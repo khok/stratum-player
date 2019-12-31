@@ -20,6 +20,7 @@ import { FabricBitmap } from "./components/fabricBitmap";
 import { FabricDoubleBitmap } from "./components/fabricDoubleBitmap";
 import { fabricConfigCanvasOptions } from "./fabricConfig";
 import { FabricText } from "./components/fabricText";
+import { BrushToolState } from "vm-interfaces-graphics";
 
 type VisualObject = FabricLine | FabricBitmap | FabricDoubleBitmap | FabricText;
 
@@ -36,6 +37,9 @@ export class FabricScene implements Scene {
             renderOnAddRemove: false
         });
         this.view = { ...view };
+    }
+    updateBrush(brush: BrushToolState) {
+        this.canvas.backgroundColor = brush.color;
     }
     requestRedraw() {
         this._redraw = true;

@@ -7,6 +7,7 @@ import { GraphicSpaceTools } from "./graphicSpaceTools";
 import { GraphicObject, GroupObject } from "./objects";
 import { createObjects, createTools } from "./createToolsAndObjects";
 import { ImageResolver } from "internal-graphic-types";
+import { BrushTool } from "./tools";
 
 /**
  * Графическое пространство, содержащее инструменты и объекты.
@@ -15,37 +16,30 @@ export class GraphicSpace implements GraphicSpaceState {
     static fromVdr(vdr: VectorDrawData, imageLoader: ImageResolver, scene: Scene) {
         const tools = createTools(vdr, imageLoader);
         const objects = vdr.elements && createObjects(vdr.elements, tools, scene);
-        const space = new GraphicSpace({ origin: vdr.origin, tools, objects }, scene);
+        const space = new GraphicSpace({ origin: vdr.origin, brushHandle: vdr.brushHandle, tools, objects }, scene);
         if (vdr.elementOrder) space.placeObjects(vdr.elementOrder);
         return space;
     }
 
     handle = 0;
-    /**
-     * Инструменты графического пространства.
-     */
     readonly tools: GraphicSpaceTools;
     private _originX: number = 0;
     private _originY: number = 0;
-    /**
-     * Перечень объектов, существующих в графическом пространстве.
-     */
     private allObjects = HandleMap.create<GraphicObject>();
     constructor(
-        {
-            origin,
-            tools,
-            objects
-        }: {
-            origin: Point2D;
-            tools?: GraphicSpaceTools;
-            objects?: HandleMap<GraphicObject>;
-        },
+        data: { origin: Point2D; brushHandle?: number; tools?: GraphicSpaceTools; objects?: HandleMap<GraphicObject> },
         public scene: Scene
     ) {
-        this.setOrigin(origin.x, origin.y);
-        this.tools = tools || new GraphicSpaceTools();
-        if (objects) objects.forEach((o, k) => this.addObjectFast(o, k));
+        this.setOrigin(data.origin.x, data.origin.y);
+        this.tools = data.tools || new GraphicSpaceTools();
+        if (data.brushHandle) {
+            const brush = this.tools.getTool<BrushTool>("ttBRUSH2D", data.brushHandle);
+            if (brush) {
+                brush.subscribe(this, b => this.scene.updateBrush(b));
+                this.scene.updateBrush(brush);
+            }
+        }
+        if (data.objects) data.objects.forEach((o, k) => this.addObjectFast(o, k));
     }
 
     /**

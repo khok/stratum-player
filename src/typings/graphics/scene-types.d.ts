@@ -67,6 +67,7 @@ declare module "scene-types" {
     export interface ControlVisualOptions extends VisualOptions {
         classname: ControlElementData["classname"];
         text: string;
+        controlSize: Point2D;
     }
 
     export interface BitmapVisualOptions extends VisualOptions {
@@ -90,6 +91,7 @@ declare module "scene-types" {
     }
 
     export interface Scene extends VisualFactory {
+        updateBrush(brush: BrushToolState): void;
         placeObjects(order: number[]): void;
         translateView(x: number, y: number): void;
         getVisualHandleFromPoint(x: number, y: number): number;

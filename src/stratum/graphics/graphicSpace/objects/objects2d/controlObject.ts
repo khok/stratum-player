@@ -1,17 +1,32 @@
 import { ControlElementData } from "data-types-graphics";
 import { ControlElementVisual, VisualFactory } from "scene-types";
-import { ControlObjectState, GraphicSpaceToolsState } from "vm-interfaces-graphics";
+import { ControlObjectState } from "vm-interfaces-graphics";
 import { Object2dMixin } from "./object2dMixin";
 
 export class ControlObject extends Object2dMixin implements ControlObjectState {
-    unsubFromTools() {}
-    protected readonly _subclassInstance: this = this;
     readonly type = "otCONTROL2D";
+    protected readonly _subclassInstance: this = this;
     visual: ControlElementVisual;
-    text: string;
-    constructor(data: ControlElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+    private _text: string;
+    constructor(data: ControlElementData, visualFactory: VisualFactory) {
         super(data);
-        this.visual = visualFactory.createControl({ ...data, isVisible: !!this.isVisible });
-        this.text = data.text;
+        this.visual = visualFactory.createControl({
+            handle: data.handle,
+            position: data.position,
+            size: data.size,
+            isVisible: !!this.isVisible,
+            selectable: !!this.selectable,
+            classname: data.classname,
+            text: data.text,
+            controlSize: data.controlSize
+        });
+        this._text = data.text;
     }
+    set text(value) {
+        this._text = value;
+    }
+    get text(): string {
+        return this._text;
+    }
+    unsubFromTools() {}
 }

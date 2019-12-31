@@ -4,7 +4,7 @@ import { HandleMap } from "~/helpers/handleMap";
 import { BitmapTool, BrushTool, DoubleBitmapTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
 
 /**
- * Инструменты графического пространства.
+ * Контейнер инструментов графического пространства.
  */
 export class GraphicSpaceTools implements GraphicSpaceToolsState {
     private brushes: HandleMap<BrushTool>;

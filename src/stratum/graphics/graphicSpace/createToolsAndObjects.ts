@@ -5,9 +5,16 @@ import { GraphicSpaceToolsState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
-import { BitmapObject, DoubleBitmapObject, GraphicObject, GroupObject, LineObject, TextObject } from "./objects";
-import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool } from "./tools";
-import { FontTool } from "./tools/fontTool";
+import {
+    BitmapObject,
+    ControlObject,
+    DoubleBitmapObject,
+    GraphicObject,
+    GroupObject,
+    LineObject,
+    TextObject
+} from "./objects";
+import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool, FontTool } from "./tools";
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
@@ -45,8 +52,7 @@ export function create2dObject(data: Element2dData, tools: GraphicSpaceToolsStat
         case "otTEXT2D":
             return new TextObject(data, tools, visualFactory);
         case "otCONTROL2D":
-            throw new Error("Контролы не реализованы");
-        // return new ControlObject(data, tools, visualFactory);
+            return new ControlObject(data, visualFactory);
     }
 }
 

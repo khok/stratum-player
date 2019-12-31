@@ -8,7 +8,7 @@ import { executeCode } from "~/vm/virtualMachine";
 import { VmContext } from "~/vm/vmContext";
 import { ClassPrototype } from "./classPrototype";
 import { MemoryManager } from "./memoryManager";
-// import { Point2D } from "data-types-graphics";
+import { StratumError } from "~/helpers/errors";
 
 export interface SchemeData {
     parent: ClassSchemeNode;
@@ -21,19 +21,10 @@ export class ClassSchemeNode implements ClassState {
     private readonly proto: ClassPrototype;
     private mmanager?: MemoryManager;
     private isDisabled: () => boolean;
-    // private onSchemePosition?: Point2D;
     private childs?: HandleMap<ClassSchemeNode>;
-    //private oldVars?: (string | number)[];
-    //private newVars?: (string | number)[];
-    //private initVars?: (string | number)[];
     private toGlobalVarId?: number[];
     private schemeData?: SchemeData;
-    constructor(data: {
-        proto: ClassPrototype;
-        globalIndexMap?: number[];
-        schemeData?: SchemeData;
-        // position?: Point2D;
-    }) {
+    constructor(data: { proto: ClassPrototype; globalIndexMap?: number[]; schemeData?: SchemeData }) {
         this.proto = data.proto;
         this.schemeData = data.schemeData;
         this.isDisabled = data.proto.variables ? createDisableGetter(this) : () => false;
@@ -49,7 +40,11 @@ export class ClassSchemeNode implements ClassState {
     }
 
     /**
-     * *Совет*: Применять их в порядке вычислений, т.к. значения родителей превыше дочерних.
+     * Инициализирует значения переменных по умолчанию.
+     *
+     * Необходимо применять к корню схемы.
+     *
+     * Замечание: Значения родительских превыше дочерних, поэтому они применяются последними.
      */
     initDefaultValuesRecursive(mmanager: MemoryManager) {
         if (this.mmanager) throw new Error("Значения уже инициализированы");
@@ -88,11 +83,12 @@ export class ClassSchemeNode implements ClassState {
     /**
      * Применяет к дереву классов набор переменных `varSet`, считанных из .stt файла.
      *
-     * Необходимо применять к корню схемы.
+     * Необходимо применять к корню схемы после инициализации переменных.
      *
      * Замечание: Значения дочерних превыше родительских, поэтому они применяются последними.
      */
     applyVarSetRecursive(varSet: VarSetData) {
+        if (!this.mmanager) throw new StratumError("Значения по умолчанию не инициализированы");
         if (this.protoName === varSet.classname && (!this.schemeData || this.schemeData.handle === varSet.handle)) {
             const { varData } = varSet;
             varData.forEach(({ name, value }) => {

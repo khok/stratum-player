@@ -4,7 +4,6 @@ import { StratumError } from "~/helpers/errors";
 import { ClassPrototype } from "./classPrototype";
 import { HandleMap } from "~/helpers/handleMap";
 import { MemoryManager } from "./memoryManager";
-import { Point2D } from "data-types-graphics";
 
 function dataToProtos(classes: Map<string, ClassData>) {
     const protos = new Map<string, { data: ClassData; proto: ClassPrototype }>();
