@@ -185,10 +185,14 @@ function V_DEG(ctx) {
 }
 
 function V_AND(ctx) {
-    ctx.stackPush(ctx.stackPop() && ctx.stackPop());
+    const a = ctx.stackPop();
+    const b = ctx.stackPop();
+    ctx.stackPush(a && b);
 }
 function V_OR(ctx) {
-    ctx.stackPush(ctx.stackPop() || ctx.stackPop());
+    const a = ctx.stackPop();
+    const b = ctx.stackPop();
+    ctx.stackPush(a || b);
 }
 function V_NOT(ctx) {
     ctx.stackPush(Number(ctx.stackPop() == 0));
@@ -275,10 +279,14 @@ function V_EDI(ctx) {
     ctx.stackPush(Number(ctx.stackPop() > 0));
 }
 function V_ANDI(ctx) {
-    ctx.stackPush(ctx.stackPop() && ctx.stackPop());
+    const a = ctx.stackPop();
+    const b = ctx.stackPop();
+    ctx.stackPush(a && b);
 }
 function V_ORI(ctx) {
-    ctx.stackPush(ctx.stackPop() || ctx.stackPop());
+    const a = ctx.stackPop();
+    const b = ctx.stackPop();
+    ctx.stackPush(a || b);
 }
 function V_NOTI(ctx) {
     ctx.stackPush(Number(ctx.stackPop() == 0));
