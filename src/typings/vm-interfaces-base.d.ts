@@ -14,7 +14,7 @@ declare module "vm-interfaces-base" {
         getNewVarValue(id: number): string | number;
         getOldVarValue(id: number): string | number;
 
-        getClassesByPath(path: string): ClassState | ClassState[] | undefined;
+        getClassByPath(path: string): ClassState | undefined;
         /**
          * Вычисляет схему имиджа и все схемы дочерних имиджей.
          * @param ctx Контекст выполнения.

@@ -133,14 +133,14 @@ export class ClassSchemeNode implements ClassState {
     get parent() {
         return this.schemeData && this.schemeData.parent;
     }
-    getClassesByPath(path: string): ClassState | ClassState[] | undefined {
+    getClassByPath(path: string): ClassState | undefined {
         console.log(`getClassesByPath(${path})`);
         //вернуть этот класс
         if (path === "") return this;
         //вернуть родительский
         if (path === "..") return this.parent;
         //вернуть корень иерархии
-        if (path === "\\") return this.parent ? this.parent.getClassesByPath("\\") : this;
+        if (path === "\\") return this.parent ? this.parent.getClassByPath("\\") : this;
 
         throw Error(`getClassesByPath() для пути ${path} не реализован`);
     }

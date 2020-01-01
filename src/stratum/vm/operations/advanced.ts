@@ -64,8 +64,8 @@ function RegisterObjectByWindowName(ctx: VmStateContainer) {
 
 //V_GETCLASS, name "GetClassName" arg "STRING" ret "STRING" out 398
 function GetClassName(ctx: VmStateContainer) {
-    const res = ctx.currentClass.getClassesByPath(<string>ctx.stackPop());
-    ctx.stackPush(!res || Array.isArray(res) ? "" : res.protoName);
+    const res = ctx.currentClass.getClassByPath(<string>ctx.stackPop());
+    ctx.stackPush(res ? res.protoName : "");
 }
 
 //NOTREL
