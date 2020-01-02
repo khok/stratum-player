@@ -5,6 +5,7 @@ import { BrushToolState, PenToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
 export class FabricLine implements LineElementVisual {
+    readonly type = "line";
     private posX: number;
     private posY: number;
     obj: fabric.Polyline;

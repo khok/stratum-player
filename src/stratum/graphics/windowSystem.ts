@@ -29,6 +29,7 @@ class Window implements WindowState {
 
 export interface WindowSystemOptions {
     globalCanvas?: HTMLCanvasElement;
+    hiddenInput?: HTMLInputElement;
     areaOriginX?: number;
     areaOriginY?: number;
     areaWidth?: number;
@@ -37,14 +38,17 @@ export interface WindowSystemOptions {
     screenHeight?: number;
 }
 
-export class WindowSystem implements WindowSystemController {
+export type MyResolver = (options: { canvas: HTMLCanvasElement; hiddenInput?: HTMLInputElement }) => GraphicSpace;
+
+export class WindowSystem implements WindowSystemOptions, WindowSystemController {
     areaOriginX: number = 0;
     areaOriginY: number = 0;
     areaWidth: number = 0;
     areaHeight: number = 0;
     screenHeight: number = 0;
     screenWidth: number = 0;
-    private globalCanvas?: HTMLCanvasElement;
+    globalCanvas?: HTMLCanvasElement;
+    hiddenInput?: HTMLInputElement;
 
     private spaces = new Map<number, GraphicSpace>();
     private windows = new Map<string, Window>();
@@ -64,11 +68,7 @@ export class WindowSystem implements WindowSystemController {
         return this;
     }
 
-    createSchemeWindow(
-        windowName: string,
-        flags: string,
-        createSpace: (options: HTMLCanvasElement) => GraphicSpace
-    ): number {
+    createSchemeWindow(windowName: string, flags: string, createSpace: MyResolver): number {
         if (this.hasWindow(windowName)) throw new StratumError(`Окно ${windowName} уже существует`);
 
         let canvas: HTMLCanvasElement;
@@ -83,7 +83,7 @@ export class WindowSystem implements WindowSystemController {
         }
 
         const spaceHandle = this.spaces.size + 1; //поменять, т.к. стратум присваивает их иначе
-        const space = createSpace(canvas);
+        const space = createSpace({ canvas, hiddenInput: this.hiddenInput });
         space.handle = spaceHandle;
         this.spaces.set(spaceHandle, space);
         this.windows.set(windowName, new Window(space, { x: canvas.width, y: canvas.height }));

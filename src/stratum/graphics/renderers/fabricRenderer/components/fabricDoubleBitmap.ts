@@ -5,6 +5,7 @@ import { DoubleBitmapToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
 export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
+    readonly type = "doubleBitmap";
     private posX: number;
     private posY: number;
     obj: fabric.Image;

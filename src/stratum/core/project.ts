@@ -3,7 +3,7 @@ import { ProjectController, VmBool } from "vm-interfaces-base";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
 import { FabricScene } from "~/graphics/renderers/fabricRenderer/fabricScene";
-import { WindowSystem } from "~/graphics/windowSystem";
+import { WindowSystem, MyResolver } from "~/graphics/windowSystem";
 import { createComposedScheme } from "~/helpers/graphics";
 import { VmContext } from "~/vm/vmContext";
 import { ClassSchemeNode } from "./classSchemeNode";
@@ -76,7 +76,7 @@ export class Project implements ProjectController {
         console.warn("Проект остановлен");
     }
 
-    createSchemeInstance(className: string): ((options: HTMLCanvasElement) => GraphicSpace) | undefined {
+    createSchemeInstance(className: string): MyResolver | undefined {
         const data = this.classCollection.get(className);
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
@@ -84,11 +84,11 @@ export class Project implements ProjectController {
             (!this.debugOptions || !this.debugOptions.disableSchemeComposition) && data.childs
                 ? createComposedScheme(data.scheme, data.childs, this.classCollection)
                 : data.scheme;
-        return canvas => {
+        return opts => {
             const space = GraphicSpace.fromVdr(
                 vdr,
                 this.globalImgLoader,
-                new FabricScene({ canvas, view: vdr.origin })
+                new FabricScene({ ...opts, view: vdr.origin })
             );
             this.globalImgLoader.getPromise().then(() => space.scene.forceRender());
             return space;

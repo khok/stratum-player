@@ -7,7 +7,6 @@ export class ControlObject extends Object2dMixin implements ControlObjectState {
     readonly type = "otCONTROL2D";
     protected readonly _subclassInstance: this = this;
     visual: ControlElementVisual;
-    private _text: string;
     constructor(data: ControlElementData, visualFactory: VisualFactory) {
         super(data);
         this.visual = visualFactory.createControl({
@@ -20,13 +19,12 @@ export class ControlObject extends Object2dMixin implements ControlObjectState {
             text: data.text,
             controlSize: data.controlSize
         });
-        this._text = data.text;
     }
     set text(value) {
-        this._text = value;
+        this.visual.setText(value);
     }
     get text(): string {
-        return this._text;
+        return this.visual.getText();
     }
     unsubFromTools() {}
 }

@@ -28,6 +28,7 @@ declare module "scene-types" {
 
     export interface ControlElementVisual extends _VisualBase {
         setText(text: string): void;
+        getText() : string;
     }
 
     export interface BitmapElementVisual extends _VisualBase {

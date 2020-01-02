@@ -4,7 +4,8 @@ import { fromUrl } from "~/api";
     const player = await fromUrl(["test_projects/balls_stress_test.zip", "/data/library.zip"]);
     if (!player) return;
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    player.setGraphicOptions({ globalCanvas: canvas });
+    const input = document.getElementById("input") as HTMLInputElement;
+    player.setGraphicOptions({ globalCanvas: canvas, hiddenInput: input });
     setTimeout(() => player.pause(), 5000);
     try {
         await player.play();

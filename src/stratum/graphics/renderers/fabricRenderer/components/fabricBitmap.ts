@@ -5,6 +5,7 @@ import { BitmapToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
 export class FabricBitmap implements BitmapElementVisual {
+    readonly type = "bitmap";
     private posX: number;
     private posY: number;
     obj: fabric.Image;

@@ -4,9 +4,10 @@ import { TextElementVisual, TextVisualOptions } from "scene-types";
 import { TextToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
-const textScaleCoof = 0.7;
+const textScaleCoof = 0.65;
 
 export class FabricText implements TextElementVisual {
+    readonly type = "text";
     private posX: number;
     private posY: number;
     obj: fabric.Text;
@@ -29,7 +30,8 @@ export class FabricText implements TextElementVisual {
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
             visible: isVisible,
-            fontSize: textSize * textScaleCoof
+            fontSize: textSize * textScaleCoof,
+            fontFamily: "Arial"
         };
         this.selectable = false; // selectable;
         this.size = { x: 0, y: 0 };
