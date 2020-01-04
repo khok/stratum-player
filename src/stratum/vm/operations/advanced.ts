@@ -48,6 +48,15 @@ function RegisterObjectByGraphicSpace(ctx: VmStateContainer) {
     const path = ctx.stackPop() as string;
     const objectHandle = ctx.stackPop() as number;
     const spaceHandle = ctx.stackPop() as number;
+
+    if (path !== "") {
+        ctx.setError(`Вызов RegisterObject с path=${path} не реализован.`);
+        return;
+    }
+
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (space) space.subscribe(ctx, ctx.currentClass, msg, objectHandle, flags);
+
     //TODO: WTF???
     // console.log(`RegisterObjectBySpace(${spaceHandle}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
 }
