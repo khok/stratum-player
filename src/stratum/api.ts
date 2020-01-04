@@ -20,19 +20,36 @@ export class Player {
     get playing() {
         return !this.paused;
     }
-    play(caller?: (fn: () => void) => void) {
+    play({ caller, activateByEvent }: { caller?: (fn: () => void) => void; activateByEvent?: boolean } = {}) {
         if (!caller) caller = window.requestAnimationFrame;
         this.paused = false;
+        let cont = true;
+        if (activateByEvent) {
+            const start = () => {
+                if (cont) return;
+                cont = true;
+                caller!(callback);
+            };
+            this.windows.globalCanvas!.addEventListener("mousemove", start);
+            this.windows.globalCanvas!.addEventListener("mousedown", start);
+            this.windows.globalCanvas!.addEventListener("mouseup", start);
+        }
+        let callback: any;
         return new Promise((resolve, reject) => {
-            const callback = () => {
+            callback = () => {
+                if (activateByEvent && !cont) return;
+                cont = false;
                 const stepResult = this.project.oneStep();
                 this.windows.renderAll();
                 if (!stepResult) {
-                    if (this.project.error) reject(new StratumError(this.project.error));
-                    else resolve();
                     this.pause();
+                    if (this.project.error) {
+                        reject(new StratumError(this.project.error));
+                        return;
+                    }
                 }
                 if (!this.paused) caller!(callback);
+                else resolve();
             };
             caller!(callback);
         });
