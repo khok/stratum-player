@@ -2,6 +2,7 @@ import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vm";
 
 function GetAsyncKeyState(ctx: VmStateContainer) {
+    const key = ctx.stackPop() as number;
     ctx.stackPush(0);
     // ctx.stackPush(StratumProject.keys[ctx.stackPop()] ? 1 : 0);
 }
