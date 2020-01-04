@@ -94,7 +94,7 @@ export class ClassSchemeNode implements ClassState {
             varData.forEach(({ name, value }) => {
                 if (!this.proto.variables) return;
                 const varId = this.getVarIdLowCase(name.toLowerCase());
-                if (!varId) return;
+                if (varId === undefined) return;
                 const variable = this.proto.variables[varId];
                 if (!variable) return;
                 this.setDefaultVarValue(varId, parseVarValue(variable.type, value));
@@ -130,6 +130,13 @@ export class ClassSchemeNode implements ClassState {
     getOldVarValue(id: number): string | number {
         return this.mmanager!.getOldVarValue(this.toGlobalVarId![id]);
     }
+    setVarValueByLowCaseName(name: string, value: string | number): void {
+        const id = this.getVarIdLowCase(name);
+        if (id !== undefined) {
+            this.setOldVarValue(id, value);
+            this.setNewVarValue(id, value);
+        }
+    }
     get parent() {
         return this.schemeData && this.schemeData.parent;
     }
@@ -154,6 +161,10 @@ export class ClassSchemeNode implements ClassState {
         const nodes = new Array<ClassSchemeNode>();
         this._collectNodes(nodes);
         return nodes;
+    }
+
+    forceSyncVariables(): void {
+        this.mmanager!.syncValues();
     }
 
     computeSchemeRecursive(ctx: VmContext, respectDisableVar: boolean = true): boolean {

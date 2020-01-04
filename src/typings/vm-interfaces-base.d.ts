@@ -14,6 +14,8 @@ declare module "vm-interfaces-base" {
         getNewVarValue(id: number): string | number;
         getOldVarValue(id: number): string | number;
 
+        setVarValueByLowCaseName(name: string, value: string | number): void;
+
         getClassByPath(path: string): ClassState | undefined;
         /**
          * Вычисляет схему имиджа и все схемы дочерних имиджей.
@@ -22,6 +24,7 @@ declare module "vm-interfaces-base" {
          * т.е. не вычислять схему, если имидж заблокирован.
          */
         computeSchemeRecursive(ctx: VmStateContainer, respectDisableVar: boolean): boolean;
+        forceSyncVariables(): void;
     }
 
     export interface ProjectController {
