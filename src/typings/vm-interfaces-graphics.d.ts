@@ -1,5 +1,6 @@
 declare module "vm-interfaces-graphics" {
-    import { VmBool } from "vm-interfaces-base";
+    import { VmBool, ClassState } from "vm-interfaces-base";
+    import { VmStateContainer } from "vm-types";
     import {
         ElementData,
         LineElementData,
@@ -162,6 +163,8 @@ declare module "vm-interfaces-graphics" {
         addObject(obj: GraphicObjectState): number;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
+
+        subscribe(ctx: VmStateContainer, klass: ClassState, msg: number, objectHandle: number, flags: number): void;
 
         findObjectByName(objectName: string, group?: GroupObjectState): GraphicObjectState | undefined;
         getObjectFromPoint(x: number, y: number): GraphicObjectState | undefined;

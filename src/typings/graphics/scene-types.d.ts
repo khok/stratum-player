@@ -28,7 +28,7 @@ declare module "scene-types" {
 
     export interface ControlElementVisual extends _VisualBase {
         setText(text: string): void;
-        getText() : string;
+        getText(): string;
     }
 
     export interface BitmapElementVisual extends _VisualBase {
@@ -96,6 +96,9 @@ declare module "scene-types" {
         placeObjects(order: number[]): void;
         translateView(x: number, y: number): void;
         getVisualHandleFromPoint(x: number, y: number): number;
+        testVisualIntersection(visualHandle: number, x: number, y: number): boolean;
+        subscribeToMouseEvents(callback: (code: number, x: number, y: number) => void): void;
+        subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
         render(): void;
         forceRender(): void;
     }

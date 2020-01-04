@@ -1,12 +1,14 @@
 import { Point2D, VectorDrawData } from "data-types-graphics";
+import { ImageResolver } from "internal-graphic-types";
 import { Scene } from "scene-types";
-import { VmBool } from "vm-interfaces-base";
+import { ClassState, VmBool } from "vm-interfaces-base";
 import { GraphicSpaceState } from "vm-interfaces-graphics";
+import { VmStateContainer } from "vm-types";
 import { HandleMap } from "~/helpers/handleMap";
+import { MessageCode } from "~/helpers/vm";
+import { createObjects, createTools } from "./createToolsAndObjects";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
 import { GraphicObject, GroupObject } from "./objects";
-import { createObjects, createTools } from "./createToolsAndObjects";
-import { ImageResolver } from "internal-graphic-types";
 import { BrushTool } from "./tools";
 
 /**
@@ -26,6 +28,13 @@ export class GraphicSpace implements GraphicSpaceState {
     private _originX: number = 0;
     private _originY: number = 0;
     private allObjects = HandleMap.create<GraphicObject>();
+    private subs = new Array<{
+        msg: MessageCode;
+        objectHandle?: number;
+        klass: ClassState;
+        ctx: VmStateContainer;
+    }>();
+
     constructor(
         data: { origin: Point2D; brushHandle?: number; tools?: GraphicSpaceTools; objects?: HandleMap<GraphicObject> },
         public scene: Scene
@@ -40,6 +49,8 @@ export class GraphicSpace implements GraphicSpaceState {
             }
         }
         if (data.objects) data.objects.forEach((o, k) => this.addObjectFast(o, k));
+        this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
+        this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
     }
 
     /**
@@ -92,6 +103,51 @@ export class GraphicSpace implements GraphicSpaceState {
         obj.destroy();
         this.allObjects.delete(handle);
         return 1;
+    }
+
+    subscribe(ctx: VmStateContainer, klass: ClassState, msg: MessageCode, objectHandle: number, flags: number): void {
+        if (this.subs.some(s => s.klass === klass && s.msg === msg)) {
+            console.warn(`Попытка повторной подписки на сообщение ${MessageCode[msg]} классом: ${klass.protoName}`);
+            return;
+        }
+        this.subs.push({ ctx, klass, objectHandle, msg });
+    }
+
+    private dispatchControlEvent(code: MessageCode, controlHandle: number) {
+        this.subs.forEach(sub => {
+            const shouldReceiveEvent =
+                //prettier-ignore
+                sub.msg === code && //совпадает ли код сообщения
+                (sub.objectHandle ? controlHandle === sub.objectHandle : true); //находится ли мышь над объектом (при необходимости)
+            if (!shouldReceiveEvent) return;
+            const msgId = sub.klass.getVarIdLowCase("msg");
+            if (msgId === undefined) return;
+            sub.klass.setNewVarValue(msgId, code);
+            sub.klass.setVarValueByLowCaseName("_hobject", controlHandle);
+            sub.klass.setVarValueByLowCaseName("iditem", -1);
+            sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
+            sub.klass.computeSchemeRecursive(sub.ctx, false);
+            sub.klass.forceSyncVariables();
+        });
+    }
+
+    private dispatchMouseEvent(code: MessageCode, x: number, y: number) {
+        this.subs.forEach(sub => {
+            const shouldReceiveEvent =
+                (sub.msg === code || sub.msg === MessageCode.WM_ALLMOUSEMESSAGE) && //совпадает ли код сообщения
+                (sub.objectHandle ? this.scene.testVisualIntersection(sub.objectHandle, x, y) : true); //находится ли мышь над объектом (при необходимости)
+            if (!shouldReceiveEvent) return;
+
+            const msgId = sub.klass.getVarIdLowCase("msg");
+            if (msgId === undefined) return;
+            sub.klass.setNewVarValue(msgId, code);
+            sub.klass.setVarValueByLowCaseName("xpos", x);
+            sub.klass.setVarValueByLowCaseName("ypos", y);
+            sub.klass.setVarValueByLowCaseName("fwkeys", 0);
+            sub.klass.computeSchemeRecursive(sub.ctx, false);
+            sub.klass.forceSyncVariables();
+        });
+        //this.scene.render();
     }
 
     findObjectByName(objectName: string, group?: GroupObject): GraphicObject | undefined {
