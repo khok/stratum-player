@@ -4,6 +4,7 @@ import { initAdvanced } from "./advanced";
 import { initBase } from "./base";
 import { initGraphicSpace } from "./graphicSpace";
 import { initSystem } from "./system";
+import { initTools } from "./tools";
 import { initWindows } from "./windows";
 
 export const VmOperations = new Array<Operation>(Opcode.VM_MAXIMUM_code + 1);
@@ -18,5 +19,6 @@ export const VmOperations = new Array<Operation>(Opcode.VM_MAXIMUM_code + 1);
     initBase(addOperation);
     initGraphicSpace(addOperation);
     initSystem(addOperation);
+    initTools(addOperation);
     initWindows(addOperation);
 })();

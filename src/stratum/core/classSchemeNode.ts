@@ -163,10 +163,6 @@ export class ClassSchemeNode implements ClassState {
         return nodes;
     }
 
-    forceSyncVariables(): void {
-        this.mmanager!.syncValues();
-    }
-
     computeSchemeRecursive(ctx: VmContext, respectDisableVar: boolean = true): boolean {
         if (ctx.error) return false;
         if (respectDisableVar && this.isDisabled()) return true;

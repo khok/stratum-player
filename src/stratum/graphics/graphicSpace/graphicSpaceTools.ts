@@ -2,6 +2,7 @@ import { VmBool } from "vm-interfaces-base";
 import { GraphicSpaceToolsState, ToolState } from "vm-interfaces-graphics";
 import { HandleMap } from "~/helpers/handleMap";
 import { BitmapTool, BrushTool, DoubleBitmapTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
+import { StringColor } from "data-types-graphics";
 
 /**
  * Контейнер инструментов графического пространства.
@@ -31,46 +32,77 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         this.fonts = (data && data.fonts) || HandleMap.create<FontTool>();
         this.strings = (data && data.strings) || HandleMap.create<StringTool>();
         this.texts = (data && data.texts) || HandleMap.create<TextTool>();
-    }
-    addTool(tool: PenTool | BrushTool | BitmapTool | DoubleBitmapTool | FontTool | StringTool | TextTool): number {
-        switch (tool.type) {
-            case "ttPEN2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.pens);
-                this.pens.set(freeHandle, tool);
-                return freeHandle;
-            }
-            case "ttBRUSH2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.brushes);
-                this.brushes.set(freeHandle, tool);
-                return freeHandle;
-            }
-            case "ttDIB2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.bitmaps);
-                this.bitmaps.set(freeHandle, tool);
-                return freeHandle;
-            }
-            case "ttDOUBLEDIB2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.doubleBitmaps);
-                this.doubleBitmaps.set(freeHandle, tool);
-                return freeHandle;
-            }
-            case "ttFONT2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.fonts);
-                this.fonts.set(freeHandle, tool);
-                return freeHandle;
-            }
-            case "ttSTRING2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.strings);
-                this.strings.set(freeHandle, tool);
-                return freeHandle;
-            }
-            case "ttTEXT2D": {
-                const freeHandle = HandleMap.getFreeHandle(this.texts);
-                this.texts.set(freeHandle, tool);
-                return freeHandle;
-            }
+        if (!data) return;
+        for (const k in data) {
+            const mp = (data as any)[k] as HandleMap<{ handle: number }> | undefined;
+            if (mp) mp.forEach((c, handle) => (c.handle = handle));
         }
     }
+    createFont(fontName: string, size: number, style: number): FontTool {
+        const font = new FontTool(fontName, size, style);
+        const handle = HandleMap.getFreeHandle(this.fonts);
+        this.fonts.set(handle, font);
+        font.handle = handle;
+        return font;
+    }
+    createString(value: string): StringTool {
+        const stringTool = new StringTool(value);
+        const handle = HandleMap.getFreeHandle(this.strings);
+        this.strings.set(handle, stringTool);
+        stringTool.handle = handle;
+        return stringTool;
+    }
+    createText(
+        font: FontTool,
+        stringFragment: StringTool,
+        foregroundColor: StringColor,
+        backgroundColor: StringColor
+    ): TextTool {
+        const textTool = new TextTool([{ font, stringFragment, foregroundColor, backgroundColor }]);
+        const handle = HandleMap.getFreeHandle(this.texts);
+        this.texts.set(handle, textTool);
+        textTool.handle = handle;
+        return textTool;
+    }
+    // createTool(tool: PenTool | BrushTool | BitmapTool | DoubleBitmapTool | FontTool | StringTool | TextTool): number {
+    //     switch (tool.type) {
+    //         case "ttPEN2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.pens);
+    //             this.pens.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //         case "ttBRUSH2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.brushes);
+    //             this.brushes.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //         case "ttDIB2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.bitmaps);
+    //             this.bitmaps.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //         case "ttDOUBLEDIB2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.doubleBitmaps);
+    //             this.doubleBitmaps.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //         case "ttFONT2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.fonts);
+    //             this.fonts.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //         case "ttSTRING2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.strings);
+    //             this.strings.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //         case "ttTEXT2D": {
+    //             const freeHandle = HandleMap.getFreeHandle(this.texts);
+    //             this.texts.set(freeHandle, tool);
+    //             return freeHandle;
+    //         }
+    //     }
+    // }
     getTool<T extends ToolState>(type: ToolState["type"], handle: number): T | undefined {
         if (handle === 0) return undefined;
         switch (type) {

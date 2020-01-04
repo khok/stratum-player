@@ -24,7 +24,6 @@ declare module "vm-interfaces-base" {
          * т.е. не вычислять схему, если имидж заблокирован.
          */
         computeSchemeRecursive(ctx: VmStateContainer, respectDisableVar: boolean): boolean;
-        forceSyncVariables(): void;
     }
 
     export interface ProjectController {

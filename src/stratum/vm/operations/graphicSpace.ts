@@ -133,7 +133,12 @@ function GetObjectFromPoint2d(ctx: VmStateContainer) {
     const x = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.getObjectHandleFromPoint(x, y) : 0);
+    if (!space) {
+        ctx.stackPush(0);
+        return;
+    }
+    const obj = space.getObjectFromPoint(x, y);
+    ctx.stackPush(obj ? obj.handle : 0);
 }
 
 //GETSPACEORGX, name "GetSpaceOrg2dx"        arg "HANDLE" ret "FLOAT" out 342
@@ -173,6 +178,20 @@ function GetScaleSpace2d(ctx: VmStateContainer) {
     // ctx.stackPush(space ? space.scale : 0);
 }
 
+function GetActualWidth2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.width : 0);
+}
+
+function GetActualHeight2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj ? obj.height : 0);
+}
+
 export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -192,4 +211,6 @@ export function initGraphicSpace(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.SETSHOWOBJECT2D, SetShowObject2d);
     addOperation(Opcode.SETZORDER2D, SetZOrder2d);
     addOperation(Opcode.GETZORDER2D, GetZOrder2d);
+    addOperation(Opcode.VM_GETACTUALWIDTH, GetActualWidth2d);
+    addOperation(Opcode.VM_GETACTUALHEIGHT, GetActualHeight2d);
 }

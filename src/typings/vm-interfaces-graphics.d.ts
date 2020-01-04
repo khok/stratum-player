@@ -74,6 +74,10 @@ declare module "vm-interfaces-graphics" {
         readonly type: TextToolData["type"];
         readonly textCount: number;
         getFragment(index: number): TextFragment;
+        updateString(str: StringToolState, idx: number): void;
+        updateFont(font: FontToolState, idx: number): void;
+        updateFgColor(color: StringColor, idx: number): void;
+        updateBgColor(color: StringColor, idx: number): void;
         readonly assembledText: { text: string; size: number };
     }
 
@@ -87,7 +91,14 @@ declare module "vm-interfaces-graphics" {
         | TextToolState;
 
     export interface GraphicSpaceToolsState {
-        addTool(tool: ToolState): number;
+        createFont(fontName: string, size: number, style: number): FontToolState;
+        createString(value: string): StringToolState;
+        createText(
+            font: FontToolState,
+            stringFragment: StringToolState,
+            foregroundColor: StringColor,
+            backgroundColor: StringColor
+        ): TextToolState;
         getTool<T extends ToolState>(type: T["type"], handle: number): T | undefined;
         deleteTool<T extends ToolState>(type: T["type"], handle: number): VmBool;
     }
@@ -161,6 +172,7 @@ declare module "vm-interfaces-graphics" {
         setOrigin(x: number, y: number): VmBool;
 
         addObject(obj: GraphicObjectState): number;
+        createText(x: number, y: number, angle: number, textHandle: number): TextObjectState;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
 
@@ -168,6 +180,5 @@ declare module "vm-interfaces-graphics" {
 
         findObjectByName(objectName: string, group?: GroupObjectState): GraphicObjectState | undefined;
         getObjectFromPoint(x: number, y: number): GraphicObjectState | undefined;
-        getObjectHandleFromPoint(x: number, y: number): number;
     }
 }

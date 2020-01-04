@@ -8,7 +8,7 @@ import { HandleMap } from "~/helpers/handleMap";
 import { MessageCode } from "~/helpers/vm";
 import { createObjects, createTools } from "./createToolsAndObjects";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
-import { GraphicObject, GroupObject } from "./objects";
+import { GraphicObject, GroupObject, TextObject } from "./objects";
 import { BrushTool } from "./tools";
 
 /**
@@ -87,6 +87,29 @@ export class GraphicSpace implements GraphicSpaceState {
         // return handle;
     }
 
+    createText(x: number, y: number, angle: number, textHandle: number): TextObject {
+        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const obj = new TextObject(
+            {
+                handle,
+                angle,
+                position: { x, y },
+                delta: 0,
+                name: "",
+                size: { x: 0, y: 0 },
+                options: 0,
+                textHandle,
+                type: "otTEXT2D"
+            },
+            this.tools,
+            this.scene
+        );
+        this.allObjects.set(handle, obj);
+        this.scene.appendLastObject(handle);
+        obj.handle = handle;
+        return obj;
+    }
+
     private addObjectFast(obj: GraphicObject, handle: number) {
         obj.handle = handle;
         this.allObjects.set(handle, obj);
@@ -127,7 +150,6 @@ export class GraphicSpace implements GraphicSpaceState {
             sub.klass.setVarValueByLowCaseName("iditem", -1);
             sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
             sub.klass.computeSchemeRecursive(sub.ctx, false);
-            sub.klass.forceSyncVariables();
         });
     }
 
@@ -145,9 +167,7 @@ export class GraphicSpace implements GraphicSpaceState {
             sub.klass.setVarValueByLowCaseName("ypos", y);
             sub.klass.setVarValueByLowCaseName("fwkeys", 0);
             sub.klass.computeSchemeRecursive(sub.ctx, false);
-            sub.klass.forceSyncVariables();
         });
-        //this.scene.render();
     }
 
     findObjectByName(objectName: string, group?: GroupObject): GraphicObject | undefined {
@@ -157,12 +177,14 @@ export class GraphicSpace implements GraphicSpaceState {
         return undefined;
     }
 
-    getObjectHandleFromPoint(x: number, y: number): number {
-        return this.scene.getVisualHandleFromPoint(x, y);
-    }
-
     getObjectFromPoint(x: number, y: number) {
-        const handle = this.getObjectHandleFromPoint(x, y);
-        return this.getObject(handle);
+        const handle = this.scene.getVisualHandleFromPoint(x, y);
+        if (!handle) return undefined;
+        let obj = this.getObject(handle);
+        if (!obj) return undefined;
+        while (obj.parent) {
+            obj = obj.parent;
+        }
+        return obj;
     }
 }

@@ -31,17 +31,18 @@ export class FabricLine implements LineElementVisual {
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible
         };
-        const sizes = points.reduce(
+        //prettier-ignore
+        const sizes = points.length > 0 ? points.reduce(
             (a, c) => ({
                 minX: Math.min(a.minX, c.x),
                 maxX: Math.max(a.maxX, c.x),
                 minY: Math.min(a.minY, c.y),
                 maxY: Math.max(a.maxY, c.y)
             }),
-            { minX: 0, maxX: 0, minY: 0, maxY: 0 }
-        );
+            { minX: points[0].x, maxX: points[0].x, minY: points[0].y, maxY: points[0].y }
+        ) : { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         this.selectable = selectable;
-        this.size = { x: sizes.maxX - sizes.minX, y: sizes.maxX - sizes.minY };
+        this.size = { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY };
         this.obj = new fabric.Polyline(points, opts);
     }
     setPoints(points: Point2D[]): void {

@@ -26,9 +26,9 @@ import { WindowSystem } from "~/graphics/windowSystem";
     });
     setTimeout(() => {
         space.setOrigin(30, 30);
-        equal(space.getObjectHandleFromPoint(40, 40), 0);
+        equal(space.getObjectFromPoint(40, 40), undefined);
         space.getObject(33)!.setPosition(32, 32);
-        equal(space.getObjectHandleFromPoint(40, 40), 33);
+        equal(space.getObjectFromPoint(40, 40)!.handle, 34);
         space.scene.render();
         console.log("graphic instance test 2/2 completed");
     }, 1500);

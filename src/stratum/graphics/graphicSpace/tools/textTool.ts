@@ -31,6 +31,16 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
         this.cachedString = undefined;
         this.dispatchChanges();
     }
+    updateFgColor(color: StringColor, idx: number) {
+        this.fragments[idx].foregroundColor = color;
+        this.cachedString = undefined;
+        this.dispatchChanges();
+    }
+    updateBgColor(color: StringColor, idx: number) {
+        this.fragments[idx].backgroundColor = color;
+        this.cachedString = undefined;
+        this.dispatchChanges();
+    }
     get textCount(): number {
         return this.fragments.length;
     }

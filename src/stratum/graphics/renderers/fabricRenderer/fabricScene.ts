@@ -107,6 +107,7 @@ export class FabricScene implements Scene {
         this._redraw = true;
     }
     placeObjects(order: number[]): void {
+        this.canvas.remove(...this.objectsByZReversed.map(c => c.obj));
         const objsByZ = [];
         for (const handle of order) {
             const obj = this.objects.get(handle);
@@ -117,6 +118,15 @@ export class FabricScene implements Scene {
         this.objectsByZReversed = objsByZ.reverse();
         this.requestRedraw();
     }
+
+    appendLastObject(handle: number) {
+        const obj = this.objects.get(handle);
+        if (!obj) throw new StratumError(`Объект #${handle} не найден на сцене`);
+        this.canvas.add(obj.obj);
+        this.objectsByZReversed = [obj].concat(this.objectsByZReversed);
+        this.requestRedraw();
+    }
+
     translateView(x: number, y: number): void {
         this.view.x = x;
         this.view.y = y;
@@ -194,7 +204,8 @@ export class FabricScene implements Scene {
         return 0;
     }
     render() {
-        if (this._redraw) this.forceRender();
+        if (this._redraw) this.canvas.renderAll();
+        this._redraw = false;
     }
 
     forceRender() {

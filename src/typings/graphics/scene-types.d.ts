@@ -94,6 +94,7 @@ declare module "scene-types" {
     export interface Scene extends VisualFactory {
         updateBrush(brush: BrushToolState): void;
         placeObjects(order: number[]): void;
+        appendLastObject(handle: number): void;
         translateView(x: number, y: number): void;
         getVisualHandleFromPoint(x: number, y: number): number;
         testVisualIntersection(visualHandle: number, x: number, y: number): boolean;
