@@ -206,6 +206,25 @@ function DelGroupItem2d(ctx: VmStateContainer) {
     }
 }
 
+function SetControlText2d(ctx: VmStateContainer) {
+    const text = ctx.stackPop() as string;
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (obj && obj.type === "otCONTROL2D") {
+        obj.text = text;
+        ctx.stackPush(1);
+    } else {
+        ctx.stackPush(0);
+    }
+}
+function GetControlText2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj && obj.type === "otCONTROL2D" ? obj.text : "");
+}
+
 export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -228,4 +247,6 @@ export function initGraphicSpace(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.VM_GETACTUALWIDTH, GetActualWidth2d);
     addOperation(Opcode.VM_GETACTUALHEIGHT, GetActualHeight2d);
     addOperation(Opcode.DELGROUPITEM2D, DelGroupItem2d);
+    addOperation(Opcode.VM_SETCONTROLTEXT, SetControlText2d);
+    addOperation(Opcode.VM_GETCONTROLTEXT, GetControlText2d);
 }

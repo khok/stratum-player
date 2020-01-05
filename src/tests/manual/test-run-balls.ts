@@ -6,7 +6,6 @@ class TestInput implements HtmlTextInputWrapper {
     y: number = 0;
     width: number = 0;
     height: number = 0;
-    text: string = "";
     hidden: boolean = false;
     private inp: HTMLInputElement;
     constructor(root: HTMLElement, options: HtmlTextInputWrapperOptions) {
@@ -29,6 +28,12 @@ class TestInput implements HtmlTextInputWrapper {
         Object.assign(this, options);
         this.updateValues();
         return this;
+    }
+    get text(): string {
+        return this.inp.value;
+    }
+    set text(value) {
+        this.inp.value = value;
     }
     destroy() {
         this.inp.remove();
