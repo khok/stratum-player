@@ -69,8 +69,13 @@ export class FabricScene implements Scene {
         });
         this.view = { ...view };
     }
+    preventMoveEvent = false;
     private raiseEvent(e: MouseEvent, type: "down" | "move" | "up") {
-        const cnv = this.canvas.getElement();
+        if (type === "move" && this.preventMoveEvent) return;
+        if (type !== "move") {
+            this.preventMoveEvent = true;
+            setTimeout(() => (this.preventMoveEvent = false), 50);
+        }
         const x = e.offsetX + this.view.x;
         const y = e.offsetY + this.view.y;
         switch (type) {
