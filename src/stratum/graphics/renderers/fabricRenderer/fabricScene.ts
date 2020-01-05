@@ -71,8 +71,8 @@ export class FabricScene implements Scene {
     }
     private raiseEvent(e: MouseEvent, type: "down" | "move" | "up") {
         const cnv = this.canvas.getElement();
-        const x = e.pageX - cnv.offsetLeft + this.view.x;
-        const y = e.pageY - cnv.offsetTop + this.view.y;
+        const x = e.offsetX + this.view.x;
+        const y = e.offsetY + this.view.y;
         switch (type) {
             case "move":
                 this.mouseSubs.forEach(s => s(MessageCode.WM_MOUSEMOVE, x, y));
