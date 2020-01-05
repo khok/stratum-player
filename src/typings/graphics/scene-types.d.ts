@@ -100,7 +100,7 @@ declare module "scene-types" {
         testVisualIntersection(visualHandle: number, x: number, y: number): boolean;
         subscribeToMouseEvents(callback: (code: number, x: number, y: number) => void): void;
         subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
-        render(): void;
+        render(): boolean;
         forceRender(): void;
     }
 }

@@ -93,6 +93,7 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     }
 
     setPosition(x: number, y: number): VmBool {
+        if (this.positionX === x && this.positionY === y) return 1;
         const dx = x - this.positionX;
         const dy = y - this.positionY;
         this.handleChildChanges = false;

@@ -106,7 +106,9 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
     }
 
     renderAll() {
-        this.spaces.forEach(s => s.scene.render());
+        let res = false;
+        this.spaces.forEach(s => (res = s.scene.render() || res));
+        return res;
     }
 
     hasWindow(windowName: string): VmBool {

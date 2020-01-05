@@ -25,23 +25,20 @@ export class Player {
         this.paused = false;
         let cont = true;
         if (activateByEvent) {
-            const start = () => {
-                if (cont) return;
-                cont = true;
-                caller!(callback);
-            };
-            this.windows.globalCanvas!.addEventListener("mousemove", start);
-            this.windows.globalCanvas!.addEventListener("mousedown", start);
-            this.windows.globalCanvas!.addEventListener("mouseup", start);
+            this.windows.globalCanvas!.addEventListener("mousemove", () => (cont = true));
+            this.windows.globalCanvas!.addEventListener("mousedown", () => (cont = true));
+            this.windows.globalCanvas!.addEventListener("mouseup", () => (cont = true));
         }
         let callback: any;
         return new Promise((resolve, reject) => {
             callback = () => {
-                if (activateByEvent && !cont) return;
+                if (this.windows.renderAll()) cont = true;
+                if (activateByEvent && !cont) {
+                    caller!(callback);
+                    return;
+                }
                 cont = false;
-                const stepResult = this.project.oneStep();
-                this.windows.renderAll();
-                if (!stepResult) {
+                if (!this.project.oneStep()) {
                     this.pause();
                     if (this.project.error) {
                         reject(new StratumError(this.project.error));

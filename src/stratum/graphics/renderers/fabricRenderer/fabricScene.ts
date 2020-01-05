@@ -92,7 +92,9 @@ export class FabricScene implements Scene {
     updateBrush(brush: BrushToolState) {
         this.canvas.backgroundColor = brush.color;
     }
+    // stepCount = 0;
     requestRedraw() {
+        // if (this.stepCount++ > 1000) throw new Error("stop");
         this._redraw = true;
     }
     placeObjects(order: number[]): void {
@@ -146,9 +148,11 @@ export class FabricScene implements Scene {
         }
         return 0;
     }
-    render() {
-        if (this._redraw) this.canvas.renderAll();
+    render(): boolean {
+        if (!this._redraw) return false;
         this._redraw = false;
+        this.canvas.renderAll();
+        return true;
     }
 
     forceRender() {
@@ -175,7 +179,10 @@ export class FabricScene implements Scene {
             throw new StratumError("Попытка создать элемент управления без фабрики элементов ввода");
         this.assertNoObject(data.handle);
         const obj = new HtmlControl(data, this.view, this.inputFactory);
-        obj.onChange(() => this.controlsubs.forEach(c => c(MessageCode.WM_CONTROLNOTIFY, data.handle)));
+        obj.onChange(() => {
+            this.controlsubs.forEach(c => c(MessageCode.WM_CONTROLNOTIFY, data.handle));
+            this.requestRedraw();
+        });
         this.objects.set(data.handle, obj);
         return obj;
     }
