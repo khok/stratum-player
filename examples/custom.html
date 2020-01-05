@@ -16,16 +16,18 @@
             const stdLib = await stdlibPromise;
             console.log("Стандартная библиотека имиджей загружена");
             const globalCanvas = document.getElementById("canvas");
+            const htmlRoot = document.getElementById("root");
             const contoller = document.getElementById("controller");
             const one_step = document.getElementById("one_step");
             controller.removeAttribute("hidden");
             one_step.removeAttribute("hidden");
-            StratumPlayer.fromFileList(fList, { graphicOptions: { globalCanvas }, preloadedLibs: stdLib })
+            StratumPlayer.fromFileList(fList, { graphicOptions: { globalCanvas, htmlRoot }, preloadedLibs: stdLib })
                 .then(p => {
                     controller.innerHTML = "Пауза";
                     if (player) player.pause();
                     player = p;
                     if (!player) return;
+                    p.on("WINDOW_CREATED", name => (document.title = name));
                     let playing = true;
                     controller.addEventListener("click", () => {
                         if (playing) player.pause();
@@ -38,7 +40,7 @@
                         controller.innerHTML = "Продолжить";
                         playing = false;
                     });
-                    player.play();
+                    return player.play();
                 })
                 .catch(e => {
                     console.error(e);
@@ -51,5 +53,7 @@
     <input id="file_drop" type="file" accept=".zip" />
     <button id="one_step" hidden style="height: 50px">Один шаг</button>
     <button id="controller" hidden style="height: 50px">Пауза</button>
-    <canvas id="canvas" style="border:1px solid #000000;" />
+    <div id="root" style="position:relative;">
+        <canvas id="canvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
+    </div>
 </body>
