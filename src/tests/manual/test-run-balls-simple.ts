@@ -2,6 +2,7 @@ import { openZipFromUrl, loadProjectData } from "~/fileReader/fileReaderHelpers"
 import { Project } from "~/core/project";
 import { WindowSystem } from "~/graphics/windowSystem";
 
+//Запуск проекта balls_stress_test
 (async function() {
     const zipFiles = await openZipFromUrl(["test_projects/balls_stress_test.zip", "/data/library.zip"]);
     const { rootName, collection, varSet } = await loadProjectData(zipFiles);

@@ -2,6 +2,7 @@ import { fromFileList, loadLibraryFromUrl } from "~/api";
 
 const stdlibPromise = loadLibraryFromUrl("/data/library.zip");
 
+//Запуск проекта при помощи выбора
 async function playProject({ target }: Event) {
     const fList = (target as HTMLInputElement).files;
     if (!fList) return;

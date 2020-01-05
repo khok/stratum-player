@@ -1,5 +1,6 @@
 import { fromUrl } from "~/api";
 
+//Запуск проекта balls_stress_test с использованием api.ts
 (async function() {
     const player = await fromUrl(["test_projects/balls_stress_test.zip", "/data/library.zip"]);
     if (!player) return;
