@@ -3,12 +3,15 @@ import { VmStateContainer, VirtualMachine } from "vm-types";
 import { WindowSystemController } from "vm-interfaces-windows";
 
 export class VmContext implements VmStateContainer, VirtualMachine {
-    private currentCmdIndex = 0;
+    private nextCmdIndex = 0;
     private ctxDepth = 0;
     private values = new Array<number | string>(2000);
     private valueP = -1;
     private endPoint: number = 0;
     private _currentClass!: ClassState;
+    private _stopped = false;
+    private _error: string = "";
+    private _hasError = false;
 
     constructor(
         public readonly windows: WindowSystemController,
@@ -30,29 +33,41 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     }
 
     nextCommandIndex(): number {
-        return this.currentCmdIndex++;
+        return this.nextCmdIndex++;
     }
 
     substituteState(newState: ClassState) {
         this._currentClass = newState;
         this.ctxDepth++;
-        return this.currentCmdIndex;
+        return this.nextCmdIndex;
     }
 
     returnState(prevState: ClassState, cmdIndex: number) {
         this._currentClass = prevState;
-        this.currentCmdIndex = cmdIndex;
+        this.nextCmdIndex = cmdIndex;
         this.ctxDepth--;
         if (this.ctxDepth === 0) this.valueP = -1;
     }
 
-    private _error: string = "";
     get error() {
         return this._error;
     }
 
+    get hasError(): boolean {
+        return this._hasError;
+    }
+
+    get shouldStop(): boolean {
+        return this._stopped;
+    }
+
+    requestStop() {
+        this._stopped = true;
+    }
+
     setError(message: string) {
-        this._error = message + ` (индекс команды: ${this.currentCmdIndex})`;
+        this._error = message + ` (индекс команды: ${this.nextCmdIndex - 1})`;
+        this._hasError = true;
         this.jumpTo(this.endPoint);
     }
 
@@ -70,6 +85,6 @@ export class VmContext implements VmStateContainer, VirtualMachine {
         return this.values[this.valueP--];
     }
     jumpTo(index: number) {
-        this.currentCmdIndex = index;
+        this.nextCmdIndex = index;
     }
 }

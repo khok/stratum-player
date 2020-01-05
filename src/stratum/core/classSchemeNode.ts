@@ -163,22 +163,18 @@ export class ClassSchemeNode implements ClassState {
         return nodes;
     }
 
-    computeSchemeRecursive(ctx: VmContext, respectDisableVar: boolean = true): boolean {
-        if (ctx.error) return false;
-        if (respectDisableVar && this.isDisabled()) return true;
+    computeSchemeRecursive(ctx: VmContext, respectDisableVar: boolean = true) {
+        if (ctx.hasError || (respectDisableVar && this.isDisabled())) return;
 
         if (this.childs) for (const child of this.childs.values()) child.computeSchemeRecursive(ctx);
 
         const { code } = this.proto;
-        if (!code) return true;
+        if (!code) return;
         const prevClass = ctx.currentClass;
         const prevCmdIdx = ctx.substituteState(this);
         executeCode(ctx, code);
-        if (ctx.error) {
+        if (ctx.hasError)
             ctx.addErrorInfo(`в классе ${this.schemeData ? "#" + this.schemeData.handle + " " : ""}${this.protoName}`);
-            return false;
-        }
-        ctx.returnState(prevClass, prevCmdIdx);
-        return true;
+        else ctx.returnState(prevClass, prevCmdIdx);
     }
 }

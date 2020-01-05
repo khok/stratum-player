@@ -12,7 +12,7 @@ function GetAsyncKeyState(ctx: VmStateContainer) {
 }
 
 function CloseAll(ctx: VmStateContainer) {
-    ctx.project.stop();
+    throw new Error("Не умею останавливаться");
 }
 
 export function initSystem(addOperation: (opcode: number, operation: Operation) => void) {

@@ -28,7 +28,7 @@ function SendMessage(ctx: VmStateContainer, count: number) {
             }
         }
 
-        if (!other.computeSchemeRecursive(ctx, false)) return;
+        other.computeSchemeRecursive(ctx, false);
 
         for (let i = 0; i < count; i += 2) {
             const idCurrent = current.getVarIdLowCase(<string>vars[i]) as number;

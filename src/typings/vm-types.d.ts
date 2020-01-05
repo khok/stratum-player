@@ -50,5 +50,6 @@ declare module "vm-types" {
         stackPop(): string | number;
         jumpTo(index: number): void;
         setError(message: string): void;
+        requestStop(): void;
     }
 }

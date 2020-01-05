@@ -33,7 +33,6 @@ export class Project implements ProjectController {
     private classCollection: Map<string, ClassData>;
     private vm: VmContext;
     private mmanager: MemoryManager;
-    private _internallyStopped = true;
     private globalImgLoader = new SimpleImageLoader();
 
     constructor(
@@ -51,25 +50,16 @@ export class Project implements ProjectController {
         this.vm = new VmContext(data.windowSystem, {} as any, this);
         this.cachedNodes = this.scheme.collectNodes();
     }
-    stop() {
-        this._internallyStopped = true;
-    }
 
     get error() {
         return this.vm.error;
     }
 
     oneStep() {
-        this._internallyStopped = false;
-        if (!this.scheme.computeSchemeRecursive(this.vm)) this._internallyStopped = true;
-        const stopped = this._internallyStopped;
-        this._internallyStopped = true;
-        if (!stopped) {
-            this.mmanager.syncValues();
-        } else {
-            this.reset();
-        }
-        return !stopped;
+        this.scheme.computeSchemeRecursive(this.vm);
+        if (this.vm.hasError || this.vm.shouldStop) return false;
+        this.mmanager.syncValues();
+        return true;
     }
 
     reset() {

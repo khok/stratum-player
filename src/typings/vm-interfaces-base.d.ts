@@ -23,14 +23,13 @@ declare module "vm-interfaces-base" {
          * @param respectDisableVar Учитывать значение переменных *_enable* и *_disable*,
          * т.е. не вычислять схему, если имидж заблокирован.
          */
-        computeSchemeRecursive(ctx: VmStateContainer, respectDisableVar: boolean): boolean;
+        computeSchemeRecursive(ctx: VmStateContainer, respectDisableVar: boolean): void;
     }
 
     export interface ProjectController {
         createSchemeInstance(className: string): GraphicSpaceResolver | undefined;
         hasClass(className: string): VmBool;
         getClassesByProtoName(className: string): IterableIterator<ClassState>;
-        stop(): void;
     }
 
     export interface InputSystemController {
