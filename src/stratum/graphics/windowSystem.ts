@@ -4,6 +4,7 @@ import { WindowState, WindowSystemController } from "vm-interfaces-windows";
 import { StratumError } from "~/helpers/errors";
 import { GraphicSpace } from "./graphicSpace/graphicSpace";
 import { HTMLInputElementsFactory } from "internal-graphic-types";
+import { HandleMap } from "~/helpers/handleMap";
 
 class Window implements WindowState {
     constructor(public space: GraphicSpaceState, private size: { x: number; y: number }) {}
@@ -25,6 +26,10 @@ class Window implements WindowState {
         this.size.x = width;
         this.size.y = height;
         return 1;
+    }
+
+    getProp(prop: "classname" | "filename"): string {
+        return this.space.source;
     }
 }
 
@@ -54,10 +59,11 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
     globalCanvas?: HTMLCanvasElement;
     inputFactory?: HTMLInputElementsFactory;
 
-    private spaces = new Map<number, GraphicSpace>();
+    private spaces = HandleMap.create<GraphicSpace>();
     private windows = new Map<string, Window>();
     private multiwindow?: boolean;
     private onWindowCreated?: (windowName: string) => void;
+    private spaceToWindowMap = HandleMap.create<string>();
     constructor(
         options: WindowSystemOptions & {
             multiwindow?: boolean;
@@ -86,12 +92,17 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
             canvas = this.globalCanvas;
         }
 
-        const spaceHandle = this.spaces.size + 1; //поменять, т.к. стратум присваивает их иначе
+        const spaceHandle = HandleMap.getFreeHandle(this.spaces); //поменять, т.к. стратум присваивает их иначе
         const space = createSpace({ canvas, inputFactory: this.inputFactory });
         space.handle = spaceHandle;
         this.spaces.set(spaceHandle, space);
         this.windows.set(windowName, new Window(space, { x: canvas.width, y: canvas.height }));
+        this.spaceToWindowMap.set(spaceHandle, windowName);
         return spaceHandle;
+    }
+
+    getWindowBySpaceHandle(spaceHandle: number) {
+        return this.spaceToWindowMap.get(spaceHandle);
     }
 
     renderAll() {

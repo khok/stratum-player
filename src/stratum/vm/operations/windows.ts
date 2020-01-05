@@ -125,6 +125,18 @@ function SetWindowOwner(ctx: VmStateContainer) {
     ctx.stackPush(1);
 }
 
+function GetWindowName(ctx: VmStateContainer) {
+    const spaceHandle = ctx.stackPop() as number;
+    ctx.stackPush(ctx.windows.getWindowBySpaceHandle(spaceHandle) || "");
+}
+function GetWindowProp(ctx: VmStateContainer) {
+    const prop = (ctx.stackPop() as string).toLowerCase();
+    const windowName = ctx.stackPop() as string;
+
+    const window = ctx.windows.getWindow(windowName);
+    ctx.stackPush(window && (prop === "classname" || prop === "filename") ? window.getProp(prop) : "");
+}
+
 export function initWindows(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.OPENSCHEMEWINDOW, OpenSchemeWindow);
     addOperation(Opcode.ISWINDOWEXIST, IsWindowExist);
@@ -147,4 +159,6 @@ export function initWindows(addOperation: (opcode: number, operation: Operation)
     addOperation(Opcode.VM_SETWINDOWTRANSPARENT, SetWindowTransparent);
     addOperation(Opcode.VM_SETWINDOWTRANSPARENTCOLOR, SetWindowTransparentColor);
     addOperation(Opcode.VM_SETWINDOWOWNER, SetWindowOwner);
+    addOperation(Opcode.V_GETNAMEBYHSP, GetWindowName);
+    addOperation(Opcode.VM_GETWINDOWPROP, GetWindowProp);
 }

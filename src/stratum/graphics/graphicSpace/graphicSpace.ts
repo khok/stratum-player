@@ -15,10 +15,13 @@ import { BrushTool } from "./tools";
  * Графическое пространство, содержащее инструменты и объекты.
  */
 export class GraphicSpace implements GraphicSpaceState {
-    static fromVdr(vdr: VectorDrawData, imageLoader: ImageResolver, scene: Scene) {
+    static fromVdr(filename: string, vdr: VectorDrawData, imageLoader: ImageResolver, scene: Scene) {
         const tools = createTools(vdr, imageLoader);
         const objects = vdr.elements && createObjects(vdr.elements, tools, scene);
-        const space = new GraphicSpace({ origin: vdr.origin, brushHandle: vdr.brushHandle, tools, objects }, scene);
+        const space = new GraphicSpace(
+            { origin: vdr.origin, brushHandle: vdr.brushHandle, tools, objects, source: filename },
+            scene
+        );
         if (vdr.elementOrder) space.placeObjects(vdr.elementOrder);
         return space;
     }
@@ -35,10 +38,19 @@ export class GraphicSpace implements GraphicSpaceState {
         ctx: VmStateContainer;
     }>();
 
+    readonly source: string;
+
     constructor(
-        data: { origin: Point2D; brushHandle?: number; tools?: GraphicSpaceTools; objects?: HandleMap<GraphicObject> },
+        data: {
+            origin: Point2D;
+            brushHandle?: number;
+            tools?: GraphicSpaceTools;
+            objects?: HandleMap<GraphicObject>;
+            source: string;
+        },
         public scene: Scene
     ) {
+        this.source = data.source;
         this.setOrigin(data.origin.x, data.origin.y);
         this.tools = data.tools || new GraphicSpaceTools();
         if (data.brushHandle) {

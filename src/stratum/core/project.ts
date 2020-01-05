@@ -76,6 +76,7 @@ export class Project implements ProjectController {
                 : data.scheme;
         return opts => {
             const space = GraphicSpace.fromVdr(
+                className,
                 vdr,
                 this.globalImgLoader,
                 new FabricScene({ ...opts, view: vdr.origin })

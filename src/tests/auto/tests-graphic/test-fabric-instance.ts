@@ -18,7 +18,7 @@ import { WindowSystem } from "~/graphics/windowSystem";
     const ws = new WindowSystem({ onWindowCreated: wname => (document.title = wname), globalCanvas: cv });
     const globalImgLoader = new SimpleImageLoader();
     ws.createSchemeWindow("Test Window", "", opts =>
-        GraphicSpace.fromVdr(vdr, globalImgLoader, new FabricScene({ canvas: opts.canvas, view: vdr.origin }))
+        GraphicSpace.fromVdr("WorkSpace", vdr, globalImgLoader, new FabricScene({ canvas: opts.canvas, view: vdr.origin }))
     );
     const space = ws.getSpace(1)!;
     globalImgLoader.getPromise().then(() => {

@@ -10,6 +10,8 @@ declare module "vm-interfaces-windows" {
         readonly width: number;
         readonly height: number;
         setSize(width: number, height: number): VmBool;
+
+        getProp(prop: "classname" | "filename"): string;
     }
 
     export interface WindowSystemController {
@@ -25,5 +27,6 @@ declare module "vm-interfaces-windows" {
         hasWindow(windowName: string): VmBool;
         getWindow(windowName: string): WindowState | undefined;
         getSpace(spaceHandle: number): GraphicSpaceState | undefined;
+        getWindowBySpaceHandle(spaceHandle : number) : string | undefined;
     }
 }

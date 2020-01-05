@@ -169,6 +169,7 @@ declare module "vm-interfaces-graphics" {
         readonly tools: GraphicSpaceToolsState;
         readonly originX: number;
         readonly originY: number;
+        readonly source : string;
         setOrigin(x: number, y: number): VmBool;
 
         addObject(obj: GraphicObjectState): number;
