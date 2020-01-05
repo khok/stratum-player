@@ -7,6 +7,7 @@ import { fromUrl } from "~/api";
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const htmlRoot = document.getElementById("root")!;
     player.setGraphicOptions({ globalCanvas: canvas, htmlRoot });
+    player.on("WINDOW_CREATED", name => (document.title = name));
     setTimeout(() => player.pause(), 5000);
     try {
         await player.play();

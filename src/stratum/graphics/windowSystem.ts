@@ -5,6 +5,7 @@ import { GraphicSpace } from "./graphicSpace/graphicSpace";
 import { HTMLInputElementsFactory } from "internal-graphic-types";
 import { HandleMap } from "~/helpers/handleMap";
 import { HtmlFactory } from "~/helpers/htmlFactory";
+import { EventDispatcher } from "~/helpers/eventDispatcher";
 
 class Window implements WindowState {
     constructor(public space: GraphicSpace, private size: { x: number; y: number }) {}
@@ -35,6 +36,8 @@ class Window implements WindowState {
 }
 
 export interface WindowSystemOptions {
+    dispatcher?: EventDispatcher;
+    multiwindow?: boolean;
     globalCanvas?: HTMLCanvasElement;
     htmlRoot?: HTMLElement;
     areaOriginX?: number;
@@ -59,18 +62,13 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
     screenWidth: number = 0;
     globalCanvas?: HTMLCanvasElement;
     inputFactory?: HTMLInputElementsFactory;
+    multiwindow?: boolean;
+    dispatcher?: EventDispatcher;
 
     private spaces = HandleMap.create<GraphicSpace>();
     private windows = new Map<string, Window>();
-    private multiwindow?: boolean;
-    private onWindowCreated?: (windowName: string) => void;
     private spaceToWindowMap = HandleMap.create<string>();
-    constructor(
-        options: WindowSystemOptions & {
-            multiwindow?: boolean;
-            onWindowCreated?: (windowName: string) => void;
-        } = {}
-    ) {
+    constructor(options: WindowSystemOptions = {}) {
         this.set(options);
     }
 
@@ -90,7 +88,7 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
         } else {
             if (!this.globalCanvas) throw new StratumError("Canvas не установлен");
             if (this.windows.size > 0) throw new StratumError("Невозможно создать более одного окна");
-            if (this.onWindowCreated) this.onWindowCreated(windowName);
+            if (this.dispatcher) this.dispatcher.dispatch("WINDOW_CREATED", windowName);
             canvas = this.globalCanvas;
         }
 

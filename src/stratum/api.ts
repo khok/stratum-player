@@ -10,10 +10,14 @@ import { StratumError } from "./helpers/errors";
 import { formatMissingCommands, showMissingCommands } from "./helpers/showMissingCommands";
 import { VmOperations } from "./vm/operations";
 import { ClassData } from "data-types-base";
+import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
 
 export class Player {
-    constructor(public project: Project, public windows: WindowSystem) {}
     private paused: boolean = false;
+    private dispatcher = new EventDispatcher();
+    constructor(public project: Project, public windows: WindowSystem) {
+        windows.dispatcher = this.dispatcher;
+    }
     setGraphicOptions(options: WindowSystemOptions) {
         this.windows.set(options);
     }
@@ -65,6 +69,9 @@ export class Player {
         this.project.oneStep();
         this.windows.renderAll();
         if (this.project.error) throw new StratumError(this.project.error);
+    }
+    on(event: EventType, fn: (...data: any) => void) {
+        this.dispatcher.on(event, fn);
     }
 }
 
