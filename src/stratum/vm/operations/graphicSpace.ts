@@ -192,6 +192,20 @@ function GetActualHeight2d(ctx: VmStateContainer) {
     ctx.stackPush(obj ? obj.height : 0);
 }
 
+function DelGroupItem2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.stackPop() as number;
+    const groupHandle = ctx.stackPop() as number; //нахрена?
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (obj) {
+        obj.parent = undefined;
+        ctx.stackPush(1);
+    } else {
+        ctx.stackPush(0);
+    }
+}
+
 export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -213,4 +227,5 @@ export function initGraphicSpace(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.GETZORDER2D, GetZOrder2d);
     addOperation(Opcode.VM_GETACTUALWIDTH, GetActualWidth2d);
     addOperation(Opcode.VM_GETACTUALHEIGHT, GetActualHeight2d);
+    addOperation(Opcode.DELGROUPITEM2D, DelGroupItem2d);
 }

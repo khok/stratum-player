@@ -62,11 +62,11 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         return 1;
     }
 
-    removeItem(obj: GraphicObject): VmBool {
+    removeItem(obj: GraphicObject, iamChild?: boolean): VmBool {
         if (obj.parent !== this) return 0;
         this.myItems.delete(obj);
         this.recalcCoords();
-        obj.parent = undefined;
+        if (!iamChild) obj.parent = undefined;
         return 1;
     }
 

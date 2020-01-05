@@ -10,7 +10,7 @@ export abstract class BaseObjectMixin {
     }
     set parent(value: GroupObject | undefined) {
         if (this._parent === value) return;
-        if (this._parent) this._parent.removeItem(this._subclassInstance);
+        if (this._parent) this._parent.removeItem(this._subclassInstance, true);
         this._parent = value;
         if (value) value.addItem(this._subclassInstance);
     }
