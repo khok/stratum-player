@@ -1,10 +1,8 @@
-import { fabric } from "fabric";
 import { Point2D } from "data-types-graphics";
-import { LineElementVisual, LineVisualOptions, ControlElementVisual, ControlVisualOptions } from "scene-types";
-import { BrushToolState, PenToolState } from "vm-interfaces-graphics";
-import { fabricConfigObjectOptions } from "../fabricConfig";
+import { fabric } from "fabric";
+import { ControlElementVisual, ControlVisualOptions } from "scene-types";
 import { StratumError } from "~/helpers/errors";
-import { IRectOptions, IGroupOptions } from "fabric/fabric-impl";
+import { fabricConfigObjectOptions } from "../fabricConfig";
 
 export class FabricControl implements ControlElementVisual {
     readonly type = "control";
@@ -29,7 +27,7 @@ export class FabricControl implements ControlElementVisual {
         this.posY = position.y;
         this.selectable = selectable;
         this.size = { ...controlSize };
-        const opts: IGroupOptions = {
+        const opts: fabric.IGroupOptions = {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
@@ -117,37 +115,3 @@ export class FabricControl implements ControlElementVisual {
         this.remove(this.obj);
     }
 }
-
-// import { fabric } from "fabric";
-
-// export class FabricInput extends fabric.Group {
-//     private iText: fabric.IText;
-//     constructor(text: string, options: { top?: number; left?: number; width: number; height: number }) {
-//         const iText = new fabric.IText("Прива", { fontSize: options.height - 3, top: -2, left: 2 });
-//         super([
-//             new fabric.Rect({
-//                 ...options,
-//                 height: options.height - 2,
-//                 top: -2,
-//                 fill: "white",
-//                 strokeWidth: 2,
-//                 stroke: "gray"
-//             }),
-//             iText
-//         ]);
-//         this.iText = iText;
-//         this.iText.on("changed", e => console.log(e));
-//     }
-//     focus(e?: MouseEvent) {
-//         console.log("focuse");
-//         this.iText.enterEditing(e);
-//         // this.iText.hiddenTextarea!.focus();
-//     }
-
-//     setText(text: string) {
-//         this.iText.text = text;
-//     }
-//     getText() {
-//         return this.iText.text;
-//     }
-// }

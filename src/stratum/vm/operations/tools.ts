@@ -4,7 +4,7 @@ import { StringToolState, FontToolState, TextToolState } from "vm-interfaces-gra
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
     const space = ctx.windows.getSpace(spaceHandle);
-    return space && space.tools.getTool<TextTool>("ttTEXT2D", textHandle);
+    return space && space.tools.getTool<TextToolState>("ttTEXT2D", textHandle);
 }
 
 function GetTextObject2d(ctx: VmStateContainer) {
