@@ -171,9 +171,18 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     findObjectByName(objectName: string, group?: GroupObject): GraphicObject | undefined {
-        if (group) console.log(`findObjectByName(#${group.handle}, ${objectName})`);
-        const iterator = group ? group.items : this.allObjects.values();
-        for (const obj of iterator) if (obj.name === objectName) return obj;
+        if (!group) {
+            for (const obj of this.allObjects.values()) if (obj.name === objectName) return obj;
+            return undefined;
+        }
+
+        for (const item of group.items) {
+            if (item.name === objectName) return item;
+            if (item.type === "otGROUP2D") {
+                const result = this.findObjectByName(objectName, item);
+                if (result) return result;
+            }
+        }
         return undefined;
     }
 
