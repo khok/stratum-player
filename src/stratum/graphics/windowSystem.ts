@@ -1,13 +1,13 @@
 import { VmBool } from "vm-interfaces-base";
-import { GraphicSpaceState } from "vm-interfaces-graphics";
 import { WindowState, WindowSystemController } from "vm-interfaces-windows";
 import { StratumError } from "~/helpers/errors";
 import { GraphicSpace } from "./graphicSpace/graphicSpace";
 import { HTMLInputElementsFactory } from "internal-graphic-types";
 import { HandleMap } from "~/helpers/handleMap";
+import { HtmlFactory } from "~/helpers/htmlFactory";
 
 class Window implements WindowState {
-    constructor(public space: GraphicSpaceState, private size: { x: number; y: number }) {}
+    constructor(public space: GraphicSpace, private size: { x: number; y: number }) {}
     originX: number = 0;
     originY: number = 0;
     setOrigin(x: number, y: number): VmBool {
@@ -25,6 +25,7 @@ class Window implements WindowState {
         console.warn("Ресайз окна пока не поддерживается");
         this.size.x = width;
         this.size.y = height;
+        this.space.scene.adaptToNewSize(width, height);
         return 1;
     }
 
@@ -35,7 +36,7 @@ class Window implements WindowState {
 
 export interface WindowSystemOptions {
     globalCanvas?: HTMLCanvasElement;
-    inputFactory?: HTMLInputElementsFactory;
+    htmlRoot?: HTMLElement;
     areaOriginX?: number;
     areaOriginY?: number;
     areaWidth?: number;
@@ -70,10 +71,11 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
             onWindowCreated?: (windowName: string) => void;
         } = {}
     ) {
-        Object.assign(this, options);
+        this.set(options);
     }
 
     set(options: WindowSystemOptions) {
+        this.inputFactory = this.inputFactory || (options && options.htmlRoot && new HtmlFactory(options.htmlRoot));
         Object.assign(this, options);
         return this;
     }

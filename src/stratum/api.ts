@@ -68,9 +68,11 @@ export class Player {
     }
 }
 
-export type PlayerOptions = ReadOptions & { projectOptions?: ProjectDebugOptions } & {
+export type PlayerOptions = ReadOptions & {
     graphicOptions?: WindowSystemOptions;
-} & { preloadedLibs?: JSZipObject[] };
+    projectOptions?: ProjectDebugOptions;
+    preloadedLibs?: JSZipObject[];
+};
 
 function handlePossibleErrors(collection: Map<string, ClassData>) {
     const { errors, missingOperations } = showMissingCommands(collection, VmOperations);

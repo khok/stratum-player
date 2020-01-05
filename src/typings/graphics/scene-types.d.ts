@@ -92,6 +92,7 @@ declare module "scene-types" {
     }
 
     export interface Scene extends VisualFactory {
+        adaptToNewSize(width: number, height: number): void;
         updateBrush(brush: BrushToolState): void;
         placeObjects(order: number[]): void;
         appendLastObject(handle: number): void;

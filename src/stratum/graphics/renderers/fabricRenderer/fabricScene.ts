@@ -89,6 +89,12 @@ export class FabricScene implements Scene {
             }
         }
     }
+    adaptToNewSize(width: number, height: number): void {
+        this.canvas
+            .setWidth(width)
+            .setHeight(height)
+            .calcOffset();
+    }
     updateBrush(brush: BrushToolState) {
         this.canvas.backgroundColor = brush.color;
     }
