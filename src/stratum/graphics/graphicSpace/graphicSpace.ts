@@ -154,10 +154,9 @@ export class GraphicSpace implements GraphicSpaceState {
                 //prettier-ignore
                 sub.msg === code && //совпадает ли код сообщения
                 (sub.objectHandle ? controlHandle === sub.objectHandle : true); //находится ли мышь над объектом (при необходимости)
-            if (!shouldReceiveEvent) return;
-            const msgId = sub.klass.getVarIdLowCase("msg");
-            if (msgId === undefined) return;
-            sub.klass.setNewVarValue(msgId, code);
+
+            if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
+            sub.klass.setVarValueByLowCaseName("msg", code);
             sub.klass.setVarValueByLowCaseName("_hobject", controlHandle);
             sub.klass.setVarValueByLowCaseName("iditem", -1);
             sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
@@ -170,11 +169,9 @@ export class GraphicSpace implements GraphicSpaceState {
             const shouldReceiveEvent =
                 (sub.msg === code || sub.msg === MessageCode.WM_ALLMOUSEMESSAGE) && //совпадает ли код сообщения
                 (sub.objectHandle ? this.scene.testVisualIntersection(sub.objectHandle, x, y) : true); //находится ли мышь над объектом (при необходимости)
-            if (!shouldReceiveEvent) return;
 
-            const msgId = sub.klass.getVarIdLowCase("msg");
-            if (msgId === undefined) return;
-            sub.klass.setNewVarValue(msgId, code);
+            if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
+            sub.klass.setVarValueByLowCaseName("msg", code);
             sub.klass.setVarValueByLowCaseName("xpos", x);
             sub.klass.setVarValueByLowCaseName("ypos", y);
             sub.klass.setVarValueByLowCaseName("fwkeys", 0);

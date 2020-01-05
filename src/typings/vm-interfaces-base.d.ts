@@ -7,6 +7,7 @@ declare module "vm-interfaces-base" {
 
     export interface ClassState {
         readonly protoName: string;
+        readonly canReceiveEvents: boolean;
         getVarIdLowCase(varName: string): number | undefined;
 
         setNewVarValue(id: number, value: string | number): void;

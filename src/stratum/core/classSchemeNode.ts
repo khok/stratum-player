@@ -24,10 +24,12 @@ export class ClassSchemeNode implements ClassState {
     private childs?: HandleMap<ClassSchemeNode>;
     private toGlobalVarId?: number[];
     private schemeData?: SchemeData;
+    readonly canReceiveEvents : boolean;
     constructor(data: { proto: ClassPrototype; globalIndexMap?: number[]; schemeData?: SchemeData }) {
         this.proto = data.proto;
         this.schemeData = data.schemeData;
         this.isDisabled = data.proto.variables ? createDisableGetter(this) : () => false;
+        this.canReceiveEvents = !!(data.proto.variables && data.proto.getVarIdLowCase("msg"));
         this.toGlobalVarId = data.globalIndexMap;
     }
 
