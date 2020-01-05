@@ -3,6 +3,7 @@ import { GraphicSpaceState } from "vm-interfaces-graphics";
 import { WindowState, WindowSystemController } from "vm-interfaces-windows";
 import { StratumError } from "~/helpers/errors";
 import { GraphicSpace } from "./graphicSpace/graphicSpace";
+import { HTMLInputElementsFactory } from "internal-graphic-types";
 
 class Window implements WindowState {
     constructor(public space: GraphicSpaceState, private size: { x: number; y: number }) {}
@@ -29,7 +30,7 @@ class Window implements WindowState {
 
 export interface WindowSystemOptions {
     globalCanvas?: HTMLCanvasElement;
-    hiddenInput?: HTMLInputElement;
+    inputFactory?: HTMLInputElementsFactory;
     areaOriginX?: number;
     areaOriginY?: number;
     areaWidth?: number;
@@ -38,7 +39,10 @@ export interface WindowSystemOptions {
     screenHeight?: number;
 }
 
-export type MyResolver = (options: { canvas: HTMLCanvasElement; hiddenInput?: HTMLInputElement }) => GraphicSpace;
+export type MyResolver = (options: {
+    canvas: HTMLCanvasElement;
+    inputFactory?: HTMLInputElementsFactory;
+}) => GraphicSpace;
 
 export class WindowSystem implements WindowSystemOptions, WindowSystemController {
     areaOriginX: number = 0;
@@ -48,7 +52,7 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
     screenHeight: number = 0;
     screenWidth: number = 0;
     globalCanvas?: HTMLCanvasElement;
-    hiddenInput?: HTMLInputElement;
+    inputFactory?: HTMLInputElementsFactory;
 
     private spaces = new Map<number, GraphicSpace>();
     private windows = new Map<string, Window>();
@@ -83,7 +87,7 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
         }
 
         const spaceHandle = this.spaces.size + 1; //поменять, т.к. стратум присваивает их иначе
-        const space = createSpace({ canvas, hiddenInput: this.hiddenInput });
+        const space = createSpace({ canvas, inputFactory: this.inputFactory });
         space.handle = spaceHandle;
         this.spaces.set(spaceHandle, space);
         this.windows.set(windowName, new Window(space, { x: canvas.width, y: canvas.height }));
