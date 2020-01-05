@@ -32,6 +32,7 @@ declare module "scene-types" {
     }
 
     export interface BitmapElementVisual extends _VisualBase {
+        setRect(x: number, y: number, width: number, height: number): void;
         updateBitmap(bmp: BitmapToolState): void;
     }
 

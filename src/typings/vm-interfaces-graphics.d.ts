@@ -142,6 +142,7 @@ declare module "vm-interfaces-graphics" {
     export interface BitmapObjectState extends _BmpBase {
         readonly type: BitmapElementData["type"];
         bmpTool: BitmapToolState | undefined;
+        setRect(x: number, y: number, width: number, height: number): VmBool;
     }
     export interface DoubleBitmapObjectState extends _BmpBase {
         readonly type: DoubleBitmapElementData["type"];
@@ -169,7 +170,7 @@ declare module "vm-interfaces-graphics" {
         readonly tools: GraphicSpaceToolsState;
         readonly originX: number;
         readonly originY: number;
-        readonly source : string;
+        readonly source: string;
         setOrigin(x: number, y: number): VmBool;
 
         addObject(obj: GraphicObjectState): number;

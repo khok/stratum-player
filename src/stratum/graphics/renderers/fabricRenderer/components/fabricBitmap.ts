@@ -36,6 +36,10 @@ export class FabricBitmap implements BitmapElementVisual {
         this.size = { ...bmpiSize };
         this.obj = new fabric.Image(bitmapTool.image, opts);
     }
+    setRect(x: number, y: number, width: number, height: number): void {
+        this.obj.set({ cropX: x, cropY: y, width, height });
+        this.requestRedraw();
+    }
     testIntersect(x: number, y: number) {
         const diffX = x - this.posX;
         const diffY = y - this.posY;

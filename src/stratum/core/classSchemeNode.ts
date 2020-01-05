@@ -24,7 +24,7 @@ export class ClassSchemeNode implements ClassState {
     private childs?: HandleMap<ClassSchemeNode>;
     private toGlobalVarId?: number[];
     private schemeData?: SchemeData;
-    readonly canReceiveEvents : boolean;
+    readonly canReceiveEvents: boolean;
     constructor(data: { proto: ClassPrototype; globalIndexMap?: number[]; schemeData?: SchemeData }) {
         this.proto = data.proto;
         this.schemeData = data.schemeData;
@@ -143,7 +143,6 @@ export class ClassSchemeNode implements ClassState {
         return this.schemeData && this.schemeData.parent;
     }
     getClassByPath(path: string): ClassState | undefined {
-        console.log(`getClassesByPath(${path})`);
         //вернуть этот класс
         if (path === "") return this;
         //вернуть родительский

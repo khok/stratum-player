@@ -31,7 +31,8 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
         this.bmpTool = bmpTool;
     }
     setRect(x: number, y: number, width: number, height: number): VmBool {
-        throw new Error("Method not implemented.");
+        this.visual.setRect(x, y, width, height);
+        return 1;
     }
 
     get bmpTool() {

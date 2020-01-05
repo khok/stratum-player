@@ -117,11 +117,31 @@ function GetClassName(ctx: VmStateContainer) {
 //     throw "VM_ADDPRIMITIVE3D: NIMP";
 // }
 
+function SetCapture(ctx: VmStateContainer) {
+    ctx.stackPop();
+    ctx.stackPop();
+    ctx.stackPop();
+}
+
+function ReleaseCapture(ctx: VmStateContainer) {}
+
+function SetVarFloat(ctx: VmStateContainer) {
+    const value = ctx.stackPop() as number;
+    const name = ctx.stackPop() as string;
+    const objectPath = ctx.stackPop() as string;
+
+    const obj = ctx.currentClass.getClassByPath(objectPath);
+    if (obj) obj.setVarValueByLowCaseName(name.toLowerCase(), value);
+}
+
 export function initAdvanced(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.VM_SENDMESSAGE, SendMessage as Operation);
     addOperation(Opcode.V_REGISTEROBJECT, RegisterObjectByGraphicSpace);
     addOperation(Opcode.REGISTEROBJECTS, RegisterObjectByWindowName);
     addOperation(Opcode.V_GETCLASS, GetClassName);
+    addOperation(Opcode.V_SETCAPTURE, SetCapture);
+    addOperation(Opcode.V_RELEASECAPTURE, ReleaseCapture);
+    addOperation(Opcode.V_SETVARF, SetVarFloat);
 
     // addCommand(Opcode.VFUNCTION, VFUNCTION);
     // addCommand(Opcode.DLLFUNCTION, DLLFUNCTION);

@@ -225,6 +225,18 @@ function GetControlText2d(ctx: VmStateContainer) {
     ctx.stackPush(obj && obj.type === "otCONTROL2D" ? obj.text : "");
 }
 
+function SetBitmapSrcRect2d(ctx: VmStateContainer) {
+    const height = ctx.stackPop() as number;
+    const width = ctx.stackPop() as number;
+    const y = ctx.stackPop() as number;
+    const x = ctx.stackPop() as number;
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    ctx.stackPush(obj && obj.type === "otBITMAP2D" ? obj.setRect(x, y, width, height) : 0);
+}
+
 export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -249,4 +261,5 @@ export function initGraphicSpace(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.DELGROUPITEM2D, DelGroupItem2d);
     addOperation(Opcode.VM_SETCONTROLTEXT, SetControlText2d);
     addOperation(Opcode.VM_GETCONTROLTEXT, GetControlText2d);
+    addOperation(Opcode.SETBITMAPSRCRECT, SetBitmapSrcRect2d);
 }
