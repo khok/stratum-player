@@ -93,24 +93,23 @@ function readVdr(stream: BinaryStream, silent = true) {
     return vdr;
 }
 
-const EC_VAR = 16384;
-const EC_CONST = 0;
-function readEquations(stream: BinaryStream) {
-    throw new StratumError("Уравнения не поддерживаются.");
-    const code = stream.readWord();
+// const EC_VAR = 16384;
+// const EC_CONST = 0;
+// function readEquations(stream: BinaryStream) {
+//     const code = stream.readWord();
 
-    if (code == EC_VAR) {
-        const index = stream.readWord();
-        const eqflag = stream.readWord();
-    }
+//     if (code == EC_VAR) {
+//         const index = stream.readWord();
+//         const eqflag = stream.readWord();
+//     }
 
-    if (code == EC_CONST) {
-        const value = stream.readBytes(8);
-    }
+//     if (code == EC_CONST) {
+//         const value = stream.readBytes(8);
+//     }
 
-    let byte;
-    while ((byte = stream.readBytes(1)[0])) readEquations(stream);
-}
+//     let byte;
+//     while ((byte = stream.readBytes(1)[0])) readEquations(stream);
+// }
 
 export function readClassHeaderData(stream: BinaryStream): ClassHeaderData {
     const sign = stream.readWord();
@@ -222,7 +221,8 @@ export function readClassData(
     }
 
     if (next == RecordType.CR_EQU) {
-        const sqr = readEquations(stream);
+        console.warn("Уравнения не поддерживаются.");
+        return res;
     }
 
     if (next != RecordType.CR_CLASSTIME && version === 0x3003)
