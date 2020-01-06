@@ -103,10 +103,14 @@ export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode 
         if (operandType === undefined) continue;
         //выставляем флаг (1 2 или 3) в зависимости от типа операнда
         switch (operandType) {
+            case "varId":
+                numberOperands[i] = <number>operand;
+                code[i] |= 8192; //1 << 13;
+                code[i] |= 16384; //1 << 14;
+                break;
             case "double":
             case "codepoint":
             case "uint":
-            case "varId":
             case "word":
                 numberOperands[i] = <number>operand;
                 code[i] |= 16384; //1 << 14;
