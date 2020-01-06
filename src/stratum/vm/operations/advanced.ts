@@ -118,12 +118,18 @@ function GetClassName(ctx: VmStateContainer) {
 // }
 
 function SetCapture(ctx: VmStateContainer) {
-    ctx.stackPop();
-    ctx.stackPop();
-    ctx.stackPop();
+    const flags = ctx.stackPop() as number;
+    const path = ctx.stackPop() as string;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = ctx.currentClass.getClassByPath(path);
+    if (!obj) return;
+    obj.startCaptureEvents(spaceHandle);
 }
 
-function ReleaseCapture(ctx: VmStateContainer) {}
+function ReleaseCapture(ctx: VmStateContainer) {
+    ctx.currentClass.stopCaptureEvents();
+}
 
 function SetVarFloat(ctx: VmStateContainer) {
     const value = ctx.stackPop() as number;

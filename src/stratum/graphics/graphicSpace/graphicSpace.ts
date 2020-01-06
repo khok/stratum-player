@@ -153,7 +153,7 @@ export class GraphicSpace implements GraphicSpaceState {
             const shouldReceiveEvent =
                 //prettier-ignore
                 sub.msg === code && //совпадает ли код сообщения
-                (sub.objectHandle ? controlHandle === sub.objectHandle : true); //находится ли мышь над объектом (при необходимости)
+                ((sub.objectHandle ? controlHandle === sub.objectHandle : true) || sub.klass.isCapturingEvents(this.handle));
 
             if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
             sub.klass.setVarValueByLowCaseName("msg", code);
@@ -168,7 +168,8 @@ export class GraphicSpace implements GraphicSpaceState {
         this.subs.forEach(sub => {
             const shouldReceiveEvent =
                 (sub.msg === code || sub.msg === MessageCode.WM_ALLMOUSEMESSAGE) && //совпадает ли код сообщения
-                (sub.objectHandle ? this.scene.testVisualIntersection(sub.objectHandle, x, y) : true); //находится ли мышь над объектом (при необходимости)
+                ((sub.objectHandle ? this.scene.testVisualIntersection(sub.objectHandle, x, y) : true) ||
+                    sub.klass.isCapturingEvents(this.handle));
 
             if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
             sub.klass.setVarValueByLowCaseName("msg", code);

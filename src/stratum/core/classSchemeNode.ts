@@ -25,6 +25,7 @@ export class ClassSchemeNode implements ClassState {
     private toGlobalVarId?: number[];
     private schemeData?: SchemeData;
     readonly canReceiveEvents: boolean;
+    private captureEventsFromHandle = 0;
     constructor(data: { proto: ClassPrototype; globalIndexMap?: number[]; schemeData?: SchemeData }) {
         this.proto = data.proto;
         this.schemeData = data.schemeData;
@@ -162,6 +163,18 @@ export class ClassSchemeNode implements ClassState {
         const nodes = new Array<ClassSchemeNode>();
         this._collectNodes(nodes);
         return nodes;
+    }
+
+    startCaptureEvents(spaceHandle: number): void {
+        this.captureEventsFromHandle = spaceHandle;
+    }
+
+    stopCaptureEvents(): void {
+        this.captureEventsFromHandle = 0;
+    }
+
+    isCapturingEvents(spaceHandle: number): boolean {
+        return this.captureEventsFromHandle === spaceHandle;
     }
 
     computeSchemeRecursive(ctx: VmContext, respectDisableVar: boolean = true) {

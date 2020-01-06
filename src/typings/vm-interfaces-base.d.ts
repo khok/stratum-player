@@ -18,6 +18,11 @@ declare module "vm-interfaces-base" {
         setVarValueByLowCaseName(name: string, value: string | number): void;
 
         getClassByPath(path: string): ClassState | undefined;
+
+        startCaptureEvents(spaceHandle: number): void;
+        stopCaptureEvents(): void;
+
+        isCapturingEvents(spaceHandle: number): boolean;
         /**
          * Вычисляет схему имиджа и все схемы дочерних имиджей.
          * @param ctx Контекст выполнения.
