@@ -6,6 +6,7 @@ import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
 import { FabricScene } from "~/graphics/renderers/fabricRenderer/fabricScene";
 import { createComposedScheme } from "~/helpers/graphics";
 import { WindowSystem } from "~/graphics/windowSystem";
+import { EventDispatcher } from "~/helpers/eventDispatcher";
 
 (async function() {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
@@ -15,11 +16,20 @@ import { WindowSystem } from "~/graphics/windowSystem";
     const oldvdr = cl.scheme!;
     const vdr = createComposedScheme(oldvdr, cdata, collection);
     const cv = document.getElementById("canvas") as HTMLCanvasElement;
-    const ws = new WindowSystem({ onWindowCreated: wname => (document.title = wname), globalCanvas: cv });
+    const dsp = new EventDispatcher();
+    const ws = new WindowSystem({ globalCanvas: cv, dispatcher: dsp });
+    dsp.on("WINDOW_CREATED", name => (document.title = name));
+
     const globalImgLoader = new SimpleImageLoader();
     ws.createSchemeWindow("Test Window", "", opts =>
-        GraphicSpace.fromVdr("WorkSpace", vdr, globalImgLoader, new FabricScene({ canvas: opts.canvas, view: vdr.origin }))
+        GraphicSpace.fromVdr(
+            "WorkSpace",
+            vdr,
+            globalImgLoader,
+            new FabricScene({ canvas: opts.canvas, view: vdr.origin })
+        )
     );
+    equal(document.title, "Test Window");
     const space = ws.getSpace(1)!;
     globalImgLoader.getPromise().then(() => {
         space.scene.forceRender();

@@ -69,13 +69,13 @@ export class FabricScene implements Scene {
         });
         this.view = { ...view };
     }
-    preventMoveEvent = false;
+    // preventMoveEvent = false;
     private raiseEvent(e: MouseEvent, type: "down" | "move" | "up") {
-        if (type === "move" && this.preventMoveEvent) return;
-        if (type !== "move") {
-            this.preventMoveEvent = true;
-            setTimeout(() => (this.preventMoveEvent = false), 50);
-        }
+        // if (type === "move" && this.preventMoveEvent) return;
+        // if (type !== "move") {
+        //     this.preventMoveEvent = true;
+        //     setTimeout(() => (this.preventMoveEvent = false), 50);
+        // }
         const x = e.offsetX + this.view.x;
         const y = e.offsetY + this.view.y;
         switch (type) {
