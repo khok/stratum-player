@@ -11,6 +11,7 @@
             document.getElementById("file_drop").addEventListener("change", play);
         };
         async function play({ target }) {
+            const projectFile = document.getElementById("proj_name").value || "project.spj";
             const fList = target.files;
             if (!fList) return;
             const stdLib = await stdlibPromise;
@@ -21,7 +22,7 @@
             const one_step = document.getElementById("one_step");
             controller.removeAttribute("hidden");
             one_step.removeAttribute("hidden");
-            StratumPlayer.fromFileList(fList, { graphicOptions: { globalCanvas, htmlRoot }, preloadedLibs: stdLib })
+            StratumPlayer.fromFileList(fList, { graphicOptions: { globalCanvas, htmlRoot }, preloadedLibs: stdLib, projectFile })
                 .then(p => {
                     controller.innerHTML = "Пауза";
                     if (player) player.pause();
@@ -53,6 +54,7 @@
     <input id="file_drop" type="file" accept=".zip" />
     <button id="one_step" hidden style="height: 50px">Один шаг</button>
     <button id="controller" hidden style="height: 50px">Пауза</button>
+    <input id="proj_name" type="text" placeholder="название файла проекта"></input>
     <div id="root" style="position:relative;">
         <canvas id="canvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
     </div>
