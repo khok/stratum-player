@@ -18,7 +18,7 @@ import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool,
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
-    const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p)]));
+    const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p.width, p.color)]));
     const bitmaps =
         tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, new BitmapTool(b, imageLoader)]));
     const doubleBitmaps =

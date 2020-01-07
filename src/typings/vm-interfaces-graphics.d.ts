@@ -18,7 +18,8 @@ declare module "vm-interfaces-graphics" {
         BitmapElementData,
         DoubleBitmapElementData,
         StringToolData,
-        TextElementData
+        TextElementData,
+        Point2D
     } from "data-types-graphics";
 
     export interface PenToolState {
@@ -91,6 +92,7 @@ declare module "vm-interfaces-graphics" {
         | TextToolState;
 
     export interface GraphicSpaceToolsState {
+        createPen(width: number, color: StringColor): PenToolState;
         createFont(fontName: string, size: number, style: number): FontToolState;
         createString(value: string): StringToolState;
         createText(
@@ -105,7 +107,7 @@ declare module "vm-interfaces-graphics" {
 
     export interface GraphicObjectStateBase {
         readonly handle: number;
-        parent: GroupObjectState | undefined;
+        readonly parent: GroupObjectState | undefined;
         name: string;
 
         readonly positionX: number;
@@ -127,6 +129,8 @@ declare module "vm-interfaces-graphics" {
         readonly type: LineElementData["type"];
         pen: PenToolState | undefined;
         brush: BrushToolState | undefined;
+        getPoint(index: number): Point2D;
+        setPointPosition(index: number, x: number, y: number): VmBool;
     }
     export interface ControlObjectState extends GraphicObjectStateBase {
         readonly type: ControlElementData["type"];
@@ -175,6 +179,7 @@ declare module "vm-interfaces-graphics" {
 
         addObject(obj: GraphicObjectState): number;
         createText(x: number, y: number, angle: number, textHandle: number): TextObjectState;
+        createLine(penHandle: number, brushHandle: number, points: Point2D[]): LineObjectState;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
 

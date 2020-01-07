@@ -198,8 +198,8 @@ function DelGroupItem2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.stackPop() as number;
 
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    if (obj) {
-        obj.parent = undefined;
+    if (obj && obj.parent) {
+        obj.parent.removeItem(obj);
         ctx.stackPush(1);
     } else {
         ctx.stackPush(0);
@@ -237,6 +237,35 @@ function SetBitmapSrcRect2d(ctx: VmStateContainer) {
     ctx.stackPush(obj && obj.type === "otBITMAP2D" ? obj.setRect(x, y, width, height) : 0);
 }
 
+function GetVectorPoint2dx(ctx: VmStateContainer) {
+    const index = ctx.stackPop() as number;
+    const lineHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = _getObject(ctx, spaceHandle, lineHandle);
+    ctx.stackPush(obj && obj.type === "otLINE2D" ? obj.getPoint(index).x : 0);
+}
+
+function GetVectorPoint2dy(ctx: VmStateContainer) {
+    const index = ctx.stackPop() as number;
+    const lineHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = _getObject(ctx, spaceHandle, lineHandle);
+    ctx.stackPush(obj && obj.type === "otLINE2D" ? obj.getPoint(index).y : 0);
+}
+
+function SetVectorPoint2d(ctx: VmStateContainer) {
+    const y = ctx.stackPop() as number;
+    const x = ctx.stackPop() as number;
+    const index = ctx.stackPop() as number;
+    const lineHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = _getObject(ctx, spaceHandle, lineHandle);
+    ctx.stackPush(obj && obj.type === "otLINE2D" ? obj.setPointPosition(index, x, y) : 0);
+}
+
 export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -262,4 +291,7 @@ export function initGraphicSpace(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.VM_SETCONTROLTEXT, SetControlText2d);
     addOperation(Opcode.VM_GETCONTROLTEXT, GetControlText2d);
     addOperation(Opcode.SETBITMAPSRCRECT, SetBitmapSrcRect2d);
+    addOperation(Opcode.GETVECTORPOINT2DX, GetVectorPoint2dx);
+    addOperation(Opcode.GETVECTORPOINT2DY, GetVectorPoint2dy);
+    addOperation(Opcode.SETVECTORPOINT2D, SetVectorPoint2d);
 }

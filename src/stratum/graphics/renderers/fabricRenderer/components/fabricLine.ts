@@ -14,11 +14,13 @@ export class FabricLine implements LineElementVisual {
     readonly selectable: boolean;
 
     constructor(
-        { handle, points, isVisible, selectable, position, brush, pen }: LineVisualOptions,
+        { handle, points, position, isVisible, selectable, brush, pen }: LineVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
     ) {
+        const { size } = FabricLine.calcSize(points);
+        this.size = size;
         this.handle = handle;
         this.posX = position.x;
         this.posY = position.y;
@@ -31,6 +33,11 @@ export class FabricLine implements LineElementVisual {
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible
         };
+
+        this.selectable = selectable;
+        this.obj = new fabric.Polyline(points, opts);
+    }
+    private static calcSize(points: Point2D[]) {
         //prettier-ignore
         const sizes = points.length > 0 ? points.reduce(
             (a, c) => ({
@@ -41,12 +48,18 @@ export class FabricLine implements LineElementVisual {
             }),
             { minX: points[0].x, maxX: points[0].x, minY: points[0].y, maxY: points[0].y }
         ) : { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        this.selectable = selectable;
-        this.size = { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY };
-        this.obj = new fabric.Polyline(points, opts);
+        return {
+            position: { x: sizes.minX, y: sizes.minY },
+            size: { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY }
+        };
     }
     setPoints(points: Point2D[]): void {
-        throw new Error("Method not implemented.");
+        const { size, position } = FabricLine.calcSize(points);
+        this.obj.set({ points: points.map(p => new fabric.Point(p.x, p.y)) });
+        this.obj._calcDimensions();
+        this.obj.dirty = true;
+        this.size = size;
+        this.requestRedraw();
     }
 
     testIntersect(x: number, y: number) {

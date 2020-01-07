@@ -2,6 +2,7 @@ import { VmBool } from "vm-interfaces-base";
 import { GroupObjectState } from "vm-interfaces-graphics";
 import { GraphicObject } from ".";
 import { BaseObjectMixin } from "./baseObjectMixin";
+import { StratumError } from "~/helpers/errors";
 
 //TODO: создать базовый класс для группы и 2д микина и пихнуть туда свойство name и присвоение группы.
 export class GroupObject extends BaseObjectMixin implements GroupObjectState {
@@ -25,15 +26,17 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
             minY: number | undefined = undefined,
             maxY: number | undefined = undefined;
         for (const child of this.items) {
+            if (!child.isVisible) continue;
             if (minX === undefined || child.positionX < minX) minX = child.positionX;
             if (minY === undefined || child.positionY < minY) minY = child.positionY;
-            if (maxX === undefined || child.positionX > maxX) maxX = child.positionX + child.width;
-            if (maxY === undefined || child.positionY > maxY) maxY = child.positionY + child.height;
+            if (maxX === undefined || child.positionX + child.width > maxX) maxX = child.positionX + child.width;
+            if (maxY === undefined || child.positionY + child.height > maxY) maxY = child.positionY + child.height;
         }
         this.positionX = minX || 0;
         this.positionY = minY || 0;
         this.width = maxX! - minX! || 0;
         this.height = maxY! - minY! || 0;
+        if (this.parent) this.parent.recalcCoords();
     }
 
     //item operations
@@ -58,20 +61,20 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     private addItemFast(obj: GraphicObject): VmBool {
         if (obj.parent === this) return 0;
         this.myItems.add(obj);
-        obj.parent = this;
+        obj._parent = this;
         return 1;
     }
 
-    removeItem(obj: GraphicObject, iamChild?: boolean): VmBool {
+    removeItem(obj: GraphicObject): VmBool {
         if (obj.parent !== this) return 0;
         this.myItems.delete(obj);
         this.recalcCoords();
-        if (!iamChild) obj.parent = undefined;
+        obj._parent = undefined;
         return 1;
     }
 
     removeAll(): VmBool {
-        this.myItems.forEach(o => (o.parent = undefined));
+        this.myItems.forEach(o => (o._parent = undefined));
         // this.myItems = new Set(); уже не нужно
         this.recalcCoords();
         return 1;
@@ -114,11 +117,11 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     }
 
     get isVisible(): VmBool {
-        throw new Error("Method not implemented.");
+        return 1;
     }
 
     set isVisible(value) {
-        if (!value) throw new Error("Не умею скрывать группы");
+        if (!value) throw new StratumError("Попытка скрыть объект-группу. На данный момент это не реализовано");
     }
 
     rotate(centerX: number, centerY: number, angleRad: number): VmBool {

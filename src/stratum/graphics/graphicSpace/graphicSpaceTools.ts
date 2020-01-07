@@ -38,6 +38,13 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
             if (mp) mp.forEach((c, handle) => (c.handle = handle));
         }
     }
+    createPen(width: number, color: string): PenTool {
+        const pen = new PenTool(width, color);
+        const handle = HandleMap.getFreeHandle(this.pens);
+        this.pens.set(handle, pen);
+        pen.handle = handle;
+        return pen;
+    }
     createFont(fontName: string, size: number, style: number): FontTool {
         const font = new FontTool(fontName, size, style);
         const handle = HandleMap.getFreeHandle(this.fonts);

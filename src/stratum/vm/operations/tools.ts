@@ -174,6 +174,30 @@ function SetString2d(ctx: VmStateContainer) {
     ctx.stackPush(1);
 }
 
+function CreatePen2d(ctx: VmStateContainer) {
+    const rop2 = ctx.stackPop() as number;
+    const color = ctx.stackPop() as string;
+    const width = ctx.stackPop() as number;
+    const style = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const space = ctx.windows.getSpace(spaceHandle);
+    ctx.stackPush(space ? space.tools.createPen(width, color).handle : 0);
+}
+
+function CreatePolyLine2d(ctx: VmStateContainer, pointCount: number) {
+    const points = Array.from({ length: pointCount / 2 }, () => ({
+        x: ctx.stackPop() as number,
+        y: ctx.stackPop() as number
+    }));
+    const brushHandle = ctx.stackPop() as number;
+    const penHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const space = ctx.windows.getSpace(spaceHandle);
+    ctx.stackPush(space ? space.createLine(penHandle, brushHandle, points).handle : 0);
+}
+
 export function initTools(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETTEXTOBJECT2D, GetTextObject2d);
     addOperation(Opcode.VM_GETTEXTCOUNT2D, GetTextCount2d);
@@ -188,4 +212,6 @@ export function initTools(addOperation: (opcode: number, operation: Operation) =
     addOperation(Opcode.CREATERASTERTEXT2D, CreateRasterText2d);
     addOperation(Opcode.VM_SETLOGTEXT2D, SetText2d);
     addOperation(Opcode.SETLOGSTRING2D, SetString2d);
+    addOperation(Opcode.CREATEPEN2D, CreatePen2d);
+    addOperation(Opcode.CREATEPOLYLINE2D, CreatePolyLine2d as Operation);
 }

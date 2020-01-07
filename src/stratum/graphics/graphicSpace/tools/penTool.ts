@@ -1,4 +1,4 @@
-import { PenToolData } from "data-types-graphics";
+import { StringColor } from "data-types-graphics";
 import { PenToolState } from "vm-interfaces-graphics";
 import { ToolMixin } from "./toolMixin";
 
@@ -6,10 +6,10 @@ export class PenTool extends ToolMixin<PenTool> implements PenToolState {
     readonly type = "ttPEN2D";
     private _color: string;
     private _width: number;
-    constructor(data: PenToolData) {
+    constructor(width : number, color : StringColor) {
         super();
-        this._color = data.color;
-        this._width = data.width;
+        this._color = color;
+        this._width = width;
     }
     get color() {
         return this._color;
