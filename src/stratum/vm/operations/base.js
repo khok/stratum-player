@@ -91,11 +91,7 @@ function V_EXP(ctx) {
 }
 function V_SQRT(ctx) {
     const value = ctx.stackPop();
-    if (value < 0) {
-        ctx.setError("Попытка извлечь корень из отр. числа");
-        return;
-    }
-    ctx.stackPush(Math.sqrt(value));
+    ctx.stackPush(Math.sqrt(value) || 0);
 }
 function V_SQR(ctx) {
     throw "V_SQR: NIMP";
@@ -111,12 +107,8 @@ function V_MUL_F(ctx) {
 }
 function V_DIV_F(ctx) {
     const b = ctx.stackPop();
-    if (b == 0) {
-        ctx.setError("Попытка деления на ноль");
-        return;
-    }
     const a = ctx.stackPop();
-    ctx.stackPush(a / b);
+    ctx.stackPush(b == 0 ? 0 : a / b);
 }
 function V_ADD_F(ctx) {
     ctx.stackPush(ctx.stackPop() + ctx.stackPop());
