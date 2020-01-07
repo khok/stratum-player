@@ -24,6 +24,7 @@ class VariableGraphNode {
     constructor(readonly lowCaseName: string, readonly type: VarData["type"], private requestIndex: () => number) {}
 
     static connect(first: VariableGraphNode, second: VariableGraphNode) {
+        if (first.type !== second.type) throw Error("inconsistent types");
         if (first.propagated) throw Error("first propagated");
         if (second.propagated) throw Error("second propagated");
         first.connectedNodes.add(second);
@@ -57,22 +58,23 @@ function linkVars(links: LinkData[], parent: VarStore, childs?: HandleMap<VarSto
         const first = handle1 ? childs && childs.get(handle1) : parent;
         const second = handle2 ? childs && childs.get(handle2) : parent;
 
-        if (!first) throw new StratumError(`Объект ${handle1} не найден`);
-        if (!first.vars) throw new StratumError(`Объект ${handle1} не имеет переменных`);
-        if (!second) throw new StratumError(`Объект ${handle2} не найден`);
-        if (!second.vars) throw new StratumError(`Объект ${handle2} не имеет переменных`);
+        if (!first) console.warn(`Объект ${handle1} не найден`);
+        else if (!first.vars) console.warn(`Объект ${handle1} не имеет переменных`);
+        if (!second) console.warn(`Объект ${handle2} не найден`);
+        else if (!second.vars) console.warn(`Объект ${handle2} не имеет переменных`);
+
+        if (!first || !first.vars || !second || !second.vars) continue;
 
         for (const { name1, name2 } of connectedVars) {
             //Получаем соединяемые переменные.
             const var1 = first.vars.find(v => v.lowCaseName === name1.toLowerCase());
             const var2 = second.vars.find(v => v.lowCaseName === name2.toLowerCase());
 
-            if (var1 === undefined) throw new StratumError(`Переменная ${name1} не найдена в #${handle1}`);
-            if (var2 === undefined) throw new StratumError(`Переменная ${name2} не найдена в #${handle2}`);
-            if (var1.type !== var2.type)
-                throw new StratumError(`Типы переменных ${name1} в #${handle1} и ${name2} в #${handle2} не совпадают`);
-
-            VariableGraphNode.connect(var1, var2);
+            if (var1 === undefined) console.warn(`Переменная ${name1} не найдена в #${handle1}`);
+            if (var2 === undefined) console.warn(`Переменная ${name2} не найдена в #${handle2}`);
+            if (var1 === undefined || var2 === undefined) continue;
+            if (var1.type === var2.type) VariableGraphNode.connect(var1, var2);
+            else console.warn(`Типы переменных ${name1} в #${handle1} и ${name2} в #${handle2} не совпадают`);
         }
     }
 }
