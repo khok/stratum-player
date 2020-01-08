@@ -52,15 +52,34 @@ export class FabricScene implements Scene {
         view: Point2D;
     }) {
         canvas.oncontextmenu = e => e.preventDefault();
+
+        //touch
+        canvas.addEventListener("touchstart", e => {
+            systemKeysTemp[1] = 1;
+            this.raiseEvent({ eventType: "touch", e }, "down");
+            // e.preventDefault();
+        });
+        canvas.addEventListener("touchend", e => {
+            systemKeysTemp[1] = 0;
+            this.raiseEvent({ eventType: "touch", e }, "up");
+            // e.preventDefault();
+        });
+        canvas.addEventListener("touchmove", e => {
+            this.raiseEvent({ eventType: "touch", e }, "move");
+            // e.preventDefault();
+        });
+
+        //mouse
         canvas.addEventListener("mousedown", e => {
             systemKeysTemp[1] = 1;
-            this.raiseEvent(e, "down");
+            this.raiseEvent({ eventType: "mouse", e }, "down");
         });
         canvas.addEventListener("mouseup", e => {
             systemKeysTemp[1] = 0;
-            this.raiseEvent(e, "up");
+            this.raiseEvent({ eventType: "mouse", e }, "up");
         });
-        canvas.addEventListener("mousemove", e => this.raiseEvent(e, "move"));
+        canvas.addEventListener("mousemove", e => this.raiseEvent({ eventType: "mouse", e }, "move"));
+
         if (inputFactory) this.inputFactory = inputFactory;
         this.canvas = new fabric.StaticCanvas(canvas, {
             ...fabricConfigCanvasOptions,
@@ -70,25 +89,32 @@ export class FabricScene implements Scene {
         this.view = { ...view };
     }
     // preventMoveEvent = false;
-    private raiseEvent(e: MouseEvent, type: "down" | "move" | "up") {
+    private raiseEvent(
+        data: { eventType: "touch"; e: TouchEvent } | { eventType: "mouse"; e: MouseEvent },
+        type: "down" | "move" | "up"
+    ) {
         // if (type === "move" && this.preventMoveEvent) return;
         // if (type !== "move") {
         //     this.preventMoveEvent = true;
         //     setTimeout(() => (this.preventMoveEvent = false), 50);
         // }
-        const x = e.offsetX + this.view.x;
-        const y = e.offsetY + this.view.y;
+        const rect = this.canvas.getElement().getBoundingClientRect();
+
+        //prettier-ignore
+        const x = (data.eventType === "mouse" ? data.e.offsetX : data.e.changedTouches[0].clientX - rect.left) + this.view.x;
+        const y =
+            (data.eventType === "mouse" ? data.e.offsetY : data.e.changedTouches[0].clientY - rect.top) + this.view.y;
         switch (type) {
             case "move":
                 this.mouseSubs.forEach(s => s(MessageCode.WM_MOUSEMOVE, x, y));
                 return;
             case "up": {
-                const code = upCodes[e.button];
+                const code = upCodes[data.eventType === "mouse" ? data.e.button : 0];
                 if (code) this.mouseSubs.forEach(s => s(code, x, y));
                 return;
             }
             case "down": {
-                const code = downCodes[e.button];
+                const code = downCodes[data.eventType === "mouse" ? data.e.button : 0];
                 if (code) this.mouseSubs.forEach(s => s(code, x, y));
                 return;
             }
