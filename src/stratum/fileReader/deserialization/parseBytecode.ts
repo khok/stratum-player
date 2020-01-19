@@ -1,4 +1,4 @@
-import { Bytecode, FunctionOperand, Operand, OperandType } from "vm-types";
+import { ParsedCode, FunctionOperand, Operand, OperandType } from "vm-types";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { operandTypes } from "~/helpers/vm";
 import { StratumError } from "~/helpers/errors";
@@ -63,7 +63,7 @@ function readOperand(stream: BinaryStream, type: OperandType): Operand {
 type OperationData = { opcode: number; operand?: Operand; operandType?: OperandType };
 
 //TODO: Переписать код парсинга
-export function parseBytecode(stream: BinaryStream, codesize: number): Bytecode {
+export function parseBytecode(stream: BinaryStream, codesize: number): ParsedCode {
     const operations: OperationData[] = [];
     const codepoints: number[] = [];
 

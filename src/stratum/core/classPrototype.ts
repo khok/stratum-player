@@ -1,16 +1,16 @@
 import { VarData } from "data-types-base";
-import { Bytecode } from "vm-types";
+import { ParsedCode } from "vm-types";
 import { parseVarValue } from "~/helpers/varValueFunctions";
 
 export class ClassPrototype {
-    readonly code?: Bytecode;
+    readonly code?: ParsedCode;
     readonly variables?: {
         readonly lowCaseName: string;
         readonly type: VarData["type"];
         readonly defaultValue: string | number | undefined;
     }[];
     readonly varNameMap?: Map<string, number>;
-    constructor(readonly name: string, { vars, code }: { vars?: VarData[]; code?: Bytecode }) {
+    constructor(readonly name: string, { vars, code }: { vars?: VarData[]; code?: ParsedCode }) {
         this.code = code;
         if (vars) {
             this.variables = vars.map(({ name, defaultValue, type }) => ({

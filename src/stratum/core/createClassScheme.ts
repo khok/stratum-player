@@ -5,17 +5,6 @@ import { ClassPrototype } from "./classPrototype";
 import { HandleMap } from "~/helpers/handleMap";
 import { MemoryManager } from "./memoryManager";
 
-function dataToProtos(classes: Map<string, ClassData>) {
-    const protos = new Map<string, { data: ClassData; proto: ClassPrototype }>();
-    classes.forEach((data, name) =>
-        protos.set(name, {
-            data,
-            proto: new ClassPrototype(name, { vars: data.vars, code: data.bytecode && data.bytecode.parsed })
-        })
-    );
-    return protos;
-}
-
 class VariableGraphNode {
     private propagated = false;
     private globalVarIdx = 0;
@@ -52,7 +41,7 @@ class VariableGraphNode {
  * @param parent объект с дескриптором #0
  * @param childs карта объектов с дескрипторами от #1 и далее
  */
-function linkVars(links: LinkData[], parent: VarStore, childs?: HandleMap<VarStore>) {
+function linkVars(links: LinkData[], parent: VarArrayNode, childs?: HandleMap<VarArrayNode>) {
     for (const { handle1, handle2, connectedVars } of links) {
         //Получаем соединяемые объекты
         const first = handle1 ? childs && childs.get(handle1) : parent;
@@ -79,10 +68,10 @@ function linkVars(links: LinkData[], parent: VarStore, childs?: HandleMap<VarSto
     }
 }
 
-class VarStore {
+class VarArrayNode {
     private proto: ClassPrototype;
     readonly vars?: VariableGraphNode[];
-    private childs?: HandleMap<VarStore>;
+    private childs?: HandleMap<VarArrayNode>;
     constructor(
         name: string,
         classes: Map<string, { data: ClassData; proto: ClassPrototype }>,
@@ -97,9 +86,9 @@ class VarStore {
         if (data.vars) this.vars = data.vars.map(v => new VariableGraphNode(v.name.toLowerCase(), v.type, reqIndex));
         //создаем детей,
         if (data.childs) {
-            const childs = (this.childs = HandleMap.create<VarStore>());
+            const childs = (this.childs = HandleMap.create<VarArrayNode>());
             data.childs.forEach(c => {
-                const childStore = new VarStore(c.classname, classes, reqIndex, {
+                const childStore = new VarArrayNode(c.classname, classes, reqIndex, {
                     handle: c.handle,
                     name: c.nameOnScheme,
                     position: c.position
@@ -111,18 +100,17 @@ class VarStore {
         if (data.links) linkVars(data.links, this, this.childs);
     }
 
-    toSchemeNode(parentData?: SchemeData): ClassSchemeNode {
+    toClassSchemeNode(parentData?: SchemeData): ClassSchemeNode {
         const { vars, proto, childs } = this;
-        const opts: ConstructorParameters<typeof ClassSchemeNode>[0] = {
+        const parentNode = new ClassSchemeNode({
             proto,
             globalIndexMap: vars && vars.map(v => v.extractIndex()),
             schemeData: parentData
-        };
-        const parentNode = new ClassSchemeNode(opts);
+        });
         if (childs) {
             const nodeChilds = HandleMap.create<ClassSchemeNode>();
             childs.forEach((c, handle) =>
-                nodeChilds.set(handle, c.toSchemeNode(c.schemeData && { ...c.schemeData, parent: parentNode }))
+                nodeChilds.set(handle, c.toClassSchemeNode(c.schemeData && { ...c.schemeData, parent: parentNode }))
             );
             parentNode.setChilds(nodeChilds);
         }
@@ -130,17 +118,38 @@ class VarStore {
     }
 }
 
+function dataToProtos(classes: Map<string, ClassData>) {
+    const protos = new Map<string, { data: ClassData; proto: ClassPrototype }>();
+    classes.forEach((data, name) =>
+        protos.set(name, {
+            data,
+            proto: new ClassPrototype(name, { vars: data.vars, code: data.bytecode && data.bytecode.parsed })
+        })
+    );
+    return protos;
+}
+
+//ClassData -> ClassPrototype(ClassData) -> VarArrayNode(ClassData, ClassPrototype) -> ClassSchemeNode(VarArrayNode, ClassPrototype)
+
 export function createClassScheme(
     rootName: string,
-    classes: Map<string, ClassData>
+    classLibrary: Map<string, ClassData>
 ): { mmanager: MemoryManager; root: ClassSchemeNode } {
-    const protos = dataToProtos(classes);
+    //Переводим "сырые" считанные данные в прототипы классов.
+    const protos = dataToProtos(classLibrary);
+
     let varCount = 0;
     const counter = () => varCount++;
-    const head = new VarStore(rootName, protos, counter);
-    const root = head.toSchemeNode();
+
+    //Создаем граф переменных.
+    const head = new VarArrayNode(rootName, protos, counter);
+    //Конвертируем его в граф классов.
+    const root = head.toClassSchemeNode();
+
     const mmanager = new MemoryManager(varCount);
+    //Инициализируем память каждого узла графа.
     root.initDefaultValuesRecursive(mmanager);
     mmanager.assertDefaultValuesInitialized();
+
     return { mmanager, root };
 }

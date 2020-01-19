@@ -2,10 +2,10 @@ export class MemoryManager {
     private defaultVars: (string | number)[];
     private oldVars: (string | number)[];
     private newVars: (string | number)[];
-    constructor(public readonly bufferLength: number) {
-        this.oldVars = new Array(bufferLength);
-        this.newVars = new Array(bufferLength);
-        this.defaultVars = new Array(bufferLength);
+    constructor(public readonly varCount: number) {
+        this.oldVars = new Array(varCount);
+        this.newVars = new Array(varCount);
+        this.defaultVars = new Array(varCount);
     }
 
     assertDefaultValuesInitialized() {

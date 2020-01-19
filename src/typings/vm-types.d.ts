@@ -22,7 +22,7 @@ declare module "vm-types" {
 
     export type Operation = (ctx: VmStateContainer, operand?: Operand) => void;
 
-    export interface Bytecode {
+    export interface ParsedCode {
         /**
          * Масссив специализированных опкодов (specCmd), где опкод = `specCmd & 2047`
          */

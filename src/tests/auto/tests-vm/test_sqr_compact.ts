@@ -2,7 +2,7 @@ import { equal } from "assert";
 import { readClassData, readClassHeaderData } from "~/fileReader/deserialization";
 import { openStreamFromUrl } from "~/fileReader/fileReaderHelpers";
 import { parseVarValue } from "~/helpers/varValueFunctions";
-import { executeCode } from "~/vm/virtualMachine";
+import { executeCode } from "~/vm/executeCode";
 import { VmContext } from "~/vm/vmContext";
 import { ClassState } from "vm-interfaces-base";
 

@@ -4,24 +4,24 @@ import { WindowSystemController } from "vm-interfaces-windows";
 
 export class VmContext implements VmStateContainer, VirtualMachine {
     private nextCmdIndex = 0;
+    private lastCmdIndex = 0;
+    private stackValues = new Array<number | string>(2000);
+    private stackPointer = -1;
     private ctxDepth = 0;
-    private values = new Array<number | string>(2000);
-    private valueP = -1;
-    private endPoint: number = 0;
-    private _currentClass!: ClassState;
     private _stopped = false;
     private _error: string = "";
     private _hasError = false;
 
+    currentClass!: ClassState; //сделаем публичным для чуть быстрого доступа к нему.
     constructor(
         public readonly windows: WindowSystemController,
         public readonly input: InputSystemController,
         public readonly project: ProjectController
     ) {}
 
-    get currentClass() {
-        return this._currentClass;
-    }
+    // get currentClass() {
+    //     return this._currentClass;
+    // }
 
     get canExecuteClass() {
         //именно такой максимальный уровень вложенности указан в оригинальных исходниках
@@ -29,7 +29,7 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     }
 
     setCodeLength(length: number) {
-        this.endPoint = length - 1;
+        this.lastCmdIndex = length - 1;
     }
 
     nextCommandIndex(): number {
@@ -37,16 +37,16 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     }
 
     substituteState(newState: ClassState) {
-        this._currentClass = newState;
+        this.currentClass = newState;
         this.ctxDepth++;
         return this.nextCmdIndex;
     }
 
     returnState(prevState: ClassState, cmdIndex: number) {
-        this._currentClass = prevState;
+        this.currentClass = prevState;
         this.nextCmdIndex = cmdIndex;
         this.ctxDepth--;
-        if (this.ctxDepth === 0) this.valueP = -1;
+        if (this.ctxDepth === 0) this.stackPointer = -1;
     }
 
     get error() {
@@ -68,7 +68,7 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     setError(message: string) {
         this._error = message + ` (индекс команды: ${this.nextCmdIndex - 1})`;
         this._hasError = true;
-        this.jumpTo(this.endPoint);
+        this.jumpTo(this.lastCmdIndex);
     }
 
     addErrorInfo(message: string) {
@@ -77,12 +77,12 @@ export class VmContext implements VmStateContainer, VirtualMachine {
 
     stackPush(value: string | number) {
         // if (typeof value === "boolean") value = Number(value);
-        this.values[++this.valueP] = value;
+        this.stackValues[++this.stackPointer] = value;
     }
     stackPop() {
         //Это условие следует вырезать в продакшене
-        if (this.valueP < 0) throw Error("В стеке нет значений");
-        return this.values[this.valueP--];
+        if (this.stackPointer < 0) throw Error("В стеке нет значений");
+        return this.stackValues[this.stackPointer--];
     }
     jumpTo(index: number) {
         this.nextCmdIndex = index;

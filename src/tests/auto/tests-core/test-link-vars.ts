@@ -9,7 +9,7 @@ async function load(name: string) {
 }
 
 (async function() {
-    equal((await load("balls")).bufferLength, 1235);
-    equal((await load("balls_stress_test")).bufferLength, 2328);
+    equal((await load("balls")).varCount, 1235);
+    equal((await load("balls_stress_test")).varCount, 2328);
     console.log("var count test completed");
 })();

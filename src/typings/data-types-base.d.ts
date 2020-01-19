@@ -1,6 +1,6 @@
 declare module "data-types-base" {
     import { VectorDrawData } from "data-types-graphics";
-    import { Bytecode } from "vm-types";
+    import { ParsedCode } from "vm-types";
 
     export interface VarSetData {
         handle: number;
@@ -57,7 +57,7 @@ declare module "data-types-base" {
         bytecode?: {
             /** `Не используется` */
             original: Uint8Array;
-            parsed?: Bytecode;
+            parsed?: ParsedCode;
         };
         iconRef?: string;
         iconIndex?: number;

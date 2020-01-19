@@ -1,5 +1,5 @@
 import { ClassData } from "data-types-base";
-import { Bytecode, Operation } from "vm-types";
+import { ParsedCode, Operation } from "vm-types";
 import { Opcode } from "~/helpers/vm";
 import realCommandNames from "./commands.json";
 
@@ -14,7 +14,7 @@ function cmdHasError(cmd: Function) {
     return false;
 }
 
-function searchErrors({ code }: Bytecode, operations: Operation[]) {
+function searchErrors({ code }: ParsedCode, operations: Operation[]) {
     const ops = new Set<number>();
     for (let i = 0; i < code.length; i++) {
         const opcode = code[i] & 2047;

@@ -4,7 +4,7 @@ import { ClassState } from "vm-interfaces-base";
 import { createDisableGetter } from "~/helpers/createDisableGetter";
 import { HandleMap } from "~/helpers/handleMap";
 import { createDefaultValue, parseVarValue } from "~/helpers/varValueFunctions";
-import { executeCode } from "~/vm/virtualMachine";
+import { executeCode } from "~/vm/executeCode";
 import { VmContext } from "~/vm/vmContext";
 import { ClassPrototype } from "./classPrototype";
 import { MemoryManager } from "./memoryManager";
@@ -24,8 +24,9 @@ export class ClassSchemeNode implements ClassState {
     private childs?: HandleMap<ClassSchemeNode>;
     private toGlobalVarId?: number[];
     private schemeData?: SchemeData;
-    readonly canReceiveEvents: boolean;
     private captureEventsFromHandle = 0;
+
+    readonly canReceiveEvents: boolean;
     constructor(data: { proto: ClassPrototype; globalIndexMap?: number[]; schemeData?: SchemeData }) {
         this.proto = data.proto;
         this.schemeData = data.schemeData;
