@@ -1,5 +1,5 @@
 import { Operation, VmStateContainer } from "vm-types";
-import { Opcode } from "~/helpers/vm";
+import { Opcode } from "~/helpers/vmConstants";
 
 // OPENSCHEMEWINDOW, name "OpenSchemeWindow" arg "STRING","STRING","STRING" ret "HANDLE" out 201
 function OpenSchemeWindow(ctx: VmStateContainer) {

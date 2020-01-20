@@ -1,5 +1,5 @@
 import { Operation, VmStateContainer } from "vm-types";
-import { Opcode } from "~/helpers/vm";
+import { Opcode } from "~/helpers/vmConstants";
 import { StringToolState, FontToolState, TextToolState } from "vm-interfaces-graphics";
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {

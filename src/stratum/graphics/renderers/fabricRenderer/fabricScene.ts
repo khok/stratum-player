@@ -21,7 +21,7 @@ import { FabricDoubleBitmap } from "./components/fabricDoubleBitmap";
 import { fabricConfigCanvasOptions } from "./fabricConfig";
 import { FabricText } from "./components/fabricText";
 import { BrushToolState } from "vm-interfaces-graphics";
-import { MessageCode } from "~/helpers/vm";
+import { MessageCode } from "~/helpers/vmConstants";
 import { systemKeysTemp } from "~/vm/operations/system";
 import { HTMLInputElementsFactory } from "internal-graphic-types";
 import { HtmlControl } from "./components/htmlControl";

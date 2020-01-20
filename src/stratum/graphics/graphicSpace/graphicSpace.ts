@@ -5,7 +5,7 @@ import { ClassState, VmBool } from "vm-interfaces-base";
 import { GraphicSpaceState } from "vm-interfaces-graphics";
 import { VmStateContainer } from "vm-types";
 import { HandleMap } from "~/helpers/handleMap";
-import { MessageCode } from "~/helpers/vm";
+import { MessageCode } from "~/helpers/vmConstants";
 import { createObjects, createTools } from "./createToolsAndObjects";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
 import { GraphicObject, GroupObject, TextObject, LineObject } from "./objects";
@@ -122,7 +122,7 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
-    createLine(penHandle: number, brushHandle: number, points: Point2D[]) : LineObject {
+    createLine(penHandle: number, brushHandle: number, points: Point2D[]): LineObject {
         const handle = HandleMap.getFreeHandle(this.allObjects);
         const obj = new LineObject(
             {
@@ -134,7 +134,7 @@ export class GraphicSpace implements GraphicSpaceState {
                 points,
                 position: points[0],
                 size: { x: 0, y: 0 },
-                options: 0,
+                options: 0
             },
             this.tools,
             this.scene

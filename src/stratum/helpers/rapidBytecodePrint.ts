@@ -1,7 +1,7 @@
 import { ClassData } from "data-types-base";
-import { Opcode } from ".";
+import { Opcode } from "./vmConstants";
 
-export function rapidPrint(name: string, collection: Map<string, ClassData>) {
+export function rapidBytecodePrint(name: string, collection: Map<string, ClassData>) {
     const kl = collection.get(name)!;
     const code = kl.bytecode!.parsed!;
     code.code.forEach((c, i) => {

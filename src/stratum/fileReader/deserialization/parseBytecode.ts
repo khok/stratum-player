@@ -1,6 +1,6 @@
 import { ParsedCode, FunctionOperand, Operand, OperandType } from "vm-types";
 import { BinaryStream } from "~/helpers/binaryStream";
-import { operandTypes } from "~/helpers/vm";
+import { operandTypes } from "~/helpers/vmConstants";
 import { StratumError } from "~/helpers/errors";
 
 function readFunctionData(stream: BinaryStream): FunctionOperand {

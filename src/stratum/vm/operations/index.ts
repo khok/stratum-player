@@ -1,5 +1,5 @@
 import { Operation } from "vm-types";
-import { Opcode } from "~/helpers/vm";
+import { Opcode } from "~/helpers/vmConstants";
 import { initAdvanced } from "./advanced";
 import { initBase } from "./base";
 import { initGraphicSpace } from "./graphicSpace";
