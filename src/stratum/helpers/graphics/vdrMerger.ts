@@ -226,7 +226,11 @@ function recreateElementOrder(schemeElementOrder: number[], imageElementOrder: n
 }
 
 export class VdrMerger {
-    scheme: Omit<VectorDrawData, "elements"> & { elements: ElementData[] }; //make "elements" property required
+    scheme: VectorDrawData & { elements: ElementData[] }; //Сделаем свойство "elements" обязательным.
+    /**
+     * Создает вспомогательный класс для вставки изображений и иконок дочерних имиджей в схему родительского имиджа.
+     * @param scheme - схема родительского имиджа.
+     */
     constructor(scheme: VectorDrawData) {
         const schemeCopy = deepVdrCopy(scheme);
         if (!schemeCopy.elements) throw new StratumError("Объект не содержит элементов");
@@ -267,7 +271,7 @@ export class VdrMerger {
             : imageCopy.elementOrder;
     }
 
-    replaceIcon(rootGroupHandle: number, iconRef: string) {
+    replaceIcon(rootGroupHandle: number, iconFile: string) {
         const { scheme } = this;
 
         const parentGroup = scheme.elements.find(el => el.handle === rootGroupHandle);
@@ -278,7 +282,7 @@ export class VdrMerger {
         const stubIcon = scheme.elements.find(el => el.handle === stubIconHandle);
         if (!stubIcon || stubIcon.type !== "otDOUBLEBITMAP2D") return;
 
-        const iconBmpTool: ExternalBitmapToolData = { type: "ttREFTODOUBLEDIB2D", handle: 0, filename: iconRef };
+        const iconBmpTool: ExternalBitmapToolData = { type: "ttREFTODOUBLEDIB2D", handle: 0, filename: iconFile };
 
         let freeHandle = 1;
         if (scheme.doubleBitmapTools) {

@@ -59,7 +59,7 @@ declare module "data-types-base" {
             original: Uint8Array;
             parsed?: ParsedCode;
         };
-        iconRef?: string;
+        iconFile?: string;
         iconIndex?: number;
         /** `Не используется` */
         sourceCode?: string;

@@ -206,7 +206,7 @@ export function readClassData(
     }
 
     if (next == RecordType.CR_ICONFILE) {
-        res.iconRef = stream.readString();
+        res.iconFile = stream.readString();
         next = stream.readWord();
     }
 
