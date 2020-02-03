@@ -1,4 +1,4 @@
-import { Opcode } from "~/helpers/vm";
+import { Opcode } from "~/helpers/vmConstants";
 
 //Пока работает - переписывать на TS не буду
 
