@@ -42,28 +42,32 @@ class VariableGraphNode {
  * @param childs карта объектов с дескрипторами от #1 и далее
  */
 function linkVars(links: LinkData[], parent: VarArrayNode, childs?: HandleMap<VarArrayNode>) {
+    const show_warn = (msg: string) => console.warn(`Имидж ${parent.protoName}: ${msg}`);
     for (const { handle1, handle2, connectedVars } of links) {
         //Получаем соединяемые объекты
         const first = handle1 ? childs && childs.get(handle1) : parent;
         const second = handle2 ? childs && childs.get(handle2) : parent;
 
-        if (!first) console.warn(`Объект ${handle1} не найден`);
-        else if (!first.vars) console.warn(`Объект ${handle1} не имеет переменных`);
-        if (!second) console.warn(`Объект ${handle2} не найден`);
-        else if (!second.vars) console.warn(`Объект ${handle2} не имеет переменных`);
+        if (!first) show_warn(`Объект #${handle1} не найден`);
+        else if (!first.vars) show_warn(`Объект #${handle1} не имеет переменных`);
+        if (!second) show_warn(`Объект #${handle2} не найден`);
+        else if (!second.vars) show_warn(`Объект #${handle2} не имеет переменных`);
 
         if (!first || !first.vars || !second || !second.vars) continue;
+
+        const obj1Name = `дочернем имидже ${first.protoName} #${handle1}`;
+        const obj2Name = `дочернем имидже ${second.protoName} #${handle2}`;
 
         for (const { name1, name2 } of connectedVars) {
             //Получаем соединяемые переменные.
             const var1 = first.vars.find(v => v.lowCaseName === name1.toLowerCase());
             const var2 = second.vars.find(v => v.lowCaseName === name2.toLowerCase());
 
-            if (var1 === undefined) console.warn(`Переменная ${name1} не найдена в #${handle1}`);
-            if (var2 === undefined) console.warn(`Переменная ${name2} не найдена в #${handle2}`);
+            if (var1 === undefined) show_warn(`Переменная ${name1} не найдена в ${obj1Name}`);
+            if (var2 === undefined) show_warn(`Переменная ${name2} не найдена в ${obj2Name}`);
             if (var1 === undefined || var2 === undefined) continue;
             if (var1.type === var2.type) VariableGraphNode.connect(var1, var2);
-            else console.warn(`Типы переменных ${name1} в #${handle1} и ${name2} в #${handle2} не совпадают`);
+            else show_warn(`Типы переменных ${name1} в ${obj1Name} и ${name2} в ${obj2Name} не совпадают`);
         }
     }
 }
@@ -98,6 +102,10 @@ class VarArrayNode {
         }
         // и создаем связи между переменными этого объекта и переменными его детей.
         if (data.links) linkVars(data.links, this, this.childs);
+    }
+
+    get protoName() {
+        return this.proto.name;
     }
 
     toClassSchemeNode(parentData?: SchemeData): ClassSchemeNode {

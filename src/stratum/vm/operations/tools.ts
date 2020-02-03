@@ -186,10 +186,9 @@ function CreatePen2d(ctx: VmStateContainer) {
 }
 
 function CreatePolyLine2d(ctx: VmStateContainer, pointCount: number) {
-    const points = Array.from({ length: pointCount / 2 }, () => ({
-        x: ctx.stackPop() as number,
-        y: ctx.stackPop() as number
-    }));
+    const points = new Array(pointCount / 2);
+    for (let i = pointCount / 2 - 1; i >= 0; i--)
+        points[i] = { y: ctx.stackPop() as number, x: ctx.stackPop() as number };
     const brushHandle = ctx.stackPop() as number;
     const penHandle = ctx.stackPop() as number;
     const spaceHandle = ctx.stackPop() as number;

@@ -266,7 +266,7 @@ function SetVectorPoint2d(ctx: VmStateContainer) {
     ctx.stackPush(obj && obj.type === "otLINE2D" ? obj.setPointPosition(index, x, y) : 0);
 }
 
-export function initGraphicSpace(addOperation: (opcode: number, operation: Operation) => void) {
+export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
     addOperation(Opcode.GETOBJECTFROMPOINT2D, GetObjectFromPoint2d);

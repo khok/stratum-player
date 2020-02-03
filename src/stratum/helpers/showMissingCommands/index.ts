@@ -1,7 +1,7 @@
 import { ClassData } from "data-types-base";
 import { ParsedCode, Operation } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import realCommandNames from "./commands.json";
+import { realCommandNames } from "./realCommandNames";
 
 function cmdHasError(cmd: Function) {
     try {
@@ -59,7 +59,7 @@ export function showMissingCommands(allClasses: Map<string, ClassData>, operatio
     const missingOperations: { name: string; classNames: string[] }[] = [];
     for (const [opc, set] of theOps)
         missingOperations.push({
-            name: (realCommandNames[opc] ? realCommandNames[opc].name : opc) + ` (${Opcode[opc]})`,
+            name: (realCommandNames[opc] ? realCommandNames[opc] : opc) + ` (${Opcode[opc]})`,
             classNames: [...set.values()]
         });
     return { missingOperations, errors };

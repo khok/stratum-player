@@ -2,7 +2,7 @@ import { Operation } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
 import { initAdvanced } from "./advanced";
 import { initBase } from "./base";
-import { initGraphicSpace } from "./graphicSpace";
+import { initGraphics } from "./graphics";
 import { initSystem } from "./system";
 import { initTools } from "./tools";
 import { initWindows } from "./windows";
@@ -17,7 +17,7 @@ export const VmOperations = new Array<Operation>(Opcode.VM_MAXIMUM_code + 1);
 
     initAdvanced(addOperation);
     initBase(addOperation);
-    initGraphicSpace(addOperation);
+    initGraphics(addOperation);
     initSystem(addOperation);
     initTools(addOperation);
     initWindows(addOperation);

@@ -79,21 +79,21 @@ export type PlayerOptions = ReadOptions & {
     graphicOptions?: WindowSystemOptions;
     projectOptions?: ProjectDebugOptions;
     preloadedLibs?: JSZipObject[];
+    continueOnErrorCallback: (msg: string) => boolean;
 };
 
-function handlePossibleErrors(collection: Map<string, ClassData>) {
+function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg: string) => boolean) {
     const { errors, missingOperations } = showMissingCommands(collection, VmOperations);
     if (errors.length === 0 && missingOperations.length === 0) return true;
 
     if (errors.length > 0) console.log(errors.concat(";\n"));
     if (missingOperations.length > 0) console.log(formatMissingCommands(missingOperations));
-    alert("Возникли ошибки (см в консоли (F12))");
-    return window.confirm("В работе проекта могут возникнуть ошибки.\nВсе равно запустить?");
+    return callback("Возникли ошибки (см в консоли (F12))\nВсе равно запустить?");
 }
 
 export async function fromZip(zip: JSZipObject[], options?: PlayerOptions) {
     const { rootName, collection, varSet } = await loadProjectData(zip, options);
-    if (!handlePossibleErrors(collection)) return undefined;
+    if (!handlePossibleErrors(collection, (options && options.continueOnErrorCallback) || confirm)) return undefined;
     const ws = new WindowSystem(options && options.graphicOptions);
     return new Player(Project.create(rootName, collection, ws, varSet, options && options.projectOptions), ws);
 }
