@@ -5,13 +5,14 @@ import { StratumError } from "~/helpers/errors";
  * Временная реализация загрузчика изображений.
  */
 export class SimpleImageLoader implements ImageResolver {
-    private data = new Map<string, HTMLImageElement>();
+    private globalImages = new Map<string, HTMLImageElement>();
+    // private localImages = new Map<string, HTMLImageElement>();
     private promises = new Set<Promise<void>>();
 
-    constructor(private iconsPath: string) {}
+    constructor(private iconsPath: string, private bmpFiles?: { filename: string; data: string }[]) {}
 
     private loadImg(iconUrl: string) {
-        const element = this.data.get(iconUrl);
+        const element = this.globalImages.get(iconUrl);
         if (element) return element;
 
         const img = new Image();
@@ -22,11 +23,11 @@ export class SimpleImageLoader implements ImageResolver {
             })
         );
         img.src = iconUrl;
-        this.data.set(iconUrl, img);
+        this.globalImages.set(iconUrl, img);
         return img;
     }
     fromData(base64Data: string): HTMLImageElement {
-        return this.loadImg(base64Data);
+        return this.loadImg("data:image/bmp;base64," + base64Data);
     }
     fromFile(filename: string): HTMLImageElement {
         return this.loadImg(`${this.iconsPath}/${filename.toUpperCase()}`);
@@ -35,6 +36,10 @@ export class SimpleImageLoader implements ImageResolver {
         return Promise.all(this.promises);
     }
     fromProjectFile(bmpFilename: string): HTMLImageElement {
-        throw new Error("Method not implemented.");
+        const name = bmpFilename.toLowerCase();
+        if (!this.bmpFiles) throw new StratumError(`В каталоге проекта нет изображений`);
+        const file = this.bmpFiles.find(f => f.filename.toLowerCase().endsWith(name));
+        if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
+        return this.fromData(file.data);
     }
 }

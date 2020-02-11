@@ -17,16 +17,25 @@ export interface ProjectOptions {
 
 export class Project implements ProjectController {
     static create(
-        rootName: string,
-        classes: Map<string, ClassData>,
-        windowSystem: WindowSystem,
-        varSet?: VarSetData,
+        {
+            rootName,
+            classes,
+            windowSystem,
+            varSet,
+            images
+        }: {
+            rootName: string;
+            classes: Map<string, ClassData>;
+            windowSystem: WindowSystem;
+            varSet?: VarSetData;
+            images?: { filename: string; data: string }[];
+        },
         options?: ProjectOptions
     ) {
         const { root, mmanager } = createClassScheme(rootName, classes);
         if (varSet) root.applyVarSetRecursive(varSet);
         mmanager.initValues();
-        return new Project({ scheme: root, classes, mmanager, windowSystem }, options);
+        return new Project({ scheme: root, classes, mmanager, windowSystem, images }, options);
     }
 
     private scheme: ClassSchemeNode;
@@ -40,12 +49,14 @@ export class Project implements ProjectController {
         data: {
             scheme: ClassSchemeNode;
             classes: Map<string, ClassData>;
+            images?: { filename: string; data: string }[];
             windowSystem: WindowSystem;
             mmanager: MemoryManager;
         },
         private options?: ProjectOptions
     ) {
-        this.globalImgLoader = new SimpleImageLoader((options && options.iconsPath) || "data/icons");
+        const iconsPath = (options && options.iconsPath) || "data/icons";
+        this.globalImgLoader = new SimpleImageLoader(iconsPath, data.images);
         this.classCollection = data.classes;
         this.scheme = data.scheme;
         this.mmanager = data.mmanager;

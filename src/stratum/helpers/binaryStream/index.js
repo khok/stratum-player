@@ -1,12 +1,12 @@
-import bops from 'bops';
+import bops from "bops";
 import { decode, encode } from "iconv-lite";
 
 function decodeString(bytes) {
-    return encode(decode(bytes, 'win1251'), 'utf8').toString();
+    return encode(decode(bytes, "win1251"), "utf8").toString();
 }
 
 export class BinaryStream {
-    constructor(data){
+    constructor(data) {
         this.streamPosition = 0;
         this.data = data instanceof Uint8Array ? data : new Uint8Array(data);
     }
@@ -15,7 +15,7 @@ export class BinaryStream {
         return this.streamPosition >= this.data.length;
     }
 
-    seek (pos) {
+    seek(pos) {
         this.streamPosition = pos;
     }
 
@@ -23,19 +23,19 @@ export class BinaryStream {
         return this.streamPosition;
     }
 
-    readBytes (size) {
+    readBytes(size) {
         const bytes = bops.subarray(this.data, this.streamPosition, this.streamPosition + size);
         this.streamPosition += size;
         return bytes;
     }
 
-    readWord () {
+    readWord() {
         const word = bops.readInt16LE(this.data, this.streamPosition);
         this.streamPosition += 2;
         return word;
     }
 
-    readLong () {
+    readLong() {
         const long = bops.readInt32LE(this.data, this.streamPosition);
         this.streamPosition += 4;
         return long;
@@ -64,13 +64,13 @@ export class BinaryStream {
     readCharSeq() {
         const strStart = this.position;
         let size = 0;
-        while(this.data[strStart + (++size)] != 0x00);
+        while (this.data[strStart + ++size] != 0x00);
 
         return bops.to(this.readBytes(size));
     }
 
     readBase64(size) {
-        return 'data:image/bmp;base64,' + bops.to(this.readBytes(size !== undefined ? size : this.data.length), "base64");
+        return bops.to(this.readBytes(size !== undefined ? size : this.data.length), "base64");
     }
 
     //Используется в коде ВМ, где количество байт всегда кратно 2
@@ -92,11 +92,10 @@ export class BinaryStream {
         return decodeString(this.readBytes(size));
     }
 
-    readString () {
+    readString() {
         const size = bops.readInt16LE(this.data, this.streamPosition);
         this.streamPosition += 2;
-        if(size <= 0)
-            return '';
+        if (size <= 0) return "";
         return decodeString(this.readBytes(size));
     }
 
@@ -104,13 +103,13 @@ export class BinaryStream {
         return {
             x: this.readDouble(),
             y: this.readDouble()
-        }
+        };
     }
 
     readIntegerPoint2D() {
         return {
             x: this.readWord(),
             y: this.readWord()
-        }
+        };
     }
 }

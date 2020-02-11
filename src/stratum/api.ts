@@ -92,10 +92,16 @@ function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg
 }
 
 export async function fromZip(zip: JSZipObject[], options?: PlayerOptions) {
-    const { rootName, collection, varSet } = await loadProjectData(zip, options);
+    const { rootName, collection, varSet, images } = await loadProjectData(zip, options);
     if (!handlePossibleErrors(collection, (options && options.continueOnErrorCallback) || confirm)) return undefined;
-    const ws = new WindowSystem(options && options.graphicOptions);
-    return new Player(Project.create(rootName, collection, ws, varSet, options && options.projectOptions), ws);
+    const windowSystem = new WindowSystem(options && options.graphicOptions);
+    return new Player(
+        Project.create(
+            { rootName, classes: collection, windowSystem, varSet, images },
+            options && options.projectOptions
+        ),
+        windowSystem
+    );
 }
 
 export async function fromUrl(url: string | string[], options?: PlayerOptions) {

@@ -92,6 +92,7 @@ declare module "vm-interfaces-graphics" {
         | TextToolState;
 
     export interface GraphicSpaceToolsState {
+        createBitmap(bmpFilename: string): BitmapToolState;
         createPen(width: number, color: StringColor): PenToolState;
         createFont(fontName: string, size: number, style: number): FontToolState;
         createString(value: string): StringToolState;

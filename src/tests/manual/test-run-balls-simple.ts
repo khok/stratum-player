@@ -7,13 +7,13 @@ import { WindowSystem } from "~/graphics/windowSystem";
     const zipFiles = await openZipFromUrl(["test_projects/balls_stress_test.zip", "/data/library.zip"]);
     const { rootName, collection, varSet } = await loadProjectData(zipFiles);
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const ws = new WindowSystem({ globalCanvas: canvas });
-    const prj = Project.create(rootName, collection, ws, varSet);
+    const windowSystem = new WindowSystem({ globalCanvas: canvas });
+    const prj = Project.create({ rootName, classes: collection, windowSystem, varSet });
     let num: number;
     const req = () =>
         (num = window.requestAnimationFrame(() => {
             prj.oneStep();
-            ws.renderAll();
+            windowSystem.renderAll();
             req();
         }));
     req();

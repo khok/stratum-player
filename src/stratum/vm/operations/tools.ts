@@ -218,6 +218,14 @@ function CreateGroup2d(ctx: VmStateContainer, objectCount: number) {
     ctx.stackPush(0);
 }
 
+// HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
+function CreateDIB2d(ctx: VmStateContainer) {
+    const bmpFilename = ctx.stackPop() as string;
+    const spaceHandle = ctx.stackPop() as number;
+    const space = ctx.windows.getSpace(spaceHandle);
+    ctx.stackPush(space ? space.tools.createBitmap(bmpFilename).handle : 0);
+}
+
 export function initTools(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETTEXTOBJECT2D, GetTextObject2d);
     addOperation(Opcode.VM_GETTEXTCOUNT2D, GetTextCount2d);
@@ -236,4 +244,5 @@ export function initTools(addOperation: (opcode: number, operation: Operation) =
     addOperation(Opcode.CREATEPOLYLINE2D, CreatePolyLine2d as Operation);
     addOperation(Opcode.CREATELINE2D, CreateLine2d);
     addOperation(Opcode.CREATEGROUP2D, CreateGroup2d as Operation);
+    addOperation(Opcode.CREATEDID2D, CreateDIB2d);
 }
