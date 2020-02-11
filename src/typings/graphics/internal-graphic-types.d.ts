@@ -3,6 +3,7 @@ declare module "internal-graphic-types" {
      * Загрузчик изображений.
      */
     export interface ImageResolver {
+        fromProjectFile(bmpFilename: string): HTMLImageElement;
         fromData(data: string): HTMLImageElement;
         fromFile(filename: string): HTMLImageElement;
     }

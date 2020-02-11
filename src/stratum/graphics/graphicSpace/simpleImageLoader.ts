@@ -1,12 +1,15 @@
 import { ImageResolver } from "internal-graphic-types";
+import { StratumError } from "~/helpers/errors";
 
 /**
  * Временная реализация загрузчика изображений.
  */
 export class SimpleImageLoader implements ImageResolver {
-    private iconsPath = "data/icons";
     private data = new Map<string, HTMLImageElement>();
     private promises = new Set<Promise<void>>();
+
+    constructor(private iconsPath: string) {}
+
     private loadImg(iconUrl: string) {
         const element = this.data.get(iconUrl);
         if (element) return element;
@@ -15,7 +18,7 @@ export class SimpleImageLoader implements ImageResolver {
         this.promises.add(
             new Promise((res, rej) => {
                 img.onload = () => res();
-                img.onerror = () => rej();
+                img.onerror = () => rej(new StratumError("Не могу загрузить " + iconUrl));
             })
         );
         img.src = iconUrl;
@@ -30,5 +33,8 @@ export class SimpleImageLoader implements ImageResolver {
     }
     getPromise() {
         return Promise.all(this.promises);
+    }
+    fromProjectFile(bmpFilename: string): HTMLImageElement {
+        throw new Error("Method not implemented.");
     }
 }

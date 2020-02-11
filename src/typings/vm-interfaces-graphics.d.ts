@@ -180,6 +180,7 @@ declare module "vm-interfaces-graphics" {
         addObject(obj: GraphicObjectState): number;
         createText(x: number, y: number, angle: number, textHandle: number): TextObjectState;
         createLine(penHandle: number, brushHandle: number, points: Point2D[]): LineObjectState;
+        createGroup(objectHandles: number[]): GroupObjectState | undefined;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
 
@@ -187,5 +188,6 @@ declare module "vm-interfaces-graphics" {
 
         findObjectByName(objectName: string, group?: GroupObjectState): GraphicObjectState | undefined;
         getObjectFromPoint(x: number, y: number): GraphicObjectState | undefined;
+        isIntersect(obj: GraphicObjectState, obj2: GraphicObjectState): VmBool;
     }
 }

@@ -1,15 +1,13 @@
 import { VmBool } from "vm-interfaces-base";
 import { BitmapToolState } from "vm-interfaces-graphics";
 import { ToolMixin } from "./toolMixin";
-import { ImageResolver } from "internal-graphic-types";
-import { BitmapToolData, ExternalBitmapToolData } from "data-types-graphics";
 
 export class BitmapTool extends ToolMixin<BitmapTool> implements BitmapToolState {
     readonly type = "ttDIB2D";
     private _image: HTMLImageElement;
-    constructor(data: BitmapToolData | ExternalBitmapToolData, imgLoader: ImageResolver) {
+    constructor(image: HTMLImageElement) {
         super();
-        this._image = data.type === "ttDIB2D" ? imgLoader.fromData(data.image) : imgLoader.fromFile(data.filename);
+        this._image = image;
     }
     get image() {
         return this._image;

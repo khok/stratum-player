@@ -20,7 +20,7 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
     const ws = new WindowSystem({ globalCanvas: cv, dispatcher: dsp });
     dsp.on("WINDOW_CREATED", name => (document.title = name));
 
-    const globalImgLoader = new SimpleImageLoader();
+    const globalImgLoader = new SimpleImageLoader("data/icons");
     ws.createSchemeWindow("Test Window", "", opts =>
         GraphicSpace.fromVdr(
             "WorkSpace",

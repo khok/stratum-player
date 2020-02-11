@@ -145,13 +145,29 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
+    createGroup(objectHandles: number[]): GroupObject | undefined {
+        const objects = new Array<GraphicObject>(objectHandles.length);
+        for (let i = 0; i < objectHandles.length; i++) {
+            const handle = objectHandles[i];
+            const obj = this.getObject(handle);
+            if (!obj) return undefined;
+            objects[i] = obj;
+        }
+
+        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const obj = new GroupObject({ items: objects.values() });
+        this.allObjects.set(handle, obj);
+        obj.handle = handle;
+        return obj;
+    }
+
     private addObjectFast(obj: GraphicObject, handle: number) {
         obj.handle = handle;
         this.allObjects.set(handle, obj);
     }
 
     getObject(handle: number): GraphicObject | undefined {
-        if (handle === 0) return undefined;
+        // if (handle === 0) return undefined; //unlikely
         return this.allObjects.get(handle);
     }
 
@@ -165,7 +181,7 @@ export class GraphicSpace implements GraphicSpaceState {
 
     subscribe(ctx: VmStateContainer, klass: ClassState, msg: MessageCode, objectHandle: number, flags: number): void {
         if (this.subs.some(s => s.klass === klass && s.msg === msg)) {
-            console.warn(`Попытка повторной подписки на сообщение ${MessageCode[msg]} классом: ${klass.protoName}`);
+            console.warn(`Попытка повторной подписки на сообщение ${MessageCode[msg]} классом ${klass.protoName}`);
             return;
         }
         this.subs.push({ ctx, klass, objectHandle, msg });
@@ -228,5 +244,8 @@ export class GraphicSpace implements GraphicSpaceState {
             obj = obj.parent;
         }
         return obj;
+    }
+    isIntersect(obj: GraphicObject, obj2: GraphicObject): VmBool {
+        throw new Error("Method not implemented.");
     }
 }

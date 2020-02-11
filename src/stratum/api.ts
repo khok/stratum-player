@@ -3,7 +3,7 @@
  */
 
 import { JSZipObject } from "jszip";
-import { Project, ProjectDebugOptions } from "~/core/project";
+import { Project, ProjectOptions } from "~/core/project";
 import { loadProjectData, openZipFromFileList, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { StratumError } from "./helpers/errors";
@@ -77,9 +77,9 @@ export class Player {
 
 export type PlayerOptions = ReadOptions & {
     graphicOptions?: WindowSystemOptions;
-    projectOptions?: ProjectDebugOptions;
+    projectOptions?: ProjectOptions;
     preloadedLibs?: JSZipObject[];
-    continueOnErrorCallback: (msg: string) => boolean;
+    continueOnErrorCallback?: (msg: string) => boolean;
 };
 
 function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg: string) => boolean) {

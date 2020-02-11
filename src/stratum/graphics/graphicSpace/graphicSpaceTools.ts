@@ -3,48 +3,58 @@ import { GraphicSpaceToolsState, ToolState } from "vm-interfaces-graphics";
 import { HandleMap } from "~/helpers/handleMap";
 import { BitmapTool, BrushTool, DoubleBitmapTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
 import { StringColor } from "data-types-graphics";
+import { ImageResolver } from "internal-graphic-types";
+import { StratumError } from "~/helpers/errors";
 
 /**
  * Контейнер инструментов графического пространства.
  */
 export class GraphicSpaceTools implements GraphicSpaceToolsState {
-    private brushes: HandleMap<BrushTool>;
-    private pens: HandleMap<PenTool>;
     private bitmaps: HandleMap<BitmapTool>;
+    private brushes: HandleMap<BrushTool>;
     private doubleBitmaps: HandleMap<DoubleBitmapTool>;
     private fonts: HandleMap<FontTool>;
+    private pens: HandleMap<PenTool>;
     private strings: HandleMap<StringTool>;
     private texts: HandleMap<TextTool>;
+    private imageLoader?: ImageResolver;
 
     constructor(data?: {
-        brushes?: HandleMap<BrushTool>;
-        pens?: HandleMap<PenTool>;
         bitmaps?: HandleMap<BitmapTool>;
+        brushes?: HandleMap<BrushTool>;
         doubleBitmaps?: HandleMap<DoubleBitmapTool>;
         fonts?: HandleMap<FontTool>;
+        pens?: HandleMap<PenTool>;
         strings?: HandleMap<StringTool>;
         texts?: HandleMap<TextTool>;
+        imageLoader: ImageResolver;
     }) {
-        this.brushes = (data && data.brushes) || HandleMap.create<BrushTool>();
-        this.pens = (data && data.pens) || HandleMap.create<PenTool>();
+        this.imageLoader = data && data.imageLoader;
         this.bitmaps = (data && data.bitmaps) || HandleMap.create<BitmapTool>();
+        this.brushes = (data && data.brushes) || HandleMap.create<BrushTool>();
         this.doubleBitmaps = (data && data.doubleBitmaps) || HandleMap.create<DoubleBitmapTool>();
         this.fonts = (data && data.fonts) || HandleMap.create<FontTool>();
+        this.pens = (data && data.pens) || HandleMap.create<PenTool>();
         this.strings = (data && data.strings) || HandleMap.create<StringTool>();
         this.texts = (data && data.texts) || HandleMap.create<TextTool>();
         if (!data) return;
         for (const k in data) {
+            if (k === "imageLoader") continue;
             const mp = (data as any)[k] as HandleMap<{ handle: number }> | undefined;
             if (mp) mp.forEach((c, handle) => (c.handle = handle));
         }
     }
-    createPen(width: number, color: string): PenTool {
-        const pen = new PenTool(width, color);
-        const handle = HandleMap.getFreeHandle(this.pens);
-        this.pens.set(handle, pen);
-        pen.handle = handle;
-        return pen;
+
+    createBitmap(bmpFilename: string) {
+        if (!this.imageLoader) throw new StratumError("Отсутствует зависимость ImageResolver!");
+        const image = this.imageLoader.fromProjectFile(bmpFilename);
+        const bmp = new BitmapTool(image);
+        const handle = HandleMap.getFreeHandle(this.bitmaps);
+        this.bitmaps.set(handle, bmp);
+        bmp.handle = handle;
+        return bmp;
     }
+
     createFont(fontName: string, size: number, style: number): FontTool {
         const font = new FontTool(fontName, size, style);
         const handle = HandleMap.getFreeHandle(this.fonts);
@@ -52,6 +62,15 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         font.handle = handle;
         return font;
     }
+
+    createPen(width: number, color: string): PenTool {
+        const pen = new PenTool(width, color);
+        const handle = HandleMap.getFreeHandle(this.pens);
+        this.pens.set(handle, pen);
+        pen.handle = handle;
+        return pen;
+    }
+
     createString(value: string): StringTool {
         const stringTool = new StringTool(value);
         const handle = HandleMap.getFreeHandle(this.strings);
@@ -59,6 +78,7 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         stringTool.handle = handle;
         return stringTool;
     }
+
     createText(
         font: FontTool,
         stringFragment: StringTool,
@@ -71,47 +91,8 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         textTool.handle = handle;
         return textTool;
     }
-    // createTool(tool: PenTool | BrushTool | BitmapTool | DoubleBitmapTool | FontTool | StringTool | TextTool): number {
-    //     switch (tool.type) {
-    //         case "ttPEN2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.pens);
-    //             this.pens.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //         case "ttBRUSH2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.brushes);
-    //             this.brushes.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //         case "ttDIB2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.bitmaps);
-    //             this.bitmaps.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //         case "ttDOUBLEDIB2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.doubleBitmaps);
-    //             this.doubleBitmaps.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //         case "ttFONT2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.fonts);
-    //             this.fonts.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //         case "ttSTRING2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.strings);
-    //             this.strings.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //         case "ttTEXT2D": {
-    //             const freeHandle = HandleMap.getFreeHandle(this.texts);
-    //             this.texts.set(freeHandle, tool);
-    //             return freeHandle;
-    //         }
-    //     }
-    // }
+
     getTool<T extends ToolState>(type: ToolState["type"], handle: number): T | undefined {
-        if (handle === 0) return undefined;
         switch (type) {
             case "ttPEN2D":
                 return this.pens.get(handle) as T | undefined;
@@ -131,7 +112,6 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
     }
 
     deleteTool(type: ToolState["type"], handle: number): VmBool {
-        if (handle === 0) return 0;
         switch (type) {
             case "ttPEN2D":
                 return this.pens.delete(handle) ? 1 : 0;

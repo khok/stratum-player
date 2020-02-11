@@ -95,21 +95,9 @@ function GetClassName(ctx: VmStateContainer) {
 // }
 
 // //NOTREL
-// function CREATEGROUP2D(ctx, _word) {
-//     const size = _word;
-//     throw "CREATEGROUP_SIZE: NIMP";
-// }
-
-// //NOTREL
 // function SETGROUPITEMS2D(ctx, _word) {
 //     const size = _word;
 //     throw "SETGROUPITEMS2D: NIMP";
-// }
-
-// //NOTREL
-// function CREATEPOLYLINE2D(ctx, _word) {
-//     const size = _word;
-//     throw "CREATEPOLYLINE2D: NIMP";
 // }
 
 // function VM_ADDPRIMITIVE3D(ctx, _word) {
@@ -151,8 +139,6 @@ export function initAdvanced(addOperation: (opcode: number, operation: Operation
 
     // addCommand(Opcode.VFUNCTION, VFUNCTION);
     // addCommand(Opcode.DLLFUNCTION, DLLFUNCTION);
-    // addCommand(Opcode.CREATEGROUP2D, CREATEGROUP2D);
     // addCommand(Opcode.SETGROUPITEMS2D, SETGROUPITEMS2D);
-    // addCommand(Opcode.CREATEPOLYLINE2D, CREATEPOLYLINE2D);
     // addCommand(Opcode.VM_ADDPRIMITIVE3D, VM_ADDPRIMITIVE3D);
 }

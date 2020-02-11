@@ -17,28 +17,34 @@ import {
 import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool, FontTool } from "./tools";
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
-    const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
-    const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p.width, p.color)]));
-    const bitmaps =
-        tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, new BitmapTool(b, imageLoader)]));
-    const doubleBitmaps =
-        tools.doubleBitmapTools &&
-        HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(b, imageLoader)]));
-    const fonts =
-        tools.fontTools &&
-        HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));
-    const strings =
-        tools.stringTools && HandleMap.create(tools.stringTools.map(s => [s.handle, new StringTool(s.data)]));
     //prettier-ignore
-    const texts =
-        tools.textTools &&
-        HandleMap.create(tools.textTools.map(t => [t.handle, new TextTool( t.textCollection.map(tt => ({
+    const bitmaps = HandleMap.create(tools.bitmapTools && tools.bitmapTools.map(bmpData => {
+        const image = bmpData.type === "ttDIB2D" ? imageLoader.fromData(bmpData.image) : imageLoader.fromFile(bmpData.filename);
+        return [bmpData.handle, new BitmapTool(image)];
+    }));
+
+    const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
+
+    //prettier-ignore
+    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(b, imageLoader)]));
+
+    //prettier-ignore
+    const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));
+
+    const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p.width, p.color)]));
+
+    //prettier-ignore
+    const strings = tools.stringTools && HandleMap.create(tools.stringTools.map(s => [s.handle, new StringTool(s.data)]));
+
+    //prettier-ignore
+    const texts = tools.textTools && HandleMap.create(tools.textTools.map(t => [t.handle, new TextTool( t.textCollection.map(tt => ({
             font: fonts!.get(tt.fontHandle)!,
             stringFragment: strings!.get(tt.stringHandle)!,
             foregroundColor: tt.ltFgColor,
             backgroundColor: tt.ltBgColor,
         })) )]));
-    return new GraphicSpaceTools({ brushes, pens, bitmaps, doubleBitmaps, fonts, strings, texts });
+
+    return new GraphicSpaceTools({ bitmaps, brushes, doubleBitmaps, fonts, pens, strings, texts, imageLoader });
 }
 
 export function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {

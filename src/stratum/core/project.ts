@@ -10,8 +10,9 @@ import { ClassSchemeNode } from "./classSchemeNode";
 import { createClassScheme } from "./createClassScheme";
 import { MemoryManager } from "./memoryManager";
 
-export interface ProjectDebugOptions {
-    disableSchemeComposition?: boolean;
+export interface ProjectOptions {
+    iconsPath?: string;
+    debug_disableSchemeComposition?: boolean;
 }
 
 export class Project implements ProjectController {
@@ -20,12 +21,12 @@ export class Project implements ProjectController {
         classes: Map<string, ClassData>,
         windowSystem: WindowSystem,
         varSet?: VarSetData,
-        debugOptions?: ProjectDebugOptions
+        options?: ProjectOptions
     ) {
         const { root, mmanager } = createClassScheme(rootName, classes);
         if (varSet) root.applyVarSetRecursive(varSet);
         mmanager.initValues();
-        return new Project({ scheme: root, classes, mmanager, windowSystem }, debugOptions);
+        return new Project({ scheme: root, classes, mmanager, windowSystem }, options);
     }
 
     private scheme: ClassSchemeNode;
@@ -33,7 +34,7 @@ export class Project implements ProjectController {
     private classCollection: Map<string, ClassData>;
     private vm: VmContext;
     private mmanager: MemoryManager;
-    private globalImgLoader = new SimpleImageLoader();
+    private globalImgLoader: SimpleImageLoader;
 
     constructor(
         data: {
@@ -42,8 +43,9 @@ export class Project implements ProjectController {
             windowSystem: WindowSystem;
             mmanager: MemoryManager;
         },
-        private debugOptions?: ProjectDebugOptions
+        private options?: ProjectOptions
     ) {
+        this.globalImgLoader = new SimpleImageLoader((options && options.iconsPath) || "data/icons");
         this.classCollection = data.classes;
         this.scheme = data.scheme;
         this.mmanager = data.mmanager;
@@ -71,7 +73,7 @@ export class Project implements ProjectController {
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const vdr =
-            (!this.debugOptions || !this.debugOptions.disableSchemeComposition) && data.childs
+            (!this.options || !this.options.debug_disableSchemeComposition) && data.childs
                 ? createComposedScheme(data.scheme, data.childs, this.classCollection)
                 : data.scheme;
         return opts => {

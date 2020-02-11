@@ -50,6 +50,7 @@ export class ClassSchemeNode implements ClassState {
      *
      * Замечание: Значения родительских превыше дочерних, поэтому они применяются последними.
      */
+    // TODO: заменить 'new Error()' на 'Error()'
     initDefaultValuesRecursive(mmanager: MemoryManager) {
         if (this.mmanager) throw new Error("Значения уже инициализированы");
         this.mmanager = mmanager;

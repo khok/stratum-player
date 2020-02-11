@@ -158,7 +158,7 @@ function V_ROUND(ctx) {
     ctx.stackPush(Math.round(value * dec) / dec);
 }
 function V_TRUNC(ctx) {
-    throw "V_TRUNC: NIMP";
+    ctx.stackPush(Math.trunc(ctx.stackPop()));
 }
 function V_RANDOM(ctx) {
     ctx.stackPush(ctx.stackPop() * Math.random());

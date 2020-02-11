@@ -266,6 +266,24 @@ function SetVectorPoint2d(ctx: VmStateContainer) {
     ctx.stackPush(obj && obj.type === "otLINE2D" ? obj.setPointPosition(index, x, y) : 0);
 }
 
+// FLOAT IsObjectsIntersect2d(HANDLE HSpace, HANDLE obj1, HANDLE obj2, FLOAT flags)
+function IsObjectsIntersect2d(ctx: VmStateContainer) {
+    const flags = ctx.stackPop() as number;
+    const obj2Handle = ctx.stackPop() as number;
+    const obj1Handle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (space) {
+        const obj1 = space.getObject(obj1Handle);
+        const obj2 = space.getObject(obj2Handle);
+        if (obj1 && obj2) {
+            ctx.stackPush(space.isIntersect(obj1, obj2));
+            return;
+        }
+    }
+    ctx.stackPush(0);
+}
+
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -294,4 +312,5 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.GETVECTORPOINT2DX, GetVectorPoint2dx);
     addOperation(Opcode.GETVECTORPOINT2DY, GetVectorPoint2dy);
     addOperation(Opcode.SETVECTORPOINT2D, SetVectorPoint2d);
+    addOperation(Opcode.V_ISINTERSECT2D, IsObjectsIntersect2d);
 }

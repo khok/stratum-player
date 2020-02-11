@@ -33,7 +33,7 @@ export const VmOperandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIM
     //                      o
     //                     /|\
     //                      |\
-    setOperand(Opcode.V_SYSTEM, "codepoint");
+    setOperand(Opcode.V_SYSTEM, "word");
     setOperand(Opcode.VFUNCTION, "functionData");
     setOperand(Opcode.DLLFUNCTION, "dllFunctionData");
     setOperand(Opcode.CREATEGROUP2D, "word");
