@@ -25,7 +25,7 @@ export type ReadOptions = {
     customRoot?: string;
 };
 
-export async function loadProjectData(data: JSZipObject[], options?: ReadOptions) {
+export async function readProjectData(data: JSZipObject[], options?: ReadOptions) {
     const customRoot = options && options.customRoot;
     const ignorePrj = options && options.projectFile === "";
     const ignoreStt = options && options.sttFile === "";

@@ -1,11 +1,11 @@
 import { ok } from "assert";
 import { createClassScheme } from "~/core/createClassScheme";
 import { Project } from "~/core/project";
-import { loadProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
+import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 
 (async function() {
     const zipFiles = await openZipFromUrl("/test_projects/test_messages.zip");
-    const { collection, rootName, varSet } = await loadProjectData(zipFiles);
+    const { collection, rootName, varSet } = await readProjectData(zipFiles);
     const { root, mmanager } = createClassScheme(rootName, collection);
     root.applyVarSetRecursive(varSet!);
     mmanager.initValues();

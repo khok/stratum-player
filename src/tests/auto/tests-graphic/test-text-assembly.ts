@@ -1,12 +1,12 @@
 import { equal } from "assert";
-import { loadProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
+import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 import { createTools } from "~/graphics/graphicSpace/createToolsAndObjects";
 import { TextTool } from "~/graphics/graphicSpace/tools";
 import { HandleMap } from "~/helpers/handleMap";
 
 (async function() {
     const files = await openZipFromUrl("test_projects/texts_test.zip");
-    const { collection, rootName } = await loadProjectData(files);
+    const { collection, rootName } = await readProjectData(files);
     const scheme = collection.get(rootName)!.scheme!;
     console.dir(scheme);
     const tools = createTools(scheme, {} as any);

@@ -1,5 +1,5 @@
 import { equal } from "assert";
-import { loadProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
+import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { GroupObject } from "~/graphics/graphicSpace/objects";
 import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
@@ -10,7 +10,7 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
 
 (async function() {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
-    const { collection } = await loadProjectData(zip);
+    const { collection } = await readProjectData(zip);
     const cl = collection.get("WorkSpace")!;
     const cdata = cl.childs!;
     const oldvdr = cl.scheme!;

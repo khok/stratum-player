@@ -4,7 +4,7 @@
 
 import { JSZipObject } from "jszip";
 import { Project, ProjectOptions } from "~/core/project";
-import { loadProjectData, openZipFromFileList, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
+import { readProjectData, openZipFromFileList, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { StratumError } from "./helpers/errors";
 import { formatMissingCommands, showMissingCommands } from "./helpers/showMissingCommands";
@@ -92,7 +92,7 @@ function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg
 }
 
 export async function fromZip(zip: JSZipObject[], options?: PlayerOptions) {
-    const { rootName, collection, varSet, images } = await loadProjectData(zip, options);
+    const { rootName, collection, varSet, images } = await readProjectData(zip, options);
     if (!handlePossibleErrors(collection, (options && options.continueOnErrorCallback) || confirm)) return undefined;
     const windowSystem = new WindowSystem(options && options.graphicOptions);
     return new Player(
