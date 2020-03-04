@@ -88,12 +88,7 @@ export class Project implements ProjectController {
                 ? createComposedScheme(data.scheme, data.childs, this.classCollection)
                 : data.scheme;
         return opts => {
-            const space = GraphicSpace.fromVdr(
-                className,
-                vdr,
-                this.globalImgLoader,
-                new FabricScene({ ...opts, view: vdr.origin })
-            );
+            const space = GraphicSpace.fromVdr(className, vdr, this.globalImgLoader, new FabricScene(opts));
             this.globalImgLoader.getPromise().then(() => space.scene.forceRender());
             return space;
         };

@@ -22,12 +22,7 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
 
     const globalImgLoader = new SimpleImageLoader("data/icons");
     ws.createSchemeWindow("Test Window", "", opts =>
-        GraphicSpace.fromVdr(
-            "WorkSpace",
-            vdr,
-            globalImgLoader,
-            new FabricScene({ canvas: opts.canvas, view: vdr.origin })
-        )
+        GraphicSpace.fromVdr("WorkSpace", vdr, globalImgLoader, new FabricScene({ canvas: opts.canvas }))
     );
     equal(document.title, "Test Window");
     const space = ws.getSpace(1)!;

@@ -36,21 +36,13 @@ export class FabricScene implements Scene {
     private objects: HandleMap<VisualObject> = HandleMap.create();
     private inputFactory?: HTMLInputElementsFactory;
     private objectsByZReversed: VisualObject[] = [];
-    private view: Point2D;
+    private view: Point2D = { x: 0, y: 0 };
     private _redraw = false;
 
     private mouseSubs = new Set<(code: MessageCode, x: number, y: number) => void>();
     private controlsubs = new Set<(code: MessageCode, controlHandle: number) => void>();
 
-    constructor({
-        canvas,
-        inputFactory,
-        view
-    }: {
-        canvas: HTMLCanvasElement;
-        inputFactory?: HTMLInputElementsFactory;
-        view: Point2D;
-    }) {
+    constructor({ canvas, inputFactory }: { canvas: HTMLCanvasElement; inputFactory?: HTMLInputElementsFactory }) {
         canvas.oncontextmenu = e => e.preventDefault();
 
         //touch
@@ -86,7 +78,6 @@ export class FabricScene implements Scene {
             preserveObjectStacking: true,
             renderOnAddRemove: false
         });
-        this.view = { ...view };
     }
     // preventMoveEvent = false;
     private raiseEvent(

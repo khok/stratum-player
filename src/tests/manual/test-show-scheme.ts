@@ -17,7 +17,7 @@ export async function _show_scheme(name: string, opts: ReadOptions) {
     const scheme = createComposedScheme(root.scheme!, root.childs!, collection);
 
     const inputFactory = new HtmlFactory(htmlRoot);
-    const scene = new FabricScene({ canvas, inputFactory, view: scheme.origin });
+    const scene = new FabricScene({ canvas, inputFactory });
     const imageResolver = new SimpleImageLoader("data/icons");
     GraphicSpace.fromVdr("", scheme, imageResolver, scene);
     setTimeout(() => scene.render(), 100);
