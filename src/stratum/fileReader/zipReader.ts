@@ -83,6 +83,11 @@ export async function readClassFiles(files: JSZipObject[], mainClassName: string
     return res;
 }
 
+/**
+ * Считывает данные всех классов проекта.
+ * @param files данные ZIP-архива с файлами классов
+ * @param silent не выбрасывать ошибки при чтении
+ */
 export async function readAllClassFiles(files: JSZipObject[], silent = false) {
     const headers = await loadHeaders(files);
     const res = new Map<string, ClassData>();
@@ -119,11 +124,21 @@ export async function readImageFiles(files: JSZipObject[]) {
     return Array.from({ length: extFiles.length }, (_, i) => ({ filename: names[i], data: datas[i] }));
 }
 
+/**
+ * Получает содержимое архива из файла или Blob.
+ * @remarks
+ * не используйте его напрямую - используйте `openZipFromFileList` вместо этого метода
+ */
 export async function zipFromBlob(file: Blob | File) {
     const { files } = await loadAsync(file);
     return Object.keys(files).map(key => files[key]);
 }
 
+/**
+ * Получает содержимое архива с `url`.
+ * @remarks
+ * не используйте его напрямую - используйте `openZipFromUrl` вместо этого метода
+ */
 export async function zipFromUrl(url: string) {
     try {
         const resp = await fetch(url);

@@ -10,7 +10,6 @@ export async function openZipFromUrl(url: string | string[]): Promise<JSZipObjec
 
 export async function openZipFromFileList(files: FileList): Promise<JSZipObject[]> {
     const zipData = await Promise.all(Array.from({ length: files.length }, (_, i) => zipFromBlob(files[i])));
-
     return new Array<JSZipObject>().concat(...zipData);
 }
 

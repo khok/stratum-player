@@ -1,16 +1,13 @@
 import { ok } from "assert";
 import { createClassScheme } from "~/core/createClassScheme";
 import { Project } from "~/core/project";
-import { openZipFromUrl } from "~/fileReader/fileReaderHelpers";
-import { readClassFiles, readProjectFile, readVarsFile } from "~/fileReader/zipReader";
+import { loadProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 
 (async function() {
     const zipFiles = await openZipFromUrl("/test_projects/test_messages.zip");
-    const mainClassName = await readProjectFile(zipFiles);
-    const collection = await readClassFiles(zipFiles, mainClassName);
-    const vars = await readVarsFile(zipFiles);
-    const { root, mmanager } = createClassScheme(mainClassName, collection);
-    root.applyVarSetRecursive(vars!);
+    const { collection, rootName, varSet } = await loadProjectData(zipFiles);
+    const { root, mmanager } = createClassScheme(rootName, collection);
+    root.applyVarSetRecursive(varSet!);
     mmanager.initValues();
     const prj = new Project({ scheme: root, mmanager, classes: collection, windowSystem: {} as any });
     ok(mmanager.getDefaultVarValue(1) === 21 && mmanager.getNewVarValue(1) === 21);
