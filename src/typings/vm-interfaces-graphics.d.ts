@@ -180,7 +180,8 @@ declare module "vm-interfaces-graphics" {
 
         addObject(obj: GraphicObjectState): number;
         createText(x: number, y: number, angle: number, textHandle: number): TextObjectState;
-        createLine(penHandle: number, brushHandle: number, points: Point2D[]): LineObjectState;
+        createBitmap(x: number, y: number, bitmapToolHandle: number): BitmapObjectState;
+        createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObjectState;
         createGroup(objectHandles: number[]): GroupObjectState | undefined;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;

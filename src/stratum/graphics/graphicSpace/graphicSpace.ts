@@ -8,7 +8,7 @@ import { HandleMap } from "~/helpers/handleMap";
 import { MessageCode } from "~/helpers/vmConstants";
 import { createObjects, createTools } from "./createToolsAndObjects";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
-import { GraphicObject, GroupObject, TextObject, LineObject } from "./objects";
+import { GraphicObject, GroupObject, TextObject, LineObject, BitmapObject } from "./objects";
 import { BrushTool } from "./tools";
 
 /**
@@ -122,7 +122,31 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
-    createLine(penHandle: number, brushHandle: number, points: Point2D[]): LineObject {
+    createBitmap(x: number, y: number, bitmapToolHandle: number): BitmapObject {
+        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const obj = new BitmapObject(
+            {
+                handle,
+                bmpAngle: 0,
+                bmpOrigin: { x: 0, y: 0 },
+                bmpSize: { x: 0, y: 0 },
+                size: { x: 0, y: 0 },
+                dibHandle: bitmapToolHandle,
+                name: "",
+                options: 0,
+                position: { x, y },
+                type: "otBITMAP2D"
+            },
+            this.tools,
+            this.scene
+        );
+        this.allObjects.set(handle, obj);
+        this.scene.appendLastObject(handle);
+        obj.handle = handle;
+        return obj;
+    }
+
+    createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObject {
         const handle = HandleMap.getFreeHandle(this.allObjects);
         const obj = new LineObject(
             {
