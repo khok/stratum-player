@@ -4,12 +4,17 @@ import { DoubleBitmapToolData, ExternalBitmapToolData } from "data-types-graphic
 import { ImageResolver } from "internal-graphic-types";
 
 export class DoubleBitmapTool extends ToolMixin<DoubleBitmapTool> implements DoubleBitmapToolState {
+    static create(data: DoubleBitmapToolData | ExternalBitmapToolData, imgLoader: ImageResolver) {
+        //prettier-ignore
+        const image = data.type === "ttDOUBLEDIB2D" ? imgLoader.fromBase64(data.images[0]) : imgLoader.fromIconUrl(data.filename);
+        return new DoubleBitmapTool(image);
+    }
+
     readonly type = "ttDOUBLEDIB2D";
     private _image: HTMLImageElement;
-    constructor(data: DoubleBitmapToolData | ExternalBitmapToolData, imgLoader: ImageResolver) {
+    constructor(image: HTMLImageElement) {
         super();
-        this._image =
-            data.type === "ttDOUBLEDIB2D" ? imgLoader.fromData(data.images[0]) : imgLoader.fromFile(data.filename);
+        this._image = image;
     }
     get image() {
         return this._image;

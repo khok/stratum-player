@@ -4,8 +4,8 @@ declare module "internal-graphic-types" {
      */
     export interface ImageResolver {
         fromProjectFile(bmpFilename: string): HTMLImageElement;
-        fromData(data: string): HTMLImageElement;
-        fromFile(filename: string): HTMLImageElement;
+        fromBase64(data: string): HTMLImageElement;
+        fromIconUrl(filename: string): HTMLImageElement;
     }
 
     export interface HtmlTextInputWrapperOptions {

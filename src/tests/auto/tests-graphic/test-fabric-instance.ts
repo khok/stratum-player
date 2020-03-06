@@ -26,7 +26,7 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
     );
     equal(document.title, "Test Window");
     const space = ws.getSpace(1)!;
-    globalImgLoader.getPromise().then(() => {
+    globalImgLoader.allImagesLoaded.then(() => {
         space.scene.forceRender();
     });
     setTimeout(() => {

@@ -89,7 +89,7 @@ export class Project implements ProjectController {
                 : data.scheme;
         return opts => {
             const space = GraphicSpace.fromVdr(className, vdr, this.globalImgLoader, new FabricScene(opts));
-            this.globalImgLoader.getPromise().then(() => space.scene.forceRender());
+            this.globalImgLoader.allImagesLoaded.then(() => space.scene.forceRender());
             return space;
         };
     }

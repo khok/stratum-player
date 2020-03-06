@@ -18,15 +18,12 @@ import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool,
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
     //prettier-ignore
-    const bitmaps = HandleMap.create(tools.bitmapTools && tools.bitmapTools.map(bmpData => {
-        const image = bmpData.type === "ttDIB2D" ? imageLoader.fromData(bmpData.image) : imageLoader.fromFile(bmpData.filename);
-        return [bmpData.handle, new BitmapTool(image)];
-    }));
+    const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, BitmapTool.create(b, imageLoader)]));
 
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
 
     //prettier-ignore
-    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(b, imageLoader)]));
+    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, DoubleBitmapTool.create(b, imageLoader)]));
 
     //prettier-ignore
     const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));
@@ -47,7 +44,7 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
     return new GraphicSpaceTools({ bitmaps, brushes, doubleBitmaps, fonts, pens, strings, texts, imageLoader });
 }
 
-export function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
     switch (data.type) {
         case "otLINE2D":
             return new LineObject(data, tools, visualFactory);
