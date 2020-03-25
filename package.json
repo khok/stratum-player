@@ -18,7 +18,8 @@
         "bops": "^1.0.0",
         "fabric": "^3.4.0",
         "iconv-lite": "^0.5.0",
-        "jszip": "^3.2.2"
+        "jszip": "^3.2.2",
+        "pngjs": "^3.4.0"
     },
     "prettier": {
         "endOfLine": "lf",

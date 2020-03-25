@@ -61,7 +61,7 @@ declare module "data-types-graphics" {
 
     export interface DoubleBitmapToolData extends _ToolDataBase {
         type: "ttDOUBLEDIB2D";
-        images: [BmpImage, BmpImage];
+        image: BmpImage;
     }
 
     export type ToolData =

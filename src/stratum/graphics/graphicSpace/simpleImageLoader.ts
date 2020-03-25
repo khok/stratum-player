@@ -25,8 +25,8 @@ export class SimpleImageLoader implements ImageResolver {
         this.globalImages.set(iconUrl, img);
         return img;
     }
-    fromBase64(base64Data: string): HTMLImageElement {
-        return this.loadImg("data:image/bmp;base64," + base64Data);
+    fromBase64(base64Data: string, type: "bmp" | "png"): HTMLImageElement {
+        return this.loadImg(`data:image/${type};base64,` + base64Data);
     }
     fromIconUrl(url: string): HTMLImageElement {
         return this.loadImg(`${this.iconsUrlPath}/${url.toUpperCase()}`);
@@ -39,6 +39,6 @@ export class SimpleImageLoader implements ImageResolver {
         if (!this.bmpFiles) throw new StratumError(`В каталоге проекта нет изображений`);
         const file = this.bmpFiles.find(f => f.filename.toLowerCase().endsWith(name));
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
-        return this.fromBase64(file.data);
+        return this.fromBase64(file.data, "bmp");
     }
 }

@@ -1,11 +1,13 @@
-import { readNext } from '../Collection'
-import consts from '../consts'
+import { readNext } from "../Collection";
+import consts from "../consts";
+import { applyAlphaMask } from "~/helpers/imageOperations";
+import { BinaryStream } from "~/helpers/binaryStream";
 
-function readTools(stream){
+function readTools(stream) {
     return {
         refCount: stream.readWord(), //Выкидывается
         handle: stream.readWord()
-    }
+    };
 }
 
 function read_ttPEN2D(stream) {
@@ -14,8 +16,8 @@ function read_ttPEN2D(stream) {
         color: stream.readColor(), //не факт, смотреть tools2d.cpp -> 169
         style: stream.readWord(),
         width: stream.readWord(),
-        rop2: stream.readWord(),
-    }
+        rop2: stream.readWord()
+    };
 }
 function read_ttBRUSH2D(stream) {
     return {
@@ -24,41 +26,43 @@ function read_ttBRUSH2D(stream) {
         style: stream.readWord(),
         hatch: stream.readWord(),
         rop2: stream.readWord(),
-        dibHandle: stream.readWord(),
-    }
+        dibHandle: stream.readWord()
+    };
 }
 
-function readBitmap(stream) {
-    const headerSize = 14;
+function readBitmapSize(stream) {
     const _pos = stream.position;
-
-    if(stream.readWord() !== 0x4d42)
-        throw Error('ttDIB2D is not an BMP');
-
+    if (stream.readWord() !== 0x4d42) throw Error("ttDIB2D is not an BMP");
     const size = stream.readLong();
     stream.seek(_pos);
-    return stream.readBase64(size);
+    return size;
 }
 
 function read_ttDIB2D(stream) {
     return {
         ...readTools(stream),
-        image: readBitmap(stream),
-    }
+        image: stream.readBase64(readBitmapSize(stream))
+    };
 }
 function read_ttDOUBLEDIB2D(stream) {
+    const header = readTools(stream);
+    const bmpBytes = stream.readBytes(readBitmapSize(stream));
+    const maskBytes = stream.readBytes(readBitmapSize(stream));
+
+    const pngImage = applyAlphaMask(bmpBytes, maskBytes);
+    const image = new BinaryStream(pngImage).readBase64(pngImage.length);
     return {
-        ...readTools(stream),
-        images: [readBitmap(stream), readBitmap(stream)]
-    }
+        ...header,
+        image
+    };
 }
 function read_ttFONT2D(stream) {
     const data = {
         ...readTools(stream),
-        OldLogfont: stream.readBytes(50), //Структуру искать как typedef struct tagOldLOGFONT
-    }
+        OldLogfont: stream.readBytes(50) //Структуру искать как typedef struct tagOldLOGFONT
+    };
 
-    if(stream.fileversion >= 0x0203) {
+    if (stream.fileversion >= 0x0203) {
         data.fontSize = stream.readLong();
         data.fontStyle = stream.readLong();
     } else {
@@ -72,26 +76,26 @@ function read_ttSTRING2D(stream) {
     return {
         ...readTools(stream),
         data: stream.readString()
-    }
+    };
 }
 function read_ttTEXT2D(stream) {
     return {
         ...readTools(stream),
         textCollection: readNext(stream, true, consts.otLOGTEXTCOLLECTION).data
-    }
+    };
 }
 function read_ttREFTODIB2D(stream) {
     return {
         ...readTools(stream),
         filename: stream.readString()
-    }
+    };
 }
 function read_ttREFTODOUBLEDIB2D(stream) {
     return read_ttREFTODIB2D(stream);
 }
 // function read_ctINFONAME(stream) {
-    // throw 'NIMP'
-    // return readTools(stream);
+// throw 'NIMP'
+// return readTools(stream);
 // }
 
 export default function init(funcs) {

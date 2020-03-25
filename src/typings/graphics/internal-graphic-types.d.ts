@@ -4,7 +4,7 @@ declare module "internal-graphic-types" {
      */
     export interface ImageResolver {
         fromProjectFile(bmpFilename: string): HTMLImageElement;
-        fromBase64(data: string): HTMLImageElement;
+        fromBase64(data: string, type: "bmp" | "png"): HTMLImageElement;
         fromIconUrl(filename: string): HTMLImageElement;
     }
 
