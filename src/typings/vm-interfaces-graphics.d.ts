@@ -30,6 +30,8 @@ declare module "vm-interfaces-graphics" {
         readonly handle: number;
         readonly type: BrushToolData["type"];
         color: StringColor;
+        fillType: "SOLID" | "NULL" | "PATTERN" | "HATCED";
+        bmpTool?: BitmapToolState;
     }
     export interface BitmapToolState {
         readonly handle: number;

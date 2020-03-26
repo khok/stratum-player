@@ -28,7 +28,13 @@ export class FabricLine implements LineElementVisual {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
-            fill: brush && brush.color,
+            fill:
+                (brush &&
+                    ((brush.fillType === "SOLID" && brush.color) ||
+                        (brush.fillType === "PATTERN" &&
+                            brush.bmpTool &&
+                            new fabric.Pattern({ source: brush.bmpTool.image })))) ||
+                undefined,
             stroke: pen && pen.color,
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible

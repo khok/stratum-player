@@ -20,7 +20,8 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
     //prettier-ignore
     const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, new BitmapTool(imageLoader.loadImage(b))]));
 
-    const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
+    //prettier-ignore
+    const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b.color, b.style, bitmaps && bitmaps.get(b.dibHandle))]));
 
     //prettier-ignore
     const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(imageLoader.loadImage(b))]));
