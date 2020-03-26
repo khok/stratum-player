@@ -18,12 +18,12 @@ import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool,
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
     //prettier-ignore
-    const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, BitmapTool.create(b, imageLoader)]));
+    const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, new BitmapTool(imageLoader.loadImage(b))]));
 
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b)]));
 
     //prettier-ignore
-    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, DoubleBitmapTool.create(b, imageLoader)]));
+    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(imageLoader.loadImage(b))]));
 
     //prettier-ignore
     const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));

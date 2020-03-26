@@ -1,9 +1,5 @@
 declare module "internal-graphic-types" {
-    import { BmpImage } from "data-types-graphics";
-
-    export type ImageToolData =
-        | { type: "ttDIB2D" | "ttDOUBLEDIB2D"; image: BmpImage }
-        | { type: "ttREFTODIB2D" | "ttREFTODOUBLEDIB2D"; filename: string };
+    import { ImageToolData } from "data-types-graphics";
     /**
      * Загрузчик изображений.
      */

@@ -1,26 +1,23 @@
 declare module "vm-interfaces-graphics" {
-    import { VmBool, ClassState } from "vm-interfaces-base";
-    import { VmStateContainer } from "vm-types";
     import {
-        ElementData,
-        LineElementData,
-        ControlElementData,
-        GroupElementData,
-        ExternalBitmapToolData,
-        BitmapToolData,
-        DoubleBitmapToolData,
-        Element2dData,
-        StringColor,
-        PenToolData,
-        BrushToolData,
-        FontToolData,
-        TextToolData,
         BitmapElementData,
+        BitmapToolData,
+        BrushToolData,
+        ControlElementData,
         DoubleBitmapElementData,
+        DoubleBitmapToolData,
+        FontToolData,
+        GroupElementData,
+        LineElementData,
+        PenToolData,
+        Point2D,
+        StringColor,
         StringToolData,
         TextElementData,
-        Point2D
+        TextToolData
     } from "data-types-graphics";
+    import { ClassState, VmBool } from "vm-interfaces-base";
+    import { VmStateContainer } from "vm-types";
 
     export interface PenToolState {
         readonly handle: number;
@@ -33,10 +30,6 @@ declare module "vm-interfaces-graphics" {
         readonly handle: number;
         readonly type: BrushToolData["type"];
         color: StringColor;
-    }
-    export interface ExternalBitmapToolState {
-        readonly handle: number;
-        readonly type: ExternalBitmapToolData["type"];
     }
     export interface BitmapToolState {
         readonly handle: number;

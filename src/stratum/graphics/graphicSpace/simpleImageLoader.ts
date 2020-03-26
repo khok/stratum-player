@@ -1,7 +1,8 @@
-import { ImageResolver, ImageToolData } from "internal-graphic-types";
+import { ImageResolver } from "internal-graphic-types";
 import { StratumError } from "~/helpers/errors";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { readDoubleBitmap } from "~/helpers/imageOperations";
+import { ImageToolData } from "data-types-graphics";
 
 /**
  * Временная реализация загрузчика изображений.
@@ -50,9 +51,6 @@ export class SimpleImageLoader implements ImageResolver {
 
     loadImage(data: ImageToolData) {
         if (data.type === "ttDIB2D" || data.type === "ttDOUBLEDIB2D") return this.loadImg(data.image);
-
-        if (data.type !== "ttREFTODIB2D" && data.type !== "ttREFTODOUBLEDIB2D")
-            throw Error(`unknown image type: ${data.type}`);
 
         const url = `${this.iconsUrlPath}/${data.filename.toUpperCase()}`;
         return data.type === "ttREFTODIB2D" ? this.loadImg(url) : this.loadImg2(url);

@@ -49,11 +49,6 @@ declare module "data-types-graphics" {
         }[];
     }
 
-    export interface ExternalBitmapToolData extends _ToolDataBase {
-        type: "ttREFTODOUBLEDIB2D";
-        filename: string;
-    }
-
     export interface BitmapToolData extends _ToolDataBase {
         type: "ttDIB2D";
         image: BmpImage;
@@ -64,15 +59,23 @@ declare module "data-types-graphics" {
         image: BmpImage;
     }
 
-    export type ToolData =
-        | BrushToolData
-        | PenToolData
-        | FontToolData
-        | StringToolData
-        | TextToolData
-        | ExternalBitmapToolData
+    export interface ExternalBitmapToolData extends _ToolDataBase {
+        type: "ttREFTODIB2D";
+        filename: string;
+    }
+
+    export interface ExternalDoubleBitmapToolData extends _ToolDataBase {
+        type: "ttREFTODOUBLEDIB2D";
+        filename: string;
+    }
+
+    export type ImageToolData =
         | BitmapToolData
-        | DoubleBitmapToolData;
+        | DoubleBitmapToolData
+        | ExternalBitmapToolData
+        | ExternalDoubleBitmapToolData;
+
+    export type ToolData = BrushToolData | PenToolData | FontToolData | StringToolData | TextToolData | ImageToolData;
 
     interface _ElementBaseData {
         handle: number;
@@ -143,8 +146,8 @@ declare module "data-types-graphics" {
     export interface VectorDrawToolsData {
         brushTools?: BrushToolData[];
         penTools?: PenToolData[];
-        bitmapTools?: (ExternalBitmapToolData | BitmapToolData)[];
-        doubleBitmapTools?: (ExternalBitmapToolData | DoubleBitmapToolData)[];
+        bitmapTools?: ImageToolData[];
+        doubleBitmapTools?: ImageToolData[];
         fontTools?: FontToolData[];
         stringTools?: StringToolData[];
         textTools?: TextToolData[];

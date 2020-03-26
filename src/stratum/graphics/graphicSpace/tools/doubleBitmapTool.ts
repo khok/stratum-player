@@ -1,15 +1,7 @@
 import { DoubleBitmapToolState } from "vm-interfaces-graphics";
 import { ToolMixin } from "./toolMixin";
-import { DoubleBitmapToolData, ExternalBitmapToolData } from "data-types-graphics";
-import { ImageResolver } from "internal-graphic-types";
 
 export class DoubleBitmapTool extends ToolMixin<DoubleBitmapTool> implements DoubleBitmapToolState {
-    static create(data: DoubleBitmapToolData | ExternalBitmapToolData, imgLoader: ImageResolver) {
-        //prettier-ignore
-        const image = imgLoader.loadImage(data);
-        return new DoubleBitmapTool(image);
-    }
-
     readonly type = "ttDOUBLEDIB2D";
     private _image: HTMLImageElement;
     constructor(image: HTMLImageElement) {

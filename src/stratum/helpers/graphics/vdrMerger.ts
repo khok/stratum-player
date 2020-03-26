@@ -2,14 +2,14 @@ import {
     BitmapElementData,
     DoubleBitmapElementData,
     ElementData,
-    ExternalBitmapToolData,
     GroupElementData,
     LineElementData,
     Point2D,
     TextElementData,
     ToolData,
     VectorDrawData,
-    VectorDrawToolsData
+    VectorDrawToolsData,
+    ImageToolData
 } from "data-types-graphics";
 import { StratumError } from "~/helpers/errors";
 
@@ -282,7 +282,7 @@ export class VdrMerger {
         const stubIcon = scheme.elements.find(el => el.handle === stubIconHandle);
         if (!stubIcon || stubIcon.type !== "otDOUBLEBITMAP2D") return;
 
-        const iconBmpTool: ExternalBitmapToolData = { type: "ttREFTODOUBLEDIB2D", handle: 0, filename: iconFile };
+        const iconBmpTool: ImageToolData = { type: "ttREFTODOUBLEDIB2D", handle: 0, filename: iconFile };
 
         let freeHandle = 1;
         if (scheme.doubleBitmapTools) {
