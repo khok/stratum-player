@@ -4,6 +4,18 @@ import { LineElementVisual, LineVisualOptions } from "scene-types";
 import { BrushToolState, PenToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
+function getFillValue(brush?: BrushToolState) {
+    if (!brush) return undefined;
+    switch (brush.fillType) {
+        case "SOLID":
+            return brush.color;
+        case "PATTERN":
+            return brush.bmpTool && new fabric.Pattern({ source: brush.bmpTool.image });
+        default:
+            return undefined;
+    }
+}
+
 export class FabricLine implements LineElementVisual {
     readonly type = "line";
     private posX: number;
@@ -28,13 +40,7 @@ export class FabricLine implements LineElementVisual {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
-            fill:
-                (brush &&
-                    ((brush.fillType === "SOLID" && brush.color) ||
-                        (brush.fillType === "PATTERN" &&
-                            brush.bmpTool &&
-                            new fabric.Pattern({ source: brush.bmpTool.image })))) ||
-                undefined,
+            fill: getFillValue(brush),
             stroke: pen && pen.color,
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible
@@ -79,7 +85,7 @@ export class FabricLine implements LineElementVisual {
         this.requestRedraw();
     }
     updateBrush(brush: BrushToolState): void {
-        this.obj.fill = brush.color;
+        this.obj.fill = getFillValue(brush);
         this.requestRedraw();
     }
     setPosition(x: number, y: number): void {

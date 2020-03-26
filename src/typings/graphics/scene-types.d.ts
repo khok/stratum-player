@@ -74,13 +74,13 @@ declare module "scene-types" {
 
     export interface BitmapVisualOptions extends VisualOptions {
         bmpOrigin: Point2D;
-        bmpiSize: Point2D;
+        bmpSize: Point2D;
         bitmapTool: BitmapToolState;
     }
 
     export interface DoubleBitmapVisualOptions extends VisualOptions {
         bmpOrigin: Point2D;
-        bmpiSize: Point2D;
+        bmpSize: Point2D;
         doubleBitmapTool: DoubleBitmapToolState;
     }
 

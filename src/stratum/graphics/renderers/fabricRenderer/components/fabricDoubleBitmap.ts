@@ -11,10 +11,11 @@ export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
     obj: fabric.Image;
     readonly handle: number;
     private size: Point2D;
-    readonly selectable : boolean;
+    readonly selectable: boolean;
 
+    //prettier-ignore
     constructor(
-        { handle, isVisible, selectable, position, bmpOrigin, bmpiSize, doubleBitmapTool }: DoubleBitmapVisualOptions,
+        { handle, isVisible, selectable, position, size, bmpOrigin, bmpSize, doubleBitmapTool }: DoubleBitmapVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
@@ -28,12 +29,14 @@ export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
             top: position.y - viewRef.y,
             cropX: bmpOrigin.x,
             cropY: bmpOrigin.y,
-            width: bmpiSize.x,
-            height: bmpiSize.y,
+            width: bmpSize.x || undefined,
+            height: bmpSize.y || undefined,
+            scaleX: bmpSize.x && size.x / bmpSize.x,
+            scaleY: bmpSize.y && size.y / bmpSize.y,
             visible: isVisible
         };
         this.selectable = selectable;
-        this.size = { ...bmpiSize };
+        this.size = { ...size };
         this.obj = new fabric.Image(doubleBitmapTool.image, opts);
         // this.obj = new fabric.Rect({ ...opts, width: size.x, height: size.y });
     }
