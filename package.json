@@ -13,11 +13,11 @@
         "typescript": "^3.5.3"
     },
     "dependencies": {
-        "@types/fabric": "^3.0.1",
-        "@types/jszip": "^3.1.6",
-        "bops": "^1.0.0",
-        "fabric": "^3.4.0",
-        "iconv-lite": "^0.5.0",
+        "@types/fabric": "^3.6.2",
+        "@types/jszip": "^3.1.7",
+        "bops": "^1.0.1",
+        "fabric": "^3.6.3",
+        "iconv-lite": "^0.5.1",
         "jszip": "^3.2.2",
         "pngjs": "^3.4.0"
     },
