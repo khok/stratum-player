@@ -14,7 +14,7 @@ export class FabricBitmap implements BitmapElementVisual {
     readonly selectable: boolean;
 
     constructor(
-        { handle, isVisible, selectable, position, bmpOrigin, bmpiSize, bitmapTool }: BitmapVisualOptions,
+        { handle, isVisible, selectable, position, size, bmpOrigin, bmpiSize, bitmapTool }: BitmapVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
@@ -30,6 +30,8 @@ export class FabricBitmap implements BitmapElementVisual {
             cropY: bmpOrigin.y,
             width: bmpiSize.x || undefined,
             height: bmpiSize.y || undefined,
+            scaleX: size.x / bmpiSize.x,
+            scaleY: size.y / bmpiSize.y,
             visible: isVisible
         };
         this.selectable = selectable;
