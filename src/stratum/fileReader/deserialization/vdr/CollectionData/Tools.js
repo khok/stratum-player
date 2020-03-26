@@ -1,6 +1,6 @@
 import { readNext } from "../Collection";
 import consts from "../consts";
-import { applyAlphaMask } from "~/helpers/imageOperations";
+import { readBitmap, readDoubleBitmap } from "~/helpers/imageOperations";
 import { BinaryStream } from "~/helpers/binaryStream";
 
 function readTools(stream) {
@@ -30,30 +30,16 @@ function read_ttBRUSH2D(stream) {
     };
 }
 
-function readBitmapSize(stream) {
-    const _pos = stream.position;
-    if (stream.readWord() !== 0x4d42) throw Error("ttDIB2D is not an BMP");
-    const size = stream.readLong();
-    stream.seek(_pos);
-    return size;
-}
-
 function read_ttDIB2D(stream) {
     return {
         ...readTools(stream),
-        image: stream.readBase64(readBitmapSize(stream))
+        image: readBitmap(stream)
     };
 }
 function read_ttDOUBLEDIB2D(stream) {
-    const header = readTools(stream);
-    const bmpBytes = stream.readBytes(readBitmapSize(stream));
-    const maskBytes = stream.readBytes(readBitmapSize(stream));
-
-    const pngImage = applyAlphaMask(bmpBytes, maskBytes);
-    const image = new BinaryStream(pngImage).readBase64(pngImage.length);
     return {
-        ...header,
-        image
+        ...readTools(stream),
+        image: readDoubleBitmap(stream)
     };
 }
 function read_ttFONT2D(stream) {

@@ -1,11 +1,15 @@
 declare module "internal-graphic-types" {
+    import { BmpImage } from "data-types-graphics";
+
+    export type ImageToolData =
+        | { type: "ttDIB2D" | "ttDOUBLEDIB2D"; image: BmpImage }
+        | { type: "ttREFTODIB2D" | "ttREFTODOUBLEDIB2D"; filename: string };
     /**
      * Загрузчик изображений.
      */
     export interface ImageResolver {
         fromProjectFile(bmpFilename: string): HTMLImageElement;
-        fromBase64(data: string, type: "bmp" | "png"): HTMLImageElement;
-        fromIconUrl(filename: string): HTMLImageElement;
+        loadImage(data: ImageToolData): HTMLImageElement;
     }
 
     export interface HtmlTextInputWrapperOptions {
