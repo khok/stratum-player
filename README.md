@@ -4,16 +4,16 @@
 
 ### Требования
 
-Для сборки и запуска необходимы NodeJS и Yarn.
+Для сборки и запуска необходимо установить NodeJS.
 
-Проект Stratum должен быть упакован в zip. Примеры проектов можно найти в `static/test_projects`.
+Запускаемый проект Stratum должен быть упакован в zip. Примеры проектов можно найти в `static/test_projects`.
 
 ### Установка и запуск
 
 Необходимо установить Parcel глобально:
 
 ```
-yarn global add parcel
+npm install -g parcel
 ```
 
 ### Сборка
@@ -21,7 +21,7 @@ yarn global add parcel
 Сборка файла `dist/player.js`:
 
 ```
-yarn build
+npm build
 ```
 
 ### Использование
@@ -35,8 +35,8 @@ yarn build
 ```
 git clone https://github.com/khok/stratum-player
 cd stratum-player
-yarn install
-yarn test
+npm install
+npm test
 ```
 
 Приложение будет доступно на `localhost:1234`
@@ -44,5 +44,5 @@ yarn test
 Запуск всех юнит-тестов:
 
 ```
-yarn test-all
+npm test-all
 ```
