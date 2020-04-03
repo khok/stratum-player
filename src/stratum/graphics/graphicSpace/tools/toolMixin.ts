@@ -12,6 +12,6 @@ export abstract class ToolMixin<T extends ToolMixin<T>> {
         return this.subs.size;
     }
     protected dispatchChanges() {
-        this.subs.forEach(s => s.fn((this as ToolMixin<T>) as T, s.data));
+        this.subs.forEach((s) => s.fn((this as ToolMixin<T>) as T, s.data));
     }
 }

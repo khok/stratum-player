@@ -154,6 +154,6 @@ export const enum RecordType {
     EF_STEPACTIVE = 0x04, // Сейчас идет шаг
     EF_EQUACTIVE = 0x08, // Сейчас идет вычисление уравнений
     EF_MSGACTIVE = 0x10, // Сейчас идет обработка сообщений
-    EF_BYTIMER = 0x20 // Вычисления идут по таймеру
+    EF_BYTIMER = 0x20, // Вычисления идут по таймеру
     //NO = EF_ONDIALG =    0x40L,  // Сейчас идет обработка диалога
 }

@@ -3,7 +3,7 @@ import { createClassScheme } from "~/core/createClassScheme";
 import { Project } from "~/core/project";
 import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 
-(async function() {
+(async function () {
     const zipFiles = await openZipFromUrl("/test_projects/test_messages.zip");
     const { collection, rootName, varSet } = await readProjectData(zipFiles);
     const { root, mmanager } = createClassScheme(rootName, collection);

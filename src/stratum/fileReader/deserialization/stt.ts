@@ -12,7 +12,7 @@ function loadSet(stream: BinaryStream): VarSetData {
 
     const varData = Array.from({ length: stream.readWord() }, () => ({
         name: stream.readString(),
-        value: stream.readString()
+        value: stream.readString(),
     }));
 
     const childSets: VarSetData[] = [];

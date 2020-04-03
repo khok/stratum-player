@@ -6,7 +6,7 @@ export class PenTool extends ToolMixin<PenTool> implements PenToolState {
     readonly type = "ttPEN2D";
     private _color: string;
     private _width: number;
-    constructor(width : number, color : StringColor) {
+    constructor(width: number, color: StringColor) {
         super();
         this._color = color;
         this._width = width;

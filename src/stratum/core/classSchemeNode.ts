@@ -54,7 +54,7 @@ export class ClassSchemeNode implements ClassState {
     initDefaultValuesRecursive(mmanager: MemoryManager) {
         if (this.mmanager) throw new Error("Значения уже инициализированы");
         this.mmanager = mmanager;
-        if (this.childs) this.childs.forEach(c => c.initDefaultValuesRecursive(mmanager));
+        if (this.childs) this.childs.forEach((c) => c.initDefaultValuesRecursive(mmanager));
         const values = this.proto.variables;
         if (!values) return;
         for (let i = 0; i < values.length; i++) {
@@ -108,7 +108,7 @@ export class ClassSchemeNode implements ClassState {
 
         const myChilds = this.childs;
         if (myChilds)
-            varSet.childSets.forEach(childSet => {
+            varSet.childSets.forEach((childSet) => {
                 const child = myChilds.get(childSet.handle);
                 if (child) child.applyVarSetRecursive(childSet);
             });
@@ -157,7 +157,7 @@ export class ClassSchemeNode implements ClassState {
     }
 
     private _collectNodes(nodes: ClassSchemeNode[]) {
-        if (this.childs) this.childs.forEach(c => c._collectNodes(nodes));
+        if (this.childs) this.childs.forEach((c) => c._collectNodes(nodes));
         nodes.push(this);
     }
 

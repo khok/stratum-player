@@ -6,11 +6,11 @@ import { executeCode } from "~/vm/executeCode";
 import { VmContext } from "~/vm/vmContext";
 import { ClassState } from "vm-interfaces-base";
 
-(async function() {
+(async function () {
     const stream = await openStreamFromUrl("/test_projects/other/square_eq.cls");
     const { version } = readClassHeaderData(stream);
     const { bytecode, vars } = readClassData(stream, version, { parseBytecode: true });
-    const values = vars!.map(v => {
+    const values = vars!.map((v) => {
         const val = parseVarValue(v.type, v.defaultValue);
         return { new: val, old: val };
     });
@@ -23,7 +23,7 @@ import { ClassState } from "vm-interfaces-base";
         },
         getOldVarValue(id) {
             return values[id].old;
-        }
+        },
     };
     const ctx = new VmContext({} as any, {} as any, {} as any);
     ctx.substituteState(cl);

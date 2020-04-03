@@ -23,7 +23,7 @@ class VariableGraphNode {
         if (this.propagated) return;
         this.propagated = true;
         this.globalVarIdx = index;
-        this.connectedNodes.forEach(n => n.propagateRecursive(index));
+        this.connectedNodes.forEach((n) => n.propagateRecursive(index));
     }
 
     extractIndex(): number {
@@ -60,8 +60,8 @@ function linkVars(links: LinkData[], parent: VarArrayNode, childs?: HandleMap<Va
 
         for (const { name1, name2 } of connectedVars) {
             //Получаем соединяемые переменные.
-            const var1 = first.vars.find(v => v.lowCaseName === name1.toLowerCase());
-            const var2 = second.vars.find(v => v.lowCaseName === name2.toLowerCase());
+            const var1 = first.vars.find((v) => v.lowCaseName === name1.toLowerCase());
+            const var2 = second.vars.find((v) => v.lowCaseName === name2.toLowerCase());
 
             if (var1 === undefined) show_warn(`Переменная ${name1} не найдена в ${obj1Name}`);
             if (var2 === undefined) show_warn(`Переменная ${name2} не найдена в ${obj2Name}`);
@@ -87,15 +87,15 @@ class VarArrayNode {
         const { data, proto } = klass;
         this.proto = proto;
         //Создаем переменные этого объекта,
-        if (data.vars) this.vars = data.vars.map(v => new VariableGraphNode(v.name.toLowerCase(), v.type, reqIndex));
+        if (data.vars) this.vars = data.vars.map((v) => new VariableGraphNode(v.name.toLowerCase(), v.type, reqIndex));
         //создаем детей,
         if (data.childs) {
             const childs = (this.childs = HandleMap.create<VarArrayNode>());
-            data.childs.forEach(c => {
+            data.childs.forEach((c) => {
                 const childStore = new VarArrayNode(c.classname, classes, reqIndex, {
                     handle: c.handle,
                     name: c.nameOnScheme,
-                    position: c.position
+                    position: c.position,
                 });
                 childs.set(c.handle, childStore);
             });
@@ -112,8 +112,8 @@ class VarArrayNode {
         const { vars, proto, childs } = this;
         const parentNode = new ClassSchemeNode({
             proto,
-            globalIndexMap: vars && vars.map(v => v.extractIndex()),
-            schemeData: parentData
+            globalIndexMap: vars && vars.map((v) => v.extractIndex()),
+            schemeData: parentData,
         });
         if (childs) {
             const nodeChilds = HandleMap.create<ClassSchemeNode>();
@@ -131,7 +131,7 @@ function dataToProtos(classes: Map<string, ClassData>) {
     classes.forEach((data, name) =>
         protos.set(name, {
             data,
-            proto: new ClassPrototype(name, { vars: data.vars, code: data.bytecode && data.bytecode.parsed })
+            proto: new ClassPrototype(name, { vars: data.vars, code: data.bytecode && data.bytecode.parsed }),
         })
     );
     return protos;

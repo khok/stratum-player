@@ -60,7 +60,7 @@ export function showMissingCommands(allClasses: Map<string, ClassData>, operatio
     for (const [opc, set] of theOps)
         missingOperations.push({
             name: (realCommandNames[opc] ? realCommandNames[opc] : opc) + ` (${Opcode[opc]})`,
-            classNames: [...set.values()]
+            classNames: [...set.values()],
         });
     return { missingOperations, errors };
 }

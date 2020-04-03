@@ -27,7 +27,7 @@ export enum MessageCode {
     WM_SPACEDONE = 1539,
     WM_SPACEINIT = 1540,
     WM_CONTROLNOTIFY = 1544,
-    WM_HYPERJUMP = 1546
+    WM_HYPERJUMP = 1546,
 
     // WORD8   = 0,
     // INT8    = 1,

@@ -8,7 +8,7 @@ import { createComposedScheme } from "~/helpers/graphics";
 import { WindowSystem } from "~/graphics/windowSystem";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 
-(async function() {
+(async function () {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
     const { collection } = await readProjectData(zip);
     const cl = collection.get("WorkSpace")!;
@@ -18,10 +18,10 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
     const cv = document.getElementById("canvas") as HTMLCanvasElement;
     const dsp = new EventDispatcher();
     const ws = new WindowSystem({ globalCanvas: cv, dispatcher: dsp });
-    dsp.on("WINDOW_CREATED", name => (document.title = name));
+    dsp.on("WINDOW_CREATED", (name) => (document.title = name));
 
     const globalImgLoader = new SimpleImageLoader("data/icons");
-    ws.createSchemeWindow("Test Window", "", opts =>
+    ws.createSchemeWindow("Test Window", "", (opts) =>
         GraphicSpace.fromVdr("WorkSpace", vdr, globalImgLoader, new FabricScene({ canvas: opts.canvas }))
     );
     equal(document.title, "Test Window");

@@ -6,14 +6,14 @@ import { readClassData, readClassHeaderData } from "~/fileReader/deserialization
 import { openStreamFromUrl } from "~/fileReader/fileReaderHelpers";
 import { VmContext } from "~/vm/vmContext";
 
-(async function() {
+(async function () {
     const stream = await openStreamFromUrl("test_projects/other/square_eq.cls");
     const { version, name } = readClassHeaderData(stream);
     const { vars, bytecode } = readClassData(stream, version, { parseBytecode: true });
 
     const node = new ClassSchemeNode({
         proto: new ClassPrototype(name, { vars, code: bytecode!.parsed }),
-        globalIndexMap: Array.from({ length: vars!.length }, (_, i) => i + 100)
+        globalIndexMap: Array.from({ length: vars!.length }, (_, i) => i + 100),
     });
     const mmanager = new MemoryManager(vars!.length + 100);
     node.initDefaultValuesRecursive(mmanager);
@@ -34,8 +34,8 @@ import { VmContext } from "~/vm/vmContext";
         varData: [
             { name: "a", value: "1" },
             { name: "b", value: "-70" },
-            { name: "c", value: "600" }
-        ]
+            { name: "c", value: "600" },
+        ],
     });
     mmanager.initValues();
 

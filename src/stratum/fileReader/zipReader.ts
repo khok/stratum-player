@@ -15,7 +15,7 @@ function findSingleFile(zipFiles: JSZipObject[], ending: string, mustExist = tru
 
     if (mustExist && files.length === 0) throw new StratumError(`Файл "${ending}" не найден`);
     if (files.length > 1) {
-        const fileString = files.map(f => f.name).join(";\n");
+        const fileString = files.map((f) => f.name).join(";\n");
         throw new StratumError(`Найдено несколько файлов с именем: "${ending}":\n${fileString}`);
     }
 
@@ -36,7 +36,7 @@ function unzipFilesWithExt(files: JSZipObject[], ext: string) {
 const clsBlacklist = ["COLORREF", "HANDLE", "POINTER"];
 async function loadHeaders(files: JSZipObject[]) {
     const res = new Map<string, ExtendedHeader>();
-    (await unzipFilesWithExt(files, "cls")).forEach(bytes => {
+    (await unzipFilesWithExt(files, "cls")).forEach((bytes) => {
         const stream = new BinaryStream(bytes);
         const data = <ExtendedHeader>readClassHeaderData(stream);
         const { name } = data;
@@ -68,7 +68,7 @@ function loadProjectClasses(headers: Map<string, ExtendedHeader>, className: str
         classes.set(root.name, body);
         return body;
     })();
-    if (childs) childs.forEach(child => loadProjectClasses(headers, child.classname, classes));
+    if (childs) childs.forEach((child) => loadProjectClasses(headers, child.classname, classes));
 }
 
 /**
@@ -119,8 +119,8 @@ export async function readVarsFile(files: JSZipObject[], filename: string = "_pr
 
 export async function readImageFiles(files: JSZipObject[]) {
     const extFiles = findFiles(files, ".bmp");
-    const names = extFiles.map(f => f.name);
-    const datas = await Promise.all(extFiles.map(f => f.async("base64")));
+    const names = extFiles.map((f) => f.name);
+    const datas = await Promise.all(extFiles.map((f) => f.async("base64")));
     return Array.from({ length: extFiles.length }, (_, i) => ({ filename: names[i], data: datas[i] }));
 }
 
@@ -131,7 +131,7 @@ export async function readImageFiles(files: JSZipObject[]) {
  */
 export async function zipFromBlob(file: Blob | File) {
     const { files } = await loadAsync(file);
-    return Object.keys(files).map(key => files[key]);
+    return Object.keys(files).map((key) => files[key]);
 }
 
 /**

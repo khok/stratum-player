@@ -22,7 +22,7 @@ export class Project implements ProjectController {
             classes,
             windowSystem,
             varSet,
-            images
+            images,
         }: {
             rootName: string;
             classes: Map<string, ClassData>;
@@ -87,7 +87,7 @@ export class Project implements ProjectController {
             (!this.options || !this.options.debug_disableSchemeComposition) && data.childs
                 ? createComposedScheme(data.scheme, data.childs, this.classCollection)
                 : data.scheme;
-        return opts => {
+        return (opts) => {
             const space = GraphicSpace.fromVdr(className, vdr, this.globalImgLoader, new FabricScene(opts));
             this.globalImgLoader.allImagesLoaded.then(() => space.scene.forceRender());
             return space;

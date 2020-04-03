@@ -4,11 +4,11 @@ import { showMissingCommands, formatMissingCommands } from "~/helpers/showMissin
 import { VmOperations } from "~/vm/operations";
 
 //тестирует считывание cls/cls->vdr файлов;
-(async function() {
+(async function () {
     const zipFiles = await openZipFromUrl([
         "/test_projects/balls.zip",
         "/data/library.zip",
-        "/test_projects/biglib.zip"
+        "/test_projects/biglib.zip",
     ]);
     const allClasses = await readAllClassFiles(zipFiles);
     console.log("Анализируем ошибки вм...");

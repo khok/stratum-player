@@ -215,7 +215,7 @@ export function readClassData(
         const original = stream.readBytes(codesize * 2);
         res.bytecode = {
             original,
-            parsed: blocks.parseBytecode ? parseBytecode(new BinaryStream(original), codesize) : undefined
+            parsed: blocks.parseBytecode ? parseBytecode(new BinaryStream(original), codesize) : undefined,
         };
         next = stream.readWord();
     }

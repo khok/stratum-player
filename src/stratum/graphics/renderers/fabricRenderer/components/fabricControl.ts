@@ -31,7 +31,7 @@ export class FabricControl implements ControlElementVisual {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
-            visible: isVisible
+            visible: isVisible,
         };
         this.rectObj = new fabric.Rect({
             top: -6,
@@ -39,12 +39,12 @@ export class FabricControl implements ControlElementVisual {
             height: controlSize.y - 1,
             fill: "white",
             stroke: "gray",
-            strokeWidth: 1
+            strokeWidth: 1,
         });
         this.textObj = new fabric.Text("", {
             fontSize: controlSize.y - 3,
             top: -6,
-            left: 2
+            left: 2,
         });
         this._text = text;
         this.setText(text);

@@ -8,7 +8,7 @@ async function load(name: string) {
     return createClassScheme(rootName, collection).mmanager;
 }
 
-(async function() {
+(async function () {
     equal((await load("balls")).varCount, 1235);
     equal((await load("balls_stress_test")).varCount, 2328);
     console.log("var count test completed");

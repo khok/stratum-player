@@ -94,7 +94,7 @@ export function parseBytecode(stream: BinaryStream, codesize: number): ParsedCod
         operations[i].operand = codepoints.indexOf(targetIndex);
     }
 
-    const code = new Uint16Array(operations.map(c => c.opcode));
+    const code = new Uint16Array(operations.map((c) => c.opcode));
     const numberOperands = new Float32Array(code.length);
     const stringOperands = new Array<string>(code.length);
     const otherOperands = new Array<Operand | undefined>(code.length);

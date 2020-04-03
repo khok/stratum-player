@@ -26,7 +26,7 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
             selectable: !!this.selectable,
             bmpOrigin: data.bmpOrigin,
             bmpSize: data.bmpSize,
-            doubleBitmapTool
+            doubleBitmapTool,
         });
         this.doubleBitmapTool = doubleBitmapTool;
     }
@@ -39,7 +39,7 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
     }
     set doubleBitmapTool(value) {
         if (this.doubleBitmapTool) this.doubleBitmapTool.unsubscribe(this);
-        if (value) value.subscribe(this, b => this.visual.updateBitmap(b));
+        if (value) value.subscribe(this, (b) => this.visual.updateBitmap(b));
         this._doubleBitmapTool = value;
     }
     unsubFromTools() {

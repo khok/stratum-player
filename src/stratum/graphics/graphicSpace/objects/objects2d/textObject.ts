@@ -23,7 +23,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
             size: data.size,
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
-            text: textTool
+            text: textTool,
         });
         this.text = textTool;
     }
@@ -33,7 +33,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
     set text(value) {
         if (this._text) this._text.unsubscribe(this);
         this._text = value;
-        value.subscribe(this, t => this.visual.updateText(t));
+        value.subscribe(this, (t) => this.visual.updateText(t));
     }
     unsubFromTools(): void {
         this.text.unsubscribe(this);

@@ -6,7 +6,7 @@ import { BitmapTool } from "./bitmapTool";
 const codeToStyle: { [idx: number]: BrushToolState["fillType"] } = {
     0: "SOLID",
     1: "NULL",
-    3: "PATTERN"
+    3: "PATTERN",
 };
 
 export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
@@ -19,7 +19,7 @@ export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
         this._color = color;
         this._fillType = codeToStyle[style] || "HATCED";
         if (this._fillType === "HATCED") console.warn(`Стиль заливки HATCED не реализован`);
-        if (bmpTool) bmpTool.subscribe(this, b => (this.bmpTool = b));
+        if (bmpTool) bmpTool.subscribe(this, (b) => (this.bmpTool = b));
         this._bmpTool = bmpTool;
     }
     get bmpTool() {

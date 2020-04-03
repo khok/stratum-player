@@ -9,7 +9,7 @@ import { initWindows } from "./windows";
 
 export const VmOperations = new Array<Operation>(Opcode.VM_MAXIMUM_code + 1);
 
-(function() {
+(function () {
     function addOperation(opcode: number, operation: Operation) {
         if (VmOperations[opcode]) throw "Operation already set: " + opcode;
         VmOperations[opcode] = operation;

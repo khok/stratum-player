@@ -1506,5 +1506,5 @@ export const realCommandNames = [
     "NUI_DestroyInstance",
     "NUI_GetDeviceName",
     "NUI_InitInstance",
-    "NUI_GetSkeletonPositions"
+    "NUI_GetSkeletonPositions",
 ];

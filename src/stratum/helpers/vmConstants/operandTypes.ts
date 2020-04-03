@@ -3,7 +3,7 @@ import { OperandType } from "vm-types";
 
 export const VmOperandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIMUM_code + 1);
 
-(function() {
+(function () {
     function setOperand(opcode: number, operandType: OperandType) {
         if (VmOperandTypes[opcode]) throw "Operand already set: " + opcode;
         VmOperandTypes[opcode] = operandType;

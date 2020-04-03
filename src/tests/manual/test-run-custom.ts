@@ -9,12 +9,12 @@ async function playProject({ target }: Event) {
     const stdLib = await stdlibPromise;
     console.log("Стандартная библиотека имиджей загружена");
     fromFileList(fList, { preloadedLibs: stdLib })
-        .then(player => {
+        .then((player) => {
             if (!player) return;
             player.setGraphicOptions({ globalCanvas: cnv });
             return player.play();
         })
-        .catch(e => {
+        .catch((e) => {
             console.error(e);
             alert("Возникли ошибки, см. в консоли (F12)");
         });

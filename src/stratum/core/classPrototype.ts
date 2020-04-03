@@ -16,7 +16,7 @@ export class ClassPrototype {
             this.variables = vars.map(({ name, defaultValue, type }) => ({
                 lowCaseName: name.toLowerCase(),
                 type,
-                defaultValue: defaultValue ? parseVarValue(type, defaultValue) : undefined
+                defaultValue: defaultValue ? parseVarValue(type, defaultValue) : undefined,
             }));
             this.varNameMap = new Map(this.variables.map((el, idx) => [el.lowCaseName, idx]));
         }

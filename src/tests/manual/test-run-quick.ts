@@ -7,7 +7,7 @@ export async function _run_test_quick(name: string, opts: PlayerOptions, timeout
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const htmlRoot = document.getElementById("root")!;
     player.setGraphicOptions({ globalCanvas: canvas, htmlRoot });
-    player.on("WINDOW_CREATED", name => (document.title = name));
+    player.on("WINDOW_CREATED", (name) => (document.title = name));
     setTimeout(() => player.pause(), timeout);
     try {
         await player.play();
@@ -17,7 +17,7 @@ export async function _run_test_quick(name: string, opts: PlayerOptions, timeout
     }
     console.log("Тест завершен");
     for (let i = 0; i < 10; i++) {
-        await new Promise(res => setTimeout(res, 400));
+        await new Promise((res) => setTimeout(res, 400));
         player.oneStep();
         console.log("Шаг ", i + 1);
     }

@@ -27,6 +27,6 @@ declare module "vm-interfaces-windows" {
         hasWindow(windowName: string): VmBool;
         getWindow(windowName: string): WindowState | undefined;
         getSpace(spaceHandle: number): GraphicSpaceState | undefined;
-        getWindowBySpaceHandle(spaceHandle : number) : string | undefined;
+        getWindowBySpaceHandle(spaceHandle: number): string | undefined;
     }
 }

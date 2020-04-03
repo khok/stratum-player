@@ -4,7 +4,7 @@ import { openZipFromUrl, readProjectData } from "~/fileReader/fileReaderHelpers"
 import { createComposedScheme } from "~/helpers/graphics";
 
 function isElementInGroup(elements: ElementData[], handle: number) {
-    return elements.some(el => el.type === "otGROUP2D" && el.childHandles.includes(handle));
+    return elements.some((el) => el.type === "otGROUP2D" && el.childHandles.includes(handle));
 }
 
 function collect(elements: ElementData[], element: ElementData): unknown {
@@ -13,14 +13,14 @@ function collect(elements: ElementData[], element: ElementData): unknown {
     if (element.type === "otGROUP2D")
         return {
             name,
-            data: element.childHandles.map(h => collect(elements, elements.find(el => el.handle === h)!))
+            data: element.childHandles.map((h) => collect(elements, elements.find((el) => el.handle === h)!)),
         };
     return name;
 }
 
 function toJson(elements: ElementData[]) {
-    const topLevelElements = elements.filter(el => !isElementInGroup(elements, el.handle));
-    return topLevelElements.map(el => collect(elements, el));
+    const topLevelElements = elements.filter((el) => !isElementInGroup(elements, el.handle));
+    return topLevelElements.map((el) => collect(elements, el));
 }
 
 const test_result = [
@@ -38,18 +38,18 @@ const test_result = [
                     "otLINE2D #16",
                     {
                         name: "otGROUP2D #17",
-                        data: [{ name: "otGROUP2D #12 Nahui", data: ["otLINE2D #10", "otLINE2D #9"] }, "otLINE2D #14"]
-                    }
-                ]
-            }
-        ]
+                        data: [{ name: "otGROUP2D #12 Nahui", data: ["otLINE2D #10", "otLINE2D #9"] }, "otLINE2D #14"],
+                    },
+                ],
+            },
+        ],
     },
     "otLINE2D #34",
-    "otLINE2D #35"
+    "otLINE2D #35",
 ];
 
 //тестирует правильность считывания и композиции VDR
-(async function() {
+(async function () {
     const zipFiles = await openZipFromUrl(["/test_projects/test_scheme_compose.zip", "/data/library.zip"]);
     const { collection, rootName } = await readProjectData(zipFiles);
     const root = collection.get(rootName)!;

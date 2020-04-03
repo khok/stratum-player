@@ -4,7 +4,7 @@ import { createTools } from "~/graphics/graphicSpace/createToolsAndObjects";
 import { TextTool } from "~/graphics/graphicSpace/tools";
 import { HandleMap } from "~/helpers/handleMap";
 
-(async function() {
+(async function () {
     const files = await openZipFromUrl("test_projects/texts_test.zip");
     const { collection, rootName } = await readProjectData(files);
     const scheme = collection.get(rootName)!.scheme!;

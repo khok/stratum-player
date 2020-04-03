@@ -26,7 +26,7 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             selectable: !!this.selectable,
             bmpOrigin: data.bmpOrigin,
             bmpSize: data.bmpSize,
-            bitmapTool: bmpTool
+            bitmapTool: bmpTool,
         });
         this.bmpTool = bmpTool;
     }
@@ -40,7 +40,7 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
     }
     set bmpTool(value) {
         if (this.bmpTool) this.bmpTool.unsubscribe(this);
-        if (value) value.subscribe(this, b => this.visual.updateBitmap(b));
+        if (value) value.subscribe(this, (b) => this.visual.updateBitmap(b));
         this._bmpTool = value;
     }
     unsubFromTools() {
