@@ -6,7 +6,7 @@ import { BinaryStream } from "~/helpers/binaryStream";
 function readTools(stream) {
     return {
         refCount: stream.readWord(), //Выкидывается
-        handle: stream.readWord()
+        handle: stream.readWord(),
     };
 }
 
@@ -16,7 +16,7 @@ function read_ttPEN2D(stream) {
         color: stream.readColor(), //не факт, смотреть tools2d.cpp -> 169
         style: stream.readWord(),
         width: stream.readWord(),
-        rop2: stream.readWord()
+        rop2: stream.readWord(),
     };
 }
 function read_ttBRUSH2D(stream) {
@@ -26,26 +26,26 @@ function read_ttBRUSH2D(stream) {
         style: stream.readWord(),
         hatch: stream.readWord(),
         rop2: stream.readWord(),
-        dibHandle: stream.readWord()
+        dibHandle: stream.readWord(),
     };
 }
 
 function read_ttDIB2D(stream) {
     return {
         ...readTools(stream),
-        image: readBitmap(stream)
+        image: readBitmap(stream),
     };
 }
 function read_ttDOUBLEDIB2D(stream) {
     return {
         ...readTools(stream),
-        image: readDoubleBitmap(stream)
+        image: readDoubleBitmap(stream),
     };
 }
 function read_ttFONT2D(stream) {
     const data = {
         ...readTools(stream),
-        OldLogfont: stream.readBytes(50) //Структуру искать как typedef struct tagOldLOGFONT
+        OldLogfont: stream.readBytes(50), //Структуру искать как typedef struct tagOldLOGFONT
     };
 
     if (stream.fileversion >= 0x0203) {
@@ -61,19 +61,19 @@ function read_ttFONT2D(stream) {
 function read_ttSTRING2D(stream) {
     return {
         ...readTools(stream),
-        data: stream.readString()
+        data: stream.readString(),
     };
 }
 function read_ttTEXT2D(stream) {
     return {
         ...readTools(stream),
-        textCollection: readNext(stream, true, consts.otLOGTEXTCOLLECTION).data
+        textCollection: readNext(stream, true, consts.otLOGTEXTCOLLECTION).data,
     };
 }
 function read_ttREFTODIB2D(stream) {
     return {
         ...readTools(stream),
-        filename: stream.readString()
+        filename: stream.readString(),
     };
 }
 function read_ttREFTODOUBLEDIB2D(stream) {

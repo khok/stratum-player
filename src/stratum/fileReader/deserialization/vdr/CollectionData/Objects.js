@@ -5,7 +5,7 @@ function readObject(stream) {
     return {
         handle: stream.readWord(),
         options: stream.readWord(),
-        name: stream.fileversion >= 0x0102 && stream.fileversion < 0x0300 ? stream.readString() : ""
+        name: stream.fileversion >= 0x0102 && stream.fileversion < 0x0300 ? stream.readString() : "",
     };
 
     // if (stream.fileversion >= 0x0102 && stream.fileversion < 0x0300) {
@@ -18,14 +18,14 @@ function readObject2D(stream) {
     return {
         ...readObject(stream),
         position: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
-        size: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D()
+        size: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
     };
 }
 
 function read_otGROUP(stream) {
     return {
         ...readObject(stream),
-        childHandles: readNext(stream, true, consts.otPRIMARYCOLLECTION).data
+        childHandles: readNext(stream, true, consts.otPRIMARYCOLLECTION).data,
     };
 }
 function read_otGROUP2D(stream) {
@@ -53,7 +53,7 @@ function read_otLINE2D(stream) {
     let data = {
         ...readObject2D(stream),
         penHandle: stream.readWord(),
-        brushHandle: stream.readWord()
+        brushHandle: stream.readWord(),
     };
     const pointCount = stream.readWord();
 
@@ -75,21 +75,21 @@ function readBitmap(stream) {
         ...readObject2D(stream),
         bmpOrigin: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
         bmpSize: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
-        bmpAngle: stream.readWord()
+        bmpAngle: stream.readWord(),
     };
 }
 
 function read_otBITMAP2D(stream) {
     return {
         ...readBitmap(stream),
-        dibHandle: stream.readWord()
+        dibHandle: stream.readWord(),
     };
 }
 
 function read_otDOUBLEBITMAP2D(stream) {
     return {
         ...readBitmap(stream),
-        doubleDibHandle: stream.readWord()
+        doubleDibHandle: stream.readWord(),
     };
 }
 
@@ -98,7 +98,7 @@ function read_otTEXT2D(stream) {
         ...readObject2D(stream),
         textHandle: stream.readWord(),
         delta: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
-        angle: stream.readWord()
+        angle: stream.readWord(),
     };
 }
 // function read_otVIEW3D2D(stream) {
@@ -118,7 +118,7 @@ function read_otCONTROL2D(stream) {
         dwStyle: stream.readLong(),
         exStyle: stream.readLong(),
         id: stream.readWord(),
-        controlSize: stream.readIntegerPoint2D()
+        controlSize: stream.readIntegerPoint2D(),
     };
     if (!["Edit", "Button", "ComboBox"].includes(res.classname))
         throw new Error(`Неизвестный тип контрола: ${res.classname}`);

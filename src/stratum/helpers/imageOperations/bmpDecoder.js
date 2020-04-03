@@ -36,7 +36,7 @@ function BmpDecoder(buffer, is_with_alpha, offset = 0) {
     this.parseRGBA();
 }
 
-BmpDecoder.prototype.parseHeader = function() {
+BmpDecoder.prototype.parseHeader = function () {
     this.fileSize = bops.readUInt32LE(this.buffer, this.pos);
     this.pos += 4;
     this.reserved = bops.readUInt32LE(this.buffer, this.pos);
@@ -81,7 +81,7 @@ BmpDecoder.prototype.parseHeader = function() {
                 red: red,
                 green: green,
                 blue: blue,
-                quad: quad
+                quad: quad,
             };
         }
     }
@@ -91,14 +91,14 @@ BmpDecoder.prototype.parseHeader = function() {
     }
 };
 
-BmpDecoder.prototype.parseRGBA = function() {
+BmpDecoder.prototype.parseRGBA = function () {
     var bitn = "bit" + this.bitPP;
     var len = this.width * this.height * 4;
     this.data = new Buffer(len);
     this[bitn]();
 };
 
-BmpDecoder.prototype.bit1 = function() {
+BmpDecoder.prototype.bit1 = function () {
     var xlen = Math.ceil(this.width / 8);
     var mode = xlen % 4;
     var y = this.height >= 0 ? this.height - 1 : -this.height;
@@ -127,7 +127,7 @@ BmpDecoder.prototype.bit1 = function() {
     }
 };
 
-BmpDecoder.prototype.bit4 = function() {
+BmpDecoder.prototype.bit4 = function () {
     //RLE-4
     if (this.compress == 2) {
         this.data.fill(0xff);
@@ -241,7 +241,7 @@ BmpDecoder.prototype.bit4 = function() {
     }
 };
 
-BmpDecoder.prototype.bit8 = function() {
+BmpDecoder.prototype.bit8 = function () {
     //RLE-8
     if (this.compress == 1) {
         this.data.fill(0xff);
@@ -330,7 +330,7 @@ BmpDecoder.prototype.bit8 = function() {
     }
 };
 
-BmpDecoder.prototype.bit15 = function() {
+BmpDecoder.prototype.bit15 = function () {
     var dif_w = this.width % 3;
     var _11111 = parseInt("11111", 2),
         _1_5 = _11111;
@@ -356,7 +356,7 @@ BmpDecoder.prototype.bit15 = function() {
     }
 };
 
-BmpDecoder.prototype.bit16 = function() {
+BmpDecoder.prototype.bit16 = function () {
     var dif_w = (this.width % 2) * 2;
     //default xrgb555
     this.maskRed = 0x7c00;
@@ -409,7 +409,7 @@ BmpDecoder.prototype.bit16 = function() {
     }
 };
 
-BmpDecoder.prototype.bit24 = function() {
+BmpDecoder.prototype.bit24 = function () {
     for (var y = this.height - 1; y >= 0; y--) {
         var line = this.bottom_up ? y : this.height - 1 - y;
         for (var x = 0; x < this.width; x++) {
@@ -432,7 +432,7 @@ BmpDecoder.prototype.bit24 = function() {
  * add 32bit decode func
  * @author soubok
  */
-BmpDecoder.prototype.bit32 = function() {
+BmpDecoder.prototype.bit32 = function () {
     //BI_BITFIELDS
     if (this.compress == 3) {
         this.maskRed = bops.readUInt32LE(this.buffer, this.pos);
@@ -477,7 +477,7 @@ BmpDecoder.prototype.bit32 = function() {
     }
 };
 
-BmpDecoder.prototype.getData = function() {
+BmpDecoder.prototype.getData = function () {
     return this.data;
 };
 

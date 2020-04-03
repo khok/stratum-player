@@ -102,14 +102,14 @@ export class BinaryStream {
     readPoint2D() {
         return {
             x: this.readDouble(),
-            y: this.readDouble()
+            y: this.readDouble(),
         };
     }
 
     readIntegerPoint2D() {
         return {
             x: this.readWord(),
-            y: this.readWord()
+            y: this.readWord(),
         };
     }
 }

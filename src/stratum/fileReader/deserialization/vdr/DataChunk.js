@@ -4,11 +4,9 @@ export default class DataChunk {
 
         this.start = stream.position;
         this.code = stream.readWord();
-        if(stream.fileversion < 0x300)
-            return;
+        if (stream.fileversion < 0x300) return;
         this.size = stream.readLong();
-        if(this.size < 0)
-            throw Error('chunk size < 0')
+        if (this.size < 0) throw Error("chunk size < 0");
     }
 
     hasData() {
@@ -20,8 +18,7 @@ export default class DataChunk {
     }
 
     readNextSubChunk() {
-        if(this.start + this.size <= this.stream.position)
-            return 0;
+        if (this.start + this.size <= this.stream.position) return 0;
         return new DataChunk(this.stream);
     }
 
@@ -31,9 +28,7 @@ export default class DataChunk {
 
     checkReaded() {
         const bytes = this.readedBytes();
-        if(bytes > this.size)
-            throw Error(`Chunk data out of range: ${bytes} instead of ${this.size}`)
-        if(bytes < this.size)
-            throw Error(`Chunk not readed: ${bytes} instead of ${this.size}`)
+        if (bytes > this.size) throw Error(`Chunk data out of range: ${bytes} instead of ${this.size}`);
+        if (bytes < this.size) throw Error(`Chunk not readed: ${bytes} instead of ${this.size}`);
     }
 }
