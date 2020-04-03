@@ -31,7 +31,7 @@ class Window implements WindowState {
     }
 
     getProp(prop: "classname" | "filename"): string {
-        return this.space.source;
+        return this.space.sourceFilename;
     }
 }
 
@@ -107,7 +107,7 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
 
     renderAll() {
         let res = false;
-        this.spaces.forEach(s => (res = s.scene.render() || res));
+        this.spaces.forEach((s) => (res = s.scene.render() || res));
         return res;
     }
 

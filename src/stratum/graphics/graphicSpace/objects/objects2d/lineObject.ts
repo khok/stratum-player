@@ -20,12 +20,13 @@ export class LineObject extends Object2dMixin implements LineObjectState {
         this.visual = visualFactory.createLine({
             handle: data.handle,
             position: data.position,
+            options: data.options,
             size: data.size,
             points: this.points,
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
             pen,
-            brush
+            brush,
         });
         this.pen = pen;
         this.brush = brush;
@@ -47,7 +48,7 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     }
     set pen(value) {
         if (this.pen) this.pen.unsubscribe(this);
-        if (value) value.subscribe(this, p => this.visual.updatePen(p));
+        if (value) value.subscribe(this, (p) => this.visual.updatePen(p));
         this._pen = value;
     }
     get brush() {
@@ -55,7 +56,7 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     }
     set brush(value) {
         if (this.brush) this.brush.unsubscribe(this);
-        if (value) value.subscribe(this, b => this.visual.updateBrush(b));
+        if (value) value.subscribe(this, (b) => this.visual.updateBrush(b));
         this._brush = value;
     }
     unsubFromTools() {

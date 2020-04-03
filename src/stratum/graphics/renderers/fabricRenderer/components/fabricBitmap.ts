@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { Point2D } from "data-types-graphics";
+import { Point2D, VdrLayers } from "data-types-graphics";
 import { BitmapElementVisual, BitmapVisualOptions } from "scene-types";
 import { BitmapToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
@@ -32,11 +32,14 @@ export class FabricBitmap implements BitmapElementVisual {
             height: bmpSize.y || undefined,
             scaleX: bmpSize.x && size.x / bmpSize.x,
             scaleY: bmpSize.y && size.y / bmpSize.y,
-            visible: isVisible
+            visible: isVisible,
         };
         this.selectable = selectable;
         this.size = { ...size };
         this.obj = new fabric.Image(bitmapTool.image, opts);
+    }
+    applyLayers(layers: VdrLayers): void {
+        // throw new Error("Method not implemented.");
     }
     setRect(x: number, y: number, width: number, height: number): void {
         this.obj.set({ cropX: x, cropY: y, width, height });

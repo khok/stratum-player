@@ -56,14 +56,14 @@ function readNewFormat(stream, res) {
     res.scale_mul = stream.readPoint2D();
     res.state = stream.readWord();
     res.brushHandle = stream.readWord();
-    res.layers = stream.readBytes(4);
+    const layers = stream.readBytes(4);
+    res.layers = [!!layers[0], !!layers[1], !!layers[2], !!layers[3]];
     res.defaultFlags = stream.readWord();
 
     while (root.hasData()) {
         const { type, data } = readNext(stream, true);
         res[type] = data;
     }
-
     root.checkReaded();
 }
 
@@ -75,7 +75,7 @@ function readVectorDraw(stream) {
 
     const res = {
         fileversion: stream.readWord(),
-        minVersion: stream.readWord()
+        minVersion: stream.readWord(),
     };
 
     stream.fileversion = res.fileversion;
@@ -95,7 +95,7 @@ const map = {
     otFONTCOLLECTION: "fontTools",
     otTEXTCOLLECTION: "textTools",
     otOBJECTCOLLECTION: "elements",
-    otPRIMARYCOLLECTION: "elementOrder"
+    otPRIMARYCOLLECTION: "elementOrder",
 };
 
 function mapNames(vdr) {

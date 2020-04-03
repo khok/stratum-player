@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { Point2D } from "data-types-graphics";
+import { Point2D, VdrLayers } from "data-types-graphics";
 import { LineElementVisual, LineVisualOptions } from "scene-types";
 import { BrushToolState, PenToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
@@ -24,13 +24,16 @@ export class FabricLine implements LineElementVisual {
     readonly handle: number;
     private size: Point2D;
     readonly selectable: boolean;
+    private layerVisible = true;
+    private options: number;
 
     constructor(
-        { handle, points, position, isVisible, selectable, brush, pen }: LineVisualOptions,
+        { handle, points, position, options, isVisible, selectable, brush, pen }: LineVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
     ) {
+        this.options = options;
         const { size } = FabricLine.calcSize(points);
         this.size = size;
         this.handle = handle;
@@ -43,11 +46,15 @@ export class FabricLine implements LineElementVisual {
             fill: getFillValue(brush),
             stroke: pen && pen.color,
             strokeWidth: pen ? pen.width || 0.5 : 0,
-            visible: isVisible
+            visible: isVisible,
         };
 
         this.selectable = selectable;
         this.obj = new fabric.Polyline(points, opts);
+    }
+    applyLayers(layers: VdrLayers): void {
+        this.layerVisible = this.options !== 6144 || !layers[3];
+        this.show();
     }
     private static calcSize(points: Point2D[]) {
         //prettier-ignore
@@ -62,12 +69,12 @@ export class FabricLine implements LineElementVisual {
         ) : { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         return {
             position: { x: sizes.minX, y: sizes.minY },
-            size: { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY }
+            size: { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY },
         };
     }
     setPoints(points: Point2D[]): void {
         const { size, position } = FabricLine.calcSize(points);
-        this.obj.set({ points: points.map(p => new fabric.Point(p.x, p.y)) });
+        this.obj.set({ points: points.map((p) => new fabric.Point(p.x, p.y)) });
         this.obj._calcDimensions();
         this.obj.dirty = true;
         this.size = size;
@@ -104,7 +111,7 @@ export class FabricLine implements LineElementVisual {
         this.requestRedraw();
     }
     show(): void {
-        this.obj.visible = true;
+        this.obj.visible = this.layerVisible && true;
         this.requestRedraw();
     }
     hide(): void {

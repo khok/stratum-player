@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { Point2D } from "data-types-graphics";
+import { Point2D, VdrLayers } from "data-types-graphics";
 import { DoubleBitmapElementVisual, DoubleBitmapVisualOptions } from "scene-types";
 import { DoubleBitmapToolState } from "vm-interfaces-graphics";
 import { fabricConfigObjectOptions } from "../fabricConfig";
@@ -39,6 +39,9 @@ export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
         this.size = { ...size };
         this.obj = new fabric.Image(doubleBitmapTool.image, opts);
         // this.obj = new fabric.Rect({ ...opts, width: size.x, height: size.y });
+    }
+    applyLayers(layers: VdrLayers): void {
+        // throw new Error("Method not implemented.");
     }
     testIntersect(x: number, y: number) {
         const diffX = x - this.posX;

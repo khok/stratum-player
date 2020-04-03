@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { Point2D } from "data-types-graphics";
+import { Point2D, VdrLayers } from "data-types-graphics";
 import {
     BitmapElementVisual,
     BitmapVisualOptions,
@@ -11,7 +11,7 @@ import {
     LineVisualOptions,
     Scene,
     TextVisualOptions,
-    TextElementVisual
+    TextElementVisual,
 } from "scene-types";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
@@ -43,41 +43,44 @@ export class FabricScene implements Scene {
     private controlsubs = new Set<(code: MessageCode, controlHandle: number) => void>();
 
     constructor({ canvas, inputFactory }: { canvas: HTMLCanvasElement; inputFactory?: HTMLInputElementsFactory }) {
-        canvas.oncontextmenu = e => e.preventDefault();
+        canvas.oncontextmenu = (e) => e.preventDefault();
 
         //touch
-        canvas.addEventListener("touchstart", e => {
+        canvas.addEventListener("touchstart", (e) => {
             systemKeysTemp[1] = 1;
             this.raiseEvent({ eventType: "touch", e }, "down");
             // e.preventDefault();
         });
-        canvas.addEventListener("touchend", e => {
+        canvas.addEventListener("touchend", (e) => {
             systemKeysTemp[1] = 0;
             this.raiseEvent({ eventType: "touch", e }, "up");
             // e.preventDefault();
         });
-        canvas.addEventListener("touchmove", e => {
+        canvas.addEventListener("touchmove", (e) => {
             this.raiseEvent({ eventType: "touch", e }, "move");
             // e.preventDefault();
         });
 
         //mouse
-        canvas.addEventListener("mousedown", e => {
+        canvas.addEventListener("mousedown", (e) => {
             systemKeysTemp[1] = 1;
             this.raiseEvent({ eventType: "mouse", e }, "down");
         });
-        canvas.addEventListener("mouseup", e => {
+        canvas.addEventListener("mouseup", (e) => {
             systemKeysTemp[1] = 0;
             this.raiseEvent({ eventType: "mouse", e }, "up");
         });
-        canvas.addEventListener("mousemove", e => this.raiseEvent({ eventType: "mouse", e }, "move"));
+        canvas.addEventListener("mousemove", (e) => this.raiseEvent({ eventType: "mouse", e }, "move"));
 
         if (inputFactory) this.inputFactory = inputFactory;
         this.canvas = new fabric.StaticCanvas(canvas, {
             ...fabricConfigCanvasOptions,
             preserveObjectStacking: true,
-            renderOnAddRemove: false
+            renderOnAddRemove: false,
         });
+    }
+    applyLayers(layers: VdrLayers): void {
+        for (const obj of this.objects.values()) obj.applyLayers(layers);
     }
     // preventMoveEvent = false;
     private raiseEvent(
@@ -97,25 +100,22 @@ export class FabricScene implements Scene {
             (data.eventType === "mouse" ? data.e.offsetY : data.e.changedTouches[0].clientY - rect.top) + this.view.y;
         switch (type) {
             case "move":
-                this.mouseSubs.forEach(s => s(MessageCode.WM_MOUSEMOVE, x, y));
+                this.mouseSubs.forEach((s) => s(MessageCode.WM_MOUSEMOVE, x, y));
                 return;
             case "up": {
                 const code = upCodes[data.eventType === "mouse" ? data.e.button : 0];
-                if (code) this.mouseSubs.forEach(s => s(code, x, y));
+                if (code) this.mouseSubs.forEach((s) => s(code, x, y));
                 return;
             }
             case "down": {
                 const code = downCodes[data.eventType === "mouse" ? data.e.button : 0];
-                if (code) this.mouseSubs.forEach(s => s(code, x, y));
+                if (code) this.mouseSubs.forEach((s) => s(code, x, y));
                 return;
             }
         }
     }
     adaptToNewSize(width: number, height: number): void {
-        this.canvas
-            .setWidth(width)
-            .setHeight(height)
-            .calcOffset();
+        this.canvas.setWidth(width).setHeight(height).calcOffset();
     }
     updateBrush(brush: BrushToolState) {
         this.canvas.backgroundColor = brush.color;
@@ -126,7 +126,7 @@ export class FabricScene implements Scene {
         this._redraw = true;
     }
     placeObjects(order: number[]): void {
-        this.objectsByZReversed.forEach(c => {
+        this.objectsByZReversed.forEach((c) => {
             if (c.type !== "control") this.canvas.remove(c.obj);
         });
         const objsByZ = [];
@@ -197,7 +197,7 @@ export class FabricScene implements Scene {
             data,
             this.view,
             () => this.requestRedraw(),
-            o => this.canvas.remove(o)
+            (o) => this.canvas.remove(o)
         );
         this.objects.set(data.handle, obj);
         return obj;
@@ -208,7 +208,7 @@ export class FabricScene implements Scene {
         this.assertNoObject(data.handle);
         const obj = new HtmlControl(data, this.view, this.inputFactory);
         obj.onChange(() => {
-            this.controlsubs.forEach(c => c(MessageCode.WM_CONTROLNOTIFY, data.handle));
+            this.controlsubs.forEach((c) => c(MessageCode.WM_CONTROLNOTIFY, data.handle));
             this.requestRedraw();
         });
         this.objects.set(data.handle, obj);
@@ -220,7 +220,7 @@ export class FabricScene implements Scene {
             data,
             this.view,
             () => this.requestRedraw(),
-            o => this.canvas.remove(o)
+            (o) => this.canvas.remove(o)
         );
         this.objects.set(data.handle, obj);
         return obj;
@@ -231,7 +231,7 @@ export class FabricScene implements Scene {
             data,
             this.view,
             () => this.requestRedraw(),
-            o => this.canvas.remove(o)
+            (o) => this.canvas.remove(o)
         );
         this.objects.set(data.handle, obj);
         return obj;
@@ -242,7 +242,7 @@ export class FabricScene implements Scene {
             data,
             this.view,
             () => this.requestRedraw(),
-            o => this.canvas.remove(o)
+            (o) => this.canvas.remove(o)
         );
         this.objects.set(data.handle, obj);
         return obj;

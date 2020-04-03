@@ -12,7 +12,7 @@ import {
     GraphicObject,
     GroupObject,
     LineObject,
-    TextObject
+    TextObject,
 } from "./objects";
 import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool, FontTool } from "./tools";
 
@@ -29,6 +29,7 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
     //prettier-ignore
     const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));
 
+    //prettier-ignore
     const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p.width, p.color)]));
 
     //prettier-ignore
@@ -73,11 +74,12 @@ export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsS
         } else {
             obj = create2dObject(elementData, tools, visualFactory);
         }
+        obj.handle = handle;
         allObjects.set(handle, obj);
     }
 
     for (const { obj, handle, data } of groups) {
-        const childs = data.map(h => {
+        const childs = data.map((h) => {
             const child = allObjects.get(h);
             if (!child) throw new StratumError(`Группа #${handle} ссылается на несуществующий объект #${h}`);
             if (child.parent)

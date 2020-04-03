@@ -15,22 +15,17 @@ import { BrushTool } from "./tools";
  * Графическое пространство, содержащее инструменты и объекты.
  */
 export class GraphicSpace implements GraphicSpaceState {
-    static fromVdr(filename: string, vdr: VectorDrawData, imageLoader: ImageResolver, scene: Scene) {
+    static fromVdr(sourceFilename: string, vdr: VectorDrawData, imageLoader: ImageResolver, scene: Scene) {
         const tools = createTools(vdr, imageLoader);
         const objects = vdr.elements && createObjects(vdr.elements, tools, scene);
-        const space = new GraphicSpace(
-            { origin: vdr.origin, brushHandle: vdr.brushHandle, tools, objects, source: filename },
-            scene
-        );
-        if (vdr.elementOrder) space.placeObjects(vdr.elementOrder);
-        return space;
+        return new GraphicSpace({ ...vdr, tools, objects, sourceFilename }, scene);
     }
 
     handle = 0;
     readonly tools: GraphicSpaceTools;
+    private allObjects: HandleMap<GraphicObject>;
     private _originX: number = 0;
     private _originY: number = 0;
-    private allObjects = HandleMap.create<GraphicObject>();
     private subs = new Array<{
         msg: MessageCode;
         objectHandle?: number;
@@ -38,39 +33,31 @@ export class GraphicSpace implements GraphicSpaceState {
         ctx: VmStateContainer;
     }>();
 
-    readonly source: string;
+    readonly sourceFilename: string;
 
     constructor(
-        data: {
-            origin: Point2D;
-            brushHandle?: number;
+        data: VectorDrawData & {
             tools?: GraphicSpaceTools;
             objects?: HandleMap<GraphicObject>;
-            source: string;
+            sourceFilename: string;
         },
         public scene: Scene
     ) {
-        this.source = data.source;
+        this.sourceFilename = data.sourceFilename;
         this.setOrigin(data.origin.x, data.origin.y);
         this.tools = data.tools || new GraphicSpaceTools();
+        this.allObjects = data.objects || HandleMap.create<GraphicObject>();
         if (data.brushHandle) {
             const brush = this.tools.getTool<BrushTool>("ttBRUSH2D", data.brushHandle);
             if (brush) {
-                brush.subscribe(this, b => this.scene.updateBrush(b));
+                brush.subscribe(this, (b) => this.scene.updateBrush(b));
                 this.scene.updateBrush(brush);
             }
         }
-        if (data.objects) data.objects.forEach((o, k) => this.addObjectFast(o, k));
+        scene.applyLayers(data.layers);
+        if (data.elementOrder) this.scene.placeObjects(data.elementOrder);
         this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
         this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
-    }
-
-    /**
-     * Размещает объекты на сцене согласно указанном порядку `order`
-     * @param order - массив дескрипторов объектов, от дальнего к ближнему
-     */
-    placeObjects(order: number[]) {
-        this.scene.placeObjects(order);
     }
 
     get originX() {
@@ -111,7 +98,7 @@ export class GraphicSpace implements GraphicSpaceState {
                 size: { x: 0, y: 0 },
                 options: 0,
                 textHandle,
-                type: "otTEXT2D"
+                type: "otTEXT2D",
             },
             this.tools,
             this.scene
@@ -135,7 +122,7 @@ export class GraphicSpace implements GraphicSpaceState {
                 name: "",
                 options: 0,
                 position: { x, y },
-                type: "otBITMAP2D"
+                type: "otBITMAP2D",
             },
             this.tools,
             this.scene
@@ -158,7 +145,7 @@ export class GraphicSpace implements GraphicSpaceState {
                 points,
                 position: points[0],
                 size: { x: 0, y: 0 },
-                options: 0
+                options: 0,
             },
             this.tools,
             this.scene
@@ -185,11 +172,6 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
-    private addObjectFast(obj: GraphicObject, handle: number) {
-        obj.handle = handle;
-        this.allObjects.set(handle, obj);
-    }
-
     getObject(handle: number): GraphicObject | undefined {
         // if (handle === 0) return undefined; //unlikely
         return this.allObjects.get(handle);
@@ -204,7 +186,7 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     subscribe(ctx: VmStateContainer, klass: ClassState, msg: MessageCode, objectHandle: number, flags: number): void {
-        if (this.subs.some(s => s.klass === klass && s.msg === msg)) {
+        if (this.subs.some((s) => s.klass === klass && s.msg === msg)) {
             console.warn(`Попытка повторной подписки на сообщение ${MessageCode[msg]} классом ${klass.protoName}`);
             return;
         }
@@ -212,7 +194,7 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     private dispatchControlEvent(code: MessageCode, controlHandle: number) {
-        this.subs.forEach(sub => {
+        this.subs.forEach((sub) => {
             const shouldReceiveEvent =
                 //prettier-ignore
                 sub.msg === code && //совпадает ли код сообщения
@@ -228,7 +210,7 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     private dispatchMouseEvent(code: MessageCode, x: number, y: number) {
-        this.subs.forEach(sub => {
+        this.subs.forEach((sub) => {
             const shouldReceiveEvent =
                 (sub.msg === code || sub.msg === MessageCode.WM_ALLMOUSEMESSAGE) && //совпадает ли код сообщения
                 ((sub.objectHandle ? this.scene.testVisualIntersection(sub.objectHandle, x, y) : true) ||

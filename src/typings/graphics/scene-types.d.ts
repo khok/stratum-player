@@ -1,11 +1,11 @@
 declare module "scene-types" {
-    import { ControlElementData, Point2D } from "data-types-graphics";
+    import { ControlElementData, Point2D, VdrLayers } from "data-types-graphics";
     import {
         BitmapToolState,
         BrushToolState,
         PenToolState,
         DoubleBitmapToolState,
-        TextToolState
+        TextToolState,
     } from "vm-interfaces-graphics";
 
     interface _VisualBase {
@@ -14,6 +14,7 @@ declare module "scene-types" {
         show(): void;
         hide(): void;
         destroy(): void;
+        applyLayers(layers: VdrLayers): void;
     }
 
     export interface LineElementVisual extends _VisualBase {
@@ -60,6 +61,7 @@ declare module "scene-types" {
         pen?: PenToolState;
         brush?: BrushToolState;
         arrows?: unknown;
+        options: number;
     }
 
     export interface TextVisualOptions extends VisualOptions {
@@ -93,8 +95,13 @@ declare module "scene-types" {
     }
 
     export interface Scene extends VisualFactory {
+        applyLayers(layers: VdrLayers): void;
         adaptToNewSize(width: number, height: number): void;
         updateBrush(brush: BrushToolState): void;
+        /**
+         * Размещает объекты на сцене согласно указанном порядку `order`
+         * @param order - массив дескрипторов объектов, от дальнего к ближнему
+         */
         placeObjects(order: number[]): void;
         appendLastObject(handle: number): void;
         translateView(x: number, y: number): void;

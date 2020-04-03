@@ -1,4 +1,4 @@
-import { Point2D } from "data-types-graphics";
+import { Point2D, VdrLayers } from "data-types-graphics";
 import { HTMLInputElementsFactory, HtmlTextInputWrapper } from "internal-graphic-types";
 import { ControlElementVisual, ControlVisualOptions } from "scene-types";
 import { StratumError } from "~/helpers/errors";
@@ -28,8 +28,11 @@ export class HtmlControl implements ControlElementVisual {
             width: controlSize.x,
             height: controlSize.y,
             hidden: !isVisible,
-            text
+            text,
         });
+    }
+    applyLayers(layers: VdrLayers): void {
+        // throw new Error("Method not implemented.");
     }
 
     onChange(fn: () => void) {

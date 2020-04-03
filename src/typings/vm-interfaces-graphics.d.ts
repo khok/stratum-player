@@ -14,7 +14,7 @@ declare module "vm-interfaces-graphics" {
         StringColor,
         StringToolData,
         TextElementData,
-        TextToolData
+        TextToolData,
     } from "data-types-graphics";
     import { ClassState, VmBool } from "vm-interfaces-base";
     import { VmStateContainer } from "vm-types";
@@ -170,7 +170,7 @@ declare module "vm-interfaces-graphics" {
         readonly tools: GraphicSpaceToolsState;
         readonly originX: number;
         readonly originY: number;
-        readonly source: string;
+        readonly sourceFilename: string;
         setOrigin(x: number, y: number): VmBool;
 
         addObject(obj: GraphicObjectState): number;

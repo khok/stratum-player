@@ -1,4 +1,4 @@
-import { Point2D } from "data-types-graphics";
+import { Point2D, VdrLayers } from "data-types-graphics";
 import { fabric } from "fabric";
 import { TextElementVisual, TextVisualOptions } from "scene-types";
 import { TextToolState } from "vm-interfaces-graphics";
@@ -31,11 +31,14 @@ export class FabricText implements TextElementVisual {
             top: position.y - viewRef.y,
             visible: isVisible,
             fontSize: textSize * textScaleCoof,
-            fontFamily: "Arial"
+            fontFamily: "Arial",
         };
         this.selectable = false; // selectable;
         this.size = { x: 0, y: 0 };
         this.obj = new fabric.Text(text, opts);
+    }
+    applyLayers(layers: VdrLayers): void {
+        // throw new Error("Method not implemented.");
     }
 
     testIntersect(x: number, y: number) {
