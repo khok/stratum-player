@@ -1,10 +1,11 @@
 ### Запуск примеров
 
 ```
+npm -g install serve parcel typescript cross-env
 git clone https://github.com/khok/stratum-player
 cd stratum-player
-yarn build
-cp dist/player.js examples/stratum.js
+npm run-script build
+cp dist/stratum.js examples
 cp -r static/data examples
 serve examples
 ```

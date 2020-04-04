@@ -18,10 +18,10 @@ npm install -g parcel
 
 ### Сборка
 
-Сборка файла `dist/player.js`:
+Сборка файла `dist/stratum.js`:
 
 ```
-npm build
+npm run-script build
 ```
 
 ### Использование

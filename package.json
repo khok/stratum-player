@@ -2,11 +2,11 @@
     "author": "Maxim Khokhryakov",
     "license": "MIT",
     "name": "stratum-player",
-    "version": "1.0.0-alpha.2",
+    "version": "0.3.0",
     "scripts": {
         "test": "parcel src/stratum/testLoader-single.html",
         "test-all": "parcel src/stratum/testLoader-all.html",
-        "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global StratumPlayer --out-file player.js"
+        "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global StratumPlayer --out-file stratum.js"
     },
     "devDependencies": {
         "parcel-plugin-static-files-copy": "^2.2.0",
