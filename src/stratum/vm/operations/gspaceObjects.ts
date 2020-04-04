@@ -34,14 +34,6 @@ function CreateGroup2d(ctx: VmStateContainer, objectCount: number) {
     ctx.stackPush(0);
 }
 
-// HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
-function CreateDIB2d(ctx: VmStateContainer) {
-    const bmpFilename = ctx.stackPop() as string;
-    const spaceHandle = ctx.stackPop() as number;
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.tools.createBitmap(bmpFilename).handle : 0);
-}
-
 //HANDLE CreateBitmap2d(HANDLE HSpace, HANDLE HDib, FLOAT x, FLOAT y)
 function CreateBitmap2d(ctx: VmStateContainer) {
     const y = ctx.stackPop() as number;
@@ -53,10 +45,19 @@ function CreateBitmap2d(ctx: VmStateContainer) {
     ctx.stackPush(space ? space.createBitmap(x, y, bitmapToolHandle).handle : 0);
 }
 
+// FLOAT DeleteObject2d(HANDLE HSpace, HANDLE HObject)
+function DeleteObject2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const space = ctx.windows.getSpace(spaceHandle);
+    ctx.stackPush(space ? space.deleteObject(objectHandle) : 0);
+}
+
 export function initGraphicObjects(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.CREATEPOLYLINE2D, CreatePolyLine2d as Operation);
     addOperation(Opcode.CREATELINE2D, CreateLine2d);
     addOperation(Opcode.CREATEGROUP2D, CreateGroup2d as Operation);
-    addOperation(Opcode.CREATEDID2D, CreateDIB2d);
     addOperation(Opcode.CREATEBITMAP2D, CreateBitmap2d);
+    addOperation(Opcode.DELETEOBJECT2D, DeleteObject2d);
 }

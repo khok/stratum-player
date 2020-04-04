@@ -185,6 +185,14 @@ function CreatePen2d(ctx: VmStateContainer) {
     ctx.stackPush(space ? space.tools.createPen(width, color).handle : 0);
 }
 
+// HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
+function CreateDIB2d(ctx: VmStateContainer) {
+    const bmpFilename = ctx.stackPop() as string;
+    const spaceHandle = ctx.stackPop() as number;
+    const space = ctx.windows.getSpace(spaceHandle);
+    ctx.stackPush(space ? space.tools.createBitmap(bmpFilename).handle : 0);
+}
+
 export function initGraphicTools(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETTEXTOBJECT2D, GetTextObject2d);
     addOperation(Opcode.VM_GETTEXTCOUNT2D, GetTextCount2d);
@@ -200,4 +208,5 @@ export function initGraphicTools(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.VM_SETLOGTEXT2D, SetText2d);
     addOperation(Opcode.SETLOGSTRING2D, SetString2d);
     addOperation(Opcode.CREATEPEN2D, CreatePen2d);
+    addOperation(Opcode.CREATEDID2D, CreateDIB2d);
 }
