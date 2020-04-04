@@ -16,8 +16,7 @@ export class FabricBitmap implements BitmapElementVisual {
     constructor(
         { handle, isVisible, selectable, position, size, bmpOrigin, bmpSize, bitmapTool }: BitmapVisualOptions,
         private viewRef: Point2D,
-        private requestRedraw: () => void,
-        private remove: (obj: fabric.Object) => void
+        private requestRedraw: () => void
     ) {
         this.handle = handle;
         this.posX = position.x;
@@ -75,8 +74,5 @@ export class FabricBitmap implements BitmapElementVisual {
     hide(): void {
         this.obj.visible = false;
         this.requestRedraw();
-    }
-    destroy(): void {
-        this.remove(this.obj);
     }
 }

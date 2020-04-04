@@ -18,7 +18,6 @@ export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
         { handle, isVisible, selectable, position, size, bmpOrigin, bmpSize, doubleBitmapTool }: DoubleBitmapVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
-        private remove: (obj: fabric.Object) => void
     ) {
         this.handle = handle;
         this.posX = position.x;
@@ -73,8 +72,5 @@ export class FabricDoubleBitmap implements DoubleBitmapElementVisual {
     hide(): void {
         this.obj.visible = false;
         this.requestRedraw();
-    }
-    destroy(): void {
-        this.remove(this.obj);
     }
 }

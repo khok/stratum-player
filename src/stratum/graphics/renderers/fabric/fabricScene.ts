@@ -120,11 +120,11 @@ export class FabricScene implements Scene {
     updateBrush(brush: BrushToolState) {
         this.canvas.backgroundColor = brush.color;
     }
-    // stepCount = 0;
-    requestRedraw() {
-        // if (this.stepCount++ > 1000) throw new Error("stop");
+
+    private requestRedraw() {
         this._redraw = true;
     }
+
     placeObjects(order: number[]): void {
         this.objectsByZReversed.forEach((c) => {
             if (c.type !== "control") this.canvas.remove(c.obj);
@@ -146,6 +146,11 @@ export class FabricScene implements Scene {
         if (obj.type !== "control") this.canvas.add(obj.obj);
         this.objectsByZReversed = [obj].concat(this.objectsByZReversed);
         this.requestRedraw();
+    }
+
+    removeObject(obj: VisualObject) {
+        if (obj.type === "control") obj.destroyHtml();
+        else this.canvas.remove(obj.obj);
     }
 
     translateView(x: number, y: number): void {
@@ -193,12 +198,7 @@ export class FabricScene implements Scene {
     }
     createLine(data: LineVisualOptions): LineElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricLine(
-            data,
-            this.view,
-            () => this.requestRedraw(),
-            (o) => this.canvas.remove(o)
-        );
+        const obj = new FabricLine(data, this.view, () => this.requestRedraw());
         this.objects.set(data.handle, obj);
         return obj;
     }
@@ -216,34 +216,19 @@ export class FabricScene implements Scene {
     }
     createText(data: TextVisualOptions): TextElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricText(
-            data,
-            this.view,
-            () => this.requestRedraw(),
-            (o) => this.canvas.remove(o)
-        );
+        const obj = new FabricText(data, this.view, () => this.requestRedraw());
         this.objects.set(data.handle, obj);
         return obj;
     }
     createBitmap(data: BitmapVisualOptions): BitmapElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricBitmap(
-            data,
-            this.view,
-            () => this.requestRedraw(),
-            (o) => this.canvas.remove(o)
-        );
+        const obj = new FabricBitmap(data, this.view, () => this.requestRedraw());
         this.objects.set(data.handle, obj);
         return obj;
     }
     createDoubleBitmap(data: DoubleBitmapVisualOptions): DoubleBitmapElementVisual {
         this.assertNoObject(data.handle);
-        const obj = new FabricDoubleBitmap(
-            data,
-            this.view,
-            () => this.requestRedraw(),
-            (o) => this.canvas.remove(o)
-        );
+        const obj = new FabricDoubleBitmap(data, this.view, () => this.requestRedraw());
         this.objects.set(data.handle, obj);
         return obj;
     }

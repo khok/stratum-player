@@ -74,7 +74,7 @@ export class HtmlControl implements ControlElementVisual {
     hide(): void {
         this.inp.set({ hidden: true });
     }
-    destroy(): void {
+    destroyHtml(): void {
         this.inp.destroy();
     }
 }

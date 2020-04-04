@@ -13,7 +13,6 @@ declare module "scene-types" {
         setAngle(angle: number): void;
         show(): void;
         hide(): void;
-        destroy(): void;
         applyLayers(layers: VdrLayers): void;
     }
 
@@ -105,6 +104,7 @@ declare module "scene-types" {
          */
         placeObjects(order: number[]): void;
         appendLastObject(handle: number): void;
+        removeObject(visual: Visual2D): void;
         translateView(x: number, y: number): void;
         getVisualHandleFromPoint(x: number, y: number): number;
         testVisualIntersection(visualHandle: number, x: number, y: number): boolean;

@@ -70,7 +70,6 @@ export abstract class Object2dMixin extends BaseObjectMixin {
 
     destroy() {
         if (this.parent) this.parent.removeItem(this._subclassInstance);
-        this.visual.destroy();
         this.unsubFromTools();
     }
 

@@ -30,8 +30,7 @@ export class FabricLine implements LineElementVisual {
     constructor(
         { handle, points, position, options, isVisible, selectable, brush, pen }: LineVisualOptions,
         private viewRef: Point2D,
-        private requestRedraw: () => void,
-        private remove: (obj: fabric.Object) => void
+        private requestRedraw: () => void
     ) {
         this.options = options;
         const { size } = FabricLine.calcSize(points);
@@ -117,8 +116,5 @@ export class FabricLine implements LineElementVisual {
     hide(): void {
         this.obj.visible = false;
         this.requestRedraw();
-    }
-    destroy(): void {
-        this.remove(this.obj);
     }
 }
