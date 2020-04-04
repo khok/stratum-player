@@ -108,19 +108,17 @@ function GetObject2dByName(ctx: VmStateContainer) {
     const objectName = <string>ctx.stackPop();
     const groupHandle = <number>ctx.stackPop();
     const spaceHandle = <number>ctx.stackPop();
+
+    if (objectName === "") return ctx.stackPush(0);
+
     const space = ctx.windows.getSpace(spaceHandle);
-    if (!space) {
-        ctx.stackPush(0);
-        return;
-    }
+    if (!space) return ctx.stackPush(0);
+
     let group: GroupObjectState | undefined;
     if (groupHandle) {
         const maybeGroup = space.getObject(groupHandle);
         // TODO: проверить эту ситуацию (фейковая группа или ее нет)
-        if (!maybeGroup || maybeGroup.type !== "otGROUP2D") {
-            ctx.stackPush(0);
-            return;
-        }
+        if (!maybeGroup || maybeGroup.type !== "otGROUP2D") return ctx.stackPush(0);
         group = maybeGroup;
     }
     const object = space.findObjectByName(objectName, group);
