@@ -9,6 +9,8 @@ export class BinaryStream {
 
     readBytes(size: number): Uint8Array;
 
+    readByte(): number;
+
     readWord(): number;
 
     readLong(): number;

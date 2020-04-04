@@ -20,10 +20,11 @@ export class TextObject extends Object2dMixin implements TextObjectState {
         this.visual = visualFactory.createText({
             handle: data.handle,
             position: data.position,
+            angle: data.angle,
             size: data.size,
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
-            text: textTool,
+            textTool,
         });
         this.text = textTool;
     }

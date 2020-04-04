@@ -16,7 +16,7 @@ export class FabricText implements TextElementVisual {
     readonly selectable: boolean;
 
     constructor(
-        { handle, isVisible, selectable, position, text: textTool }: TextVisualOptions,
+        { handle, isVisible, selectable, position, angle, textTool }: TextVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void,
         private remove: (obj: fabric.Object) => void
@@ -25,10 +25,14 @@ export class FabricText implements TextElementVisual {
         this.posX = position.x;
         this.posY = position.y;
         const { text, size: textSize } = textTool.assembledText;
+        const firstFrag = textTool.getFragment(0);
         const opts: fabric.ITextOptions = {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
+            angle: -angle * 0.1,
+            backgroundColor: firstFrag.backgroundColor,
+            fill: firstFrag.foregroundColor,
             visible: isVisible,
             fontSize: textSize * textScaleCoof,
             fontFamily: "Arial",

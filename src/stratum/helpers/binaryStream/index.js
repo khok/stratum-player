@@ -29,6 +29,12 @@ export class BinaryStream {
         return bytes;
     }
 
+    readByte() {
+        const byte = bops.readUInt8(this.data, this.streamPosition);
+        this.streamPosition += 1;
+        return byte;
+    }
+
     readWord() {
         const word = bops.readInt16LE(this.data, this.streamPosition);
         this.streamPosition += 2;
@@ -42,10 +48,9 @@ export class BinaryStream {
     }
 
     readColor() {
-        // let color =  Array.from(this.readBytes(3)).map(b => b.toString(16)).join('');
-        let color = `rgb(${this.readBytes(3)})`;
-        this.streamPosition++;
-        return color;
+        const bytes = this.readBytes(4);
+        const baseColor = `${bytes[0]},${bytes[1]},${bytes[2]}`;
+        return bytes[3] ? `rgba(${baseColor},0)` : `rgb(${baseColor})`;
     }
 
     readUint() {

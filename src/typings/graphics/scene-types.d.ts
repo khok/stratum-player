@@ -65,7 +65,8 @@ declare module "scene-types" {
     }
 
     export interface TextVisualOptions extends VisualOptions {
-        text: TextToolState;
+        textTool: TextToolState;
+        angle: number;
     }
 
     export interface ControlVisualOptions extends VisualOptions {
