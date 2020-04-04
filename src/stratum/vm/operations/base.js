@@ -390,13 +390,19 @@ function PLUS_STRING(ctx) {
     ctx.stackPush(a + b);
 }
 function LEFT_STRING(ctx) {
-    throw "LEFT_STRING: NIMP";
+    const count = ctx.stackPop();
+    const str = ctx.stackPop();
+    ctx.stackPush(str.substr(0, count));
 }
 function RIGHT_STRING(ctx) {
     throw "RIGHT_STRING: NIMP";
 }
+// STRING Substr(STRING str, FLOAT pos, FLOAT n)
 function SUBSTR_STRING(ctx) {
-    throw "SUBSTR_STRING: NIMP";
+    const length = ctx.stackPop();
+    const from = ctx.stackPop();
+    const str = ctx.stackPop();
+    ctx.stackPush(str.substr(from, length));
 }
 function POS_STRING(ctx) {
     throw "POS_STRING: NIMP";
