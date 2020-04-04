@@ -56,7 +56,7 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
     }
 
     createFont(fontName: string, size: number, style: number): FontTool {
-        const font = new FontTool(fontName, size, style);
+        const font = new FontTool({ fontName, size, style });
         const handle = HandleMap.getFreeHandle(this.fonts);
         this.fonts.set(handle, font);
         font.handle = handle;

@@ -27,7 +27,7 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
     const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(imageLoader.loadImage(b))]));
 
     //prettier-ignore
-    const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool("Arial", f.fontSize, f.fontStyle)]));
+    const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool({ fontName: "Arial", ...f, })]));
 
     //prettier-ignore
     const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p.width, p.color)]));

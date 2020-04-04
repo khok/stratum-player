@@ -33,9 +33,10 @@ export class FabricText implements TextElementVisual {
             angle: -angle * 0.1,
             backgroundColor: firstFrag.backgroundColor,
             fill: firstFrag.foregroundColor,
+            fontWeight: firstFrag.font.weight ? "bold" : "normal",
             visible: isVisible,
             fontSize: textSize * textScaleCoof,
-            fontFamily: "Arial",
+            fontFamily: firstFrag.font.name,
         };
         this.selectable = false; // selectable;
         this.size = { x: 0, y: 0 };

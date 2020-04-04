@@ -51,6 +51,7 @@ declare module "vm-interfaces-graphics" {
         readonly name: string;
         readonly size: number;
         readonly style: number;
+        readonly weight: number;
     }
     export interface StringToolState {
         readonly handle: number;

@@ -42,17 +42,31 @@ function read_ttDOUBLEDIB2D(stream) {
     };
 }
 function read_ttFONT2D(stream) {
+    //Структуру искать как typedef struct tagOldLOGFONT
     const data = {
         ...readTools(stream),
-        OldLogfont: stream.readBytes(50), //Структуру искать как typedef struct tagOldLOGFONT
+        height: stream.readWord(),
+        width: stream.readWord(),
+        escapement: stream.readWord(),
+        orientation: stream.readWord(),
+        weight: stream.readWord(),
+        italic: stream.readByte(),
+        underline: stream.readByte(),
+        strikeOut: stream.readByte(),
+        charSet: stream.readByte(),
+        outPrecision: stream.readByte(),
+        clipPrecision: stream.readByte(),
+        quality: stream.readByte(),
+        pitchAndFamily: stream.readByte(),
+        faceName: stream.readFixedString(32),
     };
 
     if (stream.fileversion >= 0x0203) {
-        data.fontSize = stream.readLong();
-        data.fontStyle = stream.readLong();
+        data.size = stream.readLong();
+        data.style = stream.readLong();
     } else {
-        data.fontSize = 22;
-        data.fontStyle = 0;
+        data.size = 22;
+        data.style = 0;
     }
     return data;
 }

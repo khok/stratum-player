@@ -30,8 +30,8 @@ declare module "data-types-graphics" {
     export interface FontToolData extends _ToolDataBase {
         type: "ttFONT2D";
         OldLogfont: unknown;
-        fontSize: number;
-        fontStyle: number;
+        size: number;
+        style: number;
     }
 
     export interface StringToolData extends _ToolDataBase {
