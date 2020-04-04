@@ -41,7 +41,7 @@ function system(ctx: VmStateContainer, paramCount: number) {
     const params = new Array<number>(paramCount);
     for (let i = paramCount - 1; i >= 0; i--) params[i] = ctx.stackPop() as number;
     const command = ctx.stackPop() as number;
-    console.log(`System(${command}, ${params})\n${systemCommands[command]}`);
+    console.warn(`Вызов операции System(${command}, ${params})\n${systemCommands[command]}`);
     ctx.stackPush(1);
 }
 

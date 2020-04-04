@@ -23,7 +23,7 @@ class Window implements WindowState {
         return this.size.y;
     }
     setSize(width: number, height: number): VmBool {
-        console.warn("Ресайз окна пока не поддерживается");
+        console.warn("Обнаружено программное изменение размеров окна");
         this.size.x = width;
         this.size.y = height;
         this.space.scene.adaptToNewSize(width, height);
