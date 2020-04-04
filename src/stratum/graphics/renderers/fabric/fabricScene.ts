@@ -24,7 +24,7 @@ import { BrushToolState } from "vm-interfaces-graphics";
 import { MessageCode } from "~/helpers/vmConstants";
 import { systemKeysTemp } from "~/vm/operations/system";
 import { HTMLInputElementsFactory } from "internal-graphic-types";
-import { HtmlControl } from "./components/htmlControl";
+import { HtmlControl } from "../html/htmlControl";
 
 type VisualObject = FabricLine | FabricBitmap | FabricDoubleBitmap | FabricText | HtmlControl;
 

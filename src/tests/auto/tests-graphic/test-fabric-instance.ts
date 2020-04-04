@@ -3,7 +3,7 @@ import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers"
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { GroupObject } from "~/graphics/graphicSpace/objects";
 import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
-import { FabricScene } from "~/graphics/renderers/fabricRenderer/fabricScene";
+import { FabricScene } from "~/graphics/renderers/fabric/fabricScene";
 import { createComposedScheme } from "~/helpers/graphics";
 import { WindowSystem } from "~/graphics/windowSystem";
 import { EventDispatcher } from "~/helpers/eventDispatcher";

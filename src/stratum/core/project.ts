@@ -2,7 +2,7 @@ import { ClassData, VarSetData } from "data-types-base";
 import { ProjectController, VmBool } from "vm-interfaces-base";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
-import { FabricScene } from "~/graphics/renderers/fabricRenderer/fabricScene";
+import { FabricScene } from "~/graphics/renderers/fabric/fabricScene";
 import { WindowSystem, MyResolver } from "~/graphics/windowSystem";
 import { createComposedScheme } from "~/helpers/graphics";
 import { VmContext } from "~/vm/vmContext";
