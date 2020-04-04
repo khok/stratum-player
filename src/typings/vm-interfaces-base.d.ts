@@ -26,10 +26,9 @@ declare module "vm-interfaces-base" {
         /**
          * Вычисляет схему имиджа и все схемы дочерних имиджей.
          * @param ctx Контекст выполнения.
-         * @param respectDisableVar Учитывать значение переменных *_enable* и *_disable*,
-         * т.е. не вычислять схему, если имидж заблокирован.
+         * @param force Вычислять схему даже если имидж отключен.
          */
-        computeSchemeRecursive(ctx: VmStateContainer, respectDisableVar: boolean): void;
+        computeSchemeRecursive(ctx: VmStateContainer, force: boolean): void;
     }
 
     export interface ProjectController {

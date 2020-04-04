@@ -60,6 +60,7 @@ declare module "data-types-base" {
             parsed?: ParsedCode;
         };
         iconFile?: string;
+        /** `Не используется` */
         iconIndex?: number;
         /** `Не используется` */
         sourceCode?: string;

@@ -75,17 +75,6 @@ export class GraphicSpace implements GraphicSpaceState {
         return 1;
     }
 
-    addObject(obj: GraphicObject): number {
-        throw new Error("Method not implemented.");
-        // // this.deleteObject(handle);
-        // // else handle = this.allObjects.getFreeHandle();
-        // const handle = HandleMap.getFreeHandle(this.allObjects);
-        // this.addObjectFast(obj, handle);
-        // //TODO: object zOrder???
-        // // if (obj.type !== "otGROUP2D") this.scene.
-        // return handle;
-    }
-
     createText(x: number, y: number, angle: number, textHandle: number): TextObject {
         const handle = HandleMap.getFreeHandle(this.allObjects);
         const obj = new TextObject(
@@ -205,7 +194,7 @@ export class GraphicSpace implements GraphicSpaceState {
             sub.klass.setVarValueByLowCaseName("_hobject", controlHandle);
             sub.klass.setVarValueByLowCaseName("iditem", -1);
             sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
-            sub.klass.computeSchemeRecursive(sub.ctx, false);
+            sub.klass.computeSchemeRecursive(sub.ctx, true);
         });
     }
 
@@ -221,7 +210,7 @@ export class GraphicSpace implements GraphicSpaceState {
             sub.klass.setVarValueByLowCaseName("xpos", x);
             sub.klass.setVarValueByLowCaseName("ypos", y);
             sub.klass.setVarValueByLowCaseName("fwkeys", 0);
-            sub.klass.computeSchemeRecursive(sub.ctx, false);
+            sub.klass.computeSchemeRecursive(sub.ctx, true);
         });
     }
 

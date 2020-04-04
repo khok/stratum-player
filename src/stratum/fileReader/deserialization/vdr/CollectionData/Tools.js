@@ -1,7 +1,6 @@
 import { readNext } from "../Collection";
 import consts from "../consts";
 import { readBitmap, readDoubleBitmap } from "~/helpers/imageOperations";
-import { BinaryStream } from "~/helpers/binaryStream";
 
 function readTools(stream) {
     return {

@@ -179,8 +179,8 @@ export class ClassSchemeNode implements ClassState {
         return this.captureEventsFromHandle === spaceHandle;
     }
 
-    computeSchemeRecursive(ctx: VmContext, respectDisableVar: boolean = true) {
-        if (ctx.hasError || (respectDisableVar && this.isDisabled())) return;
+    computeSchemeRecursive(ctx: VmContext, force: boolean = false) {
+        if (ctx.hasError || (!force && this.isDisabled())) return;
 
         if (this.childs) for (const child of this.childs.values()) child.computeSchemeRecursive(ctx);
 
