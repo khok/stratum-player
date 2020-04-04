@@ -21,7 +21,7 @@ function GetTextObject2d(ctx: VmStateContainer) {
         ctx.stackPush(0);
         return;
     }
-    ctx.stackPush(obj.text.handle);
+    ctx.stackPush(obj.textTool.handle);
 }
 
 function GetTextCount2d(ctx: VmStateContainer) {

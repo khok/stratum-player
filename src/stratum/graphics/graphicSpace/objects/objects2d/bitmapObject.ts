@@ -8,7 +8,7 @@ import { StratumError } from "~/helpers/errors";
 
 export class BitmapObject extends Object2dMixin implements BitmapObjectState {
     readonly type = "otBITMAP2D";
-    private _bmpTool: BitmapTool | undefined;
+    private _bmpTool: BitmapTool;
     protected readonly _subclassInstance: this = this;
     visual: BitmapElementVisual;
     constructor(data: BitmapElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
@@ -28,7 +28,8 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             bmpSize: data.bmpSize,
             bitmapTool: bmpTool,
         });
-        this.bmpTool = bmpTool;
+        bmpTool.subscribe(this, () => this.visual.updateBitmap(bmpTool));
+        this._bmpTool = bmpTool;
     }
     setRect(x: number, y: number, width: number, height: number): VmBool {
         this.visual.setRect(x, y, width, height);
@@ -39,11 +40,11 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
         return this._bmpTool;
     }
     set bmpTool(value) {
-        if (this.bmpTool) this.bmpTool.unsubscribe(this);
-        if (value) value.subscribe(this, (b) => this.visual.updateBitmap(b));
+        this.bmpTool.unsubscribe(this);
+        value.subscribe(this, () => this.visual.updateBitmap(value));
         this._bmpTool = value;
     }
-    unsubFromTools() {
+    protected unsubFromTools() {
         if (this.bmpTool) this.bmpTool.unsubscribe(this);
     }
 }

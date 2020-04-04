@@ -48,7 +48,7 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     }
     set pen(value) {
         if (this.pen) this.pen.unsubscribe(this);
-        if (value) value.subscribe(this, (p) => this.visual.updatePen(p));
+        if (value) value.subscribe(this, () => this.visual.updatePen(value));
         this._pen = value;
     }
     get brush() {
@@ -56,12 +56,11 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     }
     set brush(value) {
         if (this.brush) this.brush.unsubscribe(this);
-        if (value) value.subscribe(this, (b) => this.visual.updateBrush(b));
+        if (value) value.subscribe(this, () => this.visual.updateBrush(value));
         this._brush = value;
     }
-    unsubFromTools() {
+    protected unsubFromTools() {
         if (this.pen) this.pen.unsubscribe(this);
         if (this.brush) this.brush.unsubscribe(this);
     }
-    testlineFunc() {}
 }

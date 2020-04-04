@@ -8,7 +8,7 @@ import { StratumError } from "~/helpers/errors";
 
 export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObjectState {
     readonly type = "otDOUBLEBITMAP2D";
-    private _doubleBitmapTool: DoubleBitmapTool | undefined;
+    private _doubleBitmapTool: DoubleBitmapTool;
     protected readonly _subclassInstance: this = this;
     visual: DoubleBitmapElementVisual;
     constructor(data: DoubleBitmapElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
@@ -28,7 +28,8 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
             bmpSize: data.bmpSize,
             doubleBitmapTool,
         });
-        this.doubleBitmapTool = doubleBitmapTool;
+        doubleBitmapTool.subscribe(this, () => this.visual.updateBitmap(doubleBitmapTool));
+        this._doubleBitmapTool = doubleBitmapTool;
     }
     setRect(x: number, y: number, width: number, height: number): VmBool {
         throw new Error("Method not implemented.");
@@ -38,11 +39,11 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
         return this._doubleBitmapTool;
     }
     set doubleBitmapTool(value) {
-        if (this.doubleBitmapTool) this.doubleBitmapTool.unsubscribe(this);
-        if (value) value.subscribe(this, (b) => this.visual.updateBitmap(b));
+        this.doubleBitmapTool.unsubscribe(this);
+        value.subscribe(this, () => this.visual.updateBitmap(value));
         this._doubleBitmapTool = value;
     }
-    unsubFromTools() {
+    protected unsubFromTools() {
         if (this.doubleBitmapTool) this.doubleBitmapTool.unsubscribe(this);
     }
 }

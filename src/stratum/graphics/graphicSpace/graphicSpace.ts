@@ -50,7 +50,7 @@ export class GraphicSpace implements GraphicSpaceState {
         if (data.brushHandle) {
             const brush = this.tools.getTool<BrushTool>("ttBRUSH2D", data.brushHandle);
             if (brush) {
-                brush.subscribe(this, (b) => this.scene.updateBrush(b));
+                brush.subscribe(this, () => this.scene.updateBrush(brush));
                 this.scene.updateBrush(brush);
             }
         }

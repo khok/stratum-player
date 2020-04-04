@@ -31,7 +31,7 @@ declare module "vm-interfaces-graphics" {
         readonly type: BrushToolData["type"];
         color: StringColor;
         fillType: "SOLID" | "NULL" | "PATTERN" | "HATCED";
-        bmpTool?: BitmapToolState;
+        bmpTool: BitmapToolState | undefined;
     }
     export interface BitmapToolState {
         readonly handle: number;
@@ -135,19 +135,19 @@ declare module "vm-interfaces-graphics" {
     }
     export interface TextObjectState extends GraphicObjectStateBase {
         readonly type: TextElementData["type"];
-        text: TextToolState;
+        textTool: TextToolState;
     }
     interface _BmpBase extends GraphicObjectStateBase {
         setRect(x: number, y: number, width: number, height: number): VmBool;
     }
     export interface BitmapObjectState extends _BmpBase {
         readonly type: BitmapElementData["type"];
-        bmpTool: BitmapToolState | undefined;
+        bmpTool: BitmapToolState;
         setRect(x: number, y: number, width: number, height: number): VmBool;
     }
     export interface DoubleBitmapObjectState extends _BmpBase {
         readonly type: DoubleBitmapElementData["type"];
-        doubleBitmapTool: DoubleBitmapToolState | undefined;
+        doubleBitmapTool: DoubleBitmapToolState;
     }
     export interface GroupObjectState extends GraphicObjectStateBase {
         readonly type: GroupElementData["type"];

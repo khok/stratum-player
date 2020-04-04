@@ -26,5 +26,5 @@ export class ControlObject extends Object2dMixin implements ControlObjectState {
     get text(): string {
         return this.visual.getText();
     }
-    unsubFromTools() {}
+    protected unsubFromTools() {}
 }

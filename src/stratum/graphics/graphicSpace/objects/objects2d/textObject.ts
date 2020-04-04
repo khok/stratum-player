@@ -8,7 +8,7 @@ import { StratumError } from "~/helpers/errors";
 export class TextObject extends Object2dMixin implements TextObjectState {
     readonly type = "otTEXT2D";
     protected readonly _subclassInstance: this = this;
-    private _text: TextTool | undefined;
+    private _text: TextTool;
     visual: TextElementVisual;
     constructor(data: TextElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
@@ -26,17 +26,18 @@ export class TextObject extends Object2dMixin implements TextObjectState {
             selectable: !!this.selectable,
             textTool,
         });
-        this.text = textTool;
+        this._text = textTool;
+        textTool.subscribe(this, () => this.visual.updateText(textTool));
     }
-    get text(): TextTool {
-        return this._text!;
+    get textTool(): TextTool {
+        return this._text;
     }
-    set text(value) {
-        if (this._text) this._text.unsubscribe(this);
+    set textTool(value) {
+        this._text.unsubscribe(this);
         this._text = value;
-        value.subscribe(this, (t) => this.visual.updateText(t));
+        value.subscribe(this, () => this.visual.updateText(value));
     }
-    unsubFromTools(): void {
-        this.text.unsubscribe(this);
+    protected unsubFromTools(): void {
+        this.textTool.unsubscribe(this);
     }
 }

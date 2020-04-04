@@ -34,9 +34,9 @@ export class FabricText implements TextElementVisual {
             backgroundColor: firstFrag.backgroundColor,
             fill: firstFrag.foregroundColor,
             fontWeight: firstFrag.font.weight ? "bold" : "normal",
+            fontFamily: firstFrag.font.name,
             visible: isVisible,
             fontSize: textSize * textScaleCoof,
-            fontFamily: firstFrag.font.name,
         };
         this.selectable = false; // selectable;
         this.size = { x: 0, y: 0 };
@@ -55,7 +55,15 @@ export class FabricText implements TextElementVisual {
 
     updateText(textTool: TextToolState): void {
         const { text, size } = textTool.assembledText;
-        this.obj.set({ text, fontSize: size * textScaleCoof });
+        const firstFrag = textTool.getFragment(0);
+        this.obj.set({
+            text,
+            fontSize: size * textScaleCoof,
+            backgroundColor: firstFrag.backgroundColor,
+            fill: firstFrag.foregroundColor,
+            fontWeight: firstFrag.font.weight ? "bold" : "normal",
+            fontFamily: firstFrag.font.name,
+        });
         this.requestRedraw();
     }
 

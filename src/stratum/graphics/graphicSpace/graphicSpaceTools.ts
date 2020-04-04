@@ -116,7 +116,11 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
             case "ttPEN2D":
                 return this.pens.delete(handle) ? 1 : 0;
             case "ttBRUSH2D":
-                return this.brushes.delete(handle) ? 1 : 0;
+                const brush = this.brushes.get(handle);
+                if (!brush) return 0;
+                brush.unsubFromBitmapTool();
+                this.brushes.delete(handle);
+                return 1;
             case "ttDIB2D":
                 return this.bitmaps.delete(handle) ? 1 : 0;
             case "ttDOUBLEDIB2D":

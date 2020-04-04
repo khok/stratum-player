@@ -13,19 +13,20 @@ export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
     readonly type = "ttBRUSH2D";
     private _color: StringColor;
     private _fillType: BrushToolState["fillType"];
-    private _bmpTool?: BitmapTool;
+    private _bmpTool: BitmapTool | undefined;
     constructor(color: StringColor, style: number, bmpTool?: BitmapTool) {
         super();
         this._color = color;
         this._fillType = codeToStyle[style] || "HATCED";
         if (this._fillType === "HATCED") console.warn(`Стиль заливки HATCED не реализован`);
-        if (bmpTool) bmpTool.subscribe(this, (b) => (this.bmpTool = b));
-        this._bmpTool = bmpTool;
+        this.bmpTool = bmpTool;
     }
     get bmpTool() {
         return this._bmpTool;
     }
     set bmpTool(value) {
+        if (this._bmpTool) this._bmpTool.unsubscribe(this);
+        if (value) value.subscribe(this, () => this.dispatchChanges());
         this._bmpTool = value;
         this.dispatchChanges();
     }
@@ -42,5 +43,8 @@ export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
     set fillType(value) {
         this._fillType = value;
         this.dispatchChanges();
+    }
+    unsubFromBitmapTool() {
+        this.bmpTool = undefined;
     }
 }

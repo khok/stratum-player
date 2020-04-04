@@ -17,17 +17,23 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
     constructor(private fragments: TextToolTextFragment[]) {
         super();
         this.fragments.forEach(({ font, stringFragment }, idx) => {
-            font.subscribe(this, (f) => this.updateFont(f, idx));
-            stringFragment.subscribe(this, (s) => this.updateString(s, idx));
+            font.subscribe(this, () => this.dispatchChanges());
+            stringFragment.subscribe(this, () => this.dispatchChanges());
         });
     }
     updateString(str: StringTool, idx: number) {
+        const oldFrag = this.fragments[idx].stringFragment;
         this.fragments[idx].stringFragment = str;
+        if (oldFrag) oldFrag.unsubscribe(this);
+        str.subscribe(this, () => this.dispatchChanges());
         this.cachedString = undefined;
         this.dispatchChanges();
     }
     updateFont(font: FontTool, idx: number) {
+        const oldFont = this.fragments[idx].font;
         this.fragments[idx].font = font;
+        if (oldFont) oldFont.unsubscribe(this);
+        font.subscribe(this, () => this.dispatchChanges());
         this.cachedString = undefined;
         this.dispatchChanges();
     }
