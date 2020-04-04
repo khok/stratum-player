@@ -78,30 +78,6 @@ function GetWindowOrgY(ctx: VmStateContainer) {
     ctx.stackPush(window ? window.originY : 0);
 }
 
-// VM_GETSCREENWIDTH, name "GetScreenWidth" ret "FLOAT" out 772
-function GetScreenWidth(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.screenWidth);
-}
-// VM_GETSCREENHEIGHT, name "GetScreenHeight" ret "FLOAT" out 773
-function GetScreenHeight(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.screenHeight);
-}
-// VM_GETWORKAREAX, name "GetWorkAreaX" ret "FLOAT" out 774
-function GetWorkAreaX(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaOriginX);
-}
-// VM_GETWORKAREAY, name "GetWorkAreaY" ret "FLOAT" out 775
-function GetWorkAreaY(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaOriginY);
-}
-// VM_GETWORKAREAWIDTH, name "GetWorkAreaWidth" ret "FLOAT" out 776
-function GetWorkAreaWidth(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaWidth);
-}
-// VM_GETWORKAREAHEIGHT, name "GetWorkAreaHeight" ret "FLOAT" out 777
-function GetWorkAreaHeight(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaHeight);
-}
 // VM_SETWINDOWTRANSPARENT, name "SetWindowTransparent" arg "STRING", "FLOAT" ret "FLOAT" out 782
 function SetWindowTransparent(ctx: VmStateContainer) {
     const level = ctx.stackPop();
@@ -150,12 +126,6 @@ export function initWindows(addOperation: (opcode: number, operation: Operation)
     addOperation(Opcode.BRINGWINDOWTOTOP, BringWindowToTop);
     addOperation(Opcode.WIN_ORGX, GetWindowOrgX);
     addOperation(Opcode.WIN_ORGY, GetWindowOrgY);
-    addOperation(Opcode.VM_GETSCREENWIDTH, GetScreenWidth);
-    addOperation(Opcode.VM_GETSCREENHEIGHT, GetScreenHeight);
-    addOperation(Opcode.VM_GETWORKAREAX, GetWorkAreaX);
-    addOperation(Opcode.VM_GETWORKAREAY, GetWorkAreaY);
-    addOperation(Opcode.VM_GETWORKAREAWIDTH, GetWorkAreaWidth);
-    addOperation(Opcode.VM_GETWORKAREAHEIGHT, GetWorkAreaHeight);
     addOperation(Opcode.VM_SETWINDOWTRANSPARENT, SetWindowTransparent);
     addOperation(Opcode.VM_SETWINDOWTRANSPARENTCOLOR, SetWindowTransparentColor);
     addOperation(Opcode.VM_SETWINDOWOWNER, SetWindowOwner);
