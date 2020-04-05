@@ -105,7 +105,6 @@ export class GraphicSpace implements GraphicSpaceState {
                 handle,
                 bmpAngle: 0,
                 bmpOrigin: { x: 0, y: 0 },
-                bmpSize: { x: 0, y: 0 },
                 size: { x: 0, y: 0 },
                 dibHandle: bitmapToolHandle,
                 name: "",

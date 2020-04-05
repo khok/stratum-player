@@ -27,10 +27,10 @@ export class FabricBitmap implements BitmapElementVisual {
             top: position.y - viewRef.y,
             cropX: bmpOrigin.x,
             cropY: bmpOrigin.y,
-            width: bmpSize.x || undefined,
-            height: bmpSize.y || undefined,
-            scaleX: bmpSize.x && size.x / bmpSize.x,
-            scaleY: bmpSize.y && size.y / bmpSize.y,
+            width: bmpSize.x,
+            height: bmpSize.y,
+            scaleX: bmpSize.x ? size.x / bmpSize.x : 1,
+            scaleY: bmpSize.y ? size.y / bmpSize.y : 1,
             visible: isVisible,
         };
         this.selectable = selectable;

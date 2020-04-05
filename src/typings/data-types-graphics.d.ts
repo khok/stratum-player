@@ -103,7 +103,7 @@ declare module "data-types-graphics" {
 
     interface _BitmapBaseData extends _Element2dBaseData {
         bmpOrigin: Point2D;
-        bmpSize: Point2D;
+        bmpSize?: Point2D;
         bmpAngle: number;
     }
 

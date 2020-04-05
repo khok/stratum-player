@@ -18,6 +18,8 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
             //TODO: fix
             throw new StratumError(`Двойная битовая карта #${data.doubleDibHandle} не существует`);
         }
+        this.width = data.size.x = data.size.x || doubleBitmapTool.image.width;
+        this.height = data.size.y = data.size.y || doubleBitmapTool.image.height;
         this.visual = visualFactory.createDoubleBitmap({
             handle: data.handle,
             position: data.position,
@@ -25,7 +27,7 @@ export class DoubleBitmapObject extends Object2dMixin implements DoubleBitmapObj
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
             bmpOrigin: data.bmpOrigin,
-            bmpSize: data.bmpSize,
+            bmpSize: data.bmpSize || data.size,
             doubleBitmapTool,
         });
         doubleBitmapTool.subscribe(this, () => this.visual.updateBitmap(doubleBitmapTool));
