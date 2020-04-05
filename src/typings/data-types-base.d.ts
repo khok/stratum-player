@@ -43,12 +43,11 @@ declare module "data-types-base" {
         flags: number;
     }
 
-    export interface ClassHeaderData {
+    export interface ClassData {
         name: string;
         version: number;
-    }
+        fileName: string;
 
-    export interface ClassData {
         vars?: VarData[];
         links?: LinkData[];
         childs?: ChildData[];

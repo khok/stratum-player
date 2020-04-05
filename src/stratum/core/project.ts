@@ -96,6 +96,12 @@ export class Project implements ProjectController {
     hasClass(className: string): VmBool {
         return this.classCollection.get(className) ? 1 : 0;
     }
+    getClassDir(className: string): string {
+        const cl = this.classCollection.get(className);
+        if (!cl) return "";
+        const idx = cl.fileName.lastIndexOf("\\");
+        return cl.fileName.substr(0, idx + 1);
+    }
     *getClassesByProtoName(className: string): IterableIterator<ClassSchemeNode> {
         //TODO: ПЕРЕПИСАТЬ
         for (const node of this.cachedNodes) if (node.protoName === className) yield node;

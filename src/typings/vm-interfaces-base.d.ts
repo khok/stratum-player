@@ -34,6 +34,7 @@ declare module "vm-interfaces-base" {
     export interface ProjectController {
         createSchemeInstance(className: string): GraphicSpaceResolver | undefined;
         hasClass(className: string): VmBool;
+        getClassDir(className: string): string;
         getClassesByProtoName(className: string): IterableIterator<ClassState>;
     }
 

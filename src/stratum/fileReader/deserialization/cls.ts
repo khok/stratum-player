@@ -1,6 +1,6 @@
 /* Основано на class.cpp:6100
  */
-import { ChildData, ClassData, ClassHeaderData, LinkData, VarData } from "data-types-base";
+import { ChildData, ClassData, LinkData, VarData } from "data-types-base";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { FileSignatureError, StratumError } from "~/helpers/errors";
 import { readVectorDrawData } from ".";
@@ -111,7 +111,7 @@ function readVdr(stream: BinaryStream, silent = true) {
 //     while ((byte = stream.readBytes(1)[0])) readEquations(stream);
 // }
 
-export function readClassHeaderData(stream: BinaryStream): ClassHeaderData {
+export function readClassHeaderData(stream: BinaryStream): { name: string; version: number } {
     const sign = stream.readWord();
     if (sign !== 0x4253) throw new FileSignatureError(sign, 0x4253);
 
@@ -124,14 +124,13 @@ export function readClassHeaderData(stream: BinaryStream): ClassHeaderData {
 
 export function readClassData(
     stream: BinaryStream,
-    version: number,
+    res: ClassData,
     blocks: {
         readScheme?: boolean;
         readImage?: boolean;
         parseBytecode?: boolean;
     }
-): ClassData {
-    const res: ClassData = {};
+) {
     const errs: string[] = [];
 
     let next = stream.readWord();
@@ -146,7 +145,7 @@ export function readClassData(
     }
 
     if (next == RecordType.CR_CHILDSnameXY || next == RecordType.CR_CHILDSname || next == RecordType.CR_CHILDS) {
-        res.childs = readChilds(stream, version);
+        res.childs = readChilds(stream, res.version);
         next = stream.readWord();
     }
 
@@ -225,7 +224,7 @@ export function readClassData(
         return res;
     }
 
-    if (next != RecordType.CR_CLASSTIME && version === 0x3003)
+    if (next != RecordType.CR_CLASSTIME && res.version === 0x3003)
         throw new StratumError("Ошибка в ходе чтения данных имиджа");
 
     let classId = stream.readLong();

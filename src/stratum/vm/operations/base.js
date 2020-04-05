@@ -395,7 +395,9 @@ function LEFT_STRING(ctx) {
     ctx.stackPush(str.substr(0, count));
 }
 function RIGHT_STRING(ctx) {
-    throw "RIGHT_STRING: NIMP";
+    const count = ctx.stackPop();
+    const str = ctx.stackPop();
+    ctx.stackPush(str.substr(str.length - count, count));
 }
 // STRING Substr(STRING str, FLOAT pos, FLOAT n)
 function SUBSTR_STRING(ctx) {

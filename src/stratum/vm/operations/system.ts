@@ -45,6 +45,19 @@ function system(ctx: VmStateContainer, paramCount: number) {
     ctx.stackPush(1);
 }
 
+// STRING GetClassDirectory(STRING ClassName)
+function GetClassDirectory(ctx: VmStateContainer) {
+    const className = ctx.stackPop() as string;
+    ctx.stackPush(ctx.project.getClassDir(className));
+}
+
+// STRING AddSlash(STRING FileName)
+function AddSlash(ctx: VmStateContainer) {
+    const path = ctx.stackPop() as string;
+    console.log(path);
+    ctx.stackPush(path[path.length - 1] === "\\" ? path : path + "\\");
+}
+
 // VM_GETSCREENWIDTH, name "GetScreenWidth" ret "FLOAT" out 772
 function GetScreenWidth(ctx: VmStateContainer) {
     ctx.stackPush(ctx.windows.screenWidth);
@@ -82,4 +95,6 @@ export function initSystem(addOperation: (opcode: number, operation: Operation) 
     addOperation(Opcode.VM_GETWORKAREAY, GetWorkAreaY);
     addOperation(Opcode.VM_GETWORKAREAWIDTH, GetWorkAreaWidth);
     addOperation(Opcode.VM_GETWORKAREAHEIGHT, GetWorkAreaHeight);
+    addOperation(Opcode.GETCLASSDIR, GetClassDirectory);
+    addOperation(Opcode.ADDSLASH, AddSlash);
 }

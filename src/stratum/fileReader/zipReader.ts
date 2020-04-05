@@ -1,10 +1,10 @@
-import { ClassData, ClassHeaderData } from "data-types-base";
+import { ClassData } from "data-types-base";
 import { JSZipObject, loadAsync } from "jszip";
 import { StratumError } from "~/helpers/errors";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { readClassData, readClassHeaderData, readProjectName, readVarSetData } from "./deserialization";
 
-type ExtendedHeader = ClassHeaderData & { _stream: BinaryStream };
+type ExtendedHeader = ClassData & { _stream: BinaryStream };
 
 function findFiles(files: JSZipObject[], ending: string) {
     return files.filter(({ name }) => name.toLowerCase().endsWith(ending.toLowerCase()));
@@ -22,8 +22,9 @@ function findSingleFile(zipFiles: JSZipObject[], ending: string, mustExist = tru
     return files[0];
 }
 
-function unzipFile(file: JSZipObject) {
-    return file.async("uint8array");
+async function unzipFile(file: JSZipObject) {
+    const data = await file.async("uint8array");
+    return { filename: file.name.replace("/", "\\"), data };
 }
 
 function unzipFilesWithExt(files: JSZipObject[], ext: string) {
@@ -34,17 +35,23 @@ function unzipFilesWithExt(files: JSZipObject[], ext: string) {
 
 //Ищет все CLS-файлы и читает их заголовки, искл. blacklist
 const clsBlacklist = ["COLORREF", "HANDLE", "POINTER"];
+
 async function loadHeaders(files: JSZipObject[]) {
     const res = new Map<string, ExtendedHeader>();
-    (await unzipFilesWithExt(files, "cls")).forEach((bytes) => {
-        const stream = new BinaryStream(bytes);
-        const data = <ExtendedHeader>readClassHeaderData(stream);
-        const { name } = data;
-        if (res.has(name)) throw new StratumError(`Конфликт имен имиджей: ${name}`);
-        if (clsBlacklist.includes(name)) return;
-        data._stream = stream;
-        res.set(name, data);
+
+    const classesBytes = await unzipFilesWithExt(files, "cls");
+
+    classesBytes.forEach(({ filename, data }) => {
+        const stream = new BinaryStream(data);
+        const body = <ExtendedHeader>readClassHeaderData(stream);
+        body._stream = stream;
+        body.fileName = filename;
+
+        if (res.has(body.name)) throw new StratumError(`Конфликт имен имиджей: ${body.name}`);
+        if (clsBlacklist.includes(body.name)) return;
+        res.set(body.name, body);
     });
+
     return res;
 }
 
@@ -55,20 +62,20 @@ async function loadHeaders(files: JSZipObject[]) {
  * @param classes библиотека классов
  */
 function loadProjectClasses(headers: Map<string, ExtendedHeader>, className: string, classes: Map<string, ClassData>) {
-    const root = headers.get(className);
-    if (!root) throw new StratumError(`Класс ${className} не найден`);
-
-    //prettier-ignore
-    const { childs } : ClassData = classes.get(root.name) || (() => {
-        const body = readClassData(root._stream, root.version, {
+    let cl = classes.get(className);
+    if (!cl) {
+        const header = headers.get(className);
+        if (!header) throw new StratumError(`Класс ${className} не найден`);
+        readClassData(header._stream, header, {
             readImage: true,
             readScheme: true,
             parseBytecode: true,
         });
-        classes.set(root.name, body);
-        return body;
-    })();
-    if (childs) childs.forEach((child) => loadProjectClasses(headers, child.classname, classes));
+        header._stream = undefined!;
+        classes.set(header.name, header);
+        cl = header;
+    }
+    if (cl.childs) cl.childs.forEach((child) => loadProjectClasses(headers, child.classname, classes));
 }
 
 /**
@@ -91,9 +98,10 @@ export async function readClassFiles(files: JSZipObject[], mainClassName: string
 export async function readAllClassFiles(files: JSZipObject[], silent = false) {
     const headers = await loadHeaders(files);
     const res = new Map<string, ClassData>();
-    for (const [name, { _stream: stream, version }] of headers) {
+    for (const header of headers) {
+        const [name, data] = header;
         try {
-            const data = readClassData(stream, version, { readImage: true, readScheme: true, parseBytecode: true });
+            readClassData(data._stream, data, { readImage: true, readScheme: true, parseBytecode: true });
             res.set(name, data);
         } catch (e) {
             if (!silent) {
@@ -107,14 +115,14 @@ export async function readAllClassFiles(files: JSZipObject[], silent = false) {
 
 export async function readProjectFile(files: JSZipObject[], filename: string = "project.spj") {
     const prjBytes = await unzipFile(findSingleFile(files, filename));
-    return readProjectName(new BinaryStream(prjBytes));
+    return readProjectName(new BinaryStream(prjBytes.data));
 }
 
 export async function readVarsFile(files: JSZipObject[], filename: string = "_preload.stt") {
     const file = findSingleFile(files, filename, false);
     if (!file) return undefined;
     const preloadBytes = await unzipFile(file);
-    return readVarSetData(new BinaryStream(preloadBytes));
+    return readVarSetData(new BinaryStream(preloadBytes.data));
 }
 
 export async function readImageFiles(files: JSZipObject[]) {

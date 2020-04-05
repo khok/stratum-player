@@ -61,8 +61,8 @@ export class SimpleImageLoader implements ImageResolver {
     }
 
     fromProjectFile(bmpFilename: string): HTMLImageElement {
-        const name = bmpFilename.toLowerCase();
         if (!this.bmpFiles) throw new StratumError(`В каталоге проекта нет изображений`);
+        const name = bmpFilename.replace("\\\\", "\\").replace("\\", "/").toLowerCase();
         const file = this.bmpFiles.find((f) => f.filename.toLowerCase().endsWith(name));
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
         return this.loadImg("data:image/bmp;base64," + file.data);
