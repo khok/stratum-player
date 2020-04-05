@@ -180,6 +180,7 @@ declare module "vm-interfaces-graphics" {
         createGroup(objectHandles: number[]): GroupObjectState | undefined;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
+        moveObjectToTop(handle: number): VmBool;
 
         subscribe(ctx: VmStateContainer, klass: ClassState, msg: number, objectHandle: number, flags: number): void;
 

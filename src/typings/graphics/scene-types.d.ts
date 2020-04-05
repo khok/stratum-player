@@ -95,6 +95,7 @@ declare module "scene-types" {
     }
 
     export interface Scene extends VisualFactory {
+        moveObjectToTop(handle: number): void;
         applyLayers(layers: VdrLayers): void;
         adaptToNewSize(width: number, height: number): void;
         updateBrush(brush: BrushToolState): void;

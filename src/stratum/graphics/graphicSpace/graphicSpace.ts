@@ -160,6 +160,11 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
+    moveObjectToTop(handle: number): VmBool {
+        this.scene.moveObjectToTop(handle);
+        return 1;
+    }
+
     getObject(handle: number): GraphicObject | undefined {
         // if (handle === 0) return undefined; //unlikely
         return this.allObjects.get(handle);

@@ -148,6 +148,15 @@ export class FabricScene implements Scene {
         this.requestRedraw();
     }
 
+    moveObjectToTop(handle: number) {
+        const obj = this.objects.get(handle);
+        if (!obj) return;
+        if (obj.type !== "control") obj.obj.bringToFront();
+        const obzr = this.objectsByZReversed;
+        this.objectsByZReversed = [obj].concat(obzr.filter((o) => o != obj));
+        this.requestRedraw();
+    }
+
     removeObject(obj: VisualObject) {
         if (obj.type === "control") obj.destroyHtml();
         else this.canvas.remove(obj.obj);

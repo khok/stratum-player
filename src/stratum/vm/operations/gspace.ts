@@ -282,6 +282,30 @@ function IsObjectsIntersect2d(ctx: VmStateContainer) {
     ctx.stackPush(0);
 }
 
+// FLOAT SetObjectName2d(HANDLE HSpace, HANDLE HObject, STRING Name)
+function SetObjectName2d(ctx: VmStateContainer) {
+    const name = ctx.stackPop() as string;
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (obj) {
+        obj.name = name;
+        ctx.stackPush(1);
+    } else {
+        ctx.stackPush(0);
+    }
+}
+
+// FLOAT ObjectToTop2d(HANDLE HSpace, HANDLE HObject)
+function ObjectToTop2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+
+    const space = ctx.windows.getSpace(spaceHandle);
+    ctx.stackPush(space ? space.moveObjectToTop(objectHandle) : 0);
+}
+
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -311,4 +335,6 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.GETVECTORPOINT2DY, GetVectorPoint2dy);
     addOperation(Opcode.SETVECTORPOINT2D, SetVectorPoint2d);
     addOperation(Opcode.V_ISINTERSECT2D, IsObjectsIntersect2d);
+    addOperation(Opcode.SETOBJECTNAME2D, SetObjectName2d);
+    addOperation(Opcode.OBJECTTOTOP2D, ObjectToTop2d);
 }
