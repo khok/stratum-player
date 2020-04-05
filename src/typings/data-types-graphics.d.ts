@@ -52,11 +52,15 @@ declare module "data-types-graphics" {
     export interface BitmapToolData extends _ToolDataBase {
         type: "ttDIB2D";
         image: BmpImage;
+        width: number;
+        height: number;
     }
 
     export interface DoubleBitmapToolData extends _ToolDataBase {
         type: "ttDOUBLEDIB2D";
         image: BmpImage;
+        width: number;
+        height: number;
     }
 
     export interface ExternalBitmapToolData extends _ToolDataBase {

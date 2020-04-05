@@ -4,8 +4,8 @@ declare module "internal-graphic-types" {
      * Загрузчик изображений.
      */
     export interface ImageResolver {
-        fromProjectFile(bmpFilename: string): HTMLImageElement;
-        loadImage(data: ImageToolData): HTMLImageElement;
+        fromProjectFile(bmpFilename: string): { image: HTMLImageElement; width: number; height: number };
+        loadImage(data: ImageToolData): { image: HTMLImageElement; width: number; height: number };
     }
 
     export interface HtmlTextInputWrapperOptions {

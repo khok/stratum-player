@@ -11,7 +11,7 @@ function applyAlphaMask(imageBytes, maskBytes) {
     }
     const png = new PNG({ width: width, height: height, inputHasAlpha: true, filterType: 4 });
     png.data = imageData;
-    return PNG.sync.write(png);
+    return { data: PNG.sync.write(png), width, height };
 }
 
 function readBitmapSize(stream) {
@@ -23,13 +23,18 @@ function readBitmapSize(stream) {
 }
 
 export function readBitmap(stream) {
-    return "data:image/bmp;base64," + stream.readBase64(readBitmapSize(stream));
+    const bmpBytes = stream.readBytes(readBitmapSize(stream));
+
+    const { width, height } = decode(bmpBytes);
+    const image = "data:image/bmp;base64," + new BinaryStream(bmpBytes).readBase64(bmpBytes.length);
+    return { image, width, height };
 }
 
 export function readDoubleBitmap(stream) {
     const bmpBytes = stream.readBytes(readBitmapSize(stream));
     const maskBytes = stream.readBytes(readBitmapSize(stream));
 
-    const pngImage = applyAlphaMask(bmpBytes, maskBytes);
-    return "data:image/png;base64," + new BinaryStream(pngImage).readBase64(pngImage.length);
+    const { data, width, height } = applyAlphaMask(bmpBytes, maskBytes);
+    const image = "data:image/png;base64," + new BinaryStream(data).readBase64(data.length);
+    return { image, width, height };
 }

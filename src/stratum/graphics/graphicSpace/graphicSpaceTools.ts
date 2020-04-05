@@ -47,8 +47,7 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
 
     createBitmap(bmpFilename: string) {
         if (!this.imageLoader) throw new StratumError("Отсутствует зависимость ImageResolver!");
-        const image = this.imageLoader.fromProjectFile(bmpFilename);
-        const bmp = new BitmapTool(image);
+        const bmp = new BitmapTool(this.imageLoader.fromProjectFile(bmpFilename));
         const handle = HandleMap.getFreeHandle(this.bitmaps);
         this.bitmaps.set(handle, bmp);
         bmp.handle = handle;

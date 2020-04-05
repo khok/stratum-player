@@ -5,9 +5,11 @@ import { ToolMixin } from "./toolMixin";
 export class BitmapTool extends ToolMixin<BitmapTool> implements BitmapToolState {
     readonly type = "ttDIB2D";
     private _image: HTMLImageElement;
-    constructor(image: HTMLImageElement) {
+    public dimensions: { width: number; height: number };
+    constructor(data: { image: HTMLImageElement; width: number; height: number }) {
         super();
-        this._image = image;
+        this._image = data.image;
+        this.dimensions = { width: data.width, height: data.height };
     }
     get image() {
         return this._image;

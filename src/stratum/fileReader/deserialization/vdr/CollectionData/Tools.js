@@ -32,13 +32,13 @@ function read_ttBRUSH2D(stream) {
 function read_ttDIB2D(stream) {
     return {
         ...readTools(stream),
-        image: readBitmap(stream),
+        ...readBitmap(stream),
     };
 }
 function read_ttDOUBLEDIB2D(stream) {
     return {
         ...readTools(stream),
-        image: readDoubleBitmap(stream),
+        ...readDoubleBitmap(stream),
     };
 }
 function read_ttFONT2D(stream) {

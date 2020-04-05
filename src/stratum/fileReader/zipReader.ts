@@ -127,9 +127,8 @@ export async function readVarsFile(files: JSZipObject[], filename: string = "_pr
 
 export async function readImageFiles(files: JSZipObject[]) {
     const extFiles = findFiles(files, ".bmp");
-    const names = extFiles.map((f) => f.name);
-    const datas = await Promise.all(extFiles.map((f) => f.async("base64")));
-    return Array.from({ length: extFiles.length }, (_, i) => ({ filename: names[i], data: datas[i] }));
+    const data = await Promise.all(extFiles.map((f) => unzipFile(f)));
+    return data;
 }
 
 /**

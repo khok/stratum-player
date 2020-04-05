@@ -37,6 +37,7 @@ declare module "vm-interfaces-graphics" {
         readonly handle: number;
         readonly type: BitmapToolData["type"];
         image: HTMLImageElement;
+        dimensions: { width: number; height: number };
         setPixel(x: number, y: number, color: StringColor): VmBool;
         getPixel(x: number, y: number): StringColor;
     }
@@ -44,6 +45,7 @@ declare module "vm-interfaces-graphics" {
         readonly handle: number;
         readonly type: DoubleBitmapToolData["type"];
         image: HTMLImageElement;
+        dimensions: { width: number; height: number };
     }
     export interface FontToolState {
         readonly handle: number;

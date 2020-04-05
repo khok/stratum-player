@@ -18,8 +18,9 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             //TODO: fix
             throw new StratumError(`Битовая карта #${data.dibHandle} не существует`);
         }
-        this.width = data.size.x = data.size.x || bmpTool.image.width;
-        this.height = data.size.y = data.size.y || bmpTool.image.height;
+        const { image, dimensions } = bmpTool;
+        this.width = data.size.x = data.size.x || (dimensions && dimensions.width) || image.width;
+        this.height = data.size.y = data.size.y || (dimensions && dimensions.height) || image.height;
         this.visual = visualFactory.createBitmap({
             handle: data.handle,
             position: data.position,

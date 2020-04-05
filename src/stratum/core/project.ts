@@ -28,7 +28,7 @@ export class Project implements ProjectController {
             classes: Map<string, ClassData>;
             windowSystem: WindowSystem;
             varSet?: VarSetData;
-            images?: { filename: string; data: string }[];
+            images?: { filename: string; data: Uint8Array }[];
         },
         options?: ProjectOptions
     ) {
@@ -49,7 +49,7 @@ export class Project implements ProjectController {
         data: {
             scheme: ClassSchemeNode;
             classes: Map<string, ClassData>;
-            images?: { filename: string; data: string }[];
+            images?: { filename: string; data: Uint8Array }[];
             windowSystem: WindowSystem;
             mmanager: MemoryManager;
         },
