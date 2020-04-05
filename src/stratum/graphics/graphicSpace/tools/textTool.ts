@@ -17,36 +17,42 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
     constructor(private fragments: TextToolTextFragment[]) {
         super();
         this.fragments.forEach(({ font, stringFragment }, idx) => {
-            font.subscribe(this, () => this.dispatchChanges());
-            stringFragment.subscribe(this, () => this.dispatchChanges());
+            font.subscribe(this, () => this.update());
+            stringFragment.subscribe(this, () => this.update());
         });
     }
     updateString(str: StringTool, idx: number) {
         const oldFrag = this.fragments[idx].stringFragment;
-        this.fragments[idx].stringFragment = str;
-        if (oldFrag) oldFrag.unsubscribe(this);
-        str.subscribe(this, () => this.dispatchChanges());
-        this.cachedString = undefined;
-        this.dispatchChanges();
+        if (oldFrag !== str) {
+            this.fragments[idx].stringFragment = str;
+            if (oldFrag) oldFrag.unsubscribe(this);
+            str.subscribe(this, () => this.dispatchChanges());
+        }
+        this.update();
     }
     updateFont(font: FontTool, idx: number) {
         const oldFont = this.fragments[idx].font;
-        this.fragments[idx].font = font;
-        if (oldFont) oldFont.unsubscribe(this);
-        font.subscribe(this, () => this.dispatchChanges());
-        this.cachedString = undefined;
-        this.dispatchChanges();
+        if (oldFont !== font) {
+            this.fragments[idx].font = font;
+            if (oldFont) oldFont.unsubscribe(this);
+            font.subscribe(this, () => this.dispatchChanges());
+        }
+        this.update();
     }
     updateFgColor(color: StringColor, idx: number) {
         this.fragments[idx].foregroundColor = color;
-        this.cachedString = undefined;
-        this.dispatchChanges();
+        this.update();
     }
     updateBgColor(color: StringColor, idx: number) {
         this.fragments[idx].backgroundColor = color;
+        this.update();
+    }
+
+    private update() {
         this.cachedString = undefined;
         this.dispatchChanges();
     }
+
     get textCount(): number {
         return this.fragments.length;
     }
