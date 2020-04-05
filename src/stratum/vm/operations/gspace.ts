@@ -306,6 +306,32 @@ function ObjectToTop2d(ctx: VmStateContainer) {
     ctx.stackPush(space ? space.moveObjectToTop(objectHandle) : 0);
 }
 
+// FLOAT GetActualSize2d(HANDLE HSpace2d, HANDLE HObject, &FLOAT x, &FLOAT y)
+function GetActualSize2d(ctx: VmStateContainer) {
+    const isYNew = ctx.stackPop() as number;
+    const yId = ctx.stackPop() as number;
+    const isXNew = ctx.stackPop() as number;
+    const xId = ctx.stackPop() as number;
+    const objectHandle = ctx.stackPop() as number;
+    const spaceHandle = ctx.stackPop() as number;
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (!obj) {
+        ctx.stackPush(0);
+        return;
+    }
+
+    const x = obj.width;
+    const y = obj.height;
+    const cl = ctx.currentClass;
+
+    if (isXNew) cl.setNewVarValue(xId, x);
+    else cl.setOldVarValue(xId, x);
+    if (isYNew) cl.setNewVarValue(yId, y);
+    else cl.setOldVarValue(yId, y);
+
+    ctx.stackPush(1);
+}
+
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -337,4 +363,5 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.V_ISINTERSECT2D, IsObjectsIntersect2d);
     addOperation(Opcode.SETOBJECTNAME2D, SetObjectName2d);
     addOperation(Opcode.OBJECTTOTOP2D, ObjectToTop2d);
+    addOperation(Opcode.VM_GETACTUALSIZE, GetActualSize2d);
 }

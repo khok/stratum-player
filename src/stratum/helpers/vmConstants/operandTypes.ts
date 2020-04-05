@@ -28,6 +28,8 @@ export const VmOperandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIM
     setOperand(Opcode.PUSH_STRING, "varId");
     setOperand(Opcode._PUSH_STRING, "varId");
     setOperand(Opcode._POP_STRING, "varId");
+    setOperand(Opcode.PUSHPTRNEW, "varId");
+    setOperand(Opcode.PUSHPTR, "varId");
 
     //Advanced
     //                      o
