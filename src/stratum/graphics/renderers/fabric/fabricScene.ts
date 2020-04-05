@@ -151,6 +151,9 @@ export class FabricScene implements Scene {
     removeObject(obj: VisualObject) {
         if (obj.type === "control") obj.destroyHtml();
         else this.canvas.remove(obj.obj);
+        this.objects.delete(obj.handle);
+        this.objectsByZReversed = this.objectsByZReversed.filter((o) => o != obj);
+        this.requestRedraw();
     }
 
     translateView(x: number, y: number): void {
