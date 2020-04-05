@@ -8,8 +8,8 @@ import { ClassState } from "vm-interfaces-base";
 
 (async function () {
     const stream = await openStreamFromUrl("/test_projects/other/square_eq.cls");
-    const { version } = readClassHeaderData(stream);
-    const { bytecode, vars } = readClassData(stream, version, { parseBytecode: true });
+    const header = readClassHeaderData(stream);
+    const { bytecode, vars } = readClassData(stream, { ...header, fileName: "" }, { parseBytecode: true });
     const values = vars!.map((v) => {
         const val = parseVarValue(v.type, v.defaultValue);
         return { new: val, old: val };

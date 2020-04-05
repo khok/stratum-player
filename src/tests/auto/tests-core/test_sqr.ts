@@ -8,8 +8,8 @@ import { VmContext } from "~/vm/vmContext";
 
 (async function () {
     const stream = await openStreamFromUrl("test_projects/other/square_eq.cls");
-    const { version, name } = readClassHeaderData(stream);
-    const { vars, bytecode } = readClassData(stream, version, { parseBytecode: true });
+    const header = readClassHeaderData(stream);
+    const { vars, bytecode } = readClassData(stream, { ...header, fileName: "" }, { parseBytecode: true });
 
     const node = new ClassSchemeNode({
         proto: new ClassPrototype(name, { vars, code: bytecode!.parsed }),
