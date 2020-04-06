@@ -8,44 +8,44 @@ import { ImageToolData, BmpImage } from "data-types-graphics";
  * Временная реализация загрузчика изображений.
  */
 export class SimpleImageLoader implements ImageResolver {
-    private globalImages = new Map<string, HTMLImageElement>();
-    // private localImages = new Map<string, HTMLImageElement>();
+    private cachedIcons = new Map<string, HTMLImageElement>();
     private promises = new Set<Promise<HTMLImageElement>>();
 
     constructor(private iconsUrlPath: string, private bmpFiles?: { filename: string; data: Uint8Array }[]) {}
 
-    private createImage(data: Promise<BmpImage> | string, name?: string): HTMLImageElement {
-        if (name) {
-            const cachedImg = this.globalImages.get(name);
-            if (cachedImg) return cachedImg;
-        }
-
+    private createImage(data: Promise<BmpImage> | string): HTMLImageElement {
         const img = new Image();
         const promise = new Promise<HTMLImageElement>(async (res, rej) => {
-            img.onload = () => res(img);
-            img.onerror = () => rej(new StratumError("Ошибка загрузки изображения: " + name));
+            img.onload = () => res();
+            img.onerror = () => rej(new StratumError("Ошибка загрузки изображения: " + data));
             img.src = await data;
         });
         this.promises.add(promise);
-        if (name) this.globalImages.set(name, img);
         return img;
     }
 
     loadImage(data: ImageToolData) {
+        //from base64
         if (data.type === "ttDIB2D" || data.type === "ttDOUBLEDIB2D")
             return { image: this.createImage(data.image), width: data.width, height: data.height };
 
-        const url = `${this.iconsUrlPath}/${data.filename.toUpperCase()}`;
-        let image: HTMLImageElement;
+        //from icon url
+        const fname = data.filename.toUpperCase();
+        let image: HTMLImageElement | undefined;
+        image = this.cachedIcons.get(fname);
+        if (image) return { image, width: image.width, height: image.height };
+
+        const url = `${this.iconsUrlPath}/${fname}`;
         if (data.type === "ttREFTODIB2D") {
-            image = this.createImage(url, url);
+            image = this.createImage(url);
         } else {
             const dataPromise = fetch(url)
                 .then((data) => data.arrayBuffer())
                 .then((data) => readDoubleBitmap(new BinaryStream(data)))
                 .then((data) => data.image);
-            image = this.createImage(dataPromise, url);
+            image = this.createImage(dataPromise);
         }
+        this.cachedIcons.set(fname, image);
         return { image, width: image.width, height: image.height };
     }
 
