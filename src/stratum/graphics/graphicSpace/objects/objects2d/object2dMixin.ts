@@ -59,10 +59,14 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         return 1;
     }
 
+    private warn_showed = false;
     setSize(width: number, height: number): VmBool {
         this.width = width;
         this.height = height;
-        //Реализовать
+        if (!this.warn_showed) {
+            console.warn(`изменение размеров объекта типа ${this.type} не реализовано`);
+            this.warn_showed = true;
+        }
         return 1;
     }
 
