@@ -32,10 +32,11 @@ export class FabricText implements TextElementVisual {
             angle: -angle * 0.1,
             backgroundColor: firstFrag.backgroundColor,
             fill: firstFrag.foregroundColor,
-            fontWeight: firstFrag.font.weight ? "bold" : "normal",
+            fontWeight: firstFrag.font.bold ? "bold" : "normal",
             fontFamily: firstFrag.font.name,
             visible: isVisible,
-            fontSize: textSize * textScaleCoof,
+            // fontSize: textSize * textScaleCoof,
+            fontSize: textSize,
         };
         this.selectable = false; // selectable;
         this.size = { x: 0, y: 0 };
@@ -57,10 +58,11 @@ export class FabricText implements TextElementVisual {
         const firstFrag = textTool.getFragment(0);
         this.obj.set({
             text,
-            fontSize: size * textScaleCoof,
+            // fontSize: size * textScaleCoof,
+            fontSize: size,
             backgroundColor: firstFrag.backgroundColor,
             fill: firstFrag.foregroundColor,
-            fontWeight: firstFrag.font.weight ? "bold" : "normal",
+            fontWeight: firstFrag.font.bold ? "bold" : "normal",
             fontFamily: firstFrag.font.name,
         });
         this.requestRedraw();

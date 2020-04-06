@@ -54,8 +54,8 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         return bmp;
     }
 
-    createFont(fontName: string, size: number, style: number): FontTool {
-        const font = new FontTool({ fontName, size, style });
+    createFont(fontName: string, size: number, bold: boolean): FontTool {
+        const font = new FontTool({ fontName, size, weight: +bold });
         const handle = HandleMap.getFreeHandle(this.fonts);
         this.fonts.set(handle, font);
         font.handle = handle;

@@ -88,7 +88,12 @@ function CreateFont2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.stackPop() as number;
 
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.tools.createFont(fontName, height, flags).handle : 0);
+
+    const italic = !!(flags & 1);
+    const underlined = !!(flags & 2);
+    const strikeout = !!(flags & 4);
+    const bold = !!(flags & 8);
+    ctx.stackPush(space ? space.tools.createFont(fontName, height, bold).handle : 0);
 }
 
 function CreateString2d(ctx: VmStateContainer) {

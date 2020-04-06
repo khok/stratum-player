@@ -4,23 +4,22 @@ import { ToolMixin } from "./toolMixin";
 export type FontToolOptions = {
     fontName: string;
     size: number;
-    style: number;
     weight?: number;
+    height?: number;
 };
 
 export class FontTool extends ToolMixin<FontTool> implements FontToolState {
     readonly type = "ttFONT2D";
     private _name: string;
     private _size: number;
-    private _style: number;
-    private _weight: number;
-    constructor({ fontName, size, style, weight }: FontToolOptions) {
+    private _bold: boolean;
+    constructor({ fontName, size, height, weight }: FontToolOptions) {
         super();
         //тому что шрифта "Arial Cyr" в браузерах нет, обойдем это.
         this._name = fontName.toLowerCase().startsWith("arial") ? "Arial" : fontName;
-        this._size = size || 18; //исправляем дурацкие баги стратума
-        this._style = style;
-        this._weight = weight || 0;
+        // this._size = size || 18; //исправляем дурацкие баги стратума
+        this._size = -(height || 0) || size;
+        this._bold = !!weight;
     }
     get name(): string {
         return this._name;
@@ -28,11 +27,8 @@ export class FontTool extends ToolMixin<FontTool> implements FontToolState {
     get size(): number {
         return this._size;
     }
-    get style(): number {
-        return this._style;
-    }
-    get weight(): number {
-        return this._weight;
+    get bold(): boolean {
+        return this._bold;
     }
     set name(value) {
         this._name = value;
@@ -42,12 +38,8 @@ export class FontTool extends ToolMixin<FontTool> implements FontToolState {
         this._size = value;
         this.dispatchChanges();
     }
-    set style(value) {
-        this._style = value;
-        this.dispatchChanges();
-    }
-    set weight(value) {
-        this._weight = value;
+    set bold(value) {
+        this._bold = value;
         this.dispatchChanges();
     }
 }

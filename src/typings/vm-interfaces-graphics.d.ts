@@ -52,8 +52,7 @@ declare module "vm-interfaces-graphics" {
         readonly type: FontToolData["type"];
         readonly name: string;
         readonly size: number;
-        readonly style: number;
-        readonly weight: number;
+        readonly bold: boolean;
     }
     export interface StringToolState {
         readonly handle: number;
@@ -92,7 +91,7 @@ declare module "vm-interfaces-graphics" {
     export interface GraphicSpaceToolsState {
         createBitmap(bmpFilename: string): BitmapToolState;
         createPen(width: number, color: StringColor): PenToolState;
-        createFont(fontName: string, size: number, style: number): FontToolState;
+        createFont(fontName: string, size: number, bold: boolean): FontToolState;
         createString(value: string): StringToolState;
         createText(
             font: FontToolState,
