@@ -26,6 +26,9 @@ export class TextObject extends Object2dMixin implements TextObjectState {
             selectable: !!this.selectable,
             textTool,
         });
+        const area = this.visual.getVisibleAreaSize();
+        this.width = data.size.x || area.x;
+        this.height = data.size.y || area.y;
         this._text = textTool;
         textTool.subscribe(this, () => this.visual.updateText(textTool));
     }

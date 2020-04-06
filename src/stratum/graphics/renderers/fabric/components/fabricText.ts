@@ -39,8 +39,8 @@ export class FabricText implements TextElementVisual {
             fontSize: textSize,
         };
         this.selectable = false; // selectable;
-        this.size = { x: 0, y: 0 };
         this.obj = new fabric.Text(text, opts);
+        this.size = { x: this.obj.width || 0, y: this.obj.height || 0 };
     }
     applyLayers(layers: VdrLayers): void {
         // throw new Error("Method not implemented.");
@@ -51,6 +51,10 @@ export class FabricText implements TextElementVisual {
         const diffX = x - this.posX;
         const diffY = y - this.posY;
         return diffX > 0 && diffX <= this.size.x && diffY > 0 && diffY <= this.size.y;
+    }
+
+    getVisibleAreaSize(): Point2D {
+        return this.size;
     }
 
     updateText(textTool: TextToolState): void {

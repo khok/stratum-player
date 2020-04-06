@@ -20,10 +20,12 @@ declare module "scene-types" {
         setPoints(points: Point2D[]): void;
         updatePen(pen: PenToolState): void;
         updateBrush(brush: BrushToolState): void;
+        getVisibleAreaSize(): Point2D;
     }
 
     export interface TextElementVisual extends _VisualBase {
         updateText(text: TextToolState): void;
+        getVisibleAreaSize(): Point2D;
     }
 
     export interface ControlElementVisual extends _VisualBase {

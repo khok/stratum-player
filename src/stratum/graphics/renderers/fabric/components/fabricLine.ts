@@ -71,6 +71,9 @@ export class FabricLine implements LineElementVisual {
             size: { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY },
         };
     }
+    getVisibleAreaSize(): Point2D {
+        return this.size;
+    }
     setPoints(points: Point2D[]): void {
         const { size, position } = FabricLine.calcSize(points);
         this.obj.set({ points: points.map((p) => new fabric.Point(p.x, p.y)) });
