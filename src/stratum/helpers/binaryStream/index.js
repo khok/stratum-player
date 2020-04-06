@@ -65,13 +65,17 @@ export class BinaryStream {
         return double;
     }
 
-    //Нуль-терминированная строка
+    /**
+     * Нуль-терминированная строка. Нуль терминатор также считывается.
+     */
     readCharSeq() {
         const strStart = this.position;
         let size = 0;
         while (this.data[strStart + ++size] != 0x00);
 
-        return bops.to(this.readBytes(size));
+        const data = bops.to(this.readBytes(size));
+        this.streamPosition += 1;
+        return data;
     }
 
     readBase64(size) {

@@ -16,7 +16,8 @@ export class FontTool extends ToolMixin<FontTool> implements FontToolState {
     private _weight: number;
     constructor({ fontName, size, style, weight }: FontToolOptions) {
         super();
-        this._name = fontName;
+        //тому что шрифта "Arial Cyr" в браузерах нет, обойдем это.
+        this._name = fontName.toLowerCase().startsWith("arial") ? "Arial" : fontName;
         this._size = size || 18; //исправляем дурацкие баги стратума
         this._style = style;
         this._weight = weight || 0;

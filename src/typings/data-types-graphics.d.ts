@@ -29,7 +29,20 @@ declare module "data-types-graphics" {
 
     export interface FontToolData extends _ToolDataBase {
         type: "ttFONT2D";
-        OldLogfont: unknown;
+        height: number;
+        width: number;
+        escapement: number;
+        orientation: number;
+        weight: number;
+        italic: number;
+        underline: number;
+        strikeOut: number;
+        charSet: number;
+        outPrecision: number;
+        clipPrecision: number;
+        quality: number;
+        pitchAndFamily: number;
+        fontName: string;
         size: number;
         style: number;
     }
