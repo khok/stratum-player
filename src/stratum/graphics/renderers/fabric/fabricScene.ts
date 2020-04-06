@@ -153,7 +153,7 @@ export class FabricScene implements Scene {
         if (!obj) return;
         if (obj.type !== "control") obj.obj.bringToFront();
         const obzr = this.objectsByZReversed;
-        this.objectsByZReversed = [obj].concat(obzr.filter((o) => o != obj));
+        this.objectsByZReversed = [obj].concat(obzr.filter((o) => o !== obj));
         this.requestRedraw();
     }
 
@@ -161,7 +161,7 @@ export class FabricScene implements Scene {
         if (obj.type === "control") obj.destroyHtml();
         else this.canvas.remove(obj.obj);
         this.objects.delete(obj.handle);
-        this.objectsByZReversed = this.objectsByZReversed.filter((o) => o != obj);
+        this.objectsByZReversed = this.objectsByZReversed.filter((o) => o !== obj);
         this.requestRedraw();
     }
 

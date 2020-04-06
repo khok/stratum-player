@@ -31,7 +31,7 @@ function BmpDecoder(buffer, is_with_alpha, offset = 0) {
     this.bottom_up = true;
     this.flag = bops.to(bops.subarray(this.buffer, this.pos, this.pos + 2));
     this.pos += 2;
-    if (this.flag != "BM") throw new Error("Invalid BMP File");
+    if (this.flag !== "BM") throw new Error("Invalid BMP File");
     this.parseHeader();
     this.parseRGBA();
 }
@@ -121,7 +121,7 @@ BmpDecoder.prototype.bit1 = function () {
             }
         }
 
-        if (mode != 0) {
+        if (mode !== 0) {
             this.pos += 4 - mode;
         }
     }
@@ -129,7 +129,7 @@ BmpDecoder.prototype.bit1 = function () {
 
 BmpDecoder.prototype.bit4 = function () {
     //RLE-4
-    if (this.compress == 2) {
+    if (this.compress === 2) {
         this.data.fill(0xff);
 
         var location = 0;
@@ -140,8 +140,8 @@ BmpDecoder.prototype.bit4 = function () {
             var a = bops.readUInt8(this.buffer, this.pos++);
             var b = bops.readUInt8(this.buffer, this.pos++);
             //absolute mode
-            if (a == 0) {
-                if (b == 0) {
+            if (a === 0) {
+                if (b === 0) {
                     //line end
                     if (this.bottom_up) {
                         lines--;
@@ -151,10 +151,10 @@ BmpDecoder.prototype.bit4 = function () {
                     location = lines * this.width * 4;
                     low_nibble = false;
                     continue;
-                } else if (b == 1) {
+                } else if (b === 1) {
                     //image end
                     break;
-                } else if (b == 2) {
+                } else if (b === 2) {
                     //offset x,y
                     var x = bops.readUInt8(this.buffer, this.pos++);
                     var y = bops.readUInt8(this.buffer, this.pos++);
@@ -181,7 +181,7 @@ BmpDecoder.prototype.bit4 = function () {
                         low_nibble = !low_nibble;
                     }
 
-                    if ((((b + 1) >> 1) & 1) == 1) {
+                    if ((((b + 1) >> 1) & 1) === 1) {
                         this.pos++;
                     }
                 }
@@ -234,7 +234,7 @@ BmpDecoder.prototype.bit4 = function () {
                 this.data[location + 4 + 3] = 0;
             }
 
-            if (mode != 0) {
+            if (mode !== 0) {
                 this.pos += 4 - mode;
             }
         }
@@ -243,7 +243,7 @@ BmpDecoder.prototype.bit4 = function () {
 
 BmpDecoder.prototype.bit8 = function () {
     //RLE-8
-    if (this.compress == 1) {
+    if (this.compress === 1) {
         this.data.fill(0xff);
 
         var location = 0;
@@ -253,8 +253,8 @@ BmpDecoder.prototype.bit8 = function () {
             var a = bops.readUInt8(this.buffer, this.pos++);
             var b = bops.readUInt8(this.buffer, this.pos++);
             //absolute mode
-            if (a == 0) {
-                if (b == 0) {
+            if (a === 0) {
+                if (b === 0) {
                     //line end
                     if (this.bottom_up) {
                         lines--;
@@ -263,10 +263,10 @@ BmpDecoder.prototype.bit8 = function () {
                     }
                     location = lines * this.width * 4;
                     continue;
-                } else if (b == 1) {
+                } else if (b === 1) {
                     //image end
                     break;
-                } else if (b == 2) {
+                } else if (b === 2) {
                     //offset x,y
                     var x = bops.readUInt8(this.buffer, this.pos++);
                     var y = bops.readUInt8(this.buffer, this.pos++);
@@ -282,7 +282,7 @@ BmpDecoder.prototype.bit8 = function () {
                         var c = bops.readUInt8(this.buffer, this.pos++);
                         setPixelData.call(this, c);
                     }
-                    if (b & (1 == 1)) {
+                    if (b & (1 === 1)) {
                         this.pos++;
                     }
                 }
@@ -323,7 +323,7 @@ BmpDecoder.prototype.bit8 = function () {
                     this.data[location + 3] = 0xff;
                 }
             }
-            if (mode != 0) {
+            if (mode !== 0) {
                 this.pos += 4 - mode;
             }
         }
@@ -364,7 +364,7 @@ BmpDecoder.prototype.bit16 = function () {
     this.maskBlue = 0x1f;
     this.mask0 = 0;
 
-    if (this.compress == 3) {
+    if (this.compress === 3) {
         this.maskRed = bops.readUInt32LE(this.buffer, this.pos);
         this.pos += 4;
         this.maskGreen = bops.readUInt32LE(this.buffer, this.pos);
@@ -434,7 +434,7 @@ BmpDecoder.prototype.bit24 = function () {
  */
 BmpDecoder.prototype.bit32 = function () {
     //BI_BITFIELDS
-    if (this.compress == 3) {
+    if (this.compress === 3) {
         this.maskRed = bops.readUInt32LE(this.buffer, this.pos);
         this.pos += 4;
         this.maskGreen = bops.readUInt32LE(this.buffer, this.pos);

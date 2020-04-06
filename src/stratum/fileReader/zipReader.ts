@@ -2,7 +2,7 @@ import { ClassData } from "data-types-base";
 import { JSZipObject, loadAsync } from "jszip";
 import { StratumError } from "~/helpers/errors";
 import { BinaryStream } from "~/helpers/binaryStream";
-import { readClassData, readClassHeaderData, readProjectName, readVarSetData } from "./deserialization";
+import { readClassBodyData, readClassHeaderData, readProjectName, readVarSetData } from "./deserialization";
 
 type ExtendedHeader = ClassData & { _stream: BinaryStream };
 
@@ -43,9 +43,7 @@ async function loadHeaders(files: JSZipObject[]) {
 
     classesBytes.forEach(({ filename, data }) => {
         const stream = new BinaryStream(data);
-        const body = <ExtendedHeader>readClassHeaderData(stream);
-        body._stream = stream;
-        body.fileName = filename;
+        const body: ExtendedHeader = { ...readClassHeaderData(stream), _stream: stream, fileName: filename };
 
         if (res.has(body.name)) throw new StratumError(`Конфликт имен имиджей: ${body.name}`);
         if (clsBlacklist.includes(body.name)) return;
@@ -66,7 +64,7 @@ function loadProjectClasses(headers: Map<string, ExtendedHeader>, className: str
     if (!cl) {
         const header = headers.get(className);
         if (!header) throw new StratumError(`Класс ${className} не найден`);
-        readClassData(header._stream, header, {
+        readClassBodyData(header._stream, header, {
             readImage: true,
             readScheme: true,
             parseBytecode: true,
@@ -101,7 +99,7 @@ export async function readAllClassFiles(files: JSZipObject[], silent = false) {
     for (const header of headers) {
         const [name, data] = header;
         try {
-            readClassData(data._stream, data, { readImage: true, readScheme: true, parseBytecode: true });
+            readClassBodyData(data._stream, data, { readImage: true, readScheme: true, parseBytecode: true });
             res.set(name, data);
         } catch (e) {
             if (!silent) {

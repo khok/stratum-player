@@ -1,5 +1,5 @@
 import { equal } from "assert";
-import { readClassData, readClassHeaderData } from "~/fileReader/deserialization";
+import { readClassBodyData, readClassHeaderData } from "~/fileReader/deserialization";
 import { openStreamFromUrl } from "~/fileReader/fileReaderHelpers";
 import { parseVarValue } from "~/helpers/varValueFunctions";
 import { executeCode } from "~/vm/executeCode";
@@ -9,7 +9,7 @@ import { ClassState } from "vm-interfaces-base";
 (async function () {
     const stream = await openStreamFromUrl("/test_projects/other/square_eq.cls");
     const header = readClassHeaderData(stream);
-    const { bytecode, vars } = readClassData(stream, { ...header, fileName: "" }, { parseBytecode: true });
+    const { bytecode, vars } = readClassBodyData(stream, { ...header, fileName: "" }, { parseBytecode: true });
     const values = vars!.map((v) => {
         const val = parseVarValue(v.type, v.defaultValue);
         return { new: val, old: val };

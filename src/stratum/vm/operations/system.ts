@@ -54,7 +54,6 @@ function GetClassDirectory(ctx: VmStateContainer) {
 // STRING AddSlash(STRING FileName)
 function AddSlash(ctx: VmStateContainer) {
     const path = ctx.stackPop() as string;
-    console.log(path);
     ctx.stackPush(path[path.length - 1] === "\\" ? path : path + "\\");
 }
 

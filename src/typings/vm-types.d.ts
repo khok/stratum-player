@@ -24,7 +24,8 @@ declare module "vm-types" {
 
     export interface ParsedCode {
         /**
-         * Масссив специализированных опкодов (specCmd), где опкод = `specCmd & 2047`
+         * Масссив опкодов, совмещенных с операндами.
+         * Опкод извлекается так:`code[index] & 2047`
          */
         code: Uint16Array;
         numberOperands: Float32Array;

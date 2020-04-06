@@ -71,7 +71,7 @@ export class BinaryStream {
     readCharSeq() {
         const strStart = this.position;
         let size = 0;
-        while (this.data[strStart + ++size] != 0x00);
+        while (this.data[strStart + ++size] !== 0);
 
         const data = bops.to(this.readBytes(size));
         this.streamPosition += 1;
@@ -88,7 +88,7 @@ export class BinaryStream {
 
         const strStart = this.streamPosition + 2;
         const preEnd = strStart + size * 2 - 2;
-        const strEnd = preEnd + (this.data[preEnd] != 0);
+        const strEnd = preEnd + (this.data[preEnd] !== 0);
 
         const value = decodeString(bops.subarray(this.data, strStart, strEnd));
 

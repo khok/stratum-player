@@ -2,14 +2,14 @@ import { equal } from "assert";
 import { ClassPrototype } from "~/core/classPrototype";
 import { ClassSchemeNode } from "~/core/classSchemeNode";
 import { MemoryManager } from "~/core/memoryManager";
-import { readClassData, readClassHeaderData } from "~/fileReader/deserialization";
+import { readClassBodyData, readClassHeaderData } from "~/fileReader/deserialization";
 import { openStreamFromUrl } from "~/fileReader/fileReaderHelpers";
 import { VmContext } from "~/vm/vmContext";
 
 (async function () {
     const stream = await openStreamFromUrl("test_projects/other/square_eq.cls");
     const header = readClassHeaderData(stream);
-    const { vars, bytecode } = readClassData(stream, { ...header, fileName: "" }, { parseBytecode: true });
+    const { vars, bytecode } = readClassBodyData(stream, { ...header, fileName: "" }, { parseBytecode: true });
 
     const node = new ClassSchemeNode({
         proto: new ClassPrototype(name, { vars, code: bytecode!.parsed }),

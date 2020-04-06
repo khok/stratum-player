@@ -4,10 +4,10 @@ import { RecordType } from "./recordType";
 
 export function readProjectName(stream: BinaryStream) {
     const sign = stream.readWord();
-    if (sign != 0x6849) throw new FileSignatureError(sign, 0x6849);
+    if (sign !== 0x6849) throw new FileSignatureError(sign, 0x6849);
 
     let next = stream.readWord();
-    if (next == RecordType.PR_VARS) {
+    if (next === RecordType.PR_VARS) {
         const count = stream.readWord();
         for (let i = 0; i < count; i++) {
             const size = stream.readWord();
@@ -28,7 +28,7 @@ export function readProjectName(stream: BinaryStream) {
         }
         next = stream.readWord();
     }
-    if (next != RecordType.PR_MAINCLASS) throw new StratumError("Ошибка в чтении .prj файла");
+    if (next !== RecordType.PR_MAINCLASS) throw new StratumError("Ошибка в чтении .prj файла");
 
     //Считывает название главного класса;
     return stream.readString();

@@ -66,7 +66,7 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     }
 
     setError(message: string) {
-        this._error = message + ` (индекс команды: ${this.nextCmdIndex - 1})`;
+        this._error = message + ` (индекс опкода: ${this.nextCmdIndex - 1})`;
         this._hasError = true;
         this.jumpTo(this.lastCmdIndex);
     }

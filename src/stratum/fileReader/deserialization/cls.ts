@@ -16,7 +16,7 @@ function readVars(stream: BinaryStream): VarData[] {
         const description = stream.readString();
         const defaultValue = stream.readString();
         const type = stream.readString();
-        if (type != "FLOAT" && type != "HANDLE" && type != "STRING" && type != "COLORREF")
+        if (type !== "FLOAT" && type !== "HANDLE" && type !== "STRING" && type !== "COLORREF")
             throw new StratumError(`Неизвестный тип переменной: ${type}`);
         const flags = stream.readLong();
         vars[i] = { name, type, defaultValue, description, flags };
@@ -98,12 +98,12 @@ function readVdr(stream: BinaryStream, silent = true) {
 // function readEquations(stream: BinaryStream) {
 //     const code = stream.readWord();
 
-//     if (code == EC_VAR) {
+//     if (code === EC_VAR) {
 //         const index = stream.readWord();
 //         const eqflag = stream.readWord();
 //     }
 
-//     if (code == EC_CONST) {
+//     if (code === EC_CONST) {
 //         const value = stream.readBytes(8);
 //     }
 
@@ -122,7 +122,7 @@ export function readClassHeaderData(stream: BinaryStream): { name: string; versi
     return { name, version };
 }
 
-export function readClassData(
+export function readClassBodyData(
     stream: BinaryStream,
     res: ClassData,
     blocks: {
@@ -134,22 +134,22 @@ export function readClassData(
     const errs: string[] = [];
 
     let next = stream.readWord();
-    if (next == RecordType.CR_VARS1) {
+    if (next === RecordType.CR_VARS1) {
         res.vars = readVars(stream);
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_LINKS) {
+    if (next === RecordType.CR_LINKS) {
         res.links = readLinks(stream);
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_CHILDSnameXY || next == RecordType.CR_CHILDSname || next == RecordType.CR_CHILDS) {
+    if (next === RecordType.CR_CHILDSnameXY || next === RecordType.CR_CHILDSname || next === RecordType.CR_CHILDS) {
         res.childs = readChilds(stream, res.version);
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_ICON) {
+    if (next === RecordType.CR_ICON) {
         const iconSize = stream.readLong();
         stream.seek(stream.position + iconSize - 4);
         // res.icon = stream.readBytes(iconSize - 4);
@@ -169,47 +169,47 @@ export function readClassData(
         return readVdr(stream, false);
     }
 
-    if (next == RecordType.CR_SCHEME) {
+    if (next === RecordType.CR_SCHEME) {
         res.scheme = readImage(blocks.readScheme);
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_IMAGE) {
+    if (next === RecordType.CR_IMAGE) {
         res.image = readImage(blocks.readImage);
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_TEXT) {
+    if (next === RecordType.CR_TEXT) {
         res.sourceCode = stream.readString();
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_INFO) {
+    if (next === RecordType.CR_INFO) {
         res.description = stream.readString();
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_VARSIZE) {
+    if (next === RecordType.CR_VARSIZE) {
         res.varsize = stream.readWord();
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_FLAGS) {
+    if (next === RecordType.CR_FLAGS) {
         res.flags = stream.readLong();
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_DEFICON) {
+    if (next === RecordType.CR_DEFICON) {
         res.iconIndex = stream.readWord();
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_ICONFILE) {
+    if (next === RecordType.CR_ICONFILE) {
         res.iconFile = stream.readString();
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_CODE) {
+    if (next === RecordType.CR_CODE) {
         const codesize = stream.readLong();
         const original = stream.readBytes(codesize * 2);
         res.bytecode = {
@@ -219,12 +219,12 @@ export function readClassData(
         next = stream.readWord();
     }
 
-    if (next == RecordType.CR_EQU) {
+    if (next === RecordType.CR_EQU) {
         console.warn("Уравнения не поддерживаются.");
         return res;
     }
 
-    if (next != RecordType.CR_CLASSTIME && res.version === 0x3003)
+    if (next !== RecordType.CR_CLASSTIME && res.version === 0x3003)
         throw new StratumError("Ошибка в ходе чтения данных имиджа");
 
     let classId = stream.readLong();

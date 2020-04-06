@@ -1,3 +1,7 @@
+/**
+ * Базовые типы данных, находящиеся в файлах .cls, .stt
+ */
+
 declare module "data-types-base" {
     import { VectorDrawData } from "data-types-graphics";
     import { ParsedCode } from "vm-types";
@@ -44,9 +48,10 @@ declare module "data-types-base" {
     }
 
     export interface ClassData {
+        fileName: string;
+
         name: string;
         version: number;
-        fileName: string;
 
         vars?: VarData[];
         links?: LinkData[];
