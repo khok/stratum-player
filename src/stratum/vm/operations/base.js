@@ -108,7 +108,7 @@ function V_MUL_F(ctx) {
 function V_DIV_F(ctx) {
     const b = ctx.stackPop();
     const a = ctx.stackPop();
-    ctx.stackPush(b == 0 ? 0 : a / b);
+    ctx.stackPush(b === 0 ? 0 : a / b);
 }
 function V_ADD_F(ctx) {
     ctx.stackPush(ctx.stackPop() + ctx.stackPop());
@@ -187,7 +187,7 @@ function V_OR(ctx) {
     ctx.stackPush(a || b);
 }
 function V_NOT(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() == 0));
+    ctx.stackPush(Number(ctx.stackPop() === 0));
 }
 function V_JMP(ctx, _codepoint) {
     ctx.jumpTo(_codepoint);
@@ -195,7 +195,7 @@ function V_JMP(ctx, _codepoint) {
 function V_JNZ(ctx, _codepoint) {
     if (ctx.stackPop()) ctx.jumpTo(_codepoint);
 }
-//if(cond == true){} <-- if not - jump to block end
+//if(cond === true){} <-- if not - jump to block end
 function V_JZ(ctx, _codepoint) {
     if (!ctx.stackPop()) ctx.jumpTo(_codepoint);
 }
@@ -224,10 +224,10 @@ function V_SHL(ctx) {
     throw "V_SHL: NIMP";
 }
 function V_EQUAL(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() == ctx.stackPop()));
+    ctx.stackPush(Number(ctx.stackPop() === ctx.stackPop()));
 }
 function V_NOTEQUAL(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() != ctx.stackPop()));
+    ctx.stackPush(Number(ctx.stackPop() !== ctx.stackPop()));
 }
 function V_MORE(ctx) {
     ctx.stackPush(Number(ctx.stackPop() < ctx.stackPop()));
@@ -242,10 +242,10 @@ function V_LOWorEQUAL(ctx) {
     ctx.stackPush(Number(ctx.stackPop() >= ctx.stackPop()));
 }
 function S_EQUAL(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() == ctx.stackPop()));
+    ctx.stackPush(Number(ctx.stackPop() === ctx.stackPop()));
 }
 function S_NOTEQUAL(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() != ctx.stackPop()));
+    ctx.stackPush(Number(ctx.stackPop() !== ctx.stackPop()));
 }
 function S_MORE(ctx) {
     ctx.stackPush(Number(ctx.stackPop() < ctx.stackPop()));
@@ -261,10 +261,10 @@ function S_LOWorEQUAL(ctx) {
 }
 
 function V_EQUALI(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() == ctx.stackPop()));
+    ctx.stackPush(Number(ctx.stackPop() === ctx.stackPop()));
 }
 function V_NOTEQUALI(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() != ctx.stackPop()));
+    ctx.stackPush(Number(ctx.stackPop() !== ctx.stackPop()));
 }
 
 function V_EDI(ctx) {
@@ -281,7 +281,7 @@ function V_ORI(ctx) {
     ctx.stackPush(a || b);
 }
 function V_NOTI(ctx) {
-    ctx.stackPush(Number(ctx.stackPop() == 0));
+    ctx.stackPush(Number(ctx.stackPop() === 0));
 }
 function V_NOTbin(ctx) {
     throw "V_NOTbin: NIMP";
