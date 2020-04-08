@@ -307,30 +307,31 @@ function ObjectToTop2d(ctx: VmStateContainer) {
 }
 
 // FLOAT GetActualSize2d(HANDLE HSpace2d, HANDLE HObject, &FLOAT x, &FLOAT y)
-// function GetActualSize2d(ctx: VmStateContainer) {
-//     const isYNew = ctx.popDouble();
-//     const yId = ctx.popDouble();
-//     const isXNew = ctx.popDouble();
-//     const xId = ctx.popDouble();
-//     const objectHandle = ctx.popLong();
-//     const spaceHandle = ctx.popLong();
-//     const obj = _getObject(ctx, spaceHandle, objectHandle);
-//     if (!obj) {
-//         ctx.pushDouble(0);
-//         return;
-//     }
+function GetActualSize2d(ctx: VmStateContainer) {
+    const isYNew = ctx.popLong();
+    const yId = ctx.popLong();
+    const isXNew = ctx.popLong();
+    const xId = ctx.popLong();
+    const objectHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
-//     const x = obj.width;
-//     const y = obj.height;
-//     const cl = ctx.currentClass;
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (!obj) {
+        ctx.pushDouble(0);
+        return;
+    }
 
-//     if (isXNew) cl.setNewVarValue(xId, x);
-//     else cl.setOldVarValue(xId, x);
-//     if (isYNew) cl.setNewVarValue(yId, y);
-//     else cl.setOldVarValue(yId, y);
+    const x = obj.width;
+    const y = obj.height;
+    const cl = ctx.currentClass;
 
-//     ctx.pushDouble(1);
-// }
+    if (isXNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![xId]] = x;
+    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![xId]] = x;
+    if (isYNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![yId]] = y;
+    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![yId]] = y;
+
+    ctx.pushDouble(1);
+}
 
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
@@ -363,5 +364,5 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.V_ISINTERSECT2D, IsObjectsIntersect2d);
     addOperation(Opcode.SETOBJECTNAME2D, SetObjectName2d);
     addOperation(Opcode.OBJECTTOTOP2D, ObjectToTop2d);
-    // addOperation(Opcode.VM_GETACTUALSIZE, GetActualSize2d);
+    addOperation(Opcode.VM_GETACTUALSIZE, GetActualSize2d);
 }

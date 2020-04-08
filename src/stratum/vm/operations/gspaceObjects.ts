@@ -4,8 +4,7 @@ import { Opcode } from "~/helpers/vmConstants";
 function CreatePolyLine2d(ctx: VmStateContainer, coordCount: number) {
     const pointCount = coordCount / 2;
     const points = new Array(pointCount);
-    for (let i = pointCount - 1; i >= 0; i--)
-        points[i] = { y: ctx.popDouble() as number, x: ctx.popDouble() as number };
+    for (let i = pointCount - 1; i >= 0; i--) points[i] = { y: ctx.popDouble(), x: ctx.popDouble() };
     const brushHandle = ctx.popLong();
     const penHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
@@ -22,7 +21,7 @@ function CreateLine2d(ctx: VmStateContainer) {
 // HANDLE CreateGroup2d(HANDLE HSpace, [HANDLE HObject]...)
 function CreateGroup2d(ctx: VmStateContainer, objectCount: number) {
     const objects = new Array<number>(objectCount);
-    for (let i = objectCount - 1; i >= 0; i--) objects[i] = ctx.popDouble() as number;
+    for (let i = objectCount - 1; i >= 0; i--) objects[i] = ctx.popLong();
     const spaceHandle = ctx.popLong();
     const space = ctx.windows.getSpace(spaceHandle);
     if (space) {
@@ -37,8 +36,8 @@ function CreateGroup2d(ctx: VmStateContainer, objectCount: number) {
 
 //HANDLE CreateBitmap2d(HANDLE HSpace, HANDLE HDib, FLOAT x, FLOAT y)
 function CreateBitmap2d(ctx: VmStateContainer) {
-    const y = ctx.popDouble() as number;
-    const x = ctx.popDouble() as number;
+    const y = ctx.popDouble();
+    const x = ctx.popDouble();
     const bitmapToolHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
