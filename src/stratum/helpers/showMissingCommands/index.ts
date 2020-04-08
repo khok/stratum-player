@@ -1,7 +1,7 @@
 import { ClassData } from "data-types-base";
 import { ParsedCode, Operation } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { realCommandNames } from "./realCommandNames";
+import realCommandNames from "./realCommandNames.json";
 
 function cmdHasError(cmd: Function) {
     try {

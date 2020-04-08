@@ -3,6 +3,7 @@ import { fromUrl, PlayerOptions } from "~/api";
 //Запуск проекта `name` с использованием api.ts
 export async function _run_test_quick(name: string, opts: PlayerOptions, timeout: number) {
     const player = await fromUrl([`test_projects/${name}.zip`, "/data/library.zip"], opts);
+    console.dir(player);
     if (!player) return;
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const htmlRoot = document.getElementById("root")!;

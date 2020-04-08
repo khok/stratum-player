@@ -2,7 +2,7 @@ import { ParsedCode } from "vm-types";
 import { VmOperations } from "./operations";
 import { VmContext } from "./vmContext";
 import { Opcode } from "~/helpers/vmConstants";
-import { realCommandNames } from "~/helpers/showMissingCommands/realCommandNames";
+import realCommandNames from "~/helpers/showMissingCommands/realCommandNames.json";
 import { rapidBytecodePrint } from "~/helpers/rapidBytecodePrint";
 
 const OPCODE_MASK = 2047;
