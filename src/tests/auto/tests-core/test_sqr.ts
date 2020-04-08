@@ -13,18 +13,25 @@ import { VmContext } from "~/vm/vmContext";
 
     const node = new ClassSchemeNode({
         proto: new ClassPrototype(name, { vars, code: bytecode!.parsed }),
-        globalIndexMap: Array.from({ length: vars!.length }, (_, i) => i + 100),
+        // varIndexMap: Array.from({ length: vars!.length }, (_, i) => i + 100),
+        varIndexMap: vars!.map((v, i) => ({ type: v.type, globalIdx: i + 100 })),
     });
-    const mmanager = new MemoryManager(vars!.length + 100);
+    const vcount = vars!.length + 100;
+    const mmanager = new MemoryManager({ doubleVarCount: vcount, stringVarCount: vcount, longVarCount: vcount });
     node.initDefaultValuesRecursive(mmanager);
     mmanager.initValues();
 
-    const vm = new VmContext(<any>{}, <any>{}, <any>{});
+    const vm = new VmContext({
+        input: <any>{},
+        memoryState: mmanager,
+        project: <any>{},
+        windows: <any>{},
+    });
     node.computeSchemeRecursive(vm);
-    equal(node.getNewVarValue(2), "-0.4+i1.2");
-    equal(node.getNewVarValue(3), "-0.4-i1.2");
-    equal(node.getNewVarValue(2), mmanager.getNewVarValue(102));
-    equal(node.getNewVarValue(3), mmanager.getNewVarValue(103));
+    equal(mmanager.newStringValues[node.stringVarMappingArray![2]], "-0.4+i1.2");
+    equal(mmanager.newStringValues[node.stringVarMappingArray![3]], "-0.4-i1.2");
+    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![2]], mmanager.newDoubleValues[102]);
+    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![3]], mmanager.newDoubleValues[103]);
 
     node.applyVarSetRecursive({
         childSets: [],
@@ -40,9 +47,9 @@ import { VmContext } from "~/vm/vmContext";
     mmanager.initValues();
 
     node.computeSchemeRecursive(vm);
-    equal(node.getNewVarValue(0), 60);
-    equal(node.getNewVarValue(1), 10);
-    equal(node.getNewVarValue(2), "60");
-    equal(node.getNewVarValue(3), "10");
+    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![0]], 60);
+    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![1]], 10);
+    equal(mmanager.newStringValues[node.stringVarMappingArray![2]], "60");
+    equal(mmanager.newStringValues[node.stringVarMappingArray![3]], "10");
     console.log("Sqr test successful");
 })();

@@ -11,6 +11,13 @@ import { GraphicSpaceTools } from "./graphicSpaceTools";
 import { GraphicObject, GroupObject, TextObject, LineObject, BitmapObject } from "./objects";
 import { BrushTool } from "./tools";
 
+export interface GraphicSpaceSubsciber {
+    msg: MessageCode;
+    objectHandle?: number;
+    klass: ClassState;
+    ctx: VmStateContainer;
+}
+
 /**
  * Графическое пространство, содержащее инструменты и объекты.
  */
@@ -26,12 +33,7 @@ export class GraphicSpace implements GraphicSpaceState {
     private allObjects: HandleMap<GraphicObject>;
     private _originX: number = 0;
     private _originY: number = 0;
-    private subs = new Array<{
-        msg: MessageCode;
-        objectHandle?: number;
-        klass: ClassState;
-        ctx: VmStateContainer;
-    }>();
+    private subs = new Array<GraphicSpaceSubsciber>();
 
     readonly sourceFilename: string;
 
@@ -191,6 +193,23 @@ export class GraphicSpace implements GraphicSpaceState {
         this.subs.push({ ctx, klass, objectHandle, msg });
     }
 
+    private static setKlassDoubleValueByLowCaseName(sub: GraphicSpaceSubsciber, name: string, value: number) {
+        const _id = sub.klass.varIdToLowcaseNameMap!.get(name)!;
+        if (_id > -1) {
+            const id = sub.klass.doubleVarMappingArray![_id];
+            sub.ctx.memoryState.newDoubleValues[id] = value;
+            sub.ctx.memoryState.oldDoubleValues[id] = value;
+        }
+    }
+    private static setKlassLongValueByLowCaseName(sub: GraphicSpaceSubsciber, name: string, value: number) {
+        const _id = sub.klass.varIdToLowcaseNameMap!.get(name)!;
+        if (_id > -1) {
+            const id = sub.klass.longVarMappingArray![_id];
+            sub.ctx.memoryState.newLongValues[id] = value;
+            sub.ctx.memoryState.oldLongValues[id] = value;
+        }
+    }
+
     private dispatchControlEvent(code: MessageCode, controlHandle: number) {
         this.subs.forEach((sub) => {
             const shouldReceiveEvent =
@@ -199,11 +218,14 @@ export class GraphicSpace implements GraphicSpaceState {
                 ((sub.objectHandle ? controlHandle === sub.objectHandle : true) || sub.klass.isCapturingEvents(this.handle));
 
             if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
-            sub.klass.setVarValueByLowCaseName("msg", code);
-            sub.klass.setVarValueByLowCaseName("_hobject", controlHandle);
-            sub.klass.setVarValueByLowCaseName("iditem", -1);
-            sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
-            sub.klass.computeSchemeRecursive(sub.ctx, true);
+            // sub.klass.setVarValueByLowCaseName("msg", code);
+            // sub.klass.setVarValueByLowCaseName("_hobject", controlHandle);
+            // sub.klass.setVarValueByLowCaseName("iditem", -1);
+            // sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "msg", code);
+            GraphicSpace.setKlassLongValueByLowCaseName(sub, "_hobject", controlHandle);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "iditem", -1);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "wnotifycode", 768); //EN_CHANGE = 768
         });
     }
 
@@ -215,10 +237,14 @@ export class GraphicSpace implements GraphicSpaceState {
                     sub.klass.isCapturingEvents(this.handle));
 
             if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
-            sub.klass.setVarValueByLowCaseName("msg", code);
-            sub.klass.setVarValueByLowCaseName("xpos", x);
-            sub.klass.setVarValueByLowCaseName("ypos", y);
-            sub.klass.setVarValueByLowCaseName("fwkeys", 0);
+            // sub.klass.setVarValueByLowCaseName("msg", code);
+            // sub.klass.setVarValueByLowCaseName("xpos", x);
+            // sub.klass.setVarValueByLowCaseName("ypos", y);
+            // sub.klass.setVarValueByLowCaseName("fwkeys", 0);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "msg", code);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "xpos", x);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "ypos", y);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "fwkeys", 0);
             sub.klass.computeSchemeRecursive(sub.ctx, true);
         });
     }

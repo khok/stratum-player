@@ -60,7 +60,12 @@ export class Project implements ProjectController {
         this.classCollection = data.classes;
         this.scheme = data.scheme;
         this.mmanager = data.mmanager;
-        this.vm = new VmContext(data.windowSystem, {} as any, this);
+        this.vm = new VmContext({
+            project: this,
+            windows: data.windowSystem,
+            memoryState: data.mmanager,
+            input: {} as any,
+        });
         this.cachedNodes = this.scheme.collectNodes();
     }
 
@@ -72,6 +77,7 @@ export class Project implements ProjectController {
         this.scheme.computeSchemeRecursive(this.vm);
         if (this.vm.hasError || this.vm.shouldStop) return false;
         this.mmanager.syncValues();
+        this.mmanager.assertZeroIndexEmpty();
         return true;
     }
 
@@ -84,8 +90,8 @@ export class Project implements ProjectController {
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const vdr =
-            (!this.options || !this.options.debug_disableSchemeComposition) && data.childs
-                ? createComposedScheme(data.scheme, data.childs, this.classCollection)
+            (!this.options || !this.options.debug_disableSchemeComposition) && data.childInfo
+                ? createComposedScheme(data.scheme, data.childInfo, this.classCollection)
                 : data.scheme;
         return (opts) => {
             const space = GraphicSpace.fromVdr(className, vdr, this.globalImgLoader, new FabricScene(opts));

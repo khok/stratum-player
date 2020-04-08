@@ -7,8 +7,8 @@ import { Opcode } from "~/helpers/vmConstants";
 export const systemKeysTemp = new Uint8Array(2);
 
 function GetAsyncKeyState(ctx: VmStateContainer) {
-    const key = ctx.stackPop() as number;
-    ctx.stackPush(systemKeysTemp[key]);
+    const key = ctx.popDouble();
+    ctx.pushDouble(systemKeysTemp[key]);
 }
 
 function CloseAll(ctx: VmStateContainer) {
@@ -39,48 +39,48 @@ const systemCommands: { [idx: number]: string } = {
 
 function system(ctx: VmStateContainer, paramCount: number) {
     const params = new Array<number>(paramCount);
-    for (let i = paramCount - 1; i >= 0; i--) params[i] = ctx.stackPop() as number;
-    const command = ctx.stackPop() as number;
+    for (let i = paramCount - 1; i >= 0; i--) params[i] = ctx.popDouble();
+    const command = ctx.popDouble();
     console.warn(`Вызов операции System(${command}, ${params})\n${systemCommands[command]}`);
-    ctx.stackPush(1);
+    ctx.pushDouble(1);
 }
 
 // STRING GetClassDirectory(STRING ClassName)
 function GetClassDirectory(ctx: VmStateContainer) {
-    const className = ctx.stackPop() as string;
-    ctx.stackPush(ctx.project.getClassDir(className));
+    const className = ctx.popString();
+    ctx.pushString(ctx.project.getClassDir(className));
 }
 
 // STRING AddSlash(STRING FileName)
 function AddSlash(ctx: VmStateContainer) {
-    const path = ctx.stackPop() as string;
-    ctx.stackPush(path[path.length - 1] === "\\" ? path : path + "\\");
+    const path = ctx.popString();
+    ctx.pushString(path[path.length - 1] === "\\" ? path : path + "\\");
 }
 
 // VM_GETSCREENWIDTH, name "GetScreenWidth" ret "FLOAT" out 772
 function GetScreenWidth(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.screenWidth);
+    ctx.pushDouble(ctx.windows.screenWidth);
 }
 // VM_GETSCREENHEIGHT, name "GetScreenHeight" ret "FLOAT" out 773
 function GetScreenHeight(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.screenHeight);
+    ctx.pushDouble(ctx.windows.screenHeight);
 }
 
 // VM_GETWORKAREAX, name "GetWorkAreaX" ret "FLOAT" out 774
 function GetWorkAreaX(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaOriginX);
+    ctx.pushDouble(ctx.windows.areaOriginX);
 }
 // VM_GETWORKAREAY, name "GetWorkAreaY" ret "FLOAT" out 775
 function GetWorkAreaY(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaOriginY);
+    ctx.pushDouble(ctx.windows.areaOriginY);
 }
 // VM_GETWORKAREAWIDTH, name "GetWorkAreaWidth" ret "FLOAT" out 776
 function GetWorkAreaWidth(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaWidth);
+    ctx.pushDouble(ctx.windows.areaWidth);
 }
 // VM_GETWORKAREAHEIGHT, name "GetWorkAreaHeight" ret "FLOAT" out 777
 function GetWorkAreaHeight(ctx: VmStateContainer) {
-    ctx.stackPush(ctx.windows.areaHeight);
+    ctx.pushDouble(ctx.windows.areaHeight);
 }
 
 export function initSystem(addOperation: (opcode: number, operation: Operation) => void) {

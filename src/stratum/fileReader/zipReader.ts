@@ -73,7 +73,7 @@ function loadProjectClasses(headers: Map<string, ExtendedHeader>, className: str
         classes.set(header.name, header);
         cl = header;
     }
-    if (cl.childs) cl.childs.forEach((child) => loadProjectClasses(headers, child.classname, classes));
+    if (cl.childInfo) cl.childInfo.forEach((child) => loadProjectClasses(headers, child.classname, classes));
 }
 
 /**

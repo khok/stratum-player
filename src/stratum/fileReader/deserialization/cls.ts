@@ -145,7 +145,7 @@ export function readClassBodyData(
     }
 
     if (next === RecordType.CR_CHILDSnameXY || next === RecordType.CR_CHILDSname || next === RecordType.CR_CHILDS) {
-        res.childs = readChilds(stream, res.version);
+        res.childInfo = readChilds(stream, res.version);
         next = stream.readWord();
     }
 

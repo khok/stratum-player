@@ -41,18 +41,16 @@ function readDllFunctionData(stream: BinaryStream) {
 
 function readOperand(stream: BinaryStream, type: OperandType): Operand {
     switch (type) {
-        case "varId":
-            return stream.readWord();
         case "double":
             return stream.readDouble();
-        case "uint":
-            return stream.readUint();
-        case "string":
-            return stream.readStringTrimmed();
+        case "varId":
         case "codepoint":
-            return stream.readWord();
         case "word":
             return stream.readWord();
+        case "long":
+            return stream.readLong();
+        case "string":
+            return stream.readStringTrimmed();
         case "functionData":
             return readFunctionData(stream);
         case "dllFunctionData":
@@ -95,33 +93,42 @@ export function parseBytecode(stream: BinaryStream, codesize: number): ParsedCod
     }
 
     const code = new Uint16Array(operations.map((c) => c.opcode));
+
     const numberOperands = new Float32Array(code.length);
+    // const intOperands = new Int32Array(code.length);
     const stringOperands = new Array<string>(code.length);
     const otherOperands = new Array<Operand | undefined>(code.length);
+
     for (let i = 0; i < code.length; i++) {
         const { operand, operandType } = operations[i];
         if (operandType === undefined) continue;
-        //выставляем флаг (1 2 или 3) в зависимости от типа операнда
+        //На 11 позиции выставляем флаг (1, 2, 4, 8) в зависимости от типа операнда
         switch (operandType) {
             case "varId":
                 numberOperands[i] = <number>operand;
-                code[i] |= 8192; //1 << 13;
-                code[i] |= 16384; //1 << 14;
+                code[i] |= 4096 | 2048; //1 << 11 || 2 << 11;
                 break;
-            case "double":
-            case "codepoint":
-            case "uint":
             case "word":
+            case "codepoint":
+            case "long":
+            case "double":
                 numberOperands[i] = <number>operand;
-                code[i] |= 16384; //1 << 14;
+                code[i] |= 2048; //1 << 11;
                 break;
+            // case "varId":
+            // case "word":
+            // case "codepoint":
+            // case "long":
+            //     intOperands[i] = <number>operand;
+            //     code[i] |= 4096; //2 << 11;
+            //     break;
             case "string":
                 stringOperands[i] = <string>operand;
-                code[i] |= 32768; //2 << 14;
+                code[i] |= 8192; //4 << 11;
                 break;
             default:
                 otherOperands[i] = operand;
-                code[i] |= 49152; //3 << 14;
+                code[i] |= 16384; //8 << 11;
                 break;
         }
     }

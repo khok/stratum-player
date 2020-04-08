@@ -53,7 +53,7 @@ const test_result = [
     const zipFiles = await openZipFromUrl(["/test_projects/test_scheme_compose.zip", "/data/library.zip"]);
     const { collection, rootName } = await readProjectData(zipFiles);
     const root = collection.get(rootName)!;
-    const scheme = createComposedScheme(root.scheme!, root.childs!, collection);
+    const scheme = createComposedScheme(root.scheme!, root.childInfo!, collection);
     const elements = toJson(scheme.elements);
     equal(JSON.stringify(elements), JSON.stringify(test_result));
     console.log("Scheme compose test completed");

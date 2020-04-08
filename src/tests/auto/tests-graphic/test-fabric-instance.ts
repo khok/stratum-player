@@ -12,7 +12,7 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
     const { collection } = await readProjectData(zip);
     const cl = collection.get("WorkSpace")!;
-    const cdata = cl.childs!;
+    const cdata = cl.childInfo!;
     const oldvdr = cl.scheme!;
     const vdr = createComposedScheme(oldvdr, cdata, collection);
     const cv = document.getElementById("canvas") as HTMLCanvasElement;

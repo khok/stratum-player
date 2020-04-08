@@ -3,9 +3,9 @@ import { Opcode } from "~/helpers/vmConstants";
 
 function SendMessage(ctx: VmStateContainer, count: number) {
     const vars = new Array<string>(count);
-    for (let i = count - 1; i >= 0; i--) vars[i] = (<string>ctx.stackPop()).toLowerCase();
-    const className = <string>ctx.stackPop();
-    const path = <string>ctx.stackPop();
+    for (let i = count - 1; i >= 0; i--) vars[i] = ctx.popString().toLowerCase();
+    const className = ctx.popString();
+    const path = ctx.popString();
     if (path !== "") {
         ctx.setError(`Вызов SendMessage с path=${path} не реализован.`);
         return;
@@ -19,23 +19,49 @@ function SendMessage(ctx: VmStateContainer, count: number) {
         if (other === current) continue;
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = current.getVarIdLowCase(<string>vars[i]) as number;
-            const idOther = other.getVarIdLowCase(<string>vars[i + 1]) as number;
-            if (idCurrent > -1 && idOther > -1) {
-                const curValue = current.getNewVarValue(idCurrent);
-                other.setOldVarValue(idOther, curValue);
-                other.setNewVarValue(idOther, curValue);
+            const _idCurrent = current.varIdToLowcaseNameMap!.get(vars[i])!;
+            const _idOther = other.varIdToLowcaseNameMap!.get(vars[i + 1])!;
+            //таким хаком избегаем сравнения с undefined.
+            if (_idCurrent > -1 && _idOther > -1) {
+                const currentId1 = current.doubleVarMappingArray![_idCurrent];
+                const otherId1 = other.doubleVarMappingArray![_idOther];
+                ctx.memoryState.newDoubleValues[otherId1] = ctx.memoryState.oldDoubleValues[otherId1] =
+                    ctx.memoryState.newDoubleValues[currentId1];
+
+                const currentId2 = current.longVarMappingArray![_idCurrent];
+                const otherId2 = other.longVarMappingArray![_idOther];
+                ctx.memoryState.newLongValues[otherId2] = ctx.memoryState.oldLongValues[otherId2] =
+                    ctx.memoryState.newLongValues[currentId2];
+
+                const currentId3 = current.stringVarMappingArray![_idCurrent];
+                const otherId3 = other.stringVarMappingArray![_idOther];
+                ctx.memoryState.newStringValues[otherId3] = ctx.memoryState.oldStringValues[otherId3] =
+                    ctx.memoryState.newStringValues[currentId3];
+                // const curValue = current.getNewVarValue``(idCurrent);
+                // other.setOldVarValue(idOther, curValue);
+                // other.setNewVarValue(idOther, curValue);
             }
         }
 
         other.computeSchemeRecursive(ctx, true);
 
         for (let i = 0; i < count; i += 2) {
-            const idCurrent = current.getVarIdLowCase(<string>vars[i]) as number;
-            const idOther = other.getVarIdLowCase(<string>vars[i + 1]) as number;
-            if (idCurrent > -1 && idOther > -1) {
-                const otherValue = other.getNewVarValue(idOther);
-                current.setNewVarValue(idCurrent, otherValue);
+            const _idCurrent = current.varIdToLowcaseNameMap!.get(vars[i])!;
+            const _idOther = other.varIdToLowcaseNameMap!.get(vars[i + 1])!;
+            if (_idCurrent > -1 && _idOther > -1) {
+                const currentId1 = current.doubleVarMappingArray![_idCurrent];
+                const otherId1 = other.doubleVarMappingArray![_idOther];
+                ctx.memoryState.newDoubleValues[currentId1] = ctx.memoryState.newDoubleValues[otherId1];
+
+                const currentId2 = current.longVarMappingArray![_idCurrent];
+                const otherId2 = other.longVarMappingArray![_idOther];
+                ctx.memoryState.newLongValues[currentId2] = ctx.memoryState.newLongValues[otherId2];
+
+                const currentId3 = current.stringVarMappingArray![_idCurrent];
+                const otherId3 = other.stringVarMappingArray![_idOther];
+                ctx.memoryState.newStringValues[currentId3] = ctx.memoryState.newStringValues[otherId3];
+                // const otherValue = other.getNewVarValue(idOther);
+                // current.setNewVarValue(idCurrent, otherValue);
             }
         }
     }
@@ -43,11 +69,11 @@ function SendMessage(ctx: VmStateContainer, count: number) {
 
 // V_REGISTEROBJECT, name "RegisterObject" arg "HANDLE","HANDLE","STRING","FLOAT","FLOAT" out 153
 function RegisterObjectByGraphicSpace(ctx: VmStateContainer) {
-    const flags = ctx.stackPop() as number;
-    const msg = ctx.stackPop() as number;
-    const path = ctx.stackPop() as string;
-    const objectHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const flags = ctx.popDouble();
+    const msg = ctx.popDouble();
+    const path = ctx.popString();
+    const objectHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     if (path !== "") {
         ctx.setError(`Вызов RegisterObject с path=${path} не реализован.`);
@@ -63,18 +89,18 @@ function RegisterObjectByGraphicSpace(ctx: VmStateContainer) {
 
 //args: "STRING,HANDLE,STRING,FLOAT,FLOAT"
 function RegisterObjectByWindowName(ctx: VmStateContainer) {
-    const flags = ctx.stackPop() as number;
-    const msg = ctx.stackPop() as number;
-    const path = ctx.stackPop() as string;
-    const objectHandle = ctx.stackPop() as number;
-    const windowName = ctx.stackPop() as string;
+    const flags = ctx.popDouble();
+    const msg = ctx.popDouble();
+    const path = ctx.popString();
+    const objectHandle = ctx.popLong();
+    const windowName = ctx.popString();
     console.log(`RegisterObjectByWinname(${windowName}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
 }
 
 //V_GETCLASS, name "GetClassName" arg "STRING" ret "STRING" out 398
 function GetClassName(ctx: VmStateContainer) {
-    const res = ctx.currentClass.getClassByPath(<string>ctx.stackPop());
-    ctx.stackPush(res ? res.protoName : "");
+    const res = ctx.currentClass.getClassByPath(ctx.popString());
+    ctx.pushString(res ? res.protoName : "");
 }
 
 //NOTREL
@@ -106,9 +132,9 @@ function GetClassName(ctx: VmStateContainer) {
 // }
 
 function SetCapture(ctx: VmStateContainer) {
-    const flags = ctx.stackPop() as number;
-    const path = ctx.stackPop() as string;
-    const spaceHandle = ctx.stackPop() as number;
+    const flags = ctx.popDouble();
+    const path = ctx.popString();
+    const spaceHandle = ctx.popLong();
 
     const obj = ctx.currentClass.getClassByPath(path);
     if (!obj) return;
@@ -120,12 +146,18 @@ function ReleaseCapture(ctx: VmStateContainer) {
 }
 
 function SetVarFloat(ctx: VmStateContainer) {
-    const value = ctx.stackPop() as number;
-    const name = ctx.stackPop() as string;
-    const objectPath = ctx.stackPop() as string;
+    const value = ctx.popDouble();
+    const name = ctx.popString();
+    const objectPath = ctx.popString();
 
     const obj = ctx.currentClass.getClassByPath(objectPath);
-    if (obj) obj.setVarValueByLowCaseName(name.toLowerCase(), value);
+    if (!obj) return;
+
+    const varId = obj.varIdToLowcaseNameMap!.get(name.toLowerCase())!;
+    if (!(varId > -1)) return;
+    const realId = obj.doubleVarMappingArray![varId];
+    ctx.memoryState.oldDoubleValues[realId] = value;
+    ctx.memoryState.newDoubleValues[realId] = value;
 }
 
 export function initAdvanced(addOperation: (opcode: number, operation: Operation) => void) {

@@ -14,7 +14,7 @@ export async function _show_scheme(name: string, opts: ReadOptions) {
     const htmlRoot = document.getElementById("root")!;
 
     const root = collection.get(rootName)!;
-    const scheme = createComposedScheme(root.scheme!, root.childs!, collection);
+    const scheme = createComposedScheme(root.scheme!, root.childInfo!, collection);
 
     console.dir(scheme);
     const scene = new FabricScene({ canvas, inputFactory: new HtmlFactory(htmlRoot) });

@@ -8,84 +8,84 @@ function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number
 }
 
 function GetTextObject2d(ctx: VmStateContainer) {
-    const objectHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const objectHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
-        ctx.stackPush(0);
+        ctx.pushLong(0);
         return;
     }
     const obj = space.getObject(objectHandle);
     if (!obj || obj.type !== "otTEXT2D") {
-        ctx.stackPush(0);
+        ctx.pushLong(0);
         return;
     }
-    ctx.stackPush(obj.textTool.handle);
+    ctx.pushLong(obj.textTool.handle);
 }
 
 function GetTextCount2d(ctx: VmStateContainer) {
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.stackPush(text ? text.textCount : 0);
+    ctx.pushDouble(text ? text.textCount : 0);
 }
 
 function GetTextString2d(ctx: VmStateContainer) {
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.stackPush(text ? text.getFragment(0).stringFragment.handle : 0);
+    ctx.pushLong(text ? text.getFragment(0).stringFragment.handle : 0);
 }
 
 function GetString2d(ctx: VmStateContainer) {
-    const stringHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const stringHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
-        ctx.stackPush(0);
+        ctx.pushString("");
         return;
     }
     const tool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
     if (!tool) {
-        ctx.stackPush(0);
+        ctx.pushString("");
         return;
     }
-    ctx.stackPush(tool ? tool.text : "");
+    ctx.pushString(tool ? tool.text : "");
 }
 
 function GetTextFont2d(ctx: VmStateContainer) {
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.stackPush(text ? text.getFragment(0).font.handle : 0);
+    ctx.pushLong(text ? text.getFragment(0).font.handle : 0);
 }
 
 function GetTextFgColor2d(ctx: VmStateContainer) {
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.stackPush(text ? text.getFragment(0).foregroundColor : "");
+    ctx.pushString(text ? text.getFragment(0).foregroundColor : "");
 }
 
 function GetTextBkColor2d(ctx: VmStateContainer) {
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.stackPush(text ? text.getFragment(0).backgroundColor : "");
+    ctx.pushString(text ? text.getFragment(0).backgroundColor : "");
 }
 
 function CreateFont2d(ctx: VmStateContainer) {
-    const flags = ctx.stackPop() as number;
-    const height = ctx.stackPop() as number;
-    const fontName = ctx.stackPop() as string;
-    const spaceHandle = ctx.stackPop() as number;
+    const flags = ctx.popDouble();
+    const height = ctx.popDouble();
+    const fontName = ctx.popString();
+    const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
 
@@ -93,63 +93,63 @@ function CreateFont2d(ctx: VmStateContainer) {
     const underlined = !!(flags & 2);
     const strikeout = !!(flags & 4);
     const bold = !!(flags & 8);
-    ctx.stackPush(space ? space.tools.createFont(fontName, height, bold).handle : 0);
+    ctx.pushLong(space ? space.tools.createFont(fontName, height, bold).handle : 0);
 }
 
 function CreateString2d(ctx: VmStateContainer) {
-    const value = ctx.stackPop() as string;
-    const spaceHandle = ctx.stackPop() as number;
+    const value = ctx.popString();
+    const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.tools.createString(value).handle : 0);
+    ctx.pushLong(space ? space.tools.createString(value).handle : 0);
 }
 
 function CreateText2d(ctx: VmStateContainer) {
-    const bgColor = ctx.stackPop() as string;
-    const fgColor = ctx.stackPop() as string;
-    const stringHandle = ctx.stackPop() as number;
-    const fontHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const bgColor = ctx.popString();
+    const fgColor = ctx.popString();
+    const stringHandle = ctx.popLong();
+    const fontHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
     const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
-        ctx.stackPush(0);
+        ctx.pushLong(0);
         return;
     }
     const font = space.tools.getTool<FontToolState>("ttFONT2D", fontHandle);
     const stringTool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
     if (!font || !stringTool) {
-        ctx.stackPush(0);
+        ctx.pushLong(0);
         return;
     }
-    ctx.stackPush(space ? space.tools.createText(font, stringTool, fgColor, bgColor).handle : 0);
+    ctx.pushLong(space ? space.tools.createText(font, stringTool, fgColor, bgColor).handle : 0);
 }
 
 function CreateRasterText2d(ctx: VmStateContainer) {
-    const angle = ctx.stackPop() as number;
-    const y = ctx.stackPop() as number;
-    const x = ctx.stackPop() as number;
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const angle = ctx.popDouble();
+    const y = ctx.popDouble();
+    const x = ctx.popDouble();
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.createText(x, y, angle, textHandle).handle : 0);
+    ctx.pushLong(space ? space.createText(x, y, angle, textHandle).handle : 0);
 }
 function SetText2d(ctx: VmStateContainer) {
     //HSpace,HText,HFont,HString,~FgColor,~BgColor
-    const bgColor = ctx.stackPop() as string;
-    const fgColor = ctx.stackPop() as string;
-    const stringHandle = ctx.stackPop() as number;
-    const fontHandle = ctx.stackPop() as number;
-    const textHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const bgColor = ctx.popString();
+    const fgColor = ctx.popString();
+    const stringHandle = ctx.popLong();
+    const fontHandle = ctx.popLong();
+    const textHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
-        ctx.stackPush(0);
+        ctx.pushDouble(0);
         return;
     }
     const textTool = space.tools.getTool<TextToolState>("ttTEXT2D", textHandle);
     if (!textTool) {
-        ctx.stackPush(0);
+        ctx.pushDouble(0);
         return;
     }
     const fontTool = space.tools.getTool<FontToolState>("ttFONT2D", fontHandle);
@@ -158,44 +158,44 @@ function SetText2d(ctx: VmStateContainer) {
     if (stringTool) textTool.updateString(stringTool, 0);
     textTool.updateFgColor(fgColor, 0);
     textTool.updateBgColor(bgColor, 0);
-    ctx.stackPush(1);
+    ctx.pushDouble(1);
 }
 function SetString2d(ctx: VmStateContainer) {
     //~HSpace,~HString,~text
-    const text = ctx.stackPop() as string;
-    const stringHandle = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const text = ctx.popString();
+    const stringHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
     const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
-        ctx.stackPush(0);
+        ctx.pushDouble(0);
         return;
     }
     const stringTool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
     if (!stringTool) {
-        ctx.stackPush(0);
+        ctx.pushDouble(0);
         return;
     }
     stringTool.text = text;
-    ctx.stackPush(1);
+    ctx.pushDouble(1);
 }
 
 function CreatePen2d(ctx: VmStateContainer) {
-    const rop2 = ctx.stackPop() as number;
-    const color = ctx.stackPop() as string;
-    const width = ctx.stackPop() as number;
-    const style = ctx.stackPop() as number;
-    const spaceHandle = ctx.stackPop() as number;
+    const rop2 = ctx.popDouble();
+    const color = ctx.popString();
+    const width = ctx.popDouble();
+    const style = ctx.popDouble();
+    const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.tools.createPen(width, color).handle : 0);
+    ctx.pushLong(space ? space.tools.createPen(width, color).handle : 0);
 }
 
 // HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
 function CreateDIB2d(ctx: VmStateContainer) {
-    const bmpFilename = ctx.stackPop() as string;
-    const spaceHandle = ctx.stackPop() as number;
+    const bmpFilename = ctx.popString();
+    const spaceHandle = ctx.popLong();
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.stackPush(space ? space.tools.createBitmap(bmpFilename).handle : 0);
+    ctx.pushLong(space ? space.tools.createBitmap(bmpFilename).handle : 0);
 }
 
 export function initGraphicTools(addOperation: (opcode: number, operation: Operation) => void) {

@@ -1,24 +1,47 @@
-import { ClassState, InputSystemController, ProjectController } from "vm-interfaces-base";
+import { ClassState, InputSystemController, ProjectController, MemoryState } from "vm-interfaces-base";
 import { VmStateContainer, VirtualMachine } from "vm-types";
 import { WindowSystemController } from "vm-interfaces-windows";
 
 export class VmContext implements VmStateContainer, VirtualMachine {
-    private nextCmdIndex = 0;
-    private lastCmdIndex = 0;
-    private stackValues = new Array<number | string>(2000);
-    private stackPointer = -1;
+    public nextCmdIndex = 0;
+    private codeLength = 0;
+    // private stackValues = new Array<number | string>(2000);
+    private floatStack = new Float64Array(2000);
+    private floatStackPointer = -1;
+
+    private intStack = new Int32Array(2000);
+    private intStackPointer = -1;
+
+    private stringStack = new Array<string>(2000);
+    private stringStackPointer = -1;
+
     private ctxDepth = 0;
     private _stopped = false;
     private _error: string = "";
     private _hasError = false;
 
-    currentClass!: ClassState; //сделаем публичным для чуть быстрого доступа к нему.
-    constructor(
-        public readonly windows: WindowSystemController,
-        public readonly input: InputSystemController,
-        public readonly project: ProjectController
-    ) {}
+    readonly windows: WindowSystemController;
+    readonly input: InputSystemController;
+    readonly project: ProjectController;
+    readonly memoryState: MemoryState;
 
+    currentClass!: ClassState; //сделаем публичным для чуть быстрого доступа к нему.
+    constructor({
+        windows,
+        input,
+        project,
+        memoryState,
+    }: {
+        windows: WindowSystemController;
+        input: InputSystemController;
+        project: ProjectController;
+        memoryState: MemoryState;
+    }) {
+        this.windows = windows;
+        this.input = input;
+        this.project = project;
+        this.memoryState = memoryState;
+    }
     // get currentClass() {
     //     return this._currentClass;
     // }
@@ -29,12 +52,12 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     }
 
     setCodeLength(length: number) {
-        this.lastCmdIndex = length - 1;
+        this.codeLength = length;
     }
 
-    nextCommandIndex(): number {
-        return this.nextCmdIndex++;
-    }
+    // nextCommandIndex(): number {
+    //     return this.nextCmdIndex++;
+    // }
 
     substituteState(newState: ClassState) {
         this.currentClass = newState;
@@ -46,7 +69,11 @@ export class VmContext implements VmStateContainer, VirtualMachine {
         this.currentClass = prevState;
         this.nextCmdIndex = cmdIndex;
         this.ctxDepth--;
-        if (this.ctxDepth === 0) this.stackPointer = -1;
+        if (this.ctxDepth === 0) {
+            this.floatStackPointer = -1;
+            this.intStackPointer = -1;
+            this.stringStackPointer = -1;
+        }
     }
 
     get error() {
@@ -68,22 +95,47 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     setError(message: string) {
         this._error = message + ` (индекс опкода: ${this.nextCmdIndex - 1})`;
         this._hasError = true;
-        this.jumpTo(this.lastCmdIndex);
+        this.jumpTo(this.codeLength - 1);
     }
 
     addErrorInfo(message: string) {
         this._error += "\n" + message;
     }
 
-    stackPush(value: string | number) {
-        // if (typeof value === "boolean") value = Number(value);
-        this.stackValues[++this.stackPointer] = value;
+    pushDouble(value: number) {
+        this.floatStack[++this.floatStackPointer] = value;
     }
-    stackPop() {
-        //Это условие следует вырезать в продакшене
-        if (this.stackPointer < 0) throw Error("В стеке нет значений");
-        return this.stackValues[this.stackPointer--];
+    popDouble(): number {
+        if (this.floatStackPointer < 0) throw Error("В стеке нет значений");
+        return this.floatStack[this.floatStackPointer--];
     }
+
+    pushLong(value: number) {
+        this.intStack[++this.intStackPointer] = value;
+    }
+    popLong(): number {
+        if (this.intStackPointer < 0) throw Error("В стеке нет значений");
+        return this.intStack[this.intStackPointer--];
+    }
+
+    pushString(value: string) {
+        this.stringStack[++this.stringStackPointer] = value;
+    }
+    popString(): string {
+        if (this.stringStackPointer < 0) throw Error("В стеке нет значений");
+        return this.stringStack[this.stringStackPointer--];
+    }
+
+    // stackPush(value: string | number) {
+    //     // if (typeof value === "boolean") value = Number(value);
+    //     this.stackValues[++this.stackPointer] = value;
+    // }
+    // stackPop() {
+    //     //Это условие следует вырезать в продакшене
+    //     if (this.stackPointer < 0) throw Error("В стеке нет значений");
+    //     return this.stackValues[this.stackPointer--];
+    // }
+
     jumpTo(index: number) {
         this.nextCmdIndex = index;
     }

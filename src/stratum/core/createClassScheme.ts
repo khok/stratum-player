@@ -6,32 +6,37 @@ import { HandleMap } from "~/helpers/handleMap";
 import { MemoryManager } from "./memoryManager";
 
 class VariableGraphNode {
-    private propagated = false;
-    private globalVarIdx = 0;
+    private indexWasSet = false;
+    private globalVarIdx = -1;
     private connectedNodes = new Set<VariableGraphNode>();
 
-    constructor(readonly lowCaseName: string, readonly type: VarData["type"], private requestIndex: () => number) {}
+    constructor(
+        readonly lowCaseName: string,
+        readonly type: VarData["type"],
+        private requestIndex: (type: VarData["type"]) => number
+    ) {}
 
     static connect(first: VariableGraphNode, second: VariableGraphNode) {
         if (first.type !== second.type) throw Error("inconsistent types");
-        if (first.propagated) throw Error("first propagated");
-        if (second.propagated) throw Error("second propagated");
+        if (first.indexWasSet) throw Error("first propagated");
+        if (second.indexWasSet) throw Error("second propagated");
         first.connectedNodes.add(second);
         second.connectedNodes.add(first);
     }
-    private propagateRecursive(index: number) {
-        if (this.propagated) return;
-        this.propagated = true;
+
+    private shareIdxWithOthers(index: number) {
+        if (this.indexWasSet) return;
+        this.indexWasSet = true;
         this.globalVarIdx = index;
-        this.connectedNodes.forEach((n) => n.propagateRecursive(index));
+        this.connectedNodes.forEach((n) => n.shareIdxWithOthers(index));
     }
 
-    extractIndex(): number {
-        if (!this.propagated) {
-            const index = this.requestIndex();
-            this.propagateRecursive(index);
+    getIndexAndType(): { globalIdx: number; type: VarData["type"] } {
+        if (!this.indexWasSet) {
+            const index = this.requestIndex(this.type);
+            this.shareIdxWithOthers(index);
         }
-        return this.globalVarIdx;
+        return { globalIdx: this.globalVarIdx, type: this.type };
     }
 }
 
@@ -78,20 +83,21 @@ class VarArrayNode {
     private childs?: HandleMap<VarArrayNode>;
     constructor(
         name: string,
-        classes: Map<string, { data: ClassData; proto: ClassPrototype }>,
-        reqIndex: () => number,
+        classes: Map<string, { childInfo: ClassData["childInfo"]; links: ClassData["links"]; proto: ClassPrototype }>,
+        reqIndex: (type: VarData["type"]) => number,
         private schemeData?: Omit<SchemeData, "parent">
     ) {
         const klass = classes.get(name);
         if (!klass) throw new StratumError(`Класс ${name} не найден`);
-        const { data, proto } = klass;
+        const { childInfo, links, proto } = klass;
         this.proto = proto;
         //Создаем переменные этого объекта,
-        if (data.vars) this.vars = data.vars.map((v) => new VariableGraphNode(v.name.toLowerCase(), v.type, reqIndex));
+        if (proto.variables)
+            this.vars = proto.variables.map((v) => new VariableGraphNode(v.lowCaseName, v.type, reqIndex));
         //создаем детей,
-        if (data.childs) {
+        if (childInfo) {
             const childs = (this.childs = HandleMap.create<VarArrayNode>());
-            data.childs.forEach((c) => {
+            childInfo.forEach((c) => {
                 const childStore = new VarArrayNode(c.classname, classes, reqIndex, {
                     handle: c.handle,
                     name: c.nameOnScheme,
@@ -101,7 +107,7 @@ class VarArrayNode {
             });
         }
         // и создаем связи между переменными этого объекта и переменными его детей.
-        if (data.links) linkVars(data.links, this, this.childs);
+        if (links) linkVars(links, this, this.childs);
     }
 
     get protoName() {
@@ -112,7 +118,7 @@ class VarArrayNode {
         const { vars, proto, childs } = this;
         const parentNode = new ClassSchemeNode({
             proto,
-            globalIndexMap: vars && vars.map((v) => v.extractIndex()),
+            varIndexMap: vars && vars.map((v) => v.getIndexAndType()),
             schemeData: parentData,
         });
         if (childs) {
@@ -127,10 +133,14 @@ class VarArrayNode {
 }
 
 function dataToProtos(classes: Map<string, ClassData>) {
-    const protos = new Map<string, { data: ClassData; proto: ClassPrototype }>();
+    const protos = new Map<
+        string,
+        { links: ClassData["links"]; childInfo: ClassData["childInfo"]; proto: ClassPrototype }
+    >();
     classes.forEach((data, name) =>
         protos.set(name, {
-            data,
+            links: data.links,
+            childInfo: data.childInfo,
             proto: new ClassPrototype(name, { vars: data.vars, code: data.bytecode && data.bytecode.parsed }),
         })
     );
@@ -146,18 +156,29 @@ export function createClassScheme(
     //Переводим "сырые" считанные данные в прототипы классов.
     const protos = dataToProtos(classLibrary);
 
-    let varCount = 0;
-    const counter = () => varCount++;
+    //резервируем нуль, чтобы проверять есть ли где то ошибки.
+    let doubleVarCount = 1,
+        longVarCount = 1,
+        stringVarCount = 1;
+    const counter = (type: VarData["type"]) => {
+        switch (type) {
+            case "FLOAT":
+                return doubleVarCount++;
+            case "HANDLE":
+                return longVarCount++;
+            case "COLORREF":
+            case "STRING":
+                return stringVarCount++;
+        }
+    };
 
-    //Создаем граф переменных.
-    const head = new VarArrayNode(rootName, protos, counter);
-    //Конвертируем его в граф классов.
-    const root = head.toClassSchemeNode();
+    //Создаем граф переменных и конвертируем его в граф классов.
+    const root = new VarArrayNode(rootName, protos, counter).toClassSchemeNode();
 
-    const mmanager = new MemoryManager(varCount);
+    const mmanager = new MemoryManager({ doubleVarCount, longVarCount, stringVarCount });
     //Инициализируем память каждого узла графа.
     root.initDefaultValuesRecursive(mmanager);
-    mmanager.assertDefaultValuesInitialized();
+    // mmanager.assertDefaultValuesInitialized();
 
     return { mmanager, root };
 }

@@ -10,7 +10,7 @@ export const VmOperandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIM
     }
     //Base
     setOperand(Opcode.PUSH_FLOAT_const, "double");
-    setOperand(Opcode.vmPUSH_LONG_const, "uint");
+    setOperand(Opcode.vmPUSH_LONG_const, "long");
     setOperand(Opcode.PUSH_STRING_CONST, "string");
     setOperand(Opcode.V_JMP, "codepoint");
     setOperand(Opcode.V_JNZ, "codepoint");

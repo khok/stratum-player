@@ -55,7 +55,7 @@ declare module "data-types-base" {
 
         vars?: VarData[];
         links?: LinkData[];
-        childs?: ChildData[];
+        childInfo?: ChildData[];
         scheme?: VectorDrawData;
         image?: VectorDrawData;
         bytecode?: {

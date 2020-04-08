@@ -9,7 +9,15 @@ async function load(name: string) {
 }
 
 (async function () {
-    equal((await load("balls")).varCount, 1235);
-    equal((await load("balls_stress_test")).varCount, 2328);
+    const [balls, balls2] = await Promise.all([load("balls"), load("balls_stress_test")]);
+    //минус 3 под зарезервированные поля в начале.
+    equal(
+        balls.defaultDoubleValues.length + balls.defaultLongValues.length + balls.defaultStringValues.length - 3,
+        1235
+    );
+    equal(
+        balls2.defaultDoubleValues.length + balls2.defaultLongValues.length + balls2.defaultStringValues.length - 3,
+        2328
+    );
     console.log("var count test completed");
 })();
