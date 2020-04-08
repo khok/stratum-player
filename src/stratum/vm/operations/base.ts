@@ -304,11 +304,13 @@ function V_EDI(ctx: VmStateContainer) {
     ctx.pushDouble(Number(ctx.popLong() > 0));
 }
 function V_ANDI(ctx: VmStateContainer) {
+    throw "V_ANDI: NIMP";
     const a = ctx.popLong();
     const b = ctx.popLong();
     ctx.pushLong(a && b);
 }
 function V_ORI(ctx: VmStateContainer) {
+    throw "V_ORI: NIMP";
     const a = ctx.popLong();
     const b = ctx.popLong();
     ctx.pushLong(a || b);

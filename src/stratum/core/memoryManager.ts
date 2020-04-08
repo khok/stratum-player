@@ -30,9 +30,9 @@ export class MemoryManager implements MemoryState {
         this.oldLongValues = new Int32Array(longVarCount);
         this.newLongValues = new Int32Array(longVarCount);
 
-        this.defaultStringValues = new Array<string>(stringVarCount);
-        this.oldStringValues = new Array<string>(stringVarCount);
-        this.newStringValues = new Array<string>(stringVarCount);
+        this.defaultStringValues = new Array<string>(stringVarCount).fill("");
+        this.oldStringValues = new Array<string>(stringVarCount).fill("");
+        this.newStringValues = new Array<string>(stringVarCount).fill("");
     }
 
     // assertDefaultValuesInitialized() {
@@ -62,8 +62,8 @@ export class MemoryManager implements MemoryState {
             this.newDoubleValues[0] !== 0 ||
             this.oldLongValues[0] !== 0 ||
             this.newLongValues[0] !== 0 ||
-            this.oldStringValues[0] !== undefined ||
-            this.newStringValues[0] !== undefined
+            this.oldStringValues[0] !== "" ||
+            this.newStringValues[0] !== ""
         )
             throw new Error("Было изменено зарезервированное значение переменной");
     }

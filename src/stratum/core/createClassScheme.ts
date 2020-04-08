@@ -165,8 +165,8 @@ export function createClassScheme(
             case "FLOAT":
                 return doubleVarCount++;
             case "HANDLE":
-                return longVarCount++;
             case "COLORREF":
+                return longVarCount++;
             case "STRING":
                 return stringVarCount++;
         }

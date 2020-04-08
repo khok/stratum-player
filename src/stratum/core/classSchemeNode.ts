@@ -77,10 +77,10 @@ export class ClassSchemeNode implements ClassState {
                         this.doubleVarMappingArray[varIdx] = globalIdx;
                         break;
                     case "HANDLE":
+                    case "COLORREF":
                         this.longVarMappingArray[varIdx] = globalIdx;
                         break;
                     case "STRING":
-                    case "COLORREF":
                         this.stringVarMappingArray[varIdx] = globalIdx;
                 }
             }
@@ -104,10 +104,10 @@ export class ClassSchemeNode implements ClassState {
                 this.mmanager!.defaultDoubleValues[this.doubleVarMappingArray![idx]] = value as number;
                 break;
             case "HANDLE":
+            case "COLORREF":
                 this.mmanager!.defaultLongValues[this.longVarMappingArray![idx]] = value as number;
                 break;
             case "STRING":
-            case "COLORREF":
                 this.mmanager!.defaultStringValues[this.stringVarMappingArray![idx]] = value as string;
                 break;
         }
@@ -147,15 +147,14 @@ export class ClassSchemeNode implements ClassState {
                 }
             }
 
-            if (defValue !== undefined) {
-                this.setDefaultVarValue(curVar.type, i, defValue);
-            } else {
-                //строковые значения инициализируем особым образом.
-                const globaVarIdx = this.stringVarMappingArray![i];
-                //prettier-ignore
-                if((curVar.type === "STRING" || curVar.type === "COLORREF") && !mmanager.defaultStringValues[globaVarIdx])
-                    mmanager.defaultStringValues[globaVarIdx] = curVar.type === "STRING" ? "" : "rgb(0, 0, 0)";
-            }
+            if (defValue !== undefined) this.setDefaultVarValue(curVar.type, i, defValue);
+            // } else {
+            //     //строковые значения инициализируем особым образом.
+            //     const globaVarIdx = this.stringVarMappingArray![i];
+            //     //prettier-ignore
+            //     if((curVar.type === "STRING" || curVar.type === "COLORREF") && !mmanager.defaultStringValues[globaVarIdx])
+            //         mmanager.defaultStringValues[globaVarIdx] = curVar.type === "STRING" ? "" : "rgb(0, 0, 0)";
+            // }
 
             //Если нет значения по умолчанию
 
