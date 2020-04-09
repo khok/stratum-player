@@ -333,6 +333,40 @@ function GetActualSize2d(ctx: VmStateContainer) {
     ctx.pushDouble(1);
 }
 
+// HANDLE GetGroupItem2d(HANDLE HSpace, HANDLE HGroup, FLOAT Number)
+function GetGroupItem2d(ctx: VmStateContainer) {
+    const index = ctx.popDouble();
+    const groupHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+
+    const group = _getObject(ctx, spaceHandle, groupHandle);
+    if (group !== undefined && group.type === "otGROUP2D") {
+        for (const item of group.items) {
+            ctx.pushLong(item.handle);
+            return;
+        }
+    }
+    ctx.pushLong(0);
+}
+
+// FLOAT DeleteGroup2d(HANDLE HSpace, HANDLE HGroup)
+function DeleteGroup2d(ctx: VmStateContainer) {
+    const groupHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (space) {
+        const group = space.getObject(groupHandle);
+        if (group !== undefined && group.type === "otGROUP2D") {
+            group.removeAll();
+            space.deleteObject(group.handle);
+            ctx.pushDouble(1);
+            return;
+        }
+    }
+    ctx.pushDouble(0);
+}
+
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETOBJECTBYNAME, GetObject2dByName);
     addOperation(Opcode.SETOBJECTORG2D, SetObjectOrg2d);
@@ -365,4 +399,6 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.SETOBJECTNAME2D, SetObjectName2d);
     addOperation(Opcode.OBJECTTOTOP2D, ObjectToTop2d);
     addOperation(Opcode.VM_GETACTUALSIZE, GetActualSize2d);
+    addOperation(Opcode.GETGROUPITEM2D, GetGroupItem2d);
+    addOperation(Opcode.DELETEGROUP2D, DeleteGroup2d);
 }
