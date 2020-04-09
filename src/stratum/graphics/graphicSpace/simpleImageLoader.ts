@@ -55,7 +55,7 @@ export class SimpleImageLoader implements ImageResolver {
 
     fromProjectFile(bmpFilename: string) {
         if (!this.bmpFiles) throw new StratumError(`В каталоге проекта нет изображений`);
-        const name = bmpFilename.replace("\\\\", "\\").toLowerCase();
+        const name = bmpFilename.replace(/\\\\/g, "\\").toLowerCase();
         const file = this.bmpFiles.find((f) => f.filename.toLowerCase().endsWith(name));
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
         const stream = new BinaryStream(file.data);

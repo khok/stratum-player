@@ -24,7 +24,7 @@ function findSingleFile(zipFiles: JSZipObject[], ending: string, mustExist = tru
 
 async function unzipFile(file: JSZipObject) {
     const data = await file.async("uint8array");
-    return { filename: file.name.replace("/", "\\"), data };
+    return { filename: file.name.replace(/\//g, "\\"), data };
 }
 
 function unzipFilesWithExt(files: JSZipObject[], ext: string) {

@@ -417,7 +417,7 @@ function SCHANGE(ctx: VmStateContainer) {
     const s3 = ctx.popString();
     const s2 = ctx.popString();
     const s1 = ctx.popString();
-    ctx.pushString(s1.replace(s2, s3));
+    ctx.pushString(s1.replace(new RegExp(s2, "g"), s3));
 }
 function PLUS_STRING(ctx: VmStateContainer) {
     const b = ctx.popString();
