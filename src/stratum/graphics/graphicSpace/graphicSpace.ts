@@ -50,7 +50,7 @@ export class GraphicSpace implements GraphicSpaceState {
         this.tools = data.tools || new GraphicSpaceTools();
         this.allObjects = data.objects || HandleMap.create<GraphicObject>();
         if (data.brushHandle) {
-            const brush = this.tools.getTool<BrushTool>("ttBRUSH2D", data.brushHandle);
+            const brush = this.tools.getTool("ttBRUSH2D", data.brushHandle) as BrushTool;
             if (brush) {
                 brush.subscribe(this, () => this.scene.updateBrush(brush));
                 this.scene.updateBrush(brush);
@@ -100,7 +100,7 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
-    createBitmap(x: number, y: number, bitmapToolHandle: number): BitmapObject {
+    createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): BitmapObject {
         const handle = HandleMap.getFreeHandle(this.allObjects);
         const obj = new BitmapObject(
             {
@@ -108,11 +108,12 @@ export class GraphicSpace implements GraphicSpaceState {
                 bmpAngle: 0,
                 bmpOrigin: { x: 0, y: 0 },
                 size: { x: 0, y: 0 },
-                dibHandle: bitmapToolHandle,
+                dibHandle,
+                doubleDibHandle: dibHandle,
                 name: "",
                 options: 0,
                 position: { x, y },
-                type: "otBITMAP2D",
+                type: isDouble ? "otDOUBLEBITMAP2D" : "otBITMAP2D",
             },
             this.tools,
             this.scene

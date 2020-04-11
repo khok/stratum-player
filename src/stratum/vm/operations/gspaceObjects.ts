@@ -42,7 +42,7 @@ function CreateBitmap2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const space = ctx.windows.getSpace(spaceHandle);
-    ctx.pushLong(space ? space.createBitmap(x, y, bitmapToolHandle).handle : 0);
+    ctx.pushLong(space ? space.createBitmap(x, y, bitmapToolHandle, false).handle : 0);
 }
 
 // FLOAT DeleteObject2d(HANDLE HSpace, HANDLE HObject)

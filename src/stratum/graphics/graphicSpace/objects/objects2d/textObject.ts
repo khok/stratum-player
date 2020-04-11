@@ -12,7 +12,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
     visual: TextElementVisual;
     constructor(data: TextElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
-        const textTool = tools.getTool<TextTool>("ttTEXT2D", data.textHandle);
+        const textTool = tools.getTool("ttTEXT2D", data.textHandle) as TextTool;
         if (!textTool) {
             //TODO: fix
             throw new StratumError(`Инструмент Текст #${data.textHandle} не существует`);

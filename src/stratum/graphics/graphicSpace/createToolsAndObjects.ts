@@ -5,16 +5,8 @@ import { GraphicSpaceToolsState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
-import {
-    BitmapObject,
-    ControlObject,
-    DoubleBitmapObject,
-    GraphicObject,
-    GroupObject,
-    LineObject,
-    TextObject,
-} from "./objects";
-import { BitmapTool, BrushTool, DoubleBitmapTool, PenTool, StringTool, TextTool, FontTool } from "./tools";
+import { BitmapObject, ControlObject, GraphicObject, GroupObject, LineObject, TextObject } from "./objects";
+import { BitmapTool, BrushTool, PenTool, StringTool, TextTool, FontTool } from "./tools";
 
 export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
     //prettier-ignore
@@ -24,7 +16,7 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b.color, b.style, bitmaps && bitmaps.get(b.dibHandle))]));
 
     //prettier-ignore
-    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new DoubleBitmapTool(imageLoader.loadImage(b))]));
+    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new BitmapTool(imageLoader.loadImage(b))]));
 
     //prettier-ignore
     const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool(f)]));
@@ -53,7 +45,7 @@ function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visu
         case "otBITMAP2D":
             return new BitmapObject(data, tools, visualFactory);
         case "otDOUBLEBITMAP2D":
-            return new DoubleBitmapObject(data, tools, visualFactory);
+            return new BitmapObject(data, tools, visualFactory);
         case "otTEXT2D":
             return new TextObject(data, tools, visualFactory);
         case "otCONTROL2D":

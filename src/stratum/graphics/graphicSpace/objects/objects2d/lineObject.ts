@@ -15,8 +15,8 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     constructor(data: LineElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
         this.points = data.points.slice();
-        const pen = tools.getTool<PenTool>("ttPEN2D", data.penHandle);
-        const brush = tools.getTool<BrushTool>("ttBRUSH2D", data.brushHandle);
+        const pen = tools.getTool("ttPEN2D", data.penHandle) as PenTool;
+        const brush = tools.getTool("ttBRUSH2D", data.brushHandle) as BrushTool;
         this.visual = visualFactory.createLine({
             handle: data.handle,
             position: data.position,

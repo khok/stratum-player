@@ -1,12 +1,6 @@
 declare module "scene-types" {
     import { ControlElementData, Point2D, VdrLayers } from "data-types-graphics";
-    import {
-        BitmapToolState,
-        BrushToolState,
-        PenToolState,
-        DoubleBitmapToolState,
-        TextToolState,
-    } from "vm-interfaces-graphics";
+    import { BitmapToolState, BrushToolState, PenToolState, TextToolState } from "vm-interfaces-graphics";
 
     interface _VisualBase {
         setPosition(x: number, y: number): void;
@@ -38,16 +32,7 @@ declare module "scene-types" {
         updateBitmap(bmp: BitmapToolState): void;
     }
 
-    export interface DoubleBitmapElementVisual extends _VisualBase {
-        updateBitmap(bmp: DoubleBitmapToolState): void;
-    }
-
-    export type Visual2D =
-        | LineElementVisual
-        | ControlElementVisual
-        | TextElementVisual
-        | BitmapElementVisual
-        | DoubleBitmapElementVisual;
+    export type Visual2D = LineElementVisual | ControlElementVisual | TextElementVisual | BitmapElementVisual;
 
     export interface VisualOptions {
         handle: number;
@@ -82,18 +67,11 @@ declare module "scene-types" {
         bitmapTool: BitmapToolState;
     }
 
-    export interface DoubleBitmapVisualOptions extends VisualOptions {
-        bmpOrigin: Point2D;
-        bmpSize: Point2D;
-        doubleBitmapTool: DoubleBitmapToolState;
-    }
-
     export interface VisualFactory {
         createLine(data: LineVisualOptions): LineElementVisual;
         createControl(data: ControlVisualOptions): ControlElementVisual;
         createText(data: TextVisualOptions): TextElementVisual;
         createBitmap(data: BitmapVisualOptions): BitmapElementVisual;
-        createDoubleBitmap(data: DoubleBitmapVisualOptions): DoubleBitmapElementVisual;
     }
 
     export interface Scene extends VisualFactory {

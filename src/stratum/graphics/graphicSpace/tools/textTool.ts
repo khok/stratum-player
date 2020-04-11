@@ -12,7 +12,6 @@ export interface TextToolTextFragment {
 }
 
 export class TextTool extends ToolMixin<TextTool> implements TextToolState {
-    readonly type = "ttTEXT2D";
     private cachedString?: { text: string; size: number };
     constructor(private fragments: TextToolTextFragment[]) {
         super();

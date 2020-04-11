@@ -1,4 +1,4 @@
-import { BitmapElementData } from "data-types-graphics";
+import { BitmapElementData, DoubleBitmapElementData } from "data-types-graphics";
 import { BitmapElementVisual, VisualFactory } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
 import { BitmapObjectState, GraphicSpaceToolsState } from "vm-interfaces-graphics";
@@ -7,16 +7,27 @@ import { Object2dMixin } from "./object2dMixin";
 import { StratumError } from "~/helpers/errors";
 
 export class BitmapObject extends Object2dMixin implements BitmapObjectState {
-    readonly type = "otBITMAP2D";
+    readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
     private _bmpTool: BitmapTool;
     protected readonly _subclassInstance: this = this;
     visual: BitmapElementVisual;
-    constructor(data: BitmapElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+    constructor(
+        data: BitmapElementData | DoubleBitmapElementData,
+        tools: GraphicSpaceToolsState,
+        visualFactory: VisualFactory
+    ) {
         super(data);
-        const bmpTool = tools.getTool<BitmapTool>("ttDIB2D", data.dibHandle);
+        this.type = data.type;
+        const bmpTool = tools.getTool(
+            data.type === "otBITMAP2D" ? "ttDIB2D" : "ttDOUBLEDIB2D",
+            data.type === "otBITMAP2D" ? data.dibHandle : data.doubleDibHandle
+        ) as BitmapTool;
         if (!bmpTool) {
-            //TODO: fix
-            throw new StratumError(`Битовая карта #${data.dibHandle} не существует`);
+            throw new StratumError(
+                `${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта #${
+                    data.type === "otBITMAP2D" ? data.dibHandle : data.doubleDibHandle
+                } не существует`
+            );
         }
         const { image, dimensions } = bmpTool;
         this.width = data.size.x = data.size.x || (dimensions && dimensions.width) || image.width;

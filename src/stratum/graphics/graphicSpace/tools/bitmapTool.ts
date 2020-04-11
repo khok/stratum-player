@@ -3,7 +3,6 @@ import { BitmapToolState } from "vm-interfaces-graphics";
 import { ToolMixin } from "./toolMixin";
 
 export class BitmapTool extends ToolMixin<BitmapTool> implements BitmapToolState {
-    readonly type = "ttDIB2D";
     private _image: HTMLImageElement;
     public dimensions: { width: number; height: number };
     constructor(data: { image: HTMLImageElement; width: number; height: number }) {

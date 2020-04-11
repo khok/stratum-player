@@ -10,7 +10,6 @@ const codeToStyle: { [idx: number]: BrushToolState["fillType"] } = {
 };
 
 export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
-    readonly type = "ttBRUSH2D";
     private _color: StringColor;
     private _fillType: BrushToolState["fillType"];
     private _bmpTool: BitmapTool | undefined;

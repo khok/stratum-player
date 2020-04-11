@@ -9,7 +9,6 @@ export type FontToolOptions = {
 };
 
 export class FontTool extends ToolMixin<FontTool> implements FontToolState {
-    readonly type = "ttFONT2D";
     private _name: string;
     private _size: number;
     private _bold: boolean;

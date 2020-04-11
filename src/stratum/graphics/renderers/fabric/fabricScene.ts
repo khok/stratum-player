@@ -5,8 +5,6 @@ import {
     BitmapVisualOptions,
     ControlElementVisual,
     ControlVisualOptions,
-    DoubleBitmapElementVisual,
-    DoubleBitmapVisualOptions,
     LineElementVisual,
     LineVisualOptions,
     Scene,
@@ -17,7 +15,6 @@ import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { FabricLine } from "./components/fabricLine";
 import { FabricBitmap } from "./components/fabricBitmap";
-import { FabricDoubleBitmap } from "./components/fabricDoubleBitmap";
 import { fabricConfigCanvasOptions } from "./fabricConfig";
 import { FabricText } from "./components/fabricText";
 import { BrushToolState } from "vm-interfaces-graphics";
@@ -26,7 +23,7 @@ import { systemKeysTemp } from "~/vm/operations/system";
 import { HTMLInputElementsFactory } from "internal-graphic-types";
 import { HtmlControl } from "../html/htmlControl";
 
-type VisualObject = FabricLine | FabricBitmap | FabricDoubleBitmap | FabricText | HtmlControl;
+type VisualObject = FabricLine | FabricBitmap | FabricText | HtmlControl;
 
 const downCodes = [MessageCode.WM_LBUTTONDOWN, MessageCode.WM_MBUTTONDOWN, MessageCode.WM_RBUTTONDOWN];
 const upCodes = [MessageCode.WM_LBUTTONUP, MessageCode.WM_MBUTTONUP, MessageCode.WM_RBUTTONUP];
@@ -235,12 +232,6 @@ export class FabricScene implements Scene {
     createBitmap(data: BitmapVisualOptions): BitmapElementVisual {
         this.assertNoObject(data.handle);
         const obj = new FabricBitmap(data, this.view, () => this.requestRedraw());
-        this.objects.set(data.handle, obj);
-        return obj;
-    }
-    createDoubleBitmap(data: DoubleBitmapVisualOptions): DoubleBitmapElementVisual {
-        this.assertNoObject(data.handle);
-        const obj = new FabricDoubleBitmap(data, this.view, () => this.requestRedraw());
         this.objects.set(data.handle, obj);
         return obj;
     }

@@ -3,7 +3,6 @@ import { PenToolState } from "vm-interfaces-graphics";
 import { ToolMixin } from "./toolMixin";
 
 export class PenTool extends ToolMixin<PenTool> implements PenToolState {
-    readonly type = "ttPEN2D";
     private _color: string;
     private _width: number;
     constructor(width: number, color: StringColor) {

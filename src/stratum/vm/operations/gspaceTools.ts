@@ -5,7 +5,7 @@ import { colorrefToString, stringToColorref } from "~/helpers/varValueFunctions"
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
     const space = ctx.windows.getSpace(spaceHandle);
-    return space && space.tools.getTool<TextToolState>("ttTEXT2D", textHandle);
+    return space && (space.tools.getTool("ttTEXT2D", textHandle) as TextToolState);
 }
 
 function GetTextObject2d(ctx: VmStateContainer) {
@@ -50,7 +50,7 @@ function GetString2d(ctx: VmStateContainer) {
         ctx.pushString("");
         return;
     }
-    const tool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
+    const tool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
     if (!tool) {
         ctx.pushString("");
         return;
@@ -116,8 +116,8 @@ function CreateText2d(ctx: VmStateContainer) {
         ctx.pushLong(0);
         return;
     }
-    const font = space.tools.getTool<FontToolState>("ttFONT2D", fontHandle);
-    const stringTool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
+    const font = space.tools.getTool("ttFONT2D", fontHandle) as FontToolState;
+    const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
     if (!font || !stringTool) {
         ctx.pushLong(0);
         return;
@@ -148,14 +148,14 @@ function SetText2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const textTool = space.tools.getTool<TextToolState>("ttTEXT2D", textHandle);
+    const textTool = space.tools.getTool("ttTEXT2D", textHandle) as TextToolState;
     if (!textTool) {
         ctx.pushDouble(0);
         return;
     }
-    const fontTool = space.tools.getTool<FontToolState>("ttFONT2D", fontHandle);
+    const fontTool = space.tools.getTool("ttFONT2D", fontHandle) as FontToolState;
     if (fontTool) textTool.updateFont(fontTool, 0);
-    const stringTool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
+    const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
     if (stringTool) textTool.updateString(stringTool, 0);
     textTool.updateFgColor(fgColor, 0);
     textTool.updateBgColor(bgColor, 0);
@@ -171,7 +171,7 @@ function SetString2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const stringTool = space.tools.getTool<StringToolState>("ttSTRING2D", stringHandle);
+    const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
     if (!stringTool) {
         ctx.pushDouble(0);
         return;

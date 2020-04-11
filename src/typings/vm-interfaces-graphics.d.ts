@@ -1,62 +1,48 @@
 declare module "vm-interfaces-graphics" {
     import {
         BitmapElementData,
-        BitmapToolData,
-        BrushToolData,
         ControlElementData,
-        DoubleBitmapElementData,
-        DoubleBitmapToolData,
-        FontToolData,
         GroupElementData,
         LineElementData,
-        PenToolData,
         Point2D,
         StringColor,
-        StringToolData,
         TextElementData,
-        TextToolData,
+        ToolData,
+        DoubleBitmapElementData,
     } from "data-types-graphics";
     import { ClassState, VmBool } from "vm-interfaces-base";
     import { VmStateContainer } from "vm-types";
 
     export interface PenToolState {
         readonly handle: number;
-        readonly type: PenToolData["type"];
         color: StringColor;
         width: number;
     }
 
     export interface BrushToolState {
         readonly handle: number;
-        readonly type: BrushToolData["type"];
         color: StringColor;
         fillType: "SOLID" | "NULL" | "PATTERN" | "HATCED";
         bmpTool: BitmapToolState | undefined;
     }
+
     export interface BitmapToolState {
         readonly handle: number;
-        readonly type: BitmapToolData["type"];
         image: HTMLImageElement;
         dimensions: { width: number; height: number };
         setPixel(x: number, y: number, color: StringColor): VmBool;
         getPixel(x: number, y: number): StringColor;
     }
-    export interface DoubleBitmapToolState {
-        readonly handle: number;
-        readonly type: DoubleBitmapToolData["type"];
-        image: HTMLImageElement;
-        dimensions: { width: number; height: number };
-    }
+
     export interface FontToolState {
         readonly handle: number;
-        readonly type: FontToolData["type"];
         readonly name: string;
         readonly size: number;
         readonly bold: boolean;
     }
+
     export interface StringToolState {
         readonly handle: number;
-        readonly type: StringToolData["type"];
         text: string;
     }
 
@@ -69,7 +55,6 @@ declare module "vm-interfaces-graphics" {
 
     export interface TextToolState {
         readonly handle: number;
-        readonly type: TextToolData["type"];
         readonly textCount: number;
         getFragment(index: number): TextFragment;
         updateString(str: StringToolState, idx: number): void;
@@ -83,13 +68,15 @@ declare module "vm-interfaces-graphics" {
         | PenToolState
         | BrushToolState
         | BitmapToolState
-        | DoubleBitmapToolState
         | FontToolState
         | StringToolState
         | TextToolState;
 
+    export type ToolTypes = Exclude<ToolData["type"], "ttREFTODOUBLEDIB2D" | "ttREFTODIB2D">;
+
     export interface GraphicSpaceToolsState {
         createBitmap(bmpFilename: string): BitmapToolState;
+        createDoubleBitmap(bmpFilename: string): BitmapToolState;
         createPen(width: number, color: StringColor): PenToolState;
         createFont(fontName: string, size: number, bold: boolean): FontToolState;
         createString(value: string): StringToolState;
@@ -99,11 +86,11 @@ declare module "vm-interfaces-graphics" {
             foregroundColor: StringColor,
             backgroundColor: StringColor
         ): TextToolState;
-        getTool<T extends ToolState>(type: T["type"], handle: number): T | undefined;
-        deleteTool<T extends ToolState>(type: T["type"], handle: number): VmBool;
+        getTool(type: ToolTypes, handle: number): ToolState | undefined;
+        deleteTool(type: ToolTypes, handle: number): VmBool;
     }
 
-    export interface GraphicObjectStateBase {
+    export interface _2DObjBaseState {
         readonly handle: number;
         readonly parent: GroupObjectState | undefined;
         name: string;
@@ -123,39 +110,35 @@ declare module "vm-interfaces-graphics" {
         isVisible: VmBool;
     }
 
-    export interface LineObjectState extends GraphicObjectStateBase {
+    export interface LineObjectState extends _2DObjBaseState {
         readonly type: LineElementData["type"];
         pen: PenToolState | undefined;
         brush: BrushToolState | undefined;
         getPoint(index: number): Point2D;
         setPointPosition(index: number, x: number, y: number): VmBool;
     }
-    export interface ControlObjectState extends GraphicObjectStateBase {
+    export interface ControlObjectState extends _2DObjBaseState {
         readonly type: ControlElementData["type"];
         text: string;
     }
-    export interface TextObjectState extends GraphicObjectStateBase {
+    export interface TextObjectState extends _2DObjBaseState {
         readonly type: TextElementData["type"];
         textTool: TextToolState;
     }
-    interface _BmpBase extends GraphicObjectStateBase {
+    interface _BmpBase extends _2DObjBaseState {
         setRect(x: number, y: number, width: number, height: number): VmBool;
     }
     export interface BitmapObjectState extends _BmpBase {
-        readonly type: BitmapElementData["type"];
+        readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
         bmpTool: BitmapToolState;
         setRect(x: number, y: number, width: number, height: number): VmBool;
     }
-    export interface DoubleBitmapObjectState extends _BmpBase {
-        readonly type: DoubleBitmapElementData["type"];
-        doubleBitmapTool: DoubleBitmapToolState;
-    }
-    export interface GroupObjectState extends GraphicObjectStateBase {
+    export interface GroupObjectState extends _2DObjBaseState {
         readonly type: GroupElementData["type"];
         readonly items: IterableIterator<GraphicObjectState>;
-        hasItem(obj: GraphicObjectStateBase): VmBool;
+        hasItem(obj: _2DObjBaseState): VmBool;
         addItem(obj: GraphicObjectState): VmBool;
-        removeItem(obj: GraphicObjectStateBase): VmBool;
+        removeItem(obj: _2DObjBaseState): VmBool;
         removeAll(): VmBool;
     }
 
@@ -164,7 +147,6 @@ declare module "vm-interfaces-graphics" {
         | ControlObjectState
         | TextObjectState
         | BitmapObjectState
-        | DoubleBitmapObjectState
         | GroupObjectState;
 
     export interface GraphicSpaceState {
@@ -176,7 +158,7 @@ declare module "vm-interfaces-graphics" {
         setOrigin(x: number, y: number): VmBool;
 
         createText(x: number, y: number, angle: number, textHandle: number): TextObjectState;
-        createBitmap(x: number, y: number, bitmapToolHandle: number): BitmapObjectState;
+        createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): BitmapObjectState;
         createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObjectState;
         createGroup(objectHandles: number[]): GroupObjectState | undefined;
         getObject(handle: number): GraphicObjectState | undefined;
