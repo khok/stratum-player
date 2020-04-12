@@ -1,9 +1,15 @@
-import { LineElementData, Point2D } from "data-types-graphics";
+import { Point2D } from "data-types-graphics";
 import { LineElementVisual, VisualFactory } from "scene-types";
+import { VmBool } from "vm-interfaces-base";
 import { GraphicSpaceToolsState, LineObjectState } from "vm-interfaces-graphics";
 import { BrushTool, PenTool } from "../../tools";
-import { Object2dMixin } from "./object2dMixin";
-import { VmBool } from "vm-interfaces-base";
+import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+
+export interface LineObjectOptions extends Object2dOptions {
+    penHandle?: number;
+    brushHandle?: number;
+    points: Point2D[];
+}
 
 export class LineObject extends Object2dMixin implements LineObjectState {
     readonly type = "otLINE2D";
@@ -12,22 +18,26 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     protected readonly _subclassInstance: this = this;
     visual: LineElementVisual;
     points: Point2D[];
-    constructor(data: LineElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+    constructor(data: LineObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
         this.points = data.points.slice();
-        const pen = tools.getTool("ttPEN2D", data.penHandle) as PenTool;
-        const brush = tools.getTool("ttBRUSH2D", data.brushHandle) as BrushTool;
+        const pen = data.penHandle ? (tools.getTool("ttPEN2D", data.penHandle) as PenTool) : undefined;
+        const brush = data.brushHandle ? (tools.getTool("ttBRUSH2D", data.brushHandle) as BrushTool) : undefined;
         this.visual = visualFactory.createLine({
             handle: data.handle,
             position: data.position,
-            options: data.options,
-            size: data.size,
-            points: this.points,
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
+            options: data.options,
+            points: this.points,
             pen,
             brush,
         });
+        if (!data.size) {
+            const area = this.visual.getVisibleAreaSize();
+            this.width = area.x;
+            this.height = area.y;
+        }
         this.pen = pen;
         this.brush = brush;
     }

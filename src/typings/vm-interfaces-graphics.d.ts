@@ -157,7 +157,7 @@ declare module "vm-interfaces-graphics" {
         readonly sourceFilename: string;
         setOrigin(x: number, y: number): VmBool;
 
-        createText(x: number, y: number, angle: number, textHandle: number): TextObjectState;
+        createText(x: number, y: number, angle: number, textToolHandle: number): TextObjectState;
         createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): BitmapObjectState;
         createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObjectState;
         createGroup(objectHandles: number[]): GroupObjectState | undefined;

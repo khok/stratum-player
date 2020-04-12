@@ -8,13 +8,14 @@ export class FabricBitmap implements BitmapElementVisual {
     readonly type = "bitmap";
     private posX: number;
     private posY: number;
+    private origSize: Point2D;
     obj: fabric.Image;
     readonly handle: number;
-    private size: Point2D;
+    private visibleArea: Point2D;
     readonly selectable: boolean;
 
     constructor(
-        { handle, isVisible, selectable, position, size, bmpOrigin, bmpSize, bitmapTool }: BitmapVisualOptions,
+        { handle, isVisible, selectable, position, scale, bmpOrigin, bmpSize, bmpTool }: BitmapVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void
     ) {
@@ -25,33 +26,29 @@ export class FabricBitmap implements BitmapElementVisual {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
-            cropX: bmpOrigin.x,
-            cropY: bmpOrigin.y,
+            cropX: bmpOrigin && bmpOrigin.x,
+            cropY: bmpOrigin && bmpOrigin.y,
             width: bmpSize.x,
             height: bmpSize.y,
-            scaleX: bmpSize.x ? size.x / bmpSize.x : 1,
-            scaleY: bmpSize.y ? size.y / bmpSize.y : 1,
+            scaleX: scale ? scale.x : 1,
+            scaleY: scale ? scale.y : 1,
             visible: isVisible,
         };
+        this.origSize = bmpSize;
         this.selectable = selectable;
-        this.size = { ...size };
-        this.obj = new fabric.Image(bitmapTool.image, opts);
+        this.obj = new fabric.Image(bmpTool.image, opts);
+        this.visibleArea = { x: this.obj.width || 0, y: this.obj.height || 0 };
     }
-    applyLayers(layers: VdrLayers): void {
-        // throw new Error("Method not implemented.");
+
+    getVisibleAreaSize(): Point2D {
+        return this.visibleArea;
     }
-    setRect(x: number, y: number, width: number, height: number): void {
-        this.obj.set({ cropX: x, cropY: y, width, height });
-        this.requestRedraw();
+
+    updateAfterViewTranslate() {
+        const { posX, posY, viewRef } = this;
+        this.obj.set({ left: posX - viewRef.x, top: posY - viewRef.y }).setCoords();
     }
-    testIntersect(x: number, y: number) {
-        const diffX = x - this.posX;
-        const diffY = y - this.posY;
-        return diffX > 0 && diffX <= this.size.x && diffY > 0 && diffY <= this.size.y;
-    }
-    updateBitmap(bmp: BitmapToolState): void {
-        throw new Error("Method not implemented.");
-    }
+
     setPosition(x: number, y: number): void {
         const { x: viewX, y: viewY } = this.viewRef;
         this.obj.set({ left: x - viewX, top: y - viewY }).setCoords();
@@ -59,20 +56,42 @@ export class FabricBitmap implements BitmapElementVisual {
         this.posY = y;
         this.requestRedraw();
     }
-    updateAfterViewTranslate() {
-        const { posX, posY, viewRef } = this;
-        this.obj.set({ left: posX - viewRef.x, top: posY - viewRef.y }).setCoords();
+
+    scaleTo(width: number, height: number): void {
+        this.obj.set({ scaleX: width / this.origSize.x, scaleY: height / this.origSize.y });
     }
+
     setAngle(angle: number): void {
         this.obj.set({ angle }).setCoords();
         this.requestRedraw();
     }
+
+    testIntersect(x: number, y: number) {
+        const diffX = x - this.posX;
+        const diffY = y - this.posY;
+        return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
+    }
+
+    applyLayers(layers: VdrLayers): void {
+        // throw new Error("Method not implemented.");
+    }
+
     show(): void {
         this.obj.visible = true;
         this.requestRedraw();
     }
+
     hide(): void {
         this.obj.visible = false;
+        this.requestRedraw();
+    }
+
+    updateBitmap(bmp: BitmapToolState): void {
+        throw new Error("Method not implemented.");
+    }
+
+    setRect(x: number, y: number, width: number, height: number): void {
+        this.obj.set({ cropX: x, cropY: y, width, height });
         this.requestRedraw();
     }
 }

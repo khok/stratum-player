@@ -61,7 +61,7 @@ export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsS
         const { handle } = elementData;
         let obj: GraphicObject;
         if (elementData.type === "otGROUP2D") {
-            obj = new GroupObject({ name: elementData.name });
+            obj = new GroupObject(elementData);
             groups.push({ obj, handle, data: elementData.childHandles });
         } else {
             obj = create2dObject(elementData, tools, visualFactory);

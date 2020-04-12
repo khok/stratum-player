@@ -1,36 +1,42 @@
-import { Object2dMixin } from "./object2dMixin";
-import { TextObjectState, GraphicSpaceToolsState } from "vm-interfaces-graphics";
-import { TextElementData } from "data-types-graphics";
-import { VisualFactory, TextElementVisual } from "scene-types";
-import { TextTool } from "../../tools";
+import { TextElementVisual, VisualFactory } from "scene-types";
+import { GraphicSpaceToolsState, TextObjectState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
+import { TextTool } from "../../tools";
+import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+
+export interface TextObjectOptions extends Object2dOptions {
+    textToolHandle: number;
+    angle?: number;
+}
 
 export class TextObject extends Object2dMixin implements TextObjectState {
     readonly type = "otTEXT2D";
     protected readonly _subclassInstance: this = this;
     private _text: TextTool;
     visual: TextElementVisual;
-    constructor(data: TextElementData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+    constructor(data: TextObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
-        const textTool = tools.getTool("ttTEXT2D", data.textHandle) as TextTool;
+        this.angle = data.angle || 0;
+        const textTool = tools.getTool("ttTEXT2D", data.textToolHandle) as TextTool;
         if (!textTool) {
             //TODO: fix
-            throw new StratumError(`Инструмент Текст #${data.textHandle} не существует`);
+            throw new StratumError(`Инструмент Текст #${data.textToolHandle} не существует`);
         }
         this.visual = visualFactory.createText({
             handle: data.handle,
             position: data.position,
-            angle: data.angle,
-            size: data.size,
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
+            angle: data.angle,
             textTool,
         });
-        const area = this.visual.getVisibleAreaSize();
-        this.width = data.size.x || area.x;
-        this.height = data.size.y || area.y;
+        if (!data.size) {
+            const area = this.visual.getVisibleAreaSize();
+            this.width = area.x;
+            this.height = area.y;
+        }
         this._text = textTool;
-        textTool.subscribe(this, () => this.visual.updateText(textTool));
+        textTool.subscribe(this, () => this.visual.updateTextTool(textTool));
     }
     get textTool(): TextTool {
         return this._text;
@@ -38,7 +44,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
     set textTool(value) {
         this._text.unsubscribe(this);
         this._text = value;
-        value.subscribe(this, () => this.visual.updateText(value));
+        value.subscribe(this, () => this.visual.updateTextTool(value));
     }
     protected unsubFromTools(): void {
         this.textTool.unsubscribe(this);

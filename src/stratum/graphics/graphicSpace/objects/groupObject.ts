@@ -1,8 +1,14 @@
 import { VmBool } from "vm-interfaces-base";
 import { GroupObjectState } from "vm-interfaces-graphics";
+import { StratumError } from "~/helpers/errors";
 import { GraphicObject } from ".";
 import { BaseObjectMixin } from "./baseObjectMixin";
-import { StratumError } from "~/helpers/errors";
+
+export interface GroupObjectOptions {
+    handle: number;
+    name?: string;
+    items?: IterableIterator<GraphicObject>;
+}
 
 //TODO: создать базовый класс для группы и 2д микина и пихнуть туда свойство name и присвоение группы.
 export class GroupObject extends BaseObjectMixin implements GroupObjectState {
@@ -14,9 +20,8 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     width: number = 0;
     height: number = 0;
     private myItems: Set<GraphicObject> = new Set();
-    constructor(data?: { name?: string; items?: IterableIterator<GraphicObject> }) {
-        super({ name: (data && data.name) || "" });
-        if (!data) return;
+    constructor(data: GroupObjectOptions) {
+        super(data);
         if (data.items) this.addItems(data.items);
     }
 
@@ -107,6 +112,25 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         if (this.parent) this.parent.handleChildPositionChange(x, y);
         return 1;
     }
+
+    setSize(width: number, height: number): VmBool {
+        throw new Error("Method not implemented.");
+        const scaleX = width / this.width;
+        const scaleY = height / this.height;
+        this.width = width;
+        this.height = height;
+        for (const item of this.items) {
+            if (item.type !== "otGROUP2D") {
+                item.visual.scaleTo(item.width * scaleX, item.height * scaleY);
+            }
+        }
+        return 1;
+    }
+
+    rotate(centerX: number, centerY: number, angleRad: number): VmBool {
+        throw new Error("Method not implemented.");
+    }
+
     get zOrder(): number {
         // throw new Error("Method not implemented.");
         return 1; //TODO: ???
@@ -122,12 +146,5 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
 
     set isVisible(value) {
         if (!value) throw new StratumError("Попытка скрыть объект-группу. На данный момент это не реализовано");
-    }
-
-    rotate(centerX: number, centerY: number, angleRad: number): VmBool {
-        throw new Error("Method not implemented.");
-    }
-    setSize(width: number, height: number): VmBool {
-        throw new Error("Method not implemented.");
     }
 }

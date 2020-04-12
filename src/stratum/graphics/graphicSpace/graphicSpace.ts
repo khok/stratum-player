@@ -77,25 +77,20 @@ export class GraphicSpace implements GraphicSpaceState {
         return 1;
     }
 
-    createText(x: number, y: number, angle: number, textHandle: number): TextObject {
+    createText(x: number, y: number, angle: number, textToolHandle: number): TextObject {
         const handle = HandleMap.getFreeHandle(this.allObjects);
         const obj = new TextObject(
             {
                 handle,
                 angle,
                 position: { x, y },
-                delta: 0,
-                name: "",
-                size: { x: 0, y: 0 },
-                options: 0,
-                textHandle,
-                type: "otTEXT2D",
+                textToolHandle,
             },
             this.tools,
             this.scene
         );
         this.allObjects.set(handle, obj);
-        this.scene.appendLastObject(handle);
+        this.scene.appendObjectToEnd(obj.visual);
         obj.handle = handle;
         return obj;
     }
@@ -105,13 +100,8 @@ export class GraphicSpace implements GraphicSpaceState {
         const obj = new BitmapObject(
             {
                 handle,
-                bmpAngle: 0,
-                bmpOrigin: { x: 0, y: 0 },
-                size: { x: 0, y: 0 },
                 dibHandle,
                 doubleDibHandle: dibHandle,
-                name: "",
-                options: 0,
                 position: { x, y },
                 type: isDouble ? "otDOUBLEBITMAP2D" : "otBITMAP2D",
             },
@@ -119,7 +109,7 @@ export class GraphicSpace implements GraphicSpaceState {
             this.scene
         );
         this.allObjects.set(handle, obj);
-        this.scene.appendLastObject(handle);
+        this.scene.appendObjectToEnd(obj.visual);
         obj.handle = handle;
         return obj;
     }
@@ -128,21 +118,17 @@ export class GraphicSpace implements GraphicSpaceState {
         const handle = HandleMap.getFreeHandle(this.allObjects);
         const obj = new LineObject(
             {
-                type: "otLINE2D",
                 handle,
                 brushHandle,
                 penHandle,
-                name: "",
                 points,
                 position: points[0],
-                size: { x: 0, y: 0 },
-                options: 0,
             },
             this.tools,
             this.scene
         );
         this.allObjects.set(handle, obj);
-        this.scene.appendLastObject(handle);
+        this.scene.appendObjectToEnd(obj.visual);
         obj.handle = handle;
         return obj;
     }
@@ -152,19 +138,25 @@ export class GraphicSpace implements GraphicSpaceState {
         for (let i = 0; i < objectHandles.length; i++) {
             const handle = objectHandles[i];
             const obj = this.getObject(handle);
-            if (!obj) return undefined;
-            objects[i] = obj;
+            if (!obj) console.warn(`Попытка создать группу с несуществующим объектом ${handle}`);
+            else objects[i] = obj;
         }
 
         const handle = HandleMap.getFreeHandle(this.allObjects);
-        const obj = new GroupObject({ items: objects.values() });
+        const obj = new GroupObject({ handle, items: objects.values() });
         this.allObjects.set(handle, obj);
         obj.handle = handle;
         return obj;
     }
 
     moveObjectToTop(handle: number): VmBool {
-        this.scene.moveObjectToTop(handle);
+        const obj = this.getObject(handle);
+        if (!obj) return 0;
+        if (obj.type === "otGROUP2D") {
+            for (const item of obj.items) this.moveObjectToTop(item.handle);
+        } else {
+            this.scene.moveObjectToTop(obj.visual);
+        }
         return 1;
     }
 

@@ -1,4 +1,4 @@
-import { Element2dData } from "data-types-graphics";
+import { Element2dData, Point2D } from "data-types-graphics";
 import { fabric } from "fabric";
 import { Visual2D } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
@@ -7,30 +7,40 @@ import { BaseObjectMixin } from "../baseObjectMixin";
 
 const radToDeg = 180 / Math.PI;
 
+export interface Object2dOptions {
+    handle: number;
+    name?: string;
+    position: Point2D;
+    size?: Point2D;
+    options?: number;
+}
+
 export abstract class Object2dMixin extends BaseObjectMixin {
     protected abstract readonly _subclassInstance: Object2dMixin & GraphicObject;
     abstract readonly type: Element2dData["type"];
     abstract visual: Visual2D;
-    private _isVisible: VmBool;
-    private _selectable: VmBool;
+    private _isVisible: VmBool = 1;
+    private _selectable: VmBool = 1;
+
     positionX: number = 0;
     positionY: number = 0;
     angle = 0;
     width: number = 0;
     height: number = 0;
 
-    constructor(data: Element2dData) {
+    constructor(data: Object2dOptions) {
         super(data);
-        const { name, position, size, options } = data;
-        this.name = name;
-        this._isVisible = options & 0b0001 ? 0 : 1;
-        this._selectable = options & 0b1000 ? 0 : 1;
+
+        const { position, size, options } = data;
         this.positionX = position.x;
         this.positionY = position.y;
-        this.width = size.x;
-        this.height = size.y;
-        if (data.type === "otTEXT2D") {
-            this.angle = data.angle;
+        if (options) {
+            this._isVisible = options & 0b0001 ? 0 : 1;
+            this._selectable = options & 0b1000 ? 0 : 1;
+        }
+        if (size) {
+            this.width = size.x;
+            this.height = size.y;
         }
     }
 
@@ -40,6 +50,13 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         this.positionY = y;
         if (this.isVisible) this.visual.setPosition(x, y);
         if (this.parent) this.parent.handleChildPositionChange(x, y);
+        return 1;
+    }
+
+    setSize(width: number, height: number): VmBool {
+        this.width = width;
+        this.height = height;
+        this.visual.scaleTo(width, height);
         return 1;
     }
 
@@ -59,19 +76,7 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         return 1;
     }
 
-    private warn_showed = false;
-    setSize(width: number, height: number): VmBool {
-        this.width = width;
-        this.height = height;
-        if (!this.warn_showed) {
-            console.warn(`изменение размеров объекта типа ${this.type} не реализовано`);
-            this.warn_showed = true;
-        }
-        return 1;
-    }
-
     protected abstract unsubFromTools(): void;
-
     destroy() {
         if (this.parent) this.parent.removeItem(this._subclassInstance);
         this.unsubFromTools();

@@ -8,7 +8,7 @@ export class HtmlControl implements ControlElementVisual {
     private posX: number;
     private posY: number;
     readonly handle: number;
-    private size: Point2D;
+    private visibleArea: Point2D;
     readonly selectable: boolean;
     private inp: HtmlTextInputWrapper;
     constructor(
@@ -21,7 +21,7 @@ export class HtmlControl implements ControlElementVisual {
         this.posX = position.x;
         this.posY = position.y;
         this.selectable = false;
-        this.size = { ...controlSize };
+        this.visibleArea = { ...controlSize };
         this.inp = factory.createTextInput({
             x: position.x - viewRef.x,
             y: position.y - viewRef.y,
@@ -31,8 +31,45 @@ export class HtmlControl implements ControlElementVisual {
             text,
         });
     }
+
+    getVisibleAreaSize(): Point2D {
+        return this.visibleArea;
+    }
+
+    updateAfterViewTranslate() {
+        const { posX, posY, viewRef } = this;
+        this.inp.set({ x: posX - viewRef.x, y: posY - viewRef.y });
+    }
+
+    setPosition(x: number, y: number): void {
+        const { x: viewX, y: viewY } = this.viewRef;
+        this.inp.set({ x: x - viewX, y: y - viewY });
+        this.posX = x;
+        this.posY = y;
+    }
+
+    scaleTo(width: number, height: number): void {
+        // throw new Error("Method not implemented.");
+    }
+
+    setAngle(angle: number): void {}
+
+    testIntersect(x: number, y: number) {
+        const diffX = x - this.posX;
+        const diffY = y - this.posY;
+        return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
+    }
+
     applyLayers(layers: VdrLayers): void {
         // throw new Error("Method not implemented.");
+    }
+
+    show(): void {
+        this.inp.set({ hidden: false });
+    }
+
+    hide(): void {
+        this.inp.set({ hidden: true });
     }
 
     onChange(fn: () => void) {
@@ -47,33 +84,6 @@ export class HtmlControl implements ControlElementVisual {
         return this.inp.text;
     }
 
-    testIntersect(x: number, y: number) {
-        const diffX = x - this.posX;
-        const diffY = y - this.posY;
-        return diffX > 0 && diffX <= this.size.x && diffY > 0 && diffY <= this.size.y;
-    }
-
-    setPosition(x: number, y: number): void {
-        const { x: viewX, y: viewY } = this.viewRef;
-        this.inp.set({ x: x - viewX, y: y - viewY });
-        this.posX = x;
-        this.posY = y;
-    }
-
-    updateAfterViewTranslate() {
-        const { posX, posY, viewRef } = this;
-        this.inp.set({ x: posX - viewRef.x, y: posY - viewRef.y });
-    }
-
-    setAngle(angle: number): void {
-        return;
-    }
-    show(): void {
-        this.inp.set({ hidden: false });
-    }
-    hide(): void {
-        this.inp.set({ hidden: true });
-    }
     destroyHtml(): void {
         this.inp.destroy();
     }

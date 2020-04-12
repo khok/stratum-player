@@ -20,9 +20,10 @@ export class FabricLine implements LineElementVisual {
     readonly type = "line";
     private posX: number;
     private posY: number;
+    private origSize: Point2D;
     obj: fabric.Polyline;
     readonly handle: number;
-    private size: Point2D;
+    private visibleArea: Point2D;
     readonly selectable: boolean;
     private layerVisible = true;
     private options: number;
@@ -32,9 +33,7 @@ export class FabricLine implements LineElementVisual {
         private viewRef: Point2D,
         private requestRedraw: () => void
     ) {
-        this.options = options;
-        const { size } = FabricLine.calcSize(points);
-        this.size = size;
+        this.options = options || 0;
         this.handle = handle;
         this.posX = position.x;
         this.posY = position.y;
@@ -50,11 +49,10 @@ export class FabricLine implements LineElementVisual {
 
         this.selectable = selectable;
         this.obj = new fabric.Polyline(points, opts);
+        this.origSize = this.visibleArea = FabricLine.calcSize(points).size;
+        // this.visibleArea = { x: this.obj.width || 0, y: this.obj.height || 0 };
     }
-    applyLayers(layers: VdrLayers): void {
-        this.layerVisible = this.options !== 6144 || !layers[3];
-        this.show();
-    }
+
     private static calcSize(points: Point2D[]) {
         //prettier-ignore
         const sizes = points.length > 0 ? points.reduce(
@@ -71,22 +69,52 @@ export class FabricLine implements LineElementVisual {
             size: { x: sizes.maxX - sizes.minX, y: sizes.maxY - sizes.minY },
         };
     }
+
     getVisibleAreaSize(): Point2D {
-        return this.size;
+        return this.visibleArea;
     }
-    setPoints(points: Point2D[]): void {
-        const { size, position } = FabricLine.calcSize(points);
-        this.obj.set({ points: points.map((p) => new fabric.Point(p.x, p.y)) });
-        this.obj._calcDimensions();
-        this.obj.dirty = true;
-        this.size = size;
+
+    updateAfterViewTranslate() {
+        const { posX, posY, viewRef } = this;
+        this.obj.set({ left: posX - viewRef.x, top: posY - viewRef.y }).setCoords();
+    }
+
+    setPosition(x: number, y: number): void {
+        const { x: viewX, y: viewY } = this.viewRef;
+        this.obj.set({ left: x - viewX, top: y - viewY }).setCoords();
+        this.posX = x;
+        this.posY = y;
+        this.requestRedraw();
+    }
+
+    scaleTo(width: number, height: number): void {
+        this.obj.set({ scaleX: width / this.origSize.x, scaleY: height / this.origSize.y });
+    }
+
+    setAngle(angle: number): void {
+        this.obj.set({ angle }).setCoords();
         this.requestRedraw();
     }
 
     testIntersect(x: number, y: number) {
         const diffX = x - this.posX;
         const diffY = y - this.posY;
-        return diffX > 0 && diffX <= this.size.x && diffY > 0 && diffY <= this.size.y;
+        return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
+    }
+
+    applyLayers(layers: VdrLayers): void {
+        this.layerVisible = this.options !== 6144 || !layers[3];
+        this.show();
+    }
+
+    show(): void {
+        this.obj.visible = this.layerVisible && true;
+        this.requestRedraw();
+    }
+
+    hide(): void {
+        this.obj.visible = false;
+        this.requestRedraw();
     }
 
     updatePen(pen: PenToolState): void {
@@ -97,27 +125,13 @@ export class FabricLine implements LineElementVisual {
         this.obj.fill = getFillValue(brush);
         this.requestRedraw();
     }
-    setPosition(x: number, y: number): void {
-        const { x: viewX, y: viewY } = this.viewRef;
-        this.obj.set({ left: x - viewX, top: y - viewY }).setCoords();
-        this.posX = x;
-        this.posY = y;
-        this.requestRedraw();
-    }
-    updateAfterViewTranslate() {
-        const { posX, posY, viewRef } = this;
-        this.obj.set({ left: posX - viewRef.x, top: posY - viewRef.y }).setCoords();
-    }
-    setAngle(angle: number): void {
-        this.obj.set({ angle }).setCoords();
-        this.requestRedraw();
-    }
-    show(): void {
-        this.obj.visible = this.layerVisible && true;
-        this.requestRedraw();
-    }
-    hide(): void {
-        this.obj.visible = false;
+
+    setPoints(points: Point2D[]): void {
+        const { size, position } = FabricLine.calcSize(points);
+        this.obj.set({ points: points.map((p) => new fabric.Point(p.x, p.y)) });
+        this.obj._calcDimensions();
+        this.obj.dirty = true;
+        this.visibleArea = size;
         this.requestRedraw();
     }
 }

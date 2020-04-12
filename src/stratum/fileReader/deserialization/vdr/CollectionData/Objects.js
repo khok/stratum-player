@@ -96,7 +96,7 @@ function read_otDOUBLEBITMAP2D(stream) {
 function read_otTEXT2D(stream) {
     return {
         ...readObject2D(stream),
-        textHandle: stream.readWord(),
+        textToolHandle: stream.readWord(),
         delta: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
         angle: stream.readWord(),
     };

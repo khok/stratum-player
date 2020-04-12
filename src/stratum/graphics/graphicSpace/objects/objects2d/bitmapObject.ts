@@ -1,10 +1,25 @@
-import { BitmapElementData, DoubleBitmapElementData } from "data-types-graphics";
+import { BitmapElementData, DoubleBitmapElementData, Point2D } from "data-types-graphics";
 import { BitmapElementVisual, VisualFactory } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
 import { BitmapObjectState, GraphicSpaceToolsState } from "vm-interfaces-graphics";
-import { BitmapTool } from "../../tools";
-import { Object2dMixin } from "./object2dMixin";
 import { StratumError } from "~/helpers/errors";
+import { BitmapTool } from "../../tools";
+import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+
+interface _BmpObjectOptionsBase extends Object2dOptions {
+    bmpOrigin?: Point2D;
+    bmpSize?: Point2D;
+}
+
+export interface BitmapObjectOptions extends _BmpObjectOptionsBase {
+    type: BitmapElementData["type"];
+    dibHandle: number;
+}
+
+export interface DoubleBitmapObjectOptions extends _BmpObjectOptionsBase {
+    type: DoubleBitmapElementData["type"];
+    doubleDibHandle: number;
+}
 
 export class BitmapObject extends Object2dMixin implements BitmapObjectState {
     readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
@@ -12,36 +27,55 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
     protected readonly _subclassInstance: this = this;
     visual: BitmapElementVisual;
     constructor(
-        data: BitmapElementData | DoubleBitmapElementData,
+        data: BitmapObjectOptions | DoubleBitmapObjectOptions,
         tools: GraphicSpaceToolsState,
         visualFactory: VisualFactory
     ) {
         super(data);
         this.type = data.type;
-        const bmpTool = tools.getTool(
-            data.type === "otBITMAP2D" ? "ttDIB2D" : "ttDOUBLEDIB2D",
-            data.type === "otBITMAP2D" ? data.dibHandle : data.doubleDibHandle
-        ) as BitmapTool;
+        const toolType = data.type === "otBITMAP2D" ? "ttDIB2D" : "ttDOUBLEDIB2D";
+        const toolHandle = data.type === "otBITMAP2D" ? data.dibHandle : data.doubleDibHandle;
+        const bmpTool = tools.getTool(toolType, toolHandle) as BitmapTool;
         if (!bmpTool) {
-            throw new StratumError(
-                `${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта #${
-                    data.type === "otBITMAP2D" ? data.dibHandle : data.doubleDibHandle
-                } не существует`
-            );
+            //prettier-ignore
+            throw new StratumError(`${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта #${toolHandle} не существует`);
         }
+        const scale = {
+            x: data.size && data.bmpSize ? data.size.x / data.bmpSize.x : 1,
+            y: data.size && data.bmpSize ? data.size.y / data.bmpSize.y : 1,
+        };
+        // if (!data.size) {
+        //     const { image, dimensions } = bmpTool;
+        //     this.width = dimensions ? dimensions.width : image.width;
+        //     this.height = dimensions ? dimensions.height : image.height;
+        // } else if (data.bmpSize) {
+        //     scale = {
+        //         x: data.size.x / data.bmpSize.x,
+        //         y: data.size.y / data.bmpSize.y,
+        //     };
+        // }
+
+        // const bmpOrigin = data.bmpOrigin || { x: 0, y: 0 };
         const { image, dimensions } = bmpTool;
-        this.width = data.size.x = data.size.x || (dimensions && dimensions.width) || image.width;
-        this.height = data.size.y = data.size.y || (dimensions && dimensions.height) || image.height;
+        const bmpSize = data.bmpSize ||
+            data.size ||
+            (dimensions && { x: dimensions.width, y: dimensions.height }) || { x: image.width, y: image.height };
+
         this.visual = visualFactory.createBitmap({
             handle: data.handle,
             position: data.position,
-            size: data.size,
             isVisible: !!this.isVisible,
             selectable: !!this.selectable,
+            scale,
+            bmpSize,
             bmpOrigin: data.bmpOrigin,
-            bmpSize: data.bmpSize || data.size,
-            bitmapTool: bmpTool,
+            bmpTool,
         });
+        if (!data.size) {
+            const area = this.visual.getVisibleAreaSize();
+            this.width = area.x;
+            this.height = area.y;
+        }
         bmpTool.subscribe(this, () => this.visual.updateBitmap(bmpTool));
         this._bmpTool = bmpTool;
     }

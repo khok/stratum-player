@@ -120,7 +120,7 @@ declare module "data-types-graphics" {
 
     interface _BitmapBaseData extends _Element2dBaseData {
         bmpOrigin: Point2D;
-        bmpSize?: Point2D;
+        bmpSize: Point2D;
         bmpAngle: number;
     }
 
@@ -136,7 +136,7 @@ declare module "data-types-graphics" {
 
     export interface TextElementData extends _Element2dBaseData {
         type: "otTEXT2D";
-        textHandle: number;
+        textToolHandle: number;
         delta: number;
         angle: number;
     }

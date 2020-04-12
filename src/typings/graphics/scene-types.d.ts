@@ -4,22 +4,27 @@ declare module "scene-types" {
 
     interface _VisualBase {
         setPosition(x: number, y: number): void;
+        scaleTo(width: number, height: number): void;
         setAngle(angle: number): void;
         show(): void;
         hide(): void;
         applyLayers(layers: VdrLayers): void;
+        getVisibleAreaSize(): Point2D;
     }
 
     export interface LineElementVisual extends _VisualBase {
-        setPoints(points: Point2D[]): void;
         updatePen(pen: PenToolState): void;
         updateBrush(brush: BrushToolState): void;
-        getVisibleAreaSize(): Point2D;
+        setPoints(points: Point2D[]): void;
     }
 
     export interface TextElementVisual extends _VisualBase {
-        updateText(text: TextToolState): void;
-        getVisibleAreaSize(): Point2D;
+        updateTextTool(text: TextToolState): void;
+    }
+
+    export interface BitmapElementVisual extends _VisualBase {
+        updateBitmap(bmp: BitmapToolState): void;
+        setRect(x: number, y: number, width: number, height: number): void;
     }
 
     export interface ControlElementVisual extends _VisualBase {
@@ -27,17 +32,11 @@ declare module "scene-types" {
         getText(): string;
     }
 
-    export interface BitmapElementVisual extends _VisualBase {
-        setRect(x: number, y: number, width: number, height: number): void;
-        updateBitmap(bmp: BitmapToolState): void;
-    }
-
-    export type Visual2D = LineElementVisual | ControlElementVisual | TextElementVisual | BitmapElementVisual;
+    export type Visual2D = LineElementVisual | TextElementVisual | BitmapElementVisual | ControlElementVisual;
 
     export interface VisualOptions {
         handle: number;
         position: Point2D;
-        size: Point2D;
         isVisible: boolean;
         selectable: boolean;
     }
@@ -47,51 +46,64 @@ declare module "scene-types" {
         pen?: PenToolState;
         brush?: BrushToolState;
         arrows?: unknown;
-        options: number;
+        options?: number;
     }
 
     export interface TextVisualOptions extends VisualOptions {
         textTool: TextToolState;
-        angle: number;
+        angle?: number;
+    }
+
+    export interface BitmapVisualOptions extends VisualOptions {
+        bmpTool: BitmapToolState;
+        bmpSize: Point2D;
+        scale?: Point2D;
+        bmpOrigin?: Point2D;
     }
 
     export interface ControlVisualOptions extends VisualOptions {
         classname: ControlElementData["classname"];
-        text: string;
         controlSize: Point2D;
-    }
-
-    export interface BitmapVisualOptions extends VisualOptions {
-        bmpOrigin: Point2D;
-        bmpSize: Point2D;
-        bitmapTool: BitmapToolState;
+        text?: string;
     }
 
     export interface VisualFactory {
         createLine(data: LineVisualOptions): LineElementVisual;
-        createControl(data: ControlVisualOptions): ControlElementVisual;
         createText(data: TextVisualOptions): TextElementVisual;
         createBitmap(data: BitmapVisualOptions): BitmapElementVisual;
+        createControl(data: ControlVisualOptions): ControlElementVisual;
     }
 
     export interface Scene extends VisualFactory {
-        moveObjectToTop(handle: number): void;
-        applyLayers(layers: VdrLayers): void;
-        adaptToNewSize(width: number, height: number): void;
         updateBrush(brush: BrushToolState): void;
+        applyLayers(layers: VdrLayers): void;
+
+        //Управление порядком отображения объектов.
         /**
-         * Размещает объекты на сцене согласно указанном порядку `order`
+         * Размещает объекты на сцене согласно указанном порядку `order`.
          * @param order - массив дескрипторов объектов, от дальнего к ближнему
          */
         placeObjects(order: number[]): void;
-        appendLastObject(handle: number): void;
+        /** Добавляет объект с дескриптором `handle` на сцену поверх остальных. */
+        appendObjectToEnd(visual: Visual2D): void;
+        moveObjectToTop(visual: Visual2D): void;
         removeObject(visual: Visual2D): void;
+
+        //изменение точки обзора, размеров сцены
         translateView(x: number, y: number): void;
+        adaptToNewSize(width: number, height: number): void;
+
+        //визуальные проверки
         getVisualHandleFromPoint(x: number, y: number): number;
+        /** Проверяет, находится ли точка (`x`; `y`) в пределах области объекта */
         testVisualIntersection(visualHandle: number, x: number, y: number): boolean;
-        subscribeToMouseEvents(callback: (code: number, x: number, y: number) => void): void;
-        subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
+
+        //запуск отрисовки
         render(): boolean;
         forceRender(): void;
+
+        //подписки на события от пользователя (клик мышью, изменение html текстбоксов)
+        subscribeToMouseEvents(callback: (code: number, x: number, y: number) => void): void;
+        subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
     }
 }

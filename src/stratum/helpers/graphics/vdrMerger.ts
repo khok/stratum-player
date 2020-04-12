@@ -139,7 +139,7 @@ function updateRefsFromElementsToTools(
         case "textTools":
             updateHandles(
                 (elements as TextElementData[]).filter((t) => t.type === "otTEXT2D"),
-                "textHandle",
+                "textToolHandle",
                 map
             );
             break;
