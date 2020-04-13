@@ -126,11 +126,13 @@ export class FabricLine implements LineElementVisual {
         this.requestRedraw();
     }
 
-    setPoints(points: Point2D[]): void {
-        const { size, position } = FabricLine.calcSize(points);
-        this.obj.set({ points: points.map((p) => new fabric.Point(p.x, p.y)) });
-        this.obj._calcDimensions();
-        this.obj.dirty = true;
+    setPointPosition(index: number, x: number, y: number): void {
+        this.obj.points![index] = new fabric.Point(x, y);
+        this.obj.set({ dirty: true, objectCaching: false }).setCoords();
+        const { size, position } = FabricLine.calcSize(this.obj.points!);
+        // .set({ points: points.map((p) => new fabric.Point(p.x, p.y)), dirty: true, objectCaching: false })
+        // .setCoords();
+        // this.obj._calcDimensions();
         this.visibleArea = size;
         this.requestRedraw();
     }

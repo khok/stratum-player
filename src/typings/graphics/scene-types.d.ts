@@ -15,7 +15,7 @@ declare module "scene-types" {
     export interface LineElementVisual extends _VisualBase {
         updatePen(pen: PenToolState): void;
         updateBrush(brush: BrushToolState): void;
-        setPoints(points: Point2D[]): void;
+        setPointPosition(index: number, x: number, y: number): void;
     }
 
     export interface TextElementVisual extends _VisualBase {

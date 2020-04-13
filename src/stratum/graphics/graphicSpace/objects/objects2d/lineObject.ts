@@ -50,7 +50,7 @@ export class LineObject extends Object2dMixin implements LineObjectState {
         if (p.x === x && p.y === y) return 1;
         p.x = x;
         p.y = y;
-        this.visual.setPoints(this.points);
+        this.visual.setPointPosition(index, x, y);
         return 1;
     }
     get pen() {
