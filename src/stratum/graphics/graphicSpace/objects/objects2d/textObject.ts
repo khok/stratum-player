@@ -16,7 +16,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
     visual: TextElementVisual;
     constructor(data: TextObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
-        this.angle = data.angle || 0;
+        this._angle = data.angle || 0;
         const textTool = tools.getTool("ttTEXT2D", data.textToolHandle) as TextTool;
         if (!textTool) {
             //TODO: fix

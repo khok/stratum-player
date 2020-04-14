@@ -24,7 +24,7 @@ export abstract class Object2dMixin extends BaseObjectMixin {
 
     positionX: number = 0;
     positionY: number = 0;
-    angle = 0;
+    protected _angle = 0;
     width: number = 0;
     height: number = 0;
 
@@ -44,12 +44,16 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         }
     }
 
+    get angle() {
+        return this.type === "otTEXT2D" ? this._angle : 0;
+    }
+
     setPosition(x: number, y: number): VmBool {
         if (this.positionX === x && this.positionY === y) return 1;
         this.positionX = x;
         this.positionY = y;
         if (this.isVisible) this.visual.setPosition(x, y);
-        if (this.parent) this.parent.handleChildPositionChange(x, y);
+        if (this.parent) this.parent.handleChildTransform(x, y, this.width, this.height);
         return 1;
     }
 
@@ -69,8 +73,8 @@ export abstract class Object2dMixin extends BaseObjectMixin {
             new fabric.Point(centerX, centerY),
             angleRad
         );
-        const newAngle = this.angle + angleRad * radToDeg;
-        if (this.type === "otTEXT2D") this.angle = newAngle;
+        const newAngle = this._angle + angleRad * radToDeg;
+        this._angle = newAngle;
         this.visual.setAngle(newAngle);
         this.setPosition(point.x, point.y);
         return 1;

@@ -8,7 +8,6 @@ export class FabricBitmap implements BitmapElementVisual {
     readonly type = "bitmap";
     private posX: number;
     private posY: number;
-    private origSize: Point2D;
     obj: fabric.Image;
     readonly handle: number;
     private visibleArea: Point2D;
@@ -34,7 +33,6 @@ export class FabricBitmap implements BitmapElementVisual {
             scaleY: scale ? scale.y : 1,
             visible: isVisible,
         };
-        this.origSize = bmpSize;
         this.selectable = selectable;
         this.obj = new fabric.Image(bmpTool.image, opts);
         this.visibleArea = { x: this.obj.width || 0, y: this.obj.height || 0 };
@@ -58,7 +56,10 @@ export class FabricBitmap implements BitmapElementVisual {
     }
 
     scaleTo(width: number, height: number): void {
-        this.obj.set({ scaleX: width / this.origSize.x, scaleY: height / this.origSize.y });
+        this.visibleArea = { x: width, y: height };
+        this.obj.scaleToWidth(width);
+        this.obj.scaleToHeight(height);
+        this.requestRedraw();
     }
 
     setAngle(angle: number): void {

@@ -91,13 +91,14 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
 
     //obj2d operations
     private handleChildChanges = true;
-    handleChildPositionChange(childX: number, childY: number) {
+    handleChildTransform(childX: number, childY: number, childWidth: number, childHeight: number) {
         if (!this.handleChildChanges) return;
         if (childX < this.positionX) this.positionX = childX;
         if (childY < this.positionY) this.positionY = childY;
-        //также надо пересчитать width, height
+        if (childX + childWidth > this.positionX + this.width) this.width = childX + childWidth - this.positionX;
+        if (childY + childHeight > this.positionY + this.height) this.height = childY + childHeight - this.positionY;
 
-        if (this.parent) this.parent.handleChildPositionChange(childX, childY);
+        if (this.parent) this.parent.handleChildTransform(childX, childY, childWidth, childHeight);
     }
 
     setPosition(x: number, y: number): VmBool {
@@ -106,29 +107,32 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         const dy = y - this.positionY;
         this.handleChildChanges = false;
         for (const item of this.items) item.setPosition(item.positionX + dx, item.positionY + dy);
+        this.handleChildChanges = true;
         this.positionX = x;
         this.positionY = y;
-        this.handleChildChanges = true;
-        if (this.parent) this.parent.handleChildPositionChange(x, y);
+        if (this.parent) this.parent.handleChildTransform(x, y, this.width, this.height);
         return 1;
     }
 
     setSize(width: number, height: number): VmBool {
-        throw new Error("Method not implemented.");
-        const scaleX = width / this.width;
-        const scaleY = height / this.height;
+        if (this.width === width && this.height === height) return 1;
+        const dx = width / this.width;
+        const dy = height / this.height;
+        this.handleChildChanges = false;
+        for (const item of this.items) item.setSize(item.width * dx, item.height * dy);
+        this.handleChildChanges = true;
         this.width = width;
         this.height = height;
-        for (const item of this.items) {
-            if (item.type !== "otGROUP2D") {
-                item.visual.scaleTo(item.width * scaleX, item.height * scaleY);
-            }
-        }
+        if (this.parent) this.parent.handleChildTransform(this.positionX, this.positionY, width, height);
         return 1;
     }
 
     rotate(centerX: number, centerY: number, angleRad: number): VmBool {
-        throw new Error("Method not implemented.");
+        this.handleChildChanges = false;
+        for (const item of this.items) item.rotate(centerX, centerY, angleRad);
+        this.handleChildChanges = true;
+        if (this.parent) this.parent.handleChildTransform(this.positionX, this.positionY, this.width, this.height);
+        return 1;
     }
 
     get zOrder(): number {

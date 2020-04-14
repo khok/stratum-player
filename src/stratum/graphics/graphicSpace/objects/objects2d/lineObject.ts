@@ -13,11 +13,11 @@ export interface LineObjectOptions extends Object2dOptions {
 
 export class LineObject extends Object2dMixin implements LineObjectState {
     readonly type = "otLINE2D";
+    protected readonly _subclassInstance: this = this;
     private _pen: PenTool | undefined;
     private _brush: BrushTool | undefined;
-    protected readonly _subclassInstance: this = this;
+    private points: Point2D[];
     visual: LineElementVisual;
-    points: Point2D[];
     constructor(data: LineObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
         this.points = data.points.slice();
