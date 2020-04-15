@@ -5,6 +5,7 @@ import { initBase } from "./base";
 import { initGraphics } from "./gspace";
 import { initGraphicObjects } from "./gspaceObjects";
 import { initGraphicTools } from "./gspaceTools";
+import { initMultimedia } from "./multimedia";
 import { initSystem } from "./system";
 import { initWindows } from "./windows";
 
@@ -21,6 +22,7 @@ export const VmOperations = new Array<Operation>(Opcode.VM_MAXIMUM_code + 1);
     initGraphics(addOperation);
     initGraphicObjects(addOperation);
     initGraphicTools(addOperation);
+    initMultimedia(addOperation);
     initSystem(addOperation);
     initWindows(addOperation);
 })();

@@ -268,7 +268,16 @@ export class GraphicSpace implements GraphicSpaceState {
         }
         return obj;
     }
-    isIntersect(obj: GraphicObject, obj2: GraphicObject): VmBool {
-        throw new Error("Method not implemented.");
+    isIntersect(obj1: GraphicObject, obj2: GraphicObject): VmBool {
+        // if(obj1.positionX === obj2.positionX && obj1.positionY === obj2.positionY) return 1;
+        const xmin1 = obj1.positionX;
+        const xmax1 = xmin1 + obj1.width;
+        const ymin1 = obj1.positionY;
+        const ymax1 = ymin1 + obj1.height;
+        const xmin2 = obj2.positionX;
+        const xmax2 = xmin2 + obj2.width;
+        const ymin2 = obj2.positionY;
+        const ymax2 = ymin2 + obj2.height;
+        return xmax1 >= xmin2 && xmax2 >= xmin1 && ymax1 >= ymin2 && ymax2 >= ymin1 ? 1 : 0;
     }
 }
