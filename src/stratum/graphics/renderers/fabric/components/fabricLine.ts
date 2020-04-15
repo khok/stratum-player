@@ -90,8 +90,9 @@ export class FabricLine implements LineElementVisual {
 
     scaleTo(width: number, height: number): void {
         this.visibleArea = { x: width, y: height };
-        this.obj.scaleToWidth(width);
-        this.obj.scaleToHeight(height);
+        this.obj.set({ scaleX: width / this.obj.width!, scaleY: height / this.obj.height! }).setCoords();
+        // this.obj.scaleToWidth(width, true).setCoords();
+        // this.obj.scaleToHeight(height, true).setCoords();
         this.requestRedraw();
     }
 
