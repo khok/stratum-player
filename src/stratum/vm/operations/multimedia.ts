@@ -4,7 +4,7 @@ import { Opcode } from "~/helpers/vmConstants";
 // FLOAT MCISendString(STRING String)
 function MCISendString_int(ctx: VmStateContainer) {
     const data = ctx.popString();
-    console.warn(`Вызвана MCISendString(${data})`);
+    // console.warn(`Вызвана MCISendString(${data})`);
     ctx.pushDouble(-1);
 }
 
