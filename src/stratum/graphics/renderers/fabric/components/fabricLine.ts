@@ -46,7 +46,9 @@ export class FabricLine implements LineElementVisual {
             visible: isVisible,
         };
 
-        this.selectable = selectable;
+        //костыль для прозрачных объектов
+        this.selectable = brush ? selectable : false;
+        // this.selectable = selectable;
         this.obj = new fabric.Polyline(points, opts);
         this.visibleArea = FabricLine.calcSize(points).size;
         // this.visibleArea = { x: this.obj.width || 0, y: this.obj.height || 0 };

@@ -27,6 +27,13 @@ type VisualObject = FabricLine | FabricBitmap | FabricText | HtmlControl;
 const downCodes = [MessageCode.WM_LBUTTONDOWN, MessageCode.WM_MBUTTONDOWN, MessageCode.WM_RBUTTONDOWN];
 const upCodes = [MessageCode.WM_LBUTTONUP, MessageCode.WM_MBUTTONUP, MessageCode.WM_RBUTTONUP];
 
+function convertButtons(buttons: number) {
+    const lmb = buttons & 1 ? 1 : 0;
+    const rmb = buttons & 2 ? 2 : 0;
+    const wheel = buttons & 4 ? 16 : 0;
+    return lmb | rmb | wheel;
+}
+
 export class FabricScene implements Scene {
     private canvas: fabric.StaticCanvas;
     private objects: HandleMap<VisualObject> = HandleMap.create();
@@ -35,7 +42,7 @@ export class FabricScene implements Scene {
     private view: Point2D = { x: 0, y: 0 };
     private shouldRedraw = false;
 
-    private mouseSubs = new Set<(code: MessageCode, x: number, y: number) => void>();
+    private mouseSubs = new Set<(code: MessageCode, buttons: number, x: number, y: number) => void>();
     private controlsubs = new Set<(code: MessageCode, controlHandle: number) => void>();
 
     private inputFactory?: HTMLInputElementsFactory;
@@ -95,18 +102,19 @@ export class FabricScene implements Scene {
         const x = (data.eventType === "mouse" ? data.e.offsetX : data.e.changedTouches[0].clientX - rect.left) + this.view.x;
         const y =
             (data.eventType === "mouse" ? data.e.offsetY : data.e.changedTouches[0].clientY - rect.top) + this.view.y;
+        const buttons = data.eventType === "mouse" ? convertButtons(data.e.buttons) : 1;
         switch (type) {
             case "move":
-                this.mouseSubs.forEach((s) => s(MessageCode.WM_MOUSEMOVE, x, y));
+                this.mouseSubs.forEach((s) => s(MessageCode.WM_MOUSEMOVE, buttons, x, y));
                 return;
             case "up": {
                 const code = upCodes[data.eventType === "mouse" ? data.e.button : 0];
-                if (code) this.mouseSubs.forEach((s) => s(code, x, y));
+                if (code) this.mouseSubs.forEach((s) => s(code, buttons, x, y));
                 return;
             }
             case "down": {
                 const code = downCodes[data.eventType === "mouse" ? data.e.button : 0];
-                if (code) this.mouseSubs.forEach((s) => s(code, x, y));
+                if (code) this.mouseSubs.forEach((s) => s(code, buttons, x, y));
                 return;
             }
         }
@@ -248,7 +256,7 @@ export class FabricScene implements Scene {
 
     //Подписки на события от пользователя (клик мышью, изменение html текстбоксов)
     //
-    subscribeToMouseEvents(callback: (code: MessageCode, x: number, y: number) => void) {
+    subscribeToMouseEvents(callback: (code: MessageCode, buttons: number, x: number, y: number) => void) {
         this.mouseSubs.add(callback);
     }
     subscribeToControlEvents(callback: (code: MessageCode, controlHandle: number) => void) {

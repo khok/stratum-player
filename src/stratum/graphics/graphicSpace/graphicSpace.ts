@@ -222,14 +222,17 @@ export class GraphicSpace implements GraphicSpaceState {
         });
     }
 
-    private dispatchMouseEvent(code: MessageCode, x: number, y: number) {
+    private dispatchMouseEvent(code: MessageCode, buttons: number, x: number, y: number) {
         this.subs.forEach((sub) => {
-            const shouldReceiveEvent =
-                (sub.msg === code || sub.msg === MessageCode.WM_ALLMOUSEMESSAGE) && //совпадает ли код сообщения
-                ((sub.objectHandle ? this.scene.testVisualIntersection(sub.objectHandle, x, y) : true) ||
-                    sub.klass.isCapturingEvents(this.handle));
+            if (!sub.klass.canReceiveEvents) return;
+            const msgMatch = sub.msg === code || sub.msg === MessageCode.WM_ALLMOUSEMESSAGE;
+            if (!msgMatch) return;
+            if (!sub.klass.isCapturingEvents(this.handle) && sub.objectHandle) {
+                const obj = this.getObjectFromPoint(x, y);
+                const handleMatch = obj ? obj.handle === sub.objectHandle : false;
+                if (!handleMatch && !this.scene.testVisualIntersection(sub.objectHandle, x, y)) return;
+            }
 
-            if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
             // sub.klass.setVarValueByLowCaseName("msg", code);
             // sub.klass.setVarValueByLowCaseName("xpos", x);
             // sub.klass.setVarValueByLowCaseName("ypos", y);
@@ -237,7 +240,7 @@ export class GraphicSpace implements GraphicSpaceState {
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "msg", code);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "xpos", x);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "ypos", y);
-            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "fwkeys", 0);
+            GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "fwkeys", buttons);
             sub.klass.computeSchemeRecursive(sub.ctx, true);
         });
     }
