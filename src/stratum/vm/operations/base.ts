@@ -142,7 +142,8 @@ function V_SQRT(ctx: VmStateContainer) {
     ctx.pushDouble(Math.sqrt(value) || 0);
 }
 function V_SQR(ctx: VmStateContainer) {
-    throw "V_SQR: NIMP";
+    const value = ctx.popDouble();
+    ctx.pushDouble(value * value);
 }
 function V_ED(ctx: VmStateContainer) {
     throw "V_ED: NIMP";
