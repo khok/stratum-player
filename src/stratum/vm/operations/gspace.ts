@@ -264,6 +264,18 @@ function SetVectorPoint2d(ctx: VmStateContainer) {
     ctx.pushDouble(obj && obj.type === "otLINE2D" ? obj.setPointPosition(index, x, y) : 0);
 }
 
+// FLOAT AddPoint2d(HANDLE HSpace, HANDLE HLine, FLOAT Numer, FLOAT x, FLOAT y)
+function AddPoint2d(ctx: VmStateContainer) {
+    const y = ctx.popDouble();
+    const x = ctx.popDouble();
+    const index = ctx.popDouble();
+    const lineHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+
+    const obj = _getObject(ctx, spaceHandle, lineHandle);
+    ctx.pushDouble(obj && obj.type === "otLINE2D" ? obj.addPoint(index, x, y) : 0);
+}
+
 // FLOAT IsObjectsIntersect2d(HANDLE HSpace, HANDLE obj1, HANDLE obj2, FLOAT flags)
 function IsObjectsIntersect2d(ctx: VmStateContainer) {
     const flags = ctx.popDouble();
@@ -395,6 +407,7 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.GETVECTORPOINT2DX, GetVectorPoint2dx);
     addOperation(Opcode.GETVECTORPOINT2DY, GetVectorPoint2dy);
     addOperation(Opcode.SETVECTORPOINT2D, SetVectorPoint2d);
+    addOperation(Opcode.ADDPOINT2D, AddPoint2d);
     addOperation(Opcode.V_ISINTERSECT2D, IsObjectsIntersect2d);
     addOperation(Opcode.SETOBJECTNAME2D, SetObjectName2d);
     addOperation(Opcode.OBJECTTOTOP2D, ObjectToTop2d);

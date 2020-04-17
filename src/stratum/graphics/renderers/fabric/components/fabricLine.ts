@@ -141,4 +141,16 @@ export class FabricLine implements LineElementVisual {
         this.visibleArea = size;
         this.requestRedraw();
     }
+
+    addPoint(index: number, x: number, y: number) {
+        if (index < 0) {
+            this.obj.points!.push(new fabric.Point(x, y));
+        } else {
+            this.obj.points!.splice(index, 0, new fabric.Point(x, y));
+        }
+        this.obj.set({ dirty: true, objectCaching: false }).setCoords();
+        const { size, position } = FabricLine.calcSize(this.obj.points!);
+        this.visibleArea = size;
+        this.requestRedraw();
+    }
 }

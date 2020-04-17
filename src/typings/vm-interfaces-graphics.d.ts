@@ -116,6 +116,7 @@ declare module "vm-interfaces-graphics" {
         brush: BrushToolState | undefined;
         getPoint(index: number): Point2D;
         setPointPosition(index: number, x: number, y: number): VmBool;
+        addPoint(index: number, x: number, y: number): VmBool;
     }
     export interface ControlObjectState extends _2DObjBaseState {
         readonly type: ControlElementData["type"];

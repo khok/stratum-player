@@ -53,6 +53,15 @@ export class LineObject extends Object2dMixin implements LineObjectState {
         this.visual.setPointPosition(index, x, y);
         return 1;
     }
+    addPoint(index: number, x: number, y: number): VmBool {
+        if (index === -1) {
+            this.points.push({ x, y });
+        } else {
+            this.points.splice(index, 0, { x, y });
+        }
+        this.visual.addPoint(index, x, y);
+        return 1;
+    }
     get pen() {
         return this._pen;
     }

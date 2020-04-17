@@ -16,6 +16,7 @@ declare module "scene-types" {
         updatePen(pen: PenToolState): void;
         updateBrush(brush: BrushToolState): void;
         setPointPosition(index: number, x: number, y: number): void;
+        addPoint(index: number, x: number, y: number): void;
     }
 
     export interface TextElementVisual extends _VisualBase {
