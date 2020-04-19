@@ -212,18 +212,18 @@ function updateRefsFromGroupsToElements(elements: ElementData[], map: Map<number
     }
 }
 
-function updateElementOrder(order: number[], map: Map<number, number>) {
+function mapElementOrder(order: number[], map: Map<number, number>) {
     return order.map((handle) => map.get(handle) || handle);
 }
 
-function recreateElementOrder(schemeElementOrder: number[], imageElementOrder: number[], fromHandle: number) {
-    const newElementOrder: number[] = [];
-    schemeElementOrder.forEach((handle) => {
-        if (handle !== fromHandle) newElementOrder.push(handle);
-        else imageElementOrder.forEach((chldH) => newElementOrder.push(chldH));
-    });
-    return newElementOrder;
-}
+// function recreateElementOrder(schemeElementOrder: number[], imageElementOrder: number[], fromHandle: number) {
+//     const newElementOrder: number[] = [];
+//     schemeElementOrder.forEach((handle) => {
+//         if (handle !== fromHandle) newElementOrder.push(handle);
+//         else imageElementOrder.forEach((chldH) => newElementOrder.push(chldH));
+//     });
+//     return newElementOrder;
+// }
 
 export class VdrMerger {
     scheme: VectorDrawData & { elements: ElementData[] }; //Сделаем свойство "elements" обязательным.
@@ -265,10 +265,14 @@ export class VdrMerger {
 
         if (!imageCopy.elementOrder) return;
 
-        const newOrder = updateElementOrder(imageCopy.elementOrder, map);
-        scheme.elementOrder = scheme.elementOrder
-            ? recreateElementOrder(scheme.elementOrder, newOrder, stubIconHandle)
-            : imageCopy.elementOrder;
+        const imageZOrder = mapElementOrder(imageCopy.elementOrder, map);
+        const schemeZOrder = scheme.elementOrder;
+
+        scheme.elementOrder = schemeZOrder ? schemeZOrder.concat(imageZOrder) : imageZOrder;
+        // const newOrder = mapElementOrder(imageCopy.elementOrder, map);
+        // scheme.elementOrder = scheme.elementOrder
+        //     ? recreateElementOrder(scheme.elementOrder, newOrder, stubIconHandle)
+        //     : imageCopy.elementOrder;
     }
 
     replaceIcon(rootGroupHandle: number, iconFile: string) {
