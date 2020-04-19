@@ -78,7 +78,7 @@ export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsS
                 throw new StratumError(`Группа #${handle} ссылается на объект #${h}, уже состоящий в другой группе`);
             return child;
         });
-        obj.addItems(childs.values());
+        obj.addItems(childs);
     }
 
     return allObjects;

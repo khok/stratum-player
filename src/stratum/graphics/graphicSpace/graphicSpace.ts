@@ -134,16 +134,16 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     createGroup(objectHandles: number[]): GroupObject | undefined {
-        const objects = new Array<GraphicObject>(objectHandles.length);
+        const items = new Array<GraphicObject>(objectHandles.length);
         for (let i = 0; i < objectHandles.length; i++) {
             const handle = objectHandles[i];
             const obj = this.getObject(handle);
             if (!obj) console.warn(`Попытка создать группу с несуществующим объектом ${handle}`);
-            else objects[i] = obj;
+            else items[i] = obj;
         }
 
         const handle = HandleMap.getFreeHandle(this.allObjects);
-        const obj = new GroupObject({ handle, items: objects.values() });
+        const obj = new GroupObject({ handle, items });
         this.allObjects.set(handle, obj);
         obj.handle = handle;
         return obj;

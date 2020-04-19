@@ -353,12 +353,11 @@ function GetGroupItem2d(ctx: VmStateContainer) {
 
     const group = _getObject(ctx, spaceHandle, groupHandle);
     if (group !== undefined && group.type === "otGROUP2D") {
-        for (const item of group.items) {
-            ctx.pushLong(item.handle);
-            return;
-        }
+        const obj = group.getItem(index);
+        ctx.pushLong(obj ? obj.handle : 0);
+    } else {
+        ctx.pushLong(0);
     }
-    ctx.pushLong(0);
 }
 
 // FLOAT DeleteGroup2d(HANDLE HSpace, HANDLE HGroup)

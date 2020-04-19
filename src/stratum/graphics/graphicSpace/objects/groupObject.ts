@@ -7,7 +7,7 @@ import { BaseObjectMixin } from "./baseObjectMixin";
 export interface GroupObjectOptions {
     handle: number;
     name?: string;
-    items?: IterableIterator<GraphicObject>;
+    items?: GraphicObject[];
 }
 
 //TODO: создать базовый класс для группы и 2д микина и пихнуть туда свойство name и присвоение группы.
@@ -19,7 +19,7 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     positionY: number = 0;
     width: number = 0;
     height: number = 0;
-    private myItems: Set<GraphicObject> = new Set();
+    readonly items: GraphicObject[] = [];
     constructor(data: GroupObjectOptions) {
         super(data);
         if (data.items) this.addItems(data.items);
@@ -45,8 +45,8 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     }
 
     //item operations
-    get items() {
-        return this.myItems.values();
+    getItem(index: number): GraphicObject | undefined {
+        return this.items[index];
     }
 
     hasItem(obj: GraphicObject): VmBool {
@@ -57,7 +57,7 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         return 1;
     }
 
-    addItems(items: IterableIterator<GraphicObject>): VmBool {
+    addItems(items: GraphicObject[]): VmBool {
         for (const it of items) this.addItemFast(it);
         this.recalcCoords();
         return 1;
@@ -65,21 +65,23 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
 
     private addItemFast(obj: GraphicObject): VmBool {
         if (obj.parent === this) return 0;
-        this.myItems.add(obj);
+        if (!this.items.includes(obj)) this.items.push(obj);
         obj._parent = this;
         return 1;
     }
 
     removeItem(obj: GraphicObject): VmBool {
         if (obj.parent !== this) return 0;
-        this.myItems.delete(obj);
+        const index = this.items.indexOf(obj);
+        if (index < 0) return 0;
+        this.items.splice(index, 1);
         this.recalcCoords();
         obj._parent = undefined;
         return 1;
     }
 
     removeAll(): VmBool {
-        this.myItems.forEach((o) => (o._parent = undefined));
+        this.items.forEach((o) => (o._parent = undefined));
         // this.myItems = new Set(); уже не нужно
         this.recalcCoords();
         return 1;

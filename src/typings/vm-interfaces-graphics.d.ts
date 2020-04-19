@@ -136,10 +136,10 @@ declare module "vm-interfaces-graphics" {
     }
     export interface GroupObjectState extends _2DObjBaseState {
         readonly type: GroupElementData["type"];
-        readonly items: IterableIterator<GraphicObjectState>;
-        hasItem(obj: _2DObjBaseState): VmBool;
+        getItem(index: number): GraphicObjectState | undefined;
+        hasItem(obj: GraphicObjectState): VmBool;
         addItem(obj: GraphicObjectState): VmBool;
-        removeItem(obj: _2DObjBaseState): VmBool;
+        removeItem(obj: GraphicObjectState): VmBool;
         removeAll(): VmBool;
     }
 
