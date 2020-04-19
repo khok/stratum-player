@@ -19,7 +19,7 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     positionY: number = 0;
     width: number = 0;
     height: number = 0;
-    readonly items: GraphicObject[] = [];
+    items: GraphicObject[] = [];
     constructor(data: GroupObjectOptions) {
         super(data);
         if (data.items) this.addItems(data.items);
@@ -72,23 +72,18 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
 
     removeItem(obj: GraphicObject): VmBool {
         if (obj.parent !== this) return 0;
+        obj._parent = undefined;
         const index = this.items.indexOf(obj);
         if (index < 0) return 0;
         this.items.splice(index, 1);
-        this.recalcCoords();
-        obj._parent = undefined;
-        return 1;
-    }
-
-    removeAll(): VmBool {
-        this.items.forEach((o) => (o._parent = undefined));
-        // this.myItems = new Set(); уже не нужно
         this.recalcCoords();
         return 1;
     }
 
     destroy() {
-        this.removeAll();
+        this.items.forEach((o) => (o._parent = undefined));
+        this.items = [];
+        if (this.parent) this.parent.removeItem(this._subclassInstance);
     }
 
     //obj2d operations

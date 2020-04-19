@@ -168,13 +168,21 @@ export class GraphicSpace implements GraphicSpaceState {
     deleteObject(handle: number): VmBool {
         const obj = this.allObjects.get(handle);
         if (!obj) return 0;
-        obj.destroy();
         if (obj.type !== "otGROUP2D") {
+            obj.destroy();
             this.scene.removeObject(obj.visual);
         } else {
-            for (const item of obj.items) this.deleteObject(item.handle);
+            const items = obj.items;
+            obj.destroy();
+            for (const item of items) this.deleteObject(item.handle);
         }
         this.allObjects.delete(handle);
+        return 1;
+    }
+
+    deleteGroup(group: GroupObject): VmBool {
+        group.destroy();
+        this.allObjects.delete(group.handle);
         return 1;
     }
 

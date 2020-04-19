@@ -368,14 +368,10 @@ function DeleteGroup2d(ctx: VmStateContainer) {
     const space = ctx.windows.getSpace(spaceHandle);
     if (space) {
         const group = space.getObject(groupHandle);
-        if (group !== undefined && group.type === "otGROUP2D") {
-            group.removeAll();
-            space.deleteObject(group.handle);
-            ctx.pushDouble(1);
-            return;
-        }
+        ctx.pushDouble(group !== undefined && group.type === "otGROUP2D" ? space.deleteGroup(group) : 0);
+    } else {
+        ctx.pushDouble(0);
     }
-    ctx.pushDouble(0);
 }
 
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {

@@ -140,7 +140,6 @@ declare module "vm-interfaces-graphics" {
         hasItem(obj: GraphicObjectState): VmBool;
         addItem(obj: GraphicObjectState): VmBool;
         removeItem(obj: GraphicObjectState): VmBool;
-        removeAll(): VmBool;
     }
 
     export type GraphicObjectState =
@@ -164,6 +163,7 @@ declare module "vm-interfaces-graphics" {
         createGroup(objectHandles: number[]): GroupObjectState | undefined;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
+        deleteGroup(object: GroupObjectState): VmBool;
         moveObjectToTop(handle: number): VmBool;
 
         subscribe(ctx: VmStateContainer, klass: ClassState, msg: number, objectHandle: number, flags: number): void;
