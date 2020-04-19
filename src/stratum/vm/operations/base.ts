@@ -113,9 +113,6 @@ function LONG_TO_FLOAT(ctx: VmStateContainer) {
     ctx.pushDouble(ctx.popLong());
 }
 
-function GETTICKCOUNT(ctx: VmStateContainer) {
-    throw "GETTICKCOUNT: NIMP";
-}
 function V_SIN(ctx: VmStateContainer) {
     ctx.pushDouble(Math.sin(ctx.popDouble()));
 }
@@ -531,7 +528,6 @@ export function initBase(addOperation: (opcode: number, operation: Operation) =>
     addOperation(Opcode.FLOAT_TO_LONG, FLOAT_TO_LONG);
     addOperation(Opcode.LONG_TO_FLOAT, LONG_TO_FLOAT);
     addOperation(Opcode._POP_STRING_OLD, _POP_STRING_OLD);
-    addOperation(Opcode.GETTICKCOUNT, GETTICKCOUNT);
     addOperation(Opcode.V_SIN, V_SIN);
     addOperation(Opcode.V_COS, V_COS);
     addOperation(Opcode.V_ASIN, V_ASIN);

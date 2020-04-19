@@ -129,6 +129,12 @@ function GetWorkAreaHeight(ctx: VmStateContainer) {
     ctx.pushDouble(ctx.windows.areaHeight);
 }
 
+const start = new Date().getMilliseconds();
+// FLOAT GetTickCount()
+function GetTickCount(ctx: VmStateContainer) {
+    ctx.pushDouble(new Date().getTime() - start);
+}
+
 export function initSystem(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETAKEYSTATE, GetAsyncKeyState);
     addOperation(Opcode.V_CLOSEALL, CloseAll);
@@ -144,4 +150,5 @@ export function initSystem(addOperation: (opcode: number, operation: Operation) 
     addOperation(Opcode.ADDSLASH, AddSlash);
     addOperation(Opcode.VM_GETDATE, GetDate);
     addOperation(Opcode.VM_GETTIME, GetTime);
+    addOperation(Opcode.GETTICKCOUNT, GetTickCount);
 }
