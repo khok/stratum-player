@@ -49,7 +49,7 @@ declare module "vm-types" {
         readonly memoryState: MemoryState;
         readonly canExecuteClass: boolean;
         readonly windows: WindowSystemController;
-        readonly input: InputSystemController;
+        // readonly input: InputSystemController;
         readonly project: ProjectController;
 
         // stackPush(value: string | number): void;

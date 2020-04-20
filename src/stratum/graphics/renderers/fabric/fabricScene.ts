@@ -249,7 +249,7 @@ export class FabricScene implements Scene {
         return true;
     }
 
-    forceRender() {
+    renderImages() {
         this.canvas.renderAll();
         this.shouldRedraw = false;
     }

@@ -149,12 +149,9 @@ function dataToProtos(classes: Map<string, ClassData>) {
 
 //ClassData -> ClassPrototype(ClassData) -> VarArrayNode(ClassData, ClassPrototype) -> ClassSchemeNode(VarArrayNode, ClassPrototype)
 
-export function createClassScheme(
-    rootName: string,
-    classLibrary: Map<string, ClassData>
-): { mmanager: MemoryManager; root: ClassSchemeNode } {
+export function createClassTree(rootName: string, classesData: Map<string, ClassData>) {
     //Переводим "сырые" считанные данные в прототипы классов.
-    const protos = dataToProtos(classLibrary);
+    const protos = dataToProtos(classesData);
 
     //резервируем нуль, чтобы проверять есть ли где то ошибки.
     let doubleVarCount = 1,
@@ -173,12 +170,12 @@ export function createClassScheme(
     };
 
     //Создаем граф переменных и конвертируем его в граф классов.
-    const root = new VarArrayNode(rootName, protos, counter).toClassSchemeNode();
+    const classTree = new VarArrayNode(rootName, protos, counter).toClassSchemeNode();
 
     const mmanager = new MemoryManager({ doubleVarCount, longVarCount, stringVarCount });
     //Инициализируем память каждого узла графа.
-    root.initDefaultValuesRecursive(mmanager);
+    classTree.initDefaultValuesRecursive(mmanager);
     // mmanager.assertDefaultValuesInitialized();
 
-    return { mmanager, root };
+    return { mmanager, classTree };
 }

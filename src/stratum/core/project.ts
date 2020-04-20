@@ -1,115 +1,49 @@
-import { ClassData, VarSetData } from "data-types-base";
+import { ClassData } from "data-types-base";
 import { ProjectController, VmBool } from "vm-interfaces-base";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
-import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
-import { FabricScene } from "~/graphics/renderers/fabric/fabricScene";
-import { WindowSystem, MyResolver } from "~/graphics/windowSystem";
+import { MyResolver } from "~/graphics/windowSystem";
 import { createComposedScheme } from "~/helpers/graphics";
-import { VmContext } from "~/vm/vmContext";
 import { ClassSchemeNode } from "./classSchemeNode";
-import { createClassScheme } from "./createClassScheme";
-import { MemoryManager } from "./memoryManager";
+
+export interface ProjectData {
+    allClasses: ClassSchemeNode[];
+    classesData: Map<string, ClassData>;
+}
 
 export interface ProjectOptions {
-    iconsPath?: string;
-    debug_disableSchemeComposition?: boolean;
+    debug_disableSchemeCompose?: boolean;
 }
 
 export class Project implements ProjectController {
-    static create(
-        {
-            rootName,
-            classes,
-            windowSystem,
-            varSet,
-            images,
-        }: {
-            rootName: string;
-            classes: Map<string, ClassData>;
-            windowSystem: WindowSystem;
-            varSet?: VarSetData;
-            images?: { filename: string; data: Uint8Array }[];
-        },
-        options?: ProjectOptions
-    ) {
-        const { root, mmanager } = createClassScheme(rootName, classes);
-        if (varSet) root.applyVarSetRecursive(varSet);
-        mmanager.initValues();
-        return new Project({ scheme: root, classes, mmanager, windowSystem, images }, options);
-    }
+    private classNodes: ClassSchemeNode[];
+    private classesData: Map<string, ClassData>;
 
-    private scheme: ClassSchemeNode;
-    private cachedNodes: ClassSchemeNode[];
-    private classCollection: Map<string, ClassData>;
-    private vm: VmContext;
-    private mmanager: MemoryManager;
-    private globalImgLoader: SimpleImageLoader;
-
-    constructor(
-        data: {
-            scheme: ClassSchemeNode;
-            classes: Map<string, ClassData>;
-            images?: { filename: string; data: Uint8Array }[];
-            windowSystem: WindowSystem;
-            mmanager: MemoryManager;
-        },
-        private options?: ProjectOptions
-    ) {
-        const iconsPath = (options && options.iconsPath) || "data/icons";
-        this.globalImgLoader = new SimpleImageLoader(iconsPath, data.images);
-        this.classCollection = data.classes;
-        this.scheme = data.scheme;
-        this.mmanager = data.mmanager;
-        this.vm = new VmContext({
-            project: this,
-            windows: data.windowSystem,
-            memoryState: data.mmanager,
-            input: {} as any,
-        });
-        this.cachedNodes = this.scheme.collectNodes();
-    }
-
-    get error() {
-        return this.vm.error;
-    }
-
-    oneStep() {
-        this.scheme.computeSchemeRecursive(this.vm);
-        if (this.vm.hasError || this.vm.shouldStop) return false;
-        this.mmanager.syncValues();
-        this.mmanager.assertZeroIndexEmpty();
-        return true;
-    }
-
-    reset() {
-        console.warn("Проект остановлен");
+    constructor(data: ProjectData, private options?: ProjectOptions) {
+        this.classNodes = data.allClasses;
+        this.classesData = data.classesData;
     }
 
     createSchemeInstance(className: string): MyResolver | undefined {
-        const data = this.classCollection.get(className);
+        const data = this.classesData.get(className);
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const vdr =
-            (!this.options || !this.options.debug_disableSchemeComposition) && data.childInfo
-                ? createComposedScheme(data.scheme, data.childInfo, this.classCollection)
+            (!this.options || !this.options.debug_disableSchemeCompose) && data.childInfo
+                ? createComposedScheme(data.scheme, data.childInfo, this.classesData)
                 : data.scheme;
-        return (opts) => {
-            const space = GraphicSpace.fromVdr(className, vdr, this.globalImgLoader, new FabricScene(opts));
-            this.globalImgLoader.allImagesLoaded.then(() => space.scene.forceRender());
-            return space;
-        };
+        return ({ imageResolver, scene }) => GraphicSpace.fromVdr(className, vdr, imageResolver, scene);
     }
     hasClass(className: string): VmBool {
-        return this.classCollection.get(className) ? 1 : 0;
+        return this.classesData.get(className) ? 1 : 0;
     }
     getClassDir(className: string): string {
-        const cl = this.classCollection.get(className);
+        const cl = this.classesData.get(className);
         if (!cl) return "";
         const idx = cl.fileName.lastIndexOf("\\");
         return cl.fileName.substr(0, idx + 1);
     }
     *getClassesByProtoName(className: string): IterableIterator<ClassSchemeNode> {
         //TODO: ПЕРЕПИСАТЬ
-        for (const node of this.cachedNodes) if (node.protoName === className) yield node;
+        for (const node of this.classNodes) if (node.protoName === className) yield node;
     }
 }

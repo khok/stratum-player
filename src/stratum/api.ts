@@ -3,84 +3,67 @@
  */
 
 import { JSZipObject } from "jszip";
-import { Project, ProjectOptions } from "~/core/project";
 import { readProjectData, openZipFromFileList, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
-import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { StratumError } from "./helpers/errors";
 import { formatMissingCommands, showMissingCommands } from "./helpers/showMissingCommands";
 import { VmOperations } from "./vm/operations";
 import { ClassData } from "data-types-base";
 import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
+import { Player, PlayerOptions, PlayerData } from "./player";
+import { WindowSystemOptions } from "./graphics/windowSystem";
 
-export class Player {
+export class ExtendedPlayer {
     private paused: boolean = false;
     private dispatcher = new EventDispatcher();
-    constructor(public project: Project, public windows: WindowSystem) {
-        windows.dispatcher = this.dispatcher;
+    private player: Player;
+    constructor(data: PlayerData, options?: PlayerOptions) {
+        if (!options) options = {};
+        options.dispatcher = this.dispatcher;
+        this.player = new Player(data, options);
     }
     setGraphicOptions(options: WindowSystemOptions) {
-        this.windows.set(options);
+        this.player.set(options);
     }
     get playing() {
         return !this.paused;
     }
-    play({ caller, activateByEvent }: { caller?: (fn: () => void) => void; activateByEvent?: boolean } = {}) {
-        if (!caller) caller = window.requestAnimationFrame;
+    play(caller: (fn: () => void) => void = window.requestAnimationFrame) {
         this.paused = false;
-        let cont = true;
-        if (activateByEvent) {
-            this.windows.globalCanvas!.addEventListener("mousemove", () => (cont = true));
-            this.windows.globalCanvas!.addEventListener("mousedown", () => (cont = true));
-            this.windows.globalCanvas!.addEventListener("mouseup", () => (cont = true));
-        }
-        let callback: any;
         return new Promise((resolve, reject) => {
-            callback = () => {
-                if (this.windows.renderAll()) cont = true;
-                if (activateByEvent && !cont) {
-                    caller!(callback);
+            const callback = () => {
+                this.player.render();
+                if (this.paused) {
+                    if (this.player.error) {
+                        reject(new StratumError(this.player.error));
+                    } else {
+                        resolve();
+                    }
                     return;
                 }
-                cont = false;
-                if (!this.project.oneStep()) {
-                    this.pause();
-                    if (this.project.error) {
-                        reject(new StratumError(this.project.error));
-                        return;
-                    }
-                }
-                if (!this.paused) caller!(callback);
-                else resolve();
+                this.paused = !this.player.step();
+                caller!(callback);
             };
-            caller!(callback);
+            caller(callback);
         });
-    }
-    stop() {
-        console.warn("Пока не умею возвращать проекты в исходное состояние");
-        return;
-        this.pause();
-        this.project.reset();
     }
     pause() {
         this.paused = true;
     }
     oneStep() {
         this.paused = true;
-        this.project.oneStep();
-        this.windows.renderAll();
-        if (this.project.error) throw new StratumError(this.project.error);
+        this.player.step();
+        if (this.player.error) throw new StratumError(this.player.error);
+        this.player.render();
     }
     on(event: EventType, fn: (...data: any) => void) {
         this.dispatcher.on(event, fn);
     }
 }
 
-export type PlayerOptions = ReadOptions & {
-    graphicOptions?: WindowSystemOptions;
-    projectOptions?: ProjectOptions;
+export interface ExtendedPlayerOptions extends PlayerOptions, ReadOptions {
     preloadedLibs?: JSZipObject[];
     continueOnErrorCallback?: (msg: string) => boolean;
-};
+}
 
 function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg: string) => boolean) {
     const { errors, missingOperations } = showMissingCommands(collection, VmOperations);
@@ -91,29 +74,55 @@ function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg
     return callback("Возникли ошибки (см в консоли (F12))\nВсе равно запустить?");
 }
 
-export async function fromZip(zip: JSZipObject[], options?: PlayerOptions) {
-    const { rootName, collection, varSet, images } = await readProjectData(zip, options);
-    if (!handlePossibleErrors(collection, (options && options.continueOnErrorCallback) || confirm)) return undefined;
-    const windowSystem = new WindowSystem(options && options.graphicOptions);
-    return new Player(
-        Project.create(
-            { rootName, classes: collection, windowSystem, varSet, images },
-            options && options.projectOptions
-        ),
-        windowSystem
-    );
+export async function fromZip(zip: JSZipObject[], options?: ExtendedPlayerOptions) {
+    const data = await readProjectData(zip, options);
+    if (!handlePossibleErrors(data.classesData, (options && options.continueOnErrorCallback) || confirm))
+        return undefined;
+    return new ExtendedPlayer(data, options);
 }
 
-export async function fromUrl(url: string | string[], options?: PlayerOptions) {
+export async function fromUrl(url: string | string[], options?: ExtendedPlayerOptions) {
     const zip = await openZipFromUrl(url);
     const addLibs = options && options.preloadedLibs;
     return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
 }
 
-export async function fromFileList(files: FileList, options?: PlayerOptions) {
+export async function fromFileList(files: FileList, options?: ExtendedPlayerOptions) {
     const zip = await openZipFromFileList(files);
     const addLibs = options && options.preloadedLibs;
     return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
 }
 
 export { openZipFromUrl as loadLibraryFromUrl, openZipFromFileList as loadLibraryFromFileList };
+
+// play({ caller, activateByEvent }: { caller?: (fn: () => void) => void; activateByEvent?: boolean } = {}) {
+//     if (!caller) caller = window.requestAnimationFrame;
+//     this.paused = false;
+//     let cont = true;
+//     if (activateByEvent) {
+//         this.windows.globalCanvas!.addEventListener("mousemove", () => (cont = true));
+//         this.windows.globalCanvas!.addEventListener("mousedown", () => (cont = true));
+//         this.windows.globalCanvas!.addEventListener("mouseup", () => (cont = true));
+//     }
+//     let callback: any;
+//     return new Promise((resolve, reject) => {
+//         callback = () => {
+//             if (this.player.render()) cont = true;
+//             if (activateByEvent && !cont) {
+//                 caller!(callback);
+//                 return;
+//             }
+//             cont = false;
+//             if (!this.player.step()) {
+//                 this.pause();
+//                 if (this.player.error) {
+//                     reject(new StratumError(this.player.error));
+//                     return;
+//                 }
+//             }
+//             if (!this.paused) caller!(callback);
+//             else resolve();
+//         };
+//         caller!(callback);
+//     });
+// }

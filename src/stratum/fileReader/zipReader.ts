@@ -111,16 +111,18 @@ export async function readAllClassFiles(files: JSZipObject[], silent = false) {
     return res;
 }
 
-export async function readProjectFile(files: JSZipObject[], filename: string = "project.spj") {
-    const prjBytes = await unzipFile(findSingleFile(files, filename));
+export async function readProjectFile(files: JSZipObject[], filename: string) {
+    const file = findSingleFile(files, filename);
+    if (!file) throw new StratumError(`Файл проекта ${filename} не найден`);
+    const prjBytes = await unzipFile(file);
     return readProjectName(new BinaryStream(prjBytes.data));
 }
 
-export async function readVarsFile(files: JSZipObject[], filename: string = "_preload.stt") {
+export async function readVarsFile(files: JSZipObject[], filename: string) {
     const file = findSingleFile(files, filename, false);
     if (!file) return undefined;
-    const preloadBytes = await unzipFile(file);
-    return readVarSetData(new BinaryStream(preloadBytes.data));
+    const varSetBytes = await unzipFile(file);
+    return readVarSetData(new BinaryStream(varSetBytes.data));
 }
 
 export async function readImageFiles(files: JSZipObject[]) {

@@ -1,14 +1,17 @@
+import { HTMLInputElementsFactory, ImageResolver } from "internal-graphic-types";
+import { Scene } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
 import { WindowState, WindowSystemController } from "vm-interfaces-windows";
 import { StratumError } from "~/helpers/errors";
-import { GraphicSpace } from "./graphicSpace/graphicSpace";
-import { HTMLInputElementsFactory } from "internal-graphic-types";
+import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { HandleMap } from "~/helpers/handleMap";
 import { HtmlFactory } from "~/helpers/htmlFactory";
-import { EventDispatcher } from "~/helpers/eventDispatcher";
+import { GraphicSpace } from "./graphicSpace/graphicSpace";
+import { FabricScene } from "./renderers/fabric/fabricScene";
+import { SimpleImageLoader } from "./simpleImageLoader";
 
 class Window implements WindowState {
-    constructor(public space: GraphicSpace, private size: { x: number; y: number }) {}
+    constructor(public space: GraphicSpace, private size: { x: number; y: number }, private resizable: boolean) {}
     originX: number = 0;
     originY: number = 0;
     setOrigin(x: number, y: number): VmBool {
@@ -23,10 +26,10 @@ class Window implements WindowState {
         return this.size.y;
     }
     setSize(width: number, height: number): VmBool {
-        console.warn("Обнаружено программное изменение размеров окна");
         this.size.x = width;
         this.size.y = height;
-        this.space.scene.adaptToNewSize(width, height);
+        if (this.resizable) this.space.scene.adaptToNewSize(width, height);
+        else console.warn("Программное изменение размеров окна отключено");
         return 1;
     }
 
@@ -36,49 +39,49 @@ class Window implements WindowState {
 }
 
 export interface WindowSystemOptions {
-    dispatcher?: EventDispatcher;
-    multiwindow?: boolean;
-    globalCanvas?: HTMLCanvasElement;
-    htmlRoot?: HTMLElement;
+    screenWidth?: number;
+    screenHeight?: number;
     areaOriginX?: number;
     areaOriginY?: number;
     areaWidth?: number;
     areaHeight?: number;
-    screenWidth?: number;
-    screenHeight?: number;
+    htmlRoot?: HTMLElement;
+    dispatcher?: EventDispatcher;
+    multiwindow?: boolean;
+    globalCanvas?: HTMLCanvasElement;
+    disableSceneResize?: boolean;
 }
 
-export type MyResolver = (options: {
-    canvas: HTMLCanvasElement;
-    inputFactory?: HTMLInputElementsFactory;
-}) => GraphicSpace;
+export type MyResolver = (data: { imageResolver: ImageResolver; scene: Scene }) => GraphicSpace;
 
 export class WindowSystem implements WindowSystemOptions, WindowSystemController {
+    screenWidth: number = 0;
+    screenHeight: number = 0;
     areaOriginX: number = 0;
     areaOriginY: number = 0;
     areaWidth: number = 0;
     areaHeight: number = 0;
-    screenHeight: number = 0;
-    screenWidth: number = 0;
-    globalCanvas?: HTMLCanvasElement;
     inputFactory?: HTMLInputElementsFactory;
-    multiwindow?: boolean;
     dispatcher?: EventDispatcher;
+    multiwindow?: boolean;
+    globalCanvas?: HTMLCanvasElement;
+    disableSceneResize?: boolean;
 
     private spaces = HandleMap.create<GraphicSpace>();
     private windows = new Map<string, Window>();
-    private spaceToWindowMap = HandleMap.create<string>();
-    constructor(options: WindowSystemOptions = {}) {
-        this.set(options);
+    private spaceToWinNameMap = HandleMap.create<string>();
+    constructor(private imageLoader: SimpleImageLoader, options?: WindowSystemOptions) {
+        this.set(options || {});
     }
 
     set(options: WindowSystemOptions) {
-        this.inputFactory = this.inputFactory || (options && options.htmlRoot && new HtmlFactory(options.htmlRoot));
+        this.inputFactory = options.htmlRoot ? new HtmlFactory(options.htmlRoot) : this.inputFactory;
         Object.assign(this, options);
         return this;
     }
 
     createSchemeWindow(windowName: string, flags: string, createSpace: MyResolver): number {
+        if (flags !== "") console.warn(`Флаги окна не поддерживаются: "${flags}"`);
         if (this.hasWindow(windowName)) throw new StratumError(`Окно ${windowName} уже существует`);
 
         let canvas: HTMLCanvasElement;
@@ -91,18 +94,22 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
             if (this.dispatcher) this.dispatcher.dispatch("WINDOW_CREATED", windowName);
             canvas = this.globalCanvas;
         }
+        const scene = new FabricScene({ canvas, inputFactory: this.inputFactory });
 
-        const spaceHandle = HandleMap.getFreeHandle(this.spaces); //поменять, т.к. стратум присваивает их иначе
-        const space = createSpace({ canvas, inputFactory: this.inputFactory });
+        const spaceHandle = HandleMap.getFreeHandle(this.spaces);
+        const space = createSpace({ scene, imageResolver: this.imageLoader });
         space.handle = spaceHandle;
         this.spaces.set(spaceHandle, space);
-        this.windows.set(windowName, new Window(space, { x: canvas.width, y: canvas.height }));
-        this.spaceToWindowMap.set(spaceHandle, windowName);
+        this.windows.set(
+            windowName,
+            new Window(space, { x: canvas.width, y: canvas.height }, !this.disableSceneResize)
+        );
+        this.spaceToWinNameMap.set(spaceHandle, windowName);
         return spaceHandle;
     }
 
     getWindowBySpaceHandle(spaceHandle: number) {
-        return this.spaceToWindowMap.get(spaceHandle);
+        return this.spaceToWinNameMap.get(spaceHandle);
     }
 
     renderAll() {

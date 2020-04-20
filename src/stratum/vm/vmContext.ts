@@ -1,6 +1,12 @@
-import { ClassState, InputSystemController, ProjectController, MemoryState } from "vm-interfaces-base";
+import { ClassState, ProjectController, MemoryState } from "vm-interfaces-base";
 import { VmStateContainer, VirtualMachine } from "vm-types";
 import { WindowSystemController } from "vm-interfaces-windows";
+
+export interface VmContextData {
+    windows: WindowSystemController;
+    project: ProjectController;
+    memoryState: MemoryState;
+}
 
 export class VmContext implements VmStateContainer, VirtualMachine {
     public nextCmdIndex = 0;
@@ -21,24 +27,14 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     private _hasError = false;
 
     readonly windows: WindowSystemController;
-    readonly input: InputSystemController;
+    // readonly input: InputSystemController;
     readonly project: ProjectController;
     readonly memoryState: MemoryState;
 
     currentClass!: ClassState; //сделаем публичным для чуть быстрого доступа к нему.
-    constructor({
-        windows,
-        input,
-        project,
-        memoryState,
-    }: {
-        windows: WindowSystemController;
-        input: InputSystemController;
-        project: ProjectController;
-        memoryState: MemoryState;
-    }) {
+    constructor({ windows, project, memoryState }: VmContextData) {
         this.windows = windows;
-        this.input = input;
+        // this.input = input;
         this.project = project;
         this.memoryState = memoryState;
     }

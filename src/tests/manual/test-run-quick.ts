@@ -1,7 +1,7 @@
-import { fromUrl, PlayerOptions } from "~/api";
+import { fromUrl, ExtendedPlayerOptions } from "~/api";
 
 //Запуск проекта `name` с использованием api.ts
-export async function _run_test_quick(name: string, opts: PlayerOptions, timeout: number) {
+export async function _run_test_quick(name: string, opts: ExtendedPlayerOptions, timeout: number) {
     const player = await fromUrl([`test_projects/${name}.zip`, "/data/library.zip"], opts);
     console.dir(player);
     if (!player) return;
@@ -17,9 +17,9 @@ export async function _run_test_quick(name: string, opts: PlayerOptions, timeout
         return;
     }
     console.log("Тест завершен");
-    for (let i = 0; i < 10; i++) {
-        await new Promise((res) => setTimeout(res, 400));
-        player.oneStep();
-        console.log("Шаг ", i + 1);
-    }
+    // for (let i = 0; i < 10; i++) {
+    //     await new Promise((res) => setTimeout(res, 400));
+    //     player.oneStep();
+    //     console.log("Шаг ", i + 1);
+    // }
 }

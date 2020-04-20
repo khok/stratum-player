@@ -22,7 +22,6 @@ import { VmContext } from "~/vm/vmContext";
     mmanager.initValues();
 
     const vm = new VmContext({
-        input: <any>{},
         memoryState: mmanager,
         project: <any>{},
         windows: <any>{},

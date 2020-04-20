@@ -6,8 +6,8 @@ import { HandleMap } from "~/helpers/handleMap";
 
 (async function () {
     const files = await openZipFromUrl("test_projects/texts_test.zip");
-    const { collection, rootName } = await readProjectData(files);
-    const scheme = collection.get(rootName)!.scheme!;
+    const { classesData, rootName } = await readProjectData(files);
+    const scheme = classesData.get(rootName)!.scheme!;
     console.dir(scheme);
     const tools = createTools(scheme, {} as any);
     ((tools as any).texts as HandleMap<TextTool>).forEach((t, idx) => {
@@ -17,7 +17,7 @@ import { HandleMap } from "~/helpers/handleMap";
     console.log("Text assembly test comlpeted");
     // const cv = document.getElementById("canvas") as HTMLCanvasElement;
     // const ws = new WindowSystem({ globalCanvas: cv });
-    // const proj = Project.create(rootName, collection, ws);
+    // const proj = Project.create(rootName, classesData, ws);
     // const resolver = proj.createSchemeInstance(rootName)!;
     // ws.createSchemeWindow("Test", "", resolver);
     // ws.renderAll();

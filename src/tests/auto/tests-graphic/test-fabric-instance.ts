@@ -2,32 +2,31 @@ import { equal } from "assert";
 import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { GroupObject } from "~/graphics/graphicSpace/objects";
-import { SimpleImageLoader } from "~/graphics/graphicSpace/simpleImageLoader";
-import { FabricScene } from "~/graphics/renderers/fabric/fabricScene";
+import { SimpleImageLoader } from "~/graphics/simpleImageLoader";
 import { createComposedScheme } from "~/helpers/graphics";
 import { WindowSystem } from "~/graphics/windowSystem";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 
 (async function () {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
-    const { collection } = await readProjectData(zip);
-    const cl = collection.get("WorkSpace")!;
+    const { classesData } = await readProjectData(zip);
+    const cl = classesData.get("WorkSpace")!;
     const cdata = cl.childInfo!;
     const oldvdr = cl.scheme!;
-    const vdr = createComposedScheme(oldvdr, cdata, collection);
+    const vdr = createComposedScheme(oldvdr, cdata, classesData);
     const cv = document.getElementById("canvas") as HTMLCanvasElement;
     const dsp = new EventDispatcher();
-    const ws = new WindowSystem({ globalCanvas: cv, dispatcher: dsp });
+    const imgLoader = new SimpleImageLoader("data/icons");
+    const ws = new WindowSystem(imgLoader, { globalCanvas: cv, dispatcher: dsp });
     dsp.on("WINDOW_CREATED", (name) => (document.title = name));
 
-    const globalImgLoader = new SimpleImageLoader("data/icons");
-    ws.createSchemeWindow("Test Window", "", (opts) =>
-        GraphicSpace.fromVdr("WorkSpace", vdr, globalImgLoader, new FabricScene({ canvas: opts.canvas }))
+    ws.createSchemeWindow("Test Window", "", ({ imageResolver, scene }) =>
+        GraphicSpace.fromVdr("WorkSpace", vdr, imageResolver, scene)
     );
     equal(document.title, "Test Window");
     const space = ws.getSpace(1)!;
-    globalImgLoader.allImagesLoaded.then(() => {
-        space.scene.forceRender();
+    imgLoader.allImagesLoaded.then(() => {
+        space.scene.renderImages();
     });
     setTimeout(() => {
         space.setOrigin(30, 30);

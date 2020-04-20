@@ -11,7 +11,7 @@ export class SimpleImageLoader implements ImageResolver {
     private cachedIcons = new Map<string, HTMLImageElement>();
     private promises = new Set<Promise<HTMLImageElement>>();
 
-    constructor(private iconsUrlPath: string, private bmpFiles?: { filename: string; data: Uint8Array }[]) {}
+    constructor(private iconsUrlPath: string, private projectImages?: { filename: string; data: Uint8Array }[]) {}
 
     private createImage(data: Promise<BmpImage> | string): HTMLImageElement {
         const img = new Image();
@@ -54,9 +54,9 @@ export class SimpleImageLoader implements ImageResolver {
     }
 
     fromProjectFile(bmpFilename: string, isDouble: boolean) {
-        if (!this.bmpFiles) throw new StratumError(`В каталоге проекта нет изображений`);
+        if (!this.projectImages) throw new StratumError(`В каталоге проекта нет изображений`);
         const name = bmpFilename.replace(/\\\\/g, "\\").toLowerCase();
-        const file = this.bmpFiles.find((f) => f.filename.toLowerCase().endsWith(name));
+        const file = this.projectImages.find((f) => f.filename.toLowerCase().endsWith(name));
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
         const stream = new BinaryStream(file.data);
         const { image, width, height } = file.filename.endsWith("bmp") ? readBitmap(stream) : readDoubleBitmap(stream);

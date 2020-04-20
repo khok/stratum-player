@@ -22,18 +22,17 @@ export async function openStreamFromUrl(url: string) {
 export type ReadOptions = {
     projectFile?: string;
     sttFile?: string;
-    customRoot?: string;
+    customRootClass?: string;
 };
 
 export async function readProjectData(data: JSZipObject[], options?: ReadOptions) {
-    const customRoot = options && options.customRoot;
-    const ignorePrj = options && options.projectFile === "";
-    const ignoreStt = options && options.sttFile === "";
+    if (!options) options = {};
+    const projectFile = options.projectFile || "project.spj";
+    const sttFile = options.sttFile || "_preload.stt";
 
-    if (!customRoot && ignorePrj) throw new Error("Главный класс не выбран");
-    const rootName = customRoot || (await readProjectFile(data, options && options.projectFile));
-    const collection = await readClassFiles(data, rootName);
-    const varSet = ignoreStt ? undefined : await readVarsFile(data, options && options.sttFile);
+    const rootName = options.customRootClass || (await readProjectFile(data, projectFile));
+    const classesData = await readClassFiles(data, rootName);
+    const varSet = await readVarsFile(data, sttFile);
     const images = await readImageFiles(data);
-    return { rootName, collection, varSet, images };
+    return { rootName, classesData, varSet, images };
 }
