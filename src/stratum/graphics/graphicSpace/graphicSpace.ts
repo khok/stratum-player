@@ -1,14 +1,14 @@
 import { Point2D, VectorDrawData } from "data-types-graphics";
-import { ImageResolver } from "internal-graphic-types";
 import { Scene } from "scene-types";
 import { ClassState, VmBool } from "vm-interfaces-base";
 import { GraphicSpaceState } from "vm-interfaces-graphics";
 import { VmStateContainer } from "vm-types";
 import { HandleMap } from "~/helpers/handleMap";
 import { MessageCode } from "~/helpers/vmConstants";
+import { BitmapToolFactory } from "./bitmapToolFactory";
 import { createObjects, createTools } from "./createToolsAndObjects";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
-import { GraphicObject, GroupObject, TextObject, LineObject, BitmapObject } from "./objects";
+import { BitmapObject, GraphicObject, GroupObject, LineObject, TextObject } from "./objects";
 import { BrushTool } from "./tools";
 
 export interface GraphicSpaceSubsciber {
@@ -22,8 +22,8 @@ export interface GraphicSpaceSubsciber {
  * Графическое пространство, содержащее инструменты и объекты.
  */
 export class GraphicSpace implements GraphicSpaceState {
-    static fromVdr(sourceFilename: string, vdr: VectorDrawData, imageLoader: ImageResolver, scene: Scene) {
-        const tools = createTools(vdr, imageLoader);
+    static fromVdr(sourceFilename: string, vdr: VectorDrawData, bmpFactory: BitmapToolFactory, scene: Scene) {
+        const tools = createTools(vdr, bmpFactory);
         const objects = vdr.elements && createObjects(vdr.elements, tools, scene);
         return new GraphicSpace({ ...vdr, tools, objects, sourceFilename }, scene);
     }

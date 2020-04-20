@@ -1,16 +1,4 @@
 declare module "internal-graphic-types" {
-    import { ImageToolData } from "data-types-graphics";
-    /**
-     * Загрузчик изображений.
-     */
-    export interface ImageResolver {
-        fromProjectFile(
-            bmpFilename: string,
-            isDouble: boolean
-        ): { image: HTMLImageElement; width: number; height: number };
-        loadImage(data: ImageToolData): { image: HTMLImageElement; width: number; height: number };
-    }
-
     export interface HtmlTextInputWrapperOptions {
         x?: number;
         y?: number;

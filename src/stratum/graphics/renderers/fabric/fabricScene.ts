@@ -249,11 +249,6 @@ export class FabricScene implements Scene {
         return true;
     }
 
-    renderImages() {
-        this.canvas.renderAll();
-        this.shouldRedraw = false;
-    }
-
     //Подписки на события от пользователя (клик мышью, изменение html текстбоксов)
     //
     subscribeToMouseEvents(callback: (code: MessageCode, buttons: number, x: number, y: number) => void) {

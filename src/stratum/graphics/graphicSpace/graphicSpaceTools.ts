@@ -1,15 +1,27 @@
+import { StringColor } from "data-types-graphics";
 import { VmBool } from "vm-interfaces-base";
 import { GraphicSpaceToolsState, ToolTypes } from "vm-interfaces-graphics";
-import { HandleMap } from "~/helpers/handleMap";
-import { BitmapTool, BrushTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
-import { StringColor } from "data-types-graphics";
-import { ImageResolver } from "internal-graphic-types";
 import { StratumError } from "~/helpers/errors";
+import { HandleMap } from "~/helpers/handleMap";
+import { BitmapToolFactory } from "./bitmapToolFactory";
+import { BitmapTool, BrushTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
+
+export interface GraphicSpaceToolsData {
+    bmpFactory: BitmapToolFactory;
+    bitmaps?: HandleMap<BitmapTool>;
+    brushes?: HandleMap<BrushTool>;
+    doubleBitmaps?: HandleMap<BitmapTool>;
+    fonts?: HandleMap<FontTool>;
+    pens?: HandleMap<PenTool>;
+    strings?: HandleMap<StringTool>;
+    texts?: HandleMap<TextTool>;
+}
 
 /**
  * Контейнер инструментов графического пространства.
  */
 export class GraphicSpaceTools implements GraphicSpaceToolsState {
+    private bmpFactory?: BitmapToolFactory;
     private bitmaps: HandleMap<BitmapTool>;
     private brushes: HandleMap<BrushTool>;
     private doubleBitmaps: HandleMap<BitmapTool>;
@@ -17,19 +29,9 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
     private pens: HandleMap<PenTool>;
     private strings: HandleMap<StringTool>;
     private texts: HandleMap<TextTool>;
-    private imageLoader?: ImageResolver;
 
-    constructor(data?: {
-        bitmaps?: HandleMap<BitmapTool>;
-        brushes?: HandleMap<BrushTool>;
-        doubleBitmaps?: HandleMap<BitmapTool>;
-        fonts?: HandleMap<FontTool>;
-        pens?: HandleMap<PenTool>;
-        strings?: HandleMap<StringTool>;
-        texts?: HandleMap<TextTool>;
-        imageLoader: ImageResolver;
-    }) {
-        this.imageLoader = data && data.imageLoader;
+    constructor(data?: GraphicSpaceToolsData) {
+        this.bmpFactory = data && data.bmpFactory;
         this.bitmaps = (data && data.bitmaps) || HandleMap.create<BitmapTool>();
         this.brushes = (data && data.brushes) || HandleMap.create<BrushTool>();
         this.doubleBitmaps = (data && data.doubleBitmaps) || HandleMap.create<BitmapTool>();
@@ -39,15 +41,15 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         this.texts = (data && data.texts) || HandleMap.create<TextTool>();
         if (!data) return;
         for (const k in data) {
-            if (k === "imageLoader") continue;
+            if (k === "bmpFactory") continue;
             const mp = (data as any)[k] as HandleMap<{ handle: number }> | undefined;
             if (mp) mp.forEach((c, handle) => (c.handle = handle));
         }
     }
 
     createBitmap(bmpFilename: string) {
-        if (!this.imageLoader) throw new StratumError("Отсутствует зависимость ImageResolver!");
-        const bmp = new BitmapTool(this.imageLoader.fromProjectFile(bmpFilename, false));
+        if (!this.bmpFactory) throw new StratumError("Отсутствует зависимость BitmapToolFactory!");
+        const bmp = this.bmpFactory.fromProjectFile(bmpFilename, false);
         const handle = HandleMap.getFreeHandle(this.bitmaps);
         this.bitmaps.set(handle, bmp);
         bmp.handle = handle;
@@ -55,8 +57,8 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
     }
 
     createDoubleBitmap(bmpFilename: string) {
-        if (!this.imageLoader) throw new StratumError("Отсутствует зависимость ImageResolver!");
-        const bmp = new BitmapTool(this.imageLoader.fromProjectFile(bmpFilename, true));
+        if (!this.bmpFactory) throw new StratumError("Отсутствует зависимость BitmapToolFactory!");
+        const bmp = this.bmpFactory.fromProjectFile(bmpFilename, true);
         const handle = HandleMap.getFreeHandle(this.doubleBitmaps);
         this.doubleBitmaps.set(handle, bmp);
         bmp.handle = handle;

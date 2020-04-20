@@ -1,11 +1,11 @@
 import { equal } from "assert";
-import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
+import { openZipFromUrl, readProjectData } from "~/fileReader/fileReaderHelpers";
+import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { GroupObject } from "~/graphics/graphicSpace/objects";
-import { SimpleImageLoader } from "~/graphics/simpleImageLoader";
-import { createComposedScheme } from "~/helpers/graphics";
 import { WindowSystem } from "~/graphics/windowSystem";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
+import { createComposedScheme } from "~/helpers/graphics";
 
 (async function () {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
@@ -16,18 +16,16 @@ import { EventDispatcher } from "~/helpers/eventDispatcher";
     const vdr = createComposedScheme(oldvdr, cdata, classesData);
     const cv = document.getElementById("canvas") as HTMLCanvasElement;
     const dsp = new EventDispatcher();
-    const imgLoader = new SimpleImageLoader("data/icons");
-    const ws = new WindowSystem(imgLoader, { globalCanvas: cv, dispatcher: dsp });
+    const bmpFactory = new BitmapToolFactory("data/icons");
+    const ws = new WindowSystem(bmpFactory, { globalCanvas: cv, dispatcher: dsp });
     dsp.on("WINDOW_CREATED", (name) => (document.title = name));
 
-    ws.createSchemeWindow("Test Window", "", ({ imageResolver, scene }) =>
-        GraphicSpace.fromVdr("WorkSpace", vdr, imageResolver, scene)
+    ws.createSchemeWindow("Test Window", "", ({ bmpFactory, scene }) =>
+        GraphicSpace.fromVdr("WorkSpace", vdr, bmpFactory, scene)
     );
     equal(document.title, "Test Window");
     const space = ws.getSpace(1)!;
-    imgLoader.allImagesLoaded.then(() => {
-        space.scene.renderImages();
-    });
+    bmpFactory.allImagesLoaded.then(() => space.scene.render());
     setTimeout(() => {
         space.setOrigin(30, 30);
         equal(space.getObjectFromPoint(40, 40), undefined);

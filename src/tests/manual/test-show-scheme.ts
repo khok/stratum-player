@@ -1,6 +1,6 @@
-import { readProjectData, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
+import { openZipFromUrl, ReadOptions, readProjectData } from "~/fileReader/fileReaderHelpers";
+import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
-import { SimpleImageLoader } from "~/graphics/simpleImageLoader";
 import { FabricScene } from "~/graphics/renderers/fabric/fabricScene";
 import { createComposedScheme } from "~/helpers/graphics";
 import { HtmlFactory } from "~/helpers/htmlFactory";
@@ -18,7 +18,7 @@ export async function _show_scheme(name: string, opts: ReadOptions) {
 
     console.dir(scheme);
     const scene = new FabricScene({ canvas, inputFactory: new HtmlFactory(htmlRoot) });
-    const imageResolver = new SimpleImageLoader("data/icons");
-    GraphicSpace.fromVdr("", scheme, imageResolver, scene);
-    imageResolver.allImagesLoaded.then(() => scene.renderImages());
+    const bmpFactory = new BitmapToolFactory("data/icons");
+    GraphicSpace.fromVdr("", scheme, bmpFactory, scene);
+    bmpFactory.allImagesLoaded.then(() => scene.render());
 }

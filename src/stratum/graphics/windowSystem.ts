@@ -1,4 +1,4 @@
-import { HTMLInputElementsFactory, ImageResolver } from "internal-graphic-types";
+import { HTMLInputElementsFactory } from "internal-graphic-types";
 import { Scene } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
 import { WindowState, WindowSystemController } from "vm-interfaces-windows";
@@ -6,9 +6,9 @@ import { StratumError } from "~/helpers/errors";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { HandleMap } from "~/helpers/handleMap";
 import { HtmlFactory } from "~/helpers/htmlFactory";
+import { BitmapToolFactory } from "./graphicSpace/bitmapToolFactory";
 import { GraphicSpace } from "./graphicSpace/graphicSpace";
 import { FabricScene } from "./renderers/fabric/fabricScene";
-import { SimpleImageLoader } from "./simpleImageLoader";
 
 class Window implements WindowState {
     constructor(public space: GraphicSpace, private size: { x: number; y: number }, private resizable: boolean) {}
@@ -52,7 +52,7 @@ export interface WindowSystemOptions {
     disableSceneResize?: boolean;
 }
 
-export type MyResolver = (data: { imageResolver: ImageResolver; scene: Scene }) => GraphicSpace;
+export type MyResolver = (data: { bmpFactory: BitmapToolFactory; scene: Scene }) => GraphicSpace;
 
 export class WindowSystem implements WindowSystemOptions, WindowSystemController {
     screenWidth: number = 0;
@@ -70,7 +70,7 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
     private spaces = HandleMap.create<GraphicSpace>();
     private windows = new Map<string, Window>();
     private spaceToWinNameMap = HandleMap.create<string>();
-    constructor(private imageLoader: SimpleImageLoader, options?: WindowSystemOptions) {
+    constructor(private bmpFactory: BitmapToolFactory, options?: WindowSystemOptions) {
         this.set(options || {});
     }
 
@@ -97,7 +97,7 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
         const scene = new FabricScene({ canvas, inputFactory: this.inputFactory });
 
         const spaceHandle = HandleMap.getFreeHandle(this.spaces);
-        const space = createSpace({ scene, imageResolver: this.imageLoader });
+        const space = createSpace({ scene, bmpFactory: this.bmpFactory });
         space.handle = spaceHandle;
         this.spaces.set(spaceHandle, space);
         this.windows.set(

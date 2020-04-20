@@ -1,19 +1,18 @@
 import { VmBool } from "vm-interfaces-base";
 import { BitmapToolState } from "vm-interfaces-graphics";
 import { ToolMixin } from "./toolMixin";
+import { Point2D } from "data-types-graphics";
 
 export class BitmapTool extends ToolMixin<BitmapTool> implements BitmapToolState {
-    private _image: HTMLImageElement;
-    public dimensions: { width: number; height: number };
-    constructor(data: { image: HTMLImageElement; width: number; height: number }) {
+    private _image?: HTMLImageElement;
+    constructor(public dimensions?: Point2D) {
         super();
-        this._image = data.image;
-        this.dimensions = { width: data.width, height: data.height };
     }
     get image() {
         return this._image;
     }
     set image(value) {
+        if (!value) return;
         this._image = value;
         this.dispatchChanges();
     }

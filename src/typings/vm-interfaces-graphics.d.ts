@@ -28,8 +28,8 @@ declare module "vm-interfaces-graphics" {
 
     export interface BitmapToolState {
         readonly handle: number;
-        image: HTMLImageElement;
-        dimensions: { width: number; height: number };
+        image?: HTMLImageElement;
+        dimensions?: Point2D;
         setPixel(x: number, y: number, color: StringColor): VmBool;
         getPixel(x: number, y: number): StringColor;
     }

@@ -3,7 +3,7 @@ import { ClassSchemeNode } from "~/core/classSchemeNode";
 import { createClassTree } from "~/core/createClassScheme";
 import { MemoryManager } from "~/core/memoryManager";
 import { Project, ProjectOptions } from "~/core/project";
-import { SimpleImageLoader } from "~/graphics/simpleImageLoader";
+import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { VmContext } from "~/vm/vmContext";
 
@@ -31,7 +31,7 @@ export class Player {
         const allClasses = classTree.collectNodes();
         if (data.varSet) classTree.applyVarSetRecursive(data.varSet);
 
-        const imgLoader = new SimpleImageLoader((options && options.iconsPath) || "data/icons", data.images);
+        const imgLoader = new BitmapToolFactory((options && options.iconsPath) || "data/icons", data.images);
         const windows = new WindowSystem(imgLoader, options);
         const project = new Project({ allClasses, classesData }, options);
 

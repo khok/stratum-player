@@ -12,6 +12,8 @@ export class FabricBitmap implements BitmapElementVisual {
     readonly handle: number;
     private visibleArea: Point2D;
     readonly selectable: boolean;
+    private visible: boolean;
+    private imageLoaded: boolean;
 
     constructor(
         { handle, isVisible, selectable, position, scale, bmpOrigin, bmpSize, bmpTool }: BitmapVisualOptions,
@@ -21,6 +23,8 @@ export class FabricBitmap implements BitmapElementVisual {
         this.handle = handle;
         this.posX = position.x;
         this.posY = position.y;
+        this.visible = isVisible;
+        this.imageLoaded = !!bmpTool.image;
         const opts: fabric.IImageOptions = {
             ...fabricConfigObjectOptions,
             left: position.x - viewRef.x,
@@ -31,7 +35,7 @@ export class FabricBitmap implements BitmapElementVisual {
             height: bmpSize.y,
             scaleX: scale ? scale.x : 1,
             scaleY: scale ? scale.y : 1,
-            visible: isVisible,
+            visible: isVisible && this.imageLoaded,
         };
         this.selectable = selectable;
         this.obj = new fabric.Image(bmpTool.image, opts);
@@ -79,17 +83,23 @@ export class FabricBitmap implements BitmapElementVisual {
     }
 
     show(): void {
-        this.obj.visible = true;
+        this.obj.set({ visible: this.imageLoaded });
+        this.visible = true;
         this.requestRedraw();
     }
 
     hide(): void {
-        this.obj.visible = false;
+        this.obj.set({ visible: false });
+        this.visible = false;
         this.requestRedraw();
     }
 
     updateBitmap(bmp: BitmapToolState): void {
-        throw new Error("Method not implemented.");
+        this.imageLoaded = !!bmp.image;
+        const { cropX, cropY, width, height, scaleX, scaleY } = this.obj;
+        const visible = this.visible && this.imageLoaded;
+        this.obj.setElement(bmp.image!).set({ cropX, cropY, width, height, scaleX, scaleY, visible }).setCoords();
+        this.requestRedraw();
     }
 
     setRect(x: number, y: number, width: number, height: number): void {

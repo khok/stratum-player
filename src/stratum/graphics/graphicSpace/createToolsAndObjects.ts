@@ -1,22 +1,22 @@
 import { Element2dData, ElementData, VectorDrawToolsData } from "data-types-graphics";
-import { ImageResolver } from "internal-graphic-types";
 import { VisualFactory } from "scene-types";
 import { GraphicSpaceToolsState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
+import { BitmapToolFactory } from "./bitmapToolFactory";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
 import { BitmapObject, ControlObject, GraphicObject, GroupObject, LineObject, TextObject } from "./objects";
-import { BitmapTool, BrushTool, PenTool, StringTool, TextTool, FontTool } from "./tools";
+import { BrushTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
 
-export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolver): GraphicSpaceTools {
+export function createTools(tools: VectorDrawToolsData, bmpFactory: BitmapToolFactory): GraphicSpaceTools {
     //prettier-ignore
-    const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, new BitmapTool(imageLoader.loadImage(b))]));
+    const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, bmpFactory.fromData(b)]));
 
     //prettier-ignore
     const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b.color, b.style, bitmaps && bitmaps.get(b.dibHandle))]));
 
     //prettier-ignore
-    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, new BitmapTool(imageLoader.loadImage(b))]));
+    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, bmpFactory.fromData(b)]));
 
     //prettier-ignore
     const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool(f)]));
@@ -35,7 +35,7 @@ export function createTools(tools: VectorDrawToolsData, imageLoader: ImageResolv
             backgroundColor: tt.ltBgColor,
         })) )]));
 
-    return new GraphicSpaceTools({ bitmaps, brushes, doubleBitmaps, fonts, pens, strings, texts, imageLoader });
+    return new GraphicSpaceTools({ bitmaps, brushes, doubleBitmaps, fonts, pens, strings, texts, bmpFactory });
 }
 
 function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {

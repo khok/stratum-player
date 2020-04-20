@@ -56,10 +56,10 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
         // }
 
         // const bmpOrigin = data.bmpOrigin || { x: 0, y: 0 };
-        const { image, dimensions } = bmpTool;
-        const bmpSize = data.bmpSize ||
-            data.size ||
-            (dimensions && { x: dimensions.width, y: dimensions.height }) || { x: image.width, y: image.height };
+        const bmpSize = data.bmpSize || data.size || bmpTool.dimensions;
+        if (!bmpSize) {
+            throw new Error(`Битовая карта ${bmpTool.handle}: у изображения нет размеров`);
+        }
 
         this.visual = visualFactory.createBitmap({
             handle: data.handle,

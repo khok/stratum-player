@@ -10,7 +10,8 @@ function getFillValue(brush?: BrushToolState) {
         case "SOLID":
             return brush.color;
         case "PATTERN":
-            return brush.bmpTool && new fabric.Pattern({ source: brush.bmpTool.image });
+            const bmp = brush.bmpTool;
+            return bmp && bmp.image ? new fabric.Pattern({ source: bmp.image }) : "white";
         default:
             return undefined;
     }
@@ -127,7 +128,7 @@ export class FabricLine implements LineElementVisual {
         this.requestRedraw();
     }
     updateBrush(brush: BrushToolState): void {
-        this.obj.fill = getFillValue(brush);
+        this.obj.set({ fill: getFillValue(brush) });
         this.requestRedraw();
     }
 
