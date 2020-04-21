@@ -7,18 +7,18 @@ function OpenSchemeWindow(ctx: VmStateContainer) {
     const flags = ctx.popString();
     const classname = ctx.popString();
     const winName = ctx.popString();
-    const window = ctx.windows.getWindow(winName);
+    const window = ctx.graphics.getWindow(winName);
     if (window) {
         ctx.pushLong(window.space.handle);
         return;
     }
     const resolver = ctx.project.createSchemeInstance(classname);
-    ctx.pushLong(resolver ? ctx.windows.createSchemeWindow(winName, flags, resolver) : 0);
+    ctx.pushLong(resolver ? ctx.graphics.createSchemeWindow(winName, flags, resolver) : 0);
 }
 
 // ISWINDOWEXIST, name "IsWindowExist"    arg "STRING" ret "FLOAT" out 214
 function IsWindowExist(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.hasWindow(ctx.popString()));
+    ctx.pushDouble(ctx.graphics.hasWindow(ctx.popString()));
 }
 
 // CLOSEWINDOW, name "CloseWindow" arg "STRING" ret "FLOAT" out 202
@@ -28,7 +28,7 @@ function CloseWindow(ctx: VmStateContainer) {
 }
 // V_GETHSPBYNAME, name "GetWindowSpace"   arg "STRING" ret "HANDLE" out 204
 function GetWindowSpace(ctx: VmStateContainer) {
-    const window = ctx.windows.getWindow(ctx.popString());
+    const window = ctx.graphics.getWindow(ctx.popString());
     ctx.pushLong(window ? window.space.handle : 0);
 }
 // SHOWWINDOW, name "ShowWindow"       arg "STRING","FLOAT" ret "FLOAT" out 208
@@ -42,7 +42,7 @@ function SetWindowOrg(ctx: VmStateContainer) {
     const y = ctx.popDouble();
     const x = ctx.popDouble();
     const name = ctx.popString();
-    const window = ctx.windows.getWindow(name);
+    const window = ctx.graphics.getWindow(name);
     ctx.pushDouble(window ? window.setOrigin(x, y) : 0);
 }
 // V_SETCLIENTSIZE, name "SetClientSize"    arg  "STRING","FLOAT","FLOAT" ret "FLOAT" out 205
@@ -50,17 +50,17 @@ function SetClientSize(ctx: VmStateContainer) {
     const y = ctx.popDouble();
     const x = ctx.popDouble();
     const name = ctx.popString();
-    const window = ctx.windows.getWindow(name);
+    const window = ctx.graphics.getWindow(name);
     ctx.pushDouble(window ? window.setSize(x, y) : 0);
 }
 // GETCLIENTWIDTH, name "GetClientWidth"   arg  "STRING"  ret "FLOAT" out 225
 function GetClientWidth(ctx: VmStateContainer) {
-    const window = ctx.windows.getWindow(ctx.popString());
+    const window = ctx.graphics.getWindow(ctx.popString());
     ctx.pushDouble(window ? window.width : 0);
 }
 // GETCLIENTHEIGHT, name "GetClientHeight"  arg  "STRING"  ret "FLOAT" out 226
 function GetClientHeight(ctx: VmStateContainer) {
-    const window = ctx.windows.getWindow(ctx.popString());
+    const window = ctx.graphics.getWindow(ctx.popString());
     ctx.pushDouble(window ? window.height : 0);
 }
 // BRINGWINDOWTOTOP, name "BringWindowToTop" arg "STRING" ret "FLOAT" out 215
@@ -70,12 +70,12 @@ function BringWindowToTop(ctx: VmStateContainer) {
 }
 // WIN_ORGX, name "GetWindowOrgX"    arg "STRING" ret "FLOAT" out 219
 function GetWindowOrgX(ctx: VmStateContainer) {
-    const window = ctx.windows.getWindow(ctx.popString());
+    const window = ctx.graphics.getWindow(ctx.popString());
     ctx.pushDouble(window ? window.originX : 0);
 }
 // WIN_ORGY, name "GetWindowOrgY"    arg "STRING" ret "FLOAT" out 220
 function GetWindowOrgY(ctx: VmStateContainer) {
-    const window = ctx.windows.getWindow(ctx.popString());
+    const window = ctx.graphics.getWindow(ctx.popString());
     ctx.pushDouble(window ? window.originY : 0);
 }
 
@@ -104,13 +104,13 @@ function SetWindowOwner(ctx: VmStateContainer) {
 
 function GetWindowName(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
-    ctx.pushString(ctx.windows.getWindowBySpaceHandle(spaceHandle) || "");
+    ctx.pushString(ctx.graphics.getWindowBySpaceHandle(spaceHandle) || "");
 }
 function GetWindowProp(ctx: VmStateContainer) {
     const prop = ctx.popString().toLowerCase();
     const windowName = ctx.popString();
 
-    const window = ctx.windows.getWindow(windowName);
+    const window = ctx.graphics.getWindow(windowName);
     ctx.pushString(window && (prop === "classname" || prop === "filename") ? window.getProp(prop) : "");
 }
 

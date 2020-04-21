@@ -24,7 +24,7 @@ import { VmContext } from "~/vm/vmContext";
     const vm = new VmContext({
         memoryState: mmanager,
         project: <any>{},
-        windows: <any>{},
+        graphics: <any>{},
     });
     node.computeSchemeRecursive(vm);
     equal(mmanager.newStringValues[node.stringVarMappingArray![2]], "-0.4+i1.2");

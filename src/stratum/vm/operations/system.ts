@@ -105,28 +105,28 @@ function GetTime(ctx: VmStateContainer) {
 
 // VM_GETSCREENWIDTH, name "GetScreenWidth" ret "FLOAT" out 772
 function GetScreenWidth(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.screenWidth);
+    ctx.pushDouble(ctx.graphics.screenWidth);
 }
 // VM_GETSCREENHEIGHT, name "GetScreenHeight" ret "FLOAT" out 773
 function GetScreenHeight(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.screenHeight);
+    ctx.pushDouble(ctx.graphics.screenHeight);
 }
 
 // VM_GETWORKAREAX, name "GetWorkAreaX" ret "FLOAT" out 774
 function GetWorkAreaX(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.areaOriginX);
+    ctx.pushDouble(ctx.graphics.areaOriginX);
 }
 // VM_GETWORKAREAY, name "GetWorkAreaY" ret "FLOAT" out 775
 function GetWorkAreaY(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.areaOriginY);
+    ctx.pushDouble(ctx.graphics.areaOriginY);
 }
 // VM_GETWORKAREAWIDTH, name "GetWorkAreaWidth" ret "FLOAT" out 776
 function GetWorkAreaWidth(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.areaWidth);
+    ctx.pushDouble(ctx.graphics.areaWidth);
 }
 // VM_GETWORKAREAHEIGHT, name "GetWorkAreaHeight" ret "FLOAT" out 777
 function GetWorkAreaHeight(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.windows.areaHeight);
+    ctx.pushDouble(ctx.graphics.areaHeight);
 }
 
 const start = new Date().getMilliseconds();

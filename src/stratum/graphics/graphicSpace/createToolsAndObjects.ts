@@ -1,6 +1,6 @@
 import { Element2dData, ElementData, VectorDrawToolsData } from "data-types-graphics";
 import { VisualFactory } from "scene-types";
-import { GraphicSpaceToolsState } from "vm-interfaces-graphics";
+import { GraphicSpaceToolsState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { BitmapToolFactory } from "./bitmapToolFactory";

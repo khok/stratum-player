@@ -1,5 +1,5 @@
 declare module "vm-types" {
-    import { WindowSystemController } from "vm-interfaces-windows";
+    import { GraphicSystemController } from "vm-interfaces-graphics";
     import { ClassState, InputSystemController, ProjectController, MemoryState } from "vm-interfaces-base";
 
     export interface FunctionOperand {
@@ -48,7 +48,7 @@ declare module "vm-types" {
         readonly currentClass: ClassState;
         readonly memoryState: MemoryState;
         readonly canExecuteClass: boolean;
-        readonly windows: WindowSystemController;
+        readonly graphics: GraphicSystemController;
         // readonly input: InputSystemController;
         readonly project: ProjectController;
 

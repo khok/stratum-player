@@ -1,10 +1,10 @@
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { StringToolState, FontToolState, TextToolState } from "vm-interfaces-graphics";
+import { StringToolState, FontToolState, TextToolState } from "vm-interfaces-gspace";
 import { colorrefToString, stringToColorref } from "~/helpers/varValueFunctions";
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     return space && (space.tools.getTool("ttTEXT2D", textHandle) as TextToolState);
 }
 
@@ -12,7 +12,7 @@ function GetTextObject2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) {
         ctx.pushLong(0);
         return;
@@ -45,7 +45,7 @@ function GetString2d(ctx: VmStateContainer) {
     const stringHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) {
         ctx.pushString("");
         return;
@@ -88,7 +88,7 @@ function CreateFont2d(ctx: VmStateContainer) {
     const fontName = ctx.popString();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
 
     const italic = !!(flags & 1);
     const underlined = !!(flags & 2);
@@ -101,7 +101,7 @@ function CreateString2d(ctx: VmStateContainer) {
     const value = ctx.popString();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushLong(space ? space.tools.createString(value).handle : 0);
 }
 
@@ -111,7 +111,7 @@ function CreateText2d(ctx: VmStateContainer) {
     const stringHandle = ctx.popLong();
     const fontHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) {
         ctx.pushLong(0);
         return;
@@ -131,7 +131,7 @@ function CreateRasterText2d(ctx: VmStateContainer) {
     const x = ctx.popDouble();
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushLong(space ? space.createText(x, y, angle, textHandle).handle : 0);
 }
 function SetText2d(ctx: VmStateContainer) {
@@ -143,7 +143,7 @@ function SetText2d(ctx: VmStateContainer) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -166,7 +166,7 @@ function SetString2d(ctx: VmStateContainer) {
     const text = ctx.popString();
     const stringHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -187,7 +187,7 @@ function CreatePen2d(ctx: VmStateContainer) {
     const style = ctx.popDouble();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushLong(space ? space.tools.createPen(width, color).handle : 0);
 }
 
@@ -195,7 +195,7 @@ function CreatePen2d(ctx: VmStateContainer) {
 function CreateDIB2d(ctx: VmStateContainer) {
     const bmpFilename = ctx.popString();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushLong(space ? space.tools.createBitmap(bmpFilename).handle : 0);
 }
 

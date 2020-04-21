@@ -1,6 +1,6 @@
 declare module "vm-interfaces-base" {
     import { VmStateContainer } from "vm-types";
-    import { GraphicSpaceState } from "vm-interfaces-graphics";
+    import { GraphicSpaceState } from "vm-interfaces-gspace";
     import { VarData } from "data-types-base";
 
     export type VmBool = 0 | 1;

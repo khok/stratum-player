@@ -3,7 +3,7 @@ import { openZipFromUrl, readProjectData } from "~/fileReader/fileReaderHelpers"
 import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { GroupObject } from "~/graphics/graphicSpace/objects";
-import { WindowSystem } from "~/graphics/windowSystem";
+import { GraphicSystem } from "~/graphics/graphicSystem";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { createComposedScheme } from "~/helpers/graphics";
 
@@ -17,14 +17,14 @@ import { createComposedScheme } from "~/helpers/graphics";
     const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
     const dispatcher = new EventDispatcher();
     const bmpFactory = new BitmapToolFactory({ iconsPath: "data/icons" });
-    const ws = new WindowSystem(bmpFactory, { globalCanvas, dispatcher });
+    const gs = new GraphicSystem(bmpFactory, { globalCanvas, dispatcher });
     dispatcher.on("WINDOW_CREATED", (name) => (document.title = name));
 
-    ws.createSchemeWindow("Test Window", "", ({ bmpFactory, scene }) =>
+    gs.createSchemeWindow("Test Window", "", ({ bmpFactory, scene }) =>
         GraphicSpace.fromVdr("WorkSpace", vdr, bmpFactory, scene)
     );
     equal(document.title, "Test Window");
-    const space = ws.getSpace(1)!;
+    const space = gs.getSpace(1)!;
     bmpFactory.allImagesLoaded.then(() => space.scene.render());
     setTimeout(() => {
         space.setOrigin(30, 30);

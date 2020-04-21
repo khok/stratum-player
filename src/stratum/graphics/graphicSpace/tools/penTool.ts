@@ -1,5 +1,5 @@
 import { StringColor } from "data-types-graphics";
-import { PenToolState } from "vm-interfaces-graphics";
+import { PenToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 
 export class PenTool extends ToolMixin<PenTool> implements PenToolState {

@@ -14,7 +14,7 @@ import { VmContext } from "~/vm/vmContext";
     const ch1 = (classTree as any).childs.get(2) as ClassState;
 
     const project = new Project({ allClasses, classesData });
-    const ctx = new VmContext({ windows: {} as any, project, memoryState: mmanager });
+    const ctx = new VmContext({ graphics: {} as any, project, memoryState: mmanager });
 
     mmanager.initValues();
     //prettier-ignore

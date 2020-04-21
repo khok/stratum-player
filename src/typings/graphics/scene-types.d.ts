@@ -1,6 +1,6 @@
 declare module "scene-types" {
     import { ControlElementData, Point2D, VdrLayers } from "data-types-graphics";
-    import { BitmapToolState, BrushToolState, PenToolState, TextToolState } from "vm-interfaces-graphics";
+    import { BitmapToolState, BrushToolState, PenToolState, TextToolState } from "vm-interfaces-gspace";
 
     interface _VisualBase {
         setPosition(x: number, y: number): void;

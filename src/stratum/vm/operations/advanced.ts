@@ -80,7 +80,7 @@ function RegisterObjectByGraphicSpace(ctx: VmStateContainer) {
         return;
     }
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (space) space.subscribe(ctx, ctx.currentClass, msg, objectHandle, flags);
 
     //TODO: WTF???

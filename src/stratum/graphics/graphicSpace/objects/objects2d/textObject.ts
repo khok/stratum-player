@@ -1,5 +1,5 @@
 import { TextElementVisual, VisualFactory } from "scene-types";
-import { GraphicSpaceToolsState, TextObjectState } from "vm-interfaces-graphics";
+import { GraphicSpaceToolsState, TextObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { TextTool } from "../../tools";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";

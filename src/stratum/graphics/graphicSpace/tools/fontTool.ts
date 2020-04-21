@@ -1,4 +1,4 @@
-import { FontToolState } from "vm-interfaces-graphics";
+import { FontToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 
 export type FontToolOptions = {

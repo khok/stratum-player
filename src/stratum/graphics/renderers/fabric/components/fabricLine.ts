@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { Point2D, VdrLayers } from "data-types-graphics";
 import { LineElementVisual, LineVisualOptions } from "scene-types";
-import { BrushToolState, PenToolState } from "vm-interfaces-graphics";
+import { BrushToolState, PenToolState } from "vm-interfaces-gspace";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
 function getFillValue(brush?: BrushToolState) {

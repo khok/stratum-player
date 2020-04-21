@@ -1,7 +1,7 @@
 import { Point2D, VectorDrawData } from "data-types-graphics";
 import { Scene } from "scene-types";
 import { ClassState, VmBool } from "vm-interfaces-base";
-import { GraphicSpaceState } from "vm-interfaces-graphics";
+import { GraphicSpaceState } from "vm-interfaces-gspace";
 import { VmStateContainer } from "vm-types";
 import { HandleMap } from "~/helpers/handleMap";
 import { MessageCode } from "~/helpers/vmConstants";

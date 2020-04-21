@@ -1,6 +1,6 @@
 import { ControlElementData, Point2D } from "data-types-graphics";
 import { ControlElementVisual, VisualFactory } from "scene-types";
-import { ControlObjectState } from "vm-interfaces-graphics";
+import { ControlObjectState } from "vm-interfaces-gspace";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";
 
 export interface ControlObjectOptions extends Object2dOptions {

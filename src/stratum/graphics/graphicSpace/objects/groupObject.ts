@@ -1,5 +1,5 @@
 import { VmBool } from "vm-interfaces-base";
-import { GroupObjectState } from "vm-interfaces-graphics";
+import { GroupObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { GraphicObject } from ".";
 import { BaseObjectMixin } from "./baseObjectMixin";

@@ -1,7 +1,7 @@
 import { BitmapElementData, DoubleBitmapElementData, Point2D } from "data-types-graphics";
 import { BitmapElementVisual, VisualFactory } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
-import { BitmapObjectState, GraphicSpaceToolsState } from "vm-interfaces-graphics";
+import { BitmapObjectState, GraphicSpaceToolsState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { BitmapTool } from "../../tools";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";

@@ -4,7 +4,7 @@ import { createClassTree } from "~/core/createClassScheme";
 import { MemoryManager } from "~/core/memoryManager";
 import { Project, ProjectOptions } from "~/core/project";
 import { BitmapToolFactory, BitmapToolFactoryOptions } from "~/graphics/graphicSpace/bitmapToolFactory";
-import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
+import { GraphicSystem, GraphicSystemOptions } from "~/graphics/graphicSystem";
 import { VmContext } from "~/vm/vmContext";
 import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
 
@@ -15,7 +15,7 @@ export interface PlayerData {
     images?: { filename: string; data: Uint8Array }[];
 }
 
-export interface PlayerOptions extends ProjectOptions, WindowSystemOptions, BitmapToolFactoryOptions {
+export interface PlayerOptions extends ProjectOptions, GraphicSystemOptions, BitmapToolFactoryOptions {
     iconsPath?: string;
 }
 
@@ -23,7 +23,7 @@ export class Player {
     private vm: VmContext;
     private classTree: ClassSchemeNode;
     private mmanager: MemoryManager;
-    private windows: WindowSystem;
+    private graphics: GraphicSystem;
     private dispatcher: EventDispatcher;
 
     constructor(data: PlayerData, options?: PlayerOptions) {
@@ -36,20 +36,20 @@ export class Player {
         const iconsPath = options.iconsPath || "data/icons";
         const bmpFactory = new BitmapToolFactory({ iconsPath, projectImages: data.images }, options);
         const dispatcher = (options.dispatcher = options.dispatcher || new EventDispatcher());
-        const windows = new WindowSystem(bmpFactory, options);
+        const graphics = new GraphicSystem(bmpFactory, options);
         const project = new Project({ allClasses, classesData }, options);
 
-        this.vm = new VmContext({ windows, project, memoryState: mmanager });
+        this.vm = new VmContext({ graphics, project, memoryState: mmanager });
         this.classTree = classTree;
         this.mmanager = mmanager;
-        this.windows = windows;
+        this.graphics = graphics;
         this.dispatcher = dispatcher;
 
         mmanager.initValues();
     }
 
-    setGraphicOptions(options: WindowSystemOptions) {
-        this.windows.set(options);
+    setGraphicOptions(options: GraphicSystemOptions) {
+        this.graphics.set(options);
         return this;
     }
 
@@ -70,7 +70,7 @@ export class Player {
     }
 
     render() {
-        return this.windows.renderAll();
+        return this.graphics.renderAll();
     }
 
     on(event: EventType, fn: (...data: any) => void) {

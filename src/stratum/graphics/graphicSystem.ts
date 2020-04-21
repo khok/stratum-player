@@ -1,7 +1,7 @@
 import { HTMLInputElementsFactory } from "internal-graphic-types";
 import { Scene } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
-import { WindowState, WindowSystemController } from "vm-interfaces-windows";
+import { WindowState, GraphicSystemController } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { HandleMap } from "~/helpers/handleMap";
@@ -38,7 +38,7 @@ class Window implements WindowState {
     }
 }
 
-export interface WindowSystemOptions {
+export interface GraphicSystemOptions {
     screenWidth?: number;
     screenHeight?: number;
     areaOriginX?: number;
@@ -54,7 +54,7 @@ export interface WindowSystemOptions {
 
 export type MyResolver = (data: { bmpFactory: BitmapToolFactory; scene: Scene }) => GraphicSpace;
 
-export class WindowSystem implements WindowSystemOptions, WindowSystemController {
+export class GraphicSystem implements GraphicSystemOptions, GraphicSystemController {
     screenWidth: number = 0;
     screenHeight: number = 0;
     areaOriginX: number = 0;
@@ -70,11 +70,11 @@ export class WindowSystem implements WindowSystemOptions, WindowSystemController
     private spaces = HandleMap.create<GraphicSpace>();
     private windows = new Map<string, Window>();
     private spaceToWinNameMap = HandleMap.create<string>();
-    constructor(private bmpFactory: BitmapToolFactory, options?: WindowSystemOptions) {
+    constructor(private bmpFactory: BitmapToolFactory, options?: GraphicSystemOptions) {
         this.set(options || {});
     }
 
-    set(options: WindowSystemOptions) {
+    set(options: GraphicSystemOptions) {
         this.inputFactory = options.htmlRoot ? new HtmlFactory(options.htmlRoot) : this.inputFactory;
         Object.assign(this, options);
         return this;

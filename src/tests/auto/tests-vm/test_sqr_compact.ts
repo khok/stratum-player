@@ -42,7 +42,7 @@ import { MemoryManager } from "~/core/memoryManager";
         doubleVarMappingArray: fill,
     };
     const ctx = new VmContext({
-        windows: {} as any,
+        graphics: {} as any,
         project: {} as any,
         memoryState: mmanager,
     });

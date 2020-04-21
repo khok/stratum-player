@@ -1,4 +1,4 @@
-import { BrushToolState } from "vm-interfaces-graphics";
+import { BrushToolState } from "vm-interfaces-gspace";
 import { StringColor } from "data-types-graphics";
 import { ToolMixin } from "./toolMixin";
 import { BitmapTool } from "./bitmapTool";

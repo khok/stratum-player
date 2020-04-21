@@ -1,7 +1,7 @@
 import { Point2D, VdrLayers } from "data-types-graphics";
 import { fabric } from "fabric";
 import { TextElementVisual, TextVisualOptions } from "scene-types";
-import { TextToolState } from "vm-interfaces-graphics";
+import { TextToolState } from "vm-interfaces-gspace";
 import { fabricConfigObjectOptions } from "../fabricConfig";
 
 const textScaleCoof = 0.65;

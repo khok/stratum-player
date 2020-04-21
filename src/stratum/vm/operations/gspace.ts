@@ -1,9 +1,9 @@
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { GroupObjectState } from "vm-interfaces-graphics";
+import { GroupObjectState } from "vm-interfaces-gspace";
 
 function _getObject(ctx: VmStateContainer, spaceHandle: number, objectHandle: number) {
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     return space && space.getObject(objectHandle);
 }
 
@@ -111,7 +111,7 @@ function GetObject2dByName(ctx: VmStateContainer) {
 
     if (objectName === "") return ctx.pushLong(0);
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) return ctx.pushLong(0);
 
     let group: GroupObjectState | undefined;
@@ -130,7 +130,7 @@ function GetObjectFromPoint2d(ctx: VmStateContainer) {
     const y = ctx.popDouble();
     const x = ctx.popDouble();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (!space) {
         ctx.pushLong(0);
         return;
@@ -141,13 +141,13 @@ function GetObjectFromPoint2d(ctx: VmStateContainer) {
 
 //GETSPACEORGX, name "GetSpaceOrg2dx"        arg "HANDLE" ret "FLOAT" out 342
 function GetSpaceOrg2dx(ctx: VmStateContainer) {
-    const space = ctx.windows.getSpace(ctx.popLong());
+    const space = ctx.graphics.getSpace(ctx.popLong());
     ctx.pushDouble(space ? space.originX : 0);
 }
 
 //GETSPACEORGY, name "GetSpaceOrg2dy"        arg "HANDLE" ret "FLOAT" out 341
 function GetSpaceOrg2dy(ctx: VmStateContainer) {
-    const space = ctx.windows.getSpace(ctx.popLong());
+    const space = ctx.graphics.getSpace(ctx.popLong());
     ctx.pushDouble(space ? space.originY : 0);
 }
 
@@ -156,20 +156,20 @@ function SetSpaceOrg2d(ctx: VmStateContainer) {
     const y = ctx.popDouble();
     const x = ctx.popDouble();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushDouble(space ? space.setOrigin(x, y) : 0);
 }
 //SETSCALESPACE2D, name "SetScaleSpace2d"       arg "HANDLE","FLOAT" ret "FLOAT" out 344
 function SetScaleSpace2d(ctx: VmStateContainer) {
     const scale = ctx.popDouble();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushDouble(space ? 1 : 0);
     // ctx.pushDouble(space ? space.setScale(scale) : 0);
 }
 //GETSCALESPACE2D, name "GetScaleSpace2d"       arg "HANDLE" ret "FLOAT" out 345
 function GetScaleSpace2d(ctx: VmStateContainer) {
-    const space = ctx.windows.getSpace(ctx.popLong());
+    const space = ctx.graphics.getSpace(ctx.popLong());
     // ctx.setError("GetScaleSpace2d не реализована");
     // return;
     ctx.pushDouble(space ? 1 : 0);
@@ -282,7 +282,7 @@ function IsObjectsIntersect2d(ctx: VmStateContainer) {
     const obj2Handle = ctx.popLong();
     const obj1Handle = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (space) {
         const obj1 = space.getObject(obj1Handle);
         const obj2 = space.getObject(obj2Handle);
@@ -314,7 +314,7 @@ function ObjectToTop2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushDouble(space ? space.moveObjectToTop(objectHandle) : 0);
 }
 
@@ -365,7 +365,7 @@ function DeleteGroup2d(ctx: VmStateContainer) {
     const groupHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (space) {
         const group = space.getObject(groupHandle);
         ctx.pushDouble(group !== undefined && group.type === "otGROUP2D" ? space.deleteGroup(group) : 0);

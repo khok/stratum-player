@@ -1,5 +1,5 @@
 import { VmBool } from "vm-interfaces-base";
-import { BitmapToolState } from "vm-interfaces-graphics";
+import { BitmapToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 import { Point2D } from "data-types-graphics";
 

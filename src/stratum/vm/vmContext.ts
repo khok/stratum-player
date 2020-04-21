@@ -1,9 +1,9 @@
 import { ClassState, ProjectController, MemoryState } from "vm-interfaces-base";
 import { VmStateContainer, VirtualMachine } from "vm-types";
-import { WindowSystemController } from "vm-interfaces-windows";
+import { GraphicSystemController } from "vm-interfaces-graphics";
 
 export interface VmContextData {
-    windows: WindowSystemController;
+    graphics: GraphicSystemController;
     project: ProjectController;
     memoryState: MemoryState;
 }
@@ -26,14 +26,14 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     private _error: string = "";
     private _hasError = false;
 
-    readonly windows: WindowSystemController;
+    readonly graphics: GraphicSystemController;
     // readonly input: InputSystemController;
     readonly project: ProjectController;
     readonly memoryState: MemoryState;
 
     currentClass!: ClassState; //сделаем публичным для чуть быстрого доступа к нему.
-    constructor({ windows, project, memoryState }: VmContextData) {
-        this.windows = windows;
+    constructor({ graphics, project, memoryState }: VmContextData) {
+        this.graphics = graphics;
         // this.input = input;
         this.project = project;
         this.memoryState = memoryState;

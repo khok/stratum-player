@@ -12,7 +12,7 @@ import {
     TextElementVisual,
     TextVisualOptions,
 } from "scene-types";
-import { BrushToolState } from "vm-interfaces-graphics";
+import { BrushToolState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { MessageCode } from "~/helpers/vmConstants";

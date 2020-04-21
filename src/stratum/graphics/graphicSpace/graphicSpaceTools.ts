@@ -1,6 +1,6 @@
 import { StringColor } from "data-types-graphics";
 import { VmBool } from "vm-interfaces-base";
-import { GraphicSpaceToolsState, ToolTypes } from "vm-interfaces-graphics";
+import { GraphicSpaceToolsState, ToolTypes } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { BitmapToolFactory } from "./bitmapToolFactory";

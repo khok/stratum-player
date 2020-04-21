@@ -1,7 +1,7 @@
 import { Point2D } from "data-types-graphics";
 import { LineElementVisual, VisualFactory } from "scene-types";
 import { VmBool } from "vm-interfaces-base";
-import { GraphicSpaceToolsState, LineObjectState } from "vm-interfaces-graphics";
+import { GraphicSpaceToolsState, LineObjectState } from "vm-interfaces-gspace";
 import { BrushTool, PenTool } from "../../tools";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";
 

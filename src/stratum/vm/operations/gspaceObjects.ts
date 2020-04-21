@@ -9,7 +9,7 @@ function CreatePolyLine2d(ctx: VmStateContainer, coordCount: number) {
     const penHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushLong(space ? space.createLine(points, penHandle, brushHandle).handle : 0);
 }
 
@@ -23,7 +23,7 @@ function CreateGroup2d(ctx: VmStateContainer, objectCount: number) {
     const objects = new Array<number>(objectCount);
     for (let i = objectCount - 1; i >= 0; i--) objects[i] = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     if (space) {
         const group = space.createGroup(objects);
         if (group) {
@@ -41,7 +41,7 @@ function CreateBitmap2d(ctx: VmStateContainer) {
     const bitmapToolHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushLong(space ? space.createBitmap(x, y, bitmapToolHandle, false).handle : 0);
 }
 
@@ -50,7 +50,7 @@ function DeleteObject2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.windows.getSpace(spaceHandle);
+    const space = ctx.graphics.getSpace(spaceHandle);
     ctx.pushDouble(space ? space.deleteObject(objectHandle) : 0);
 }
 

@@ -1,4 +1,4 @@
-import { StringToolState } from "vm-interfaces-graphics";
+import { StringToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 
 export class StringTool extends ToolMixin<StringTool> implements StringToolState {
