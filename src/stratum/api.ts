@@ -2,61 +2,53 @@
  * Все функции экспортируется в неймспейс 'StratumPlayer' (см package.json -> yarn build)
  */
 
+import { ClassData } from "data-types-base";
 import { JSZipObject } from "jszip";
-import { readProjectData, openZipFromFileList, openZipFromUrl, ReadOptions } from "~/fileReader/fileReaderHelpers";
+import { openZipFromFileList, openZipFromUrl, ReadOptions, readProjectData } from "~/fileReader/fileReaderHelpers";
 import { StratumError } from "./helpers/errors";
 import { formatMissingCommands, showMissingCommands } from "./helpers/showMissingCommands";
+import { Player, PlayerData, PlayerOptions } from "./player";
 import { VmOperations } from "./vm/operations";
-import { ClassData } from "data-types-base";
-import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
-import { Player, PlayerOptions, PlayerData } from "./player";
-import { WindowSystemOptions } from "./graphics/windowSystem";
 
-export class ExtendedPlayer {
+export class ExtendedPlayer extends Player {
     private paused: boolean = false;
-    private dispatcher = new EventDispatcher();
-    private player: Player;
     constructor(data: PlayerData, options?: PlayerOptions) {
-        if (!options) options = {};
-        options.dispatcher = this.dispatcher;
-        this.player = new Player(data, options);
+        super(data, options);
     }
-    setGraphicOptions(options: WindowSystemOptions) {
-        this.player.set(options);
-    }
+
     get playing() {
         return !this.paused;
     }
+
     play(caller: (fn: () => void) => void = window.requestAnimationFrame) {
         this.paused = false;
         return new Promise((resolve, reject) => {
             const callback = () => {
-                this.player.render();
+                this.render();
                 if (this.paused) {
-                    if (this.player.error) {
-                        reject(new StratumError(this.player.error));
+                    if (this.error) {
+                        reject(new StratumError(this.error));
                     } else {
                         resolve();
                     }
                     return;
                 }
-                this.paused = !this.player.step();
+                this.paused = !this.step();
                 caller!(callback);
             };
             caller(callback);
         });
     }
+
     pause() {
         this.paused = true;
     }
+
     oneStep() {
         this.paused = true;
-        this.player.step();
-        if (this.player.error) throw new StratumError(this.player.error);
-        this.player.render();
-    }
-    on(event: EventType, fn: (...data: any) => void) {
-        this.dispatcher.on(event, fn);
+        this.step();
+        this.render();
+        if (this.error) throw new StratumError(this.error);
     }
 }
 

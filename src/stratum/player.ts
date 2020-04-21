@@ -6,6 +6,7 @@ import { Project, ProjectOptions } from "~/core/project";
 import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { VmContext } from "~/vm/vmContext";
+import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
 
 export interface PlayerData {
     rootName: string;
@@ -23,27 +24,30 @@ export class Player {
     private classTree: ClassSchemeNode;
     private mmanager: MemoryManager;
     private windows: WindowSystem;
+    private dispatcher: EventDispatcher;
 
     constructor(data: PlayerData, options?: PlayerOptions) {
-        if (!options) options = {};
         const { classesData } = data;
         const { classTree, mmanager } = createClassTree(data.rootName, classesData);
         const allClasses = classTree.collectNodes();
         if (data.varSet) classTree.applyVarSetRecursive(data.varSet);
 
-        const imgLoader = new BitmapToolFactory((options && options.iconsPath) || "data/icons", data.images);
-        const windows = new WindowSystem(imgLoader, options);
+        if (!options) options = {};
+        const bmpFactory = new BitmapToolFactory(options.iconsPath || "data/icons", data.images);
+        const dispatcher = (options.dispatcher = options.dispatcher || new EventDispatcher());
+        const windows = new WindowSystem(bmpFactory, options);
         const project = new Project({ allClasses, classesData }, options);
 
         this.vm = new VmContext({ windows, project, memoryState: mmanager });
         this.classTree = classTree;
         this.mmanager = mmanager;
         this.windows = windows;
+        this.dispatcher = dispatcher;
 
         mmanager.initValues();
     }
 
-    set(options: WindowSystemOptions) {
+    setGraphicOptions(options: WindowSystemOptions) {
         this.windows.set(options);
         return this;
     }
@@ -66,5 +70,9 @@ export class Player {
 
     render() {
         return this.windows.renderAll();
+    }
+
+    on(event: EventType, fn: (...data: any) => void) {
+        this.dispatcher.on(event, fn);
     }
 }

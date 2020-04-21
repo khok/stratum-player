@@ -14,11 +14,11 @@ import { createComposedScheme } from "~/helpers/graphics";
     const cdata = cl.childInfo!;
     const oldvdr = cl.scheme!;
     const vdr = createComposedScheme(oldvdr, cdata, classesData);
-    const cv = document.getElementById("canvas") as HTMLCanvasElement;
-    const dsp = new EventDispatcher();
+    const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const dispatcher = new EventDispatcher();
     const bmpFactory = new BitmapToolFactory("data/icons");
-    const ws = new WindowSystem(bmpFactory, { globalCanvas: cv, dispatcher: dsp });
-    dsp.on("WINDOW_CREATED", (name) => (document.title = name));
+    const ws = new WindowSystem(bmpFactory, { globalCanvas, dispatcher });
+    dispatcher.on("WINDOW_CREATED", (name) => (document.title = name));
 
     ws.createSchemeWindow("Test Window", "", ({ bmpFactory, scene }) =>
         GraphicSpace.fromVdr("WorkSpace", vdr, bmpFactory, scene)
