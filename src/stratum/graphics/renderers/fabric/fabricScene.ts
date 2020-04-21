@@ -103,7 +103,7 @@ export class FabricScene implements Scene {
         const x = (data.eventType === "mouse" ? data.e.offsetX : data.e.changedTouches[0].clientX - rect.left) + this.view.x;
         const y =
             (data.eventType === "mouse" ? data.e.offsetY : data.e.changedTouches[0].clientY - rect.top) + this.view.y;
-        const buttons = data.eventType === "mouse" ? convertButtons(data.e.buttons) : 1;
+        const buttons = data.eventType === "mouse" ? convertButtons(data.e.buttons) : type === "up" ? 0 : 1;
         switch (type) {
             case "move":
                 this.mouseSubs.forEach((s) => s(MessageCode.WM_MOUSEMOVE, buttons, x, y));
