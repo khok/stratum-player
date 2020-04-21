@@ -1,4 +1,4 @@
-declare module "internal-graphic-types" {
+declare module "html-types" {
     export interface HtmlTextInputWrapperOptions {
         x?: number;
         y?: number;

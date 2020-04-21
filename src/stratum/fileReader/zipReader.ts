@@ -1,4 +1,4 @@
-import { ClassData } from "data-types-base";
+import { ClassData } from "cls-types";
 import { JSZipObject, loadAsync } from "jszip";
 import { StratumError } from "~/helpers/errors";
 import { BinaryStream } from "~/helpers/binaryStream";

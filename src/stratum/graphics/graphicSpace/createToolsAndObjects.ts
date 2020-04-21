@@ -1,4 +1,4 @@
-import { Element2dData, ElementData, VectorDrawToolsData } from "data-types-graphics";
+import { Element2dData, ElementData, VectorDrawToolsData } from "vdr-types";
 import { VisualFactory } from "scene-types";
 import { GraphicSpaceToolsState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";

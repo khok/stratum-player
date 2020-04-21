@@ -1,5 +1,5 @@
 import { equal } from "assert";
-import { ElementData } from "data-types-graphics";
+import { ElementData } from "vdr-types";
 import { openZipFromUrl, readProjectData } from "~/fileReader/fileReaderHelpers";
 import { createComposedScheme } from "~/helpers/graphics";
 

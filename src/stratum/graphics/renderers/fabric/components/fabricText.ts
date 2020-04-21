@@ -1,4 +1,4 @@
-import { Point2D, VdrLayers } from "data-types-graphics";
+import { Point2D, VdrLayers } from "vdr-types";
 import { fabric } from "fabric";
 import { TextElementVisual, TextVisualOptions } from "scene-types";
 import { TextToolState } from "vm-interfaces-gspace";

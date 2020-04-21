@@ -5,10 +5,10 @@ function V_END(ctx: VmStateContainer) {}
 
 //Float push
 function PUSH_FLOAT(ctx: VmStateContainer, varId: number) {
-    ctx.pushDouble(ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleVarMappingArray![varId]]);
+    ctx.pushDouble(ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleIdToGlobal![varId]]);
 }
 function _PUSH_FLOAT(ctx: VmStateContainer, varId: number) {
-    ctx.pushDouble(ctx.memoryState.newDoubleValues[ctx.currentClass.doubleVarMappingArray![varId]]);
+    ctx.pushDouble(ctx.memoryState.newDoubleValues[ctx.currentClass.doubleIdToGlobal![varId]]);
 }
 
 function PUSH_FLOAT_PTR(ctx: VmStateContainer) {
@@ -17,10 +17,10 @@ function PUSH_FLOAT_PTR(ctx: VmStateContainer) {
 
 //Float pop
 function _POP_FLOAT(ctx: VmStateContainer, varId: number) {
-    ctx.memoryState.newDoubleValues[ctx.currentClass.doubleVarMappingArray![varId]] = ctx.popDouble();
+    ctx.memoryState.newDoubleValues[ctx.currentClass.doubleIdToGlobal![varId]] = ctx.popDouble();
 }
 function _POP_FLOAT_OLD(ctx: VmStateContainer, varId: number) {
-    ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleVarMappingArray![varId]] = ctx.popDouble();
+    ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleIdToGlobal![varId]] = ctx.popDouble();
 }
 function POP_FLOAT_PTR(ctx: VmStateContainer) {
     throw "POP_FLOAT_PTR: NIMP";
@@ -28,16 +28,16 @@ function POP_FLOAT_PTR(ctx: VmStateContainer) {
 
 //Long push
 function vmPUSH_LONG(ctx: VmStateContainer, varId: number) {
-    ctx.pushLong(ctx.memoryState.oldLongValues[ctx.currentClass.longVarMappingArray![varId]]);
+    ctx.pushLong(ctx.memoryState.oldLongValues[ctx.currentClass.longIdToGlobal![varId]]);
 }
 
 function vm_PUSH_LONG(ctx: VmStateContainer, varId: number) {
-    ctx.pushLong(ctx.memoryState.newLongValues[ctx.currentClass.longVarMappingArray![varId]]);
+    ctx.pushLong(ctx.memoryState.newLongValues[ctx.currentClass.longIdToGlobal![varId]]);
 }
 
 //Long pop
 function vm_POP_LONG(ctx: VmStateContainer, varId: number) {
-    ctx.memoryState.newLongValues[ctx.currentClass.longVarMappingArray![varId]] = ctx.popLong();
+    ctx.memoryState.newLongValues[ctx.currentClass.longIdToGlobal![varId]] = ctx.popLong();
 }
 
 function vm_POP_LONG_OLD(ctx: VmStateContainer) {
@@ -46,16 +46,16 @@ function vm_POP_LONG_OLD(ctx: VmStateContainer) {
 
 //String push
 function PUSH_STRING(ctx: VmStateContainer, varId: number) {
-    ctx.pushString(ctx.memoryState.oldStringValues[ctx.currentClass.stringVarMappingArray![varId]]);
+    ctx.pushString(ctx.memoryState.oldStringValues[ctx.currentClass.stringIdToGlobal![varId]]);
 }
 
 function _PUSH_STRING(ctx: VmStateContainer, varId: number) {
-    ctx.pushString(ctx.memoryState.newStringValues[ctx.currentClass.stringVarMappingArray![varId]]);
+    ctx.pushString(ctx.memoryState.newStringValues[ctx.currentClass.stringIdToGlobal![varId]]);
 }
 
 //String pop
 function _POP_STRING(ctx: VmStateContainer, varId: number) {
-    ctx.memoryState.newStringValues[ctx.currentClass.stringVarMappingArray![varId]] = ctx.popString();
+    ctx.memoryState.newStringValues[ctx.currentClass.stringIdToGlobal![varId]] = ctx.popString();
 }
 
 function _POP_STRING_OLD(ctx: VmStateContainer) {

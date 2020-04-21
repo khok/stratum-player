@@ -1,5 +1,5 @@
-import { ClassData } from "data-types-base";
-import { ProjectController, VmBool } from "vm-interfaces-base";
+import { ClassData } from "cls-types";
+import { ProjectController, VmBool } from "vm-interfaces-core";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { MyResolver } from "~/graphics/graphicSystem";
 import { createComposedScheme } from "~/helpers/graphics";

@@ -2,7 +2,7 @@ import { ToolMixin } from "./toolMixin";
 import { TextToolState, TextFragment } from "vm-interfaces-gspace";
 import { FontTool } from "./fontTool";
 import { StringTool } from "./stringTool";
-import { StringColor } from "data-types-graphics";
+import { StringColor } from "vdr-types";
 
 export interface TextToolTextFragment {
     font: FontTool;

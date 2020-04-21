@@ -9,8 +9,8 @@ declare module "vm-interfaces-gspace" {
         TextElementData,
         ToolData,
         DoubleBitmapElementData,
-    } from "data-types-graphics";
-    import { ClassState, VmBool } from "vm-interfaces-base";
+    } from "vdr-types";
+    import { ClassState, VmBool } from "vm-interfaces-core";
     import { VmStateContainer } from "vm-types";
 
     export interface PenToolState {

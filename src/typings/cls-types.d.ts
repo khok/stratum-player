@@ -2,8 +2,8 @@
  * Базовые типы данных, находящиеся в файлах .cls, .stt
  */
 
-declare module "data-types-base" {
-    import { VectorDrawData } from "data-types-graphics";
+declare module "cls-types" {
+    import { VectorDrawData } from "vdr-types";
     import { ParsedCode } from "vm-types";
 
     export interface VarSetData {

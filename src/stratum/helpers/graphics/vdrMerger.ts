@@ -10,7 +10,7 @@ import {
     VectorDrawData,
     VectorDrawToolsData,
     ImageToolData,
-} from "data-types-graphics";
+} from "vdr-types";
 import { StratumError } from "~/helpers/errors";
 
 const toolKeys: (keyof VectorDrawToolsData)[] = [

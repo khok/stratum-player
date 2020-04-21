@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { Point2D, VdrLayers } from "data-types-graphics";
+import { Point2D, VdrLayers } from "vdr-types";
 import { BitmapElementVisual, BitmapVisualOptions } from "scene-types";
 import { BitmapToolState } from "vm-interfaces-gspace";
 import { fabricConfigObjectOptions } from "../fabricConfig";

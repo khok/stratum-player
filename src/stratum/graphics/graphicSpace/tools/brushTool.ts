@@ -1,5 +1,5 @@
 import { BrushToolState } from "vm-interfaces-gspace";
-import { StringColor } from "data-types-graphics";
+import { StringColor } from "vdr-types";
 import { ToolMixin } from "./toolMixin";
 import { BitmapTool } from "./bitmapTool";
 

@@ -1,4 +1,4 @@
-import { StringColor } from "data-types-graphics";
+import { StringColor } from "vdr-types";
 import { PenToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 

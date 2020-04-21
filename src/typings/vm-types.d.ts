@@ -1,6 +1,6 @@
 declare module "vm-types" {
     import { GraphicSystemController } from "vm-interfaces-graphics";
-    import { ClassState, InputSystemController, ProjectController, MemoryState } from "vm-interfaces-base";
+    import { ClassState, InputSystemController, ProjectController, MemoryState } from "vm-interfaces-core";
 
     export interface FunctionOperand {
         funcName: string;
@@ -51,9 +51,6 @@ declare module "vm-types" {
         readonly graphics: GraphicSystemController;
         // readonly input: InputSystemController;
         readonly project: ProjectController;
-
-        // stackPush(value: string | number): void;
-        // stackPop(): string | number;
 
         pushDouble(value: number): void;
         popDouble(): number;

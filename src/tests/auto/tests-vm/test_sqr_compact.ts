@@ -4,7 +4,7 @@ import { openStreamFromUrl } from "~/fileReader/fileReaderHelpers";
 import { parseVarValue } from "~/helpers/varValueFunctions";
 import { executeCode } from "~/vm/executeCode";
 import { VmContext } from "~/vm/vmContext";
-import { ClassState } from "vm-interfaces-base";
+import { ClassState } from "vm-interfaces-core";
 import { MemoryManager } from "~/core/memoryManager";
 
 (async function () {
@@ -37,9 +37,9 @@ import { MemoryManager } from "~/core/memoryManager";
     const fill = new Uint16Array(12).map((_, i) => i);
 
     const cl = <ClassState>{
-        longVarMappingArray: fill,
-        stringVarMappingArray: fill,
-        doubleVarMappingArray: fill,
+        longIdToGlobal: fill,
+        stringIdToGlobal: fill,
+        doubleIdToGlobal: fill,
     };
     const ctx = new VmContext({
         graphics: {} as any,

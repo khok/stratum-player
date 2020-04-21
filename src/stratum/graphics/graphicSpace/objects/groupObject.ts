@@ -1,4 +1,4 @@
-import { VmBool } from "vm-interfaces-base";
+import { VmBool } from "vm-interfaces-core";
 import { GroupObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { GraphicObject } from ".";
@@ -10,7 +10,6 @@ export interface GroupObjectOptions {
     items?: GraphicObject[];
 }
 
-//TODO: создать базовый класс для группы и 2д микина и пихнуть туда свойство name и присвоение группы.
 export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     protected _subclassInstance: this = this;
     readonly type = "otGROUP2D";

@@ -1,4 +1,4 @@
-import { ClassData } from "data-types-base";
+import { ClassData } from "cls-types";
 import { ParsedCode, Operation } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
 import realCommandNames from "./realCommandNames.json";

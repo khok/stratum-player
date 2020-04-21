@@ -1,4 +1,4 @@
-import { VarData } from "data-types-base";
+import { VarData } from "cls-types";
 import { ParsedCode } from "vm-types";
 import { parseVarValue } from "~/helpers/varValueFunctions";
 

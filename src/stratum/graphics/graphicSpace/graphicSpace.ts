@@ -1,6 +1,6 @@
-import { Point2D, VectorDrawData } from "data-types-graphics";
+import { Point2D, VectorDrawData } from "vdr-types";
 import { Scene } from "scene-types";
-import { ClassState, VmBool } from "vm-interfaces-base";
+import { ClassState, VmBool } from "vm-interfaces-core";
 import { GraphicSpaceState } from "vm-interfaces-gspace";
 import { VmStateContainer } from "vm-types";
 import { HandleMap } from "~/helpers/handleMap";
@@ -195,17 +195,17 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     private static setKlassDoubleValueByLowCaseName(sub: GraphicSpaceSubsciber, name: string, value: number) {
-        const _id = sub.klass.varIdToLowcaseNameMap!.get(name)!;
+        const _id = sub.klass.varnameToIdMap!.get(name)!;
         if (_id > -1) {
-            const id = sub.klass.doubleVarMappingArray![_id];
+            const id = sub.klass.doubleIdToGlobal![_id];
             sub.ctx.memoryState.newDoubleValues[id] = value;
             sub.ctx.memoryState.oldDoubleValues[id] = value;
         }
     }
     private static setKlassLongValueByLowCaseName(sub: GraphicSpaceSubsciber, name: string, value: number) {
-        const _id = sub.klass.varIdToLowcaseNameMap!.get(name)!;
+        const _id = sub.klass.varnameToIdMap!.get(name)!;
         if (_id > -1) {
-            const id = sub.klass.longVarMappingArray![_id];
+            const id = sub.klass.longIdToGlobal![_id];
             sub.ctx.memoryState.newLongValues[id] = value;
             sub.ctx.memoryState.oldLongValues[id] = value;
         }

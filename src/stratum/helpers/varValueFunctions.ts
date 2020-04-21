@@ -1,4 +1,4 @@
-import { VarData } from "data-types-base";
+import { VarData } from "cls-types";
 
 export function createDefaultValue(type: VarData["type"]) {
     switch (type) {

@@ -1,4 +1,4 @@
-import { HtmlTextInputWrapper, HtmlTextInputWrapperOptions, HTMLInputElementsFactory } from "internal-graphic-types";
+import { HtmlTextInputWrapper, HtmlTextInputWrapperOptions, HTMLInputElementsFactory } from "html-types";
 
 class HtmlInput implements HtmlTextInputWrapper {
     x: number = 0;

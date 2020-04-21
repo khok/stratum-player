@@ -1,4 +1,4 @@
-import { VectorDrawData } from "data-types-graphics";
+import { VectorDrawData } from "vdr-types";
 import { BinaryStream } from "~/helpers/binaryStream";
 
 /**

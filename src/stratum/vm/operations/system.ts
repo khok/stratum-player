@@ -57,6 +57,14 @@ function AddSlash(ctx: VmStateContainer) {
     ctx.pushString(path[path.length - 1] === "\\" ? path : path + "\\");
 }
 
+function setNewDoubleValue(ctx: VmStateContainer, id: number, value: number) {
+    ctx.memoryState.newDoubleValues[ctx.currentClass.doubleIdToGlobal![id]] = value;
+}
+
+function setOldDoubleValue(ctx: VmStateContainer, id: number, value: number) {
+    ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleIdToGlobal![id]] = value;
+}
+
 // GetDate(FLOAT &year, FLOAT &mon, FLOAT &day)
 function GetDate(ctx: VmStateContainer) {
     const isDayNew = ctx.popLong();
@@ -68,20 +76,20 @@ function GetDate(ctx: VmStateContainer) {
 
     const time = new Date();
 
-    const cl = ctx.currentClass;
+    if (isDayNew) setNewDoubleValue(ctx, dayId, time.getDate());
+    else setOldDoubleValue(ctx, dayId, time.getDate());
 
-    if (isDayNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![dayId]] = time.getDate();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![dayId]] = time.getDate();
-    if (isMonthNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![monthId]] = time.getMonth();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![monthId]] = time.getMonth();
-    if (isYearNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![yearId]] = time.getFullYear();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![yearId]] = time.getFullYear();
+    if (isMonthNew) setNewDoubleValue(ctx, monthId, time.getMonth());
+    else setOldDoubleValue(ctx, monthId, time.getMonth());
+
+    if (isYearNew) setNewDoubleValue(ctx, yearId, time.getFullYear());
+    else setOldDoubleValue(ctx, yearId, time.getFullYear());
 }
 
 // GetTime(FLOAT hour, FLOAT min, FLOAT sec, FLOAT hund)
 function GetTime(ctx: VmStateContainer) {
-    const isWtfNew = ctx.popLong();
-    const wtfId = ctx.popLong();
+    const isMsecNew = ctx.popLong();
+    const msecId = ctx.popLong();
     const isSecNew = ctx.popLong();
     const secId = ctx.popLong();
     const isMinNew = ctx.popLong();
@@ -91,16 +99,17 @@ function GetTime(ctx: VmStateContainer) {
 
     const time = new Date();
 
-    const cl = ctx.currentClass;
+    if (isMsecNew) setNewDoubleValue(ctx, msecId, time.getMilliseconds());
+    else setOldDoubleValue(ctx, msecId, time.getMilliseconds());
 
-    if (isWtfNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![wtfId]] = time.getMilliseconds();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![wtfId]] = time.getMilliseconds();
-    if (isSecNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![secId]] = time.getSeconds();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![secId]] = time.getSeconds();
-    if (isMinNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![minId]] = time.getMinutes();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![minId]] = time.getMinutes();
-    if (isHourNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![hourId]] = time.getHours();
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![hourId]] = time.getHours();
+    if (isSecNew) setNewDoubleValue(ctx, secId, time.getSeconds());
+    else setOldDoubleValue(ctx, secId, time.getSeconds());
+
+    if (isMinNew) setNewDoubleValue(ctx, minId, time.getMinutes());
+    else setOldDoubleValue(ctx, minId, time.getMinutes());
+
+    if (isHourNew) setNewDoubleValue(ctx, hourId, time.getHours());
+    else setOldDoubleValue(ctx, hourId, time.getHours());
 }
 
 // VM_GETSCREENWIDTH, name "GetScreenWidth" ret "FLOAT" out 772

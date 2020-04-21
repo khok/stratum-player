@@ -1,6 +1,6 @@
 /* Основано на class.cpp:6100
  */
-import { ChildData, ClassData, LinkData, VarData } from "data-types-base";
+import { ChildData, ClassData, LinkData, VarData } from "cls-types";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { FileSignatureError, StratumError } from "~/helpers/errors";
 import { readVectorDrawData } from ".";

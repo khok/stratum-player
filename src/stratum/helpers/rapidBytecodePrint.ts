@@ -1,4 +1,4 @@
-import { ClassData } from "data-types-base";
+import { ClassData } from "cls-types";
 import { Opcode } from "./vmConstants";
 import { ParsedCode } from "vm-types";
 

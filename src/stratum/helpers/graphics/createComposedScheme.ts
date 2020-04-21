@@ -1,5 +1,5 @@
-import { ChildData, ClassData } from "data-types-base";
-import { VectorDrawData } from "data-types-graphics";
+import { ChildData, ClassData } from "cls-types";
+import { VectorDrawData } from "vdr-types";
 import { VdrMerger } from "./vdrMerger";
 
 /**

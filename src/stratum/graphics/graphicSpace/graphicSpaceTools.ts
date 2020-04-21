@@ -1,5 +1,5 @@
-import { StringColor } from "data-types-graphics";
-import { VmBool } from "vm-interfaces-base";
+import { StringColor } from "vdr-types";
+import { VmBool } from "vm-interfaces-core";
 import { GraphicSpaceToolsState, ToolTypes } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";

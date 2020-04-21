@@ -1,6 +1,6 @@
-import { VarSetData, VarData } from "data-types-base";
-import { Point2D } from "data-types-graphics";
-import { ClassState } from "vm-interfaces-base";
+import { VarSetData, VarData } from "cls-types";
+import { Point2D } from "vdr-types";
+import { ClassState } from "vm-interfaces-core";
 import { HandleMap } from "~/helpers/handleMap";
 import { parseVarValue } from "~/helpers/varValueFunctions";
 import { executeCode } from "~/vm/executeCode";
@@ -24,18 +24,16 @@ export interface ClassSchemeNodeOptions {
 
 export class ClassSchemeNode implements ClassState {
     private static createDisableGetter(ci: ClassSchemeNode): () => boolean {
-        const enableVarid = ci.varIdToLowcaseNameMap!.get("_enable");
-        const disableVarId = ci.varIdToLowcaseNameMap!.get("_disable");
+        const enableVarid = ci.varnameToIdMap!.get("_enable");
+        const disableVarId = ci.varnameToIdMap!.get("_disable");
 
         let res = () => false;
 
-        if (enableVarid !== undefined)
-            res = () => ci.mmanager!.newDoubleValues[ci.doubleVarMappingArray![enableVarid]] < 1;
+        if (enableVarid !== undefined) res = () => ci.mmanager!.newDoubleValues[ci.doubleIdToGlobal![enableVarid]] < 1;
 
         if (disableVarId !== undefined) {
             const disableVarPriority = enableVarid === undefined || disableVarId < enableVarid;
-            if (disableVarPriority)
-                res = () => ci.mmanager!.newDoubleValues[ci.doubleVarMappingArray![disableVarId]] > 0;
+            if (disableVarPriority) res = () => ci.mmanager!.newDoubleValues[ci.doubleIdToGlobal![disableVarId]] > 0;
         }
         return res;
     }
@@ -50,12 +48,12 @@ export class ClassSchemeNode implements ClassState {
 
     readonly canReceiveEvents: boolean;
 
-    readonly varIdToLowcaseNameMap?: Map<string, number>;
+    readonly varnameToIdMap?: Map<string, number>;
     readonly varTypes?: VarData["type"][];
 
-    readonly doubleVarMappingArray?: Uint16Array;
-    readonly longVarMappingArray?: Uint16Array;
-    readonly stringVarMappingArray?: Uint16Array;
+    readonly doubleIdToGlobal?: Uint16Array;
+    readonly longIdToGlobal?: Uint16Array;
+    readonly stringIdToGlobal?: Uint16Array;
 
     constructor({ proto, varIndexMap, schemeData }: ClassSchemeNodeOptions) {
         this.proto = proto;
@@ -63,30 +61,30 @@ export class ClassSchemeNode implements ClassState {
 
         if (varIndexMap) {
             const varCount = varIndexMap.length;
-            this.varIdToLowcaseNameMap = new Map(proto.variables!.map((v, idx) => [v.lowCaseName, idx]));
+            this.varnameToIdMap = new Map(proto.variables!.map((v, idx) => [v.lowCaseName, idx]));
             this.varTypes = varIndexMap.map((v) => v.type);
 
-            this.doubleVarMappingArray = new Uint16Array(varCount);
-            this.longVarMappingArray = new Uint16Array(varCount);
-            this.stringVarMappingArray = new Uint16Array(varCount);
+            this.doubleIdToGlobal = new Uint16Array(varCount);
+            this.longIdToGlobal = new Uint16Array(varCount);
+            this.stringIdToGlobal = new Uint16Array(varCount);
 
             for (let varIdx = 0; varIdx < varCount; varIdx++) {
                 const { globalIdx, type } = varIndexMap[varIdx];
                 switch (type) {
                     case "FLOAT":
-                        this.doubleVarMappingArray[varIdx] = globalIdx;
+                        this.doubleIdToGlobal[varIdx] = globalIdx;
                         break;
                     case "HANDLE":
                     case "COLORREF":
-                        this.longVarMappingArray[varIdx] = globalIdx;
+                        this.longIdToGlobal[varIdx] = globalIdx;
                         break;
                     case "STRING":
-                        this.stringVarMappingArray[varIdx] = globalIdx;
+                        this.stringIdToGlobal[varIdx] = globalIdx;
                 }
             }
         }
-        this.canReceiveEvents = !!(this.varIdToLowcaseNameMap && this.varIdToLowcaseNameMap.get("msg"));
-        this.isDisabled = this.varIdToLowcaseNameMap ? ClassSchemeNode.createDisableGetter(this) : () => false;
+        this.canReceiveEvents = !!(this.varnameToIdMap && this.varnameToIdMap.get("msg"));
+        this.isDisabled = this.varnameToIdMap ? ClassSchemeNode.createDisableGetter(this) : () => false;
         this.hasCode = !!proto.code;
     }
 
@@ -101,14 +99,14 @@ export class ClassSchemeNode implements ClassState {
     private setDefaultVarValue(type: VarData["type"], idx: number, value: string | number) {
         switch (type) {
             case "FLOAT":
-                this.mmanager!.defaultDoubleValues[this.doubleVarMappingArray![idx]] = value as number;
+                this.mmanager!.defaultDoubleValues[this.doubleIdToGlobal![idx]] = value as number;
                 break;
             case "HANDLE":
             case "COLORREF":
-                this.mmanager!.defaultLongValues[this.longVarMappingArray![idx]] = value as number;
+                this.mmanager!.defaultLongValues[this.longIdToGlobal![idx]] = value as number;
                 break;
             case "STRING":
-                this.mmanager!.defaultStringValues[this.stringVarMappingArray![idx]] = value as string;
+                this.mmanager!.defaultStringValues[this.stringIdToGlobal![idx]] = value as string;
                 break;
         }
     }
@@ -148,26 +146,6 @@ export class ClassSchemeNode implements ClassState {
             }
 
             if (defValue !== undefined) this.setDefaultVarValue(curVar.type, i, defValue);
-            // } else {
-            //     //строковые значения инициализируем особым образом.
-            //     const globaVarIdx = this.stringVarMappingArray![i];
-            //     //prettier-ignore
-            //     if((curVar.type === "STRING" || curVar.type === "COLORREF") && !mmanager.defaultStringValues[globaVarIdx])
-            //         mmanager.defaultStringValues[globaVarIdx] = curVar.type === "STRING" ? "" : "rgb(0, 0, 0)";
-            // }
-
-            //Если нет значения по умолчанию
-
-            ////Если нет специального значения, и переменная еще не была установлена предыдущими имиджами,
-            ////нужно проинициализировать ее самому.
-            // if (resultValue === undefined) {
-            //     if (!mmanager.isValueInitialized(this.toGlobalVarId![i]))
-            //         this.setDefaultVarValue(i, createDefaultValue(values[i].type));
-            // }
-
-            //Если переменная имеет спец. значение или у нее есть значение по умолчанию, устанавливаем его,
-            //перекрывая значения установленные имиджами, выполняющимися ранее.
-            // this.setDefaultVarValue(i, resultValue);
         }
     }
 
@@ -184,7 +162,7 @@ export class ClassSchemeNode implements ClassState {
             const { varData } = varSet;
             varData.forEach(({ name, value }) => {
                 if (!this.varTypes) return;
-                const varId = this.varIdToLowcaseNameMap!.get(name.toLowerCase());
+                const varId = this.varnameToIdMap!.get(name.toLowerCase());
                 if (varId === undefined) return;
                 const varType = this.varTypes[varId];
                 this.setDefaultVarValue(varType, varId, parseVarValue(varType, value));
@@ -199,37 +177,10 @@ export class ClassSchemeNode implements ClassState {
             });
     }
 
-    // getVarIdLowCase(varName: string): number | undefined {
-    //     return this.proto.getVarIdLowCase(varName);
-    // }
-    // setDefaultVarValue(id: number, value: string | number): void {
-    //     this.mmanager!.setDefaultVarValue(this.toGlobalVarId![id], value);
-    // }
-    // getDefaultVarValue(id: number): string | number {
-    //     return this.mmanager!.getDefaultVarValue(this.toGlobalVarId![id]);
-    // }
-    // setNewVarValue(id: number, value: string | number): void {
-    //     this.mmanager!.setNewVarValue(this.toGlobalVarId![id], value);
-    // }
-    // getNewVarValue(id: number): string | number {
-    //     return this.mmanager!.getNewVarValue(this.toGlobalVarId![id]);
-    // }
-    // setOldVarValue(id: number, value: string | number): void {
-    //     this.mmanager!.setOldVarValue(this.toGlobalVarId![id], value);
-    // }
-    // getOldVarValue(id: number): string | number {
-    //     return this.mmanager!.getOldVarValue(this.toGlobalVarId![id]);
-    // }
-    // setVarValueByLowCaseName(name: string, value: string | number): void {
-    //     const id = this.getVarIdLowCase(name);
-    //     if (id !== undefined) {
-    //         this.setOldVarValue(id, value);
-    //         this.setNewVarValue(id, value);
-    //     }
-    // }
     get parent() {
         return this.schemeData && this.schemeData.parent;
     }
+
     getClassByPath(path: string): ClassState | undefined {
         //вернуть этот класс
         if (path === "") return this;

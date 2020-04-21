@@ -1,5 +1,5 @@
 declare module "vm-interfaces-graphics" {
-    import { VmBool, GraphicSpaceResolver } from "vm-interfaces-base";
+    import { VmBool, GraphicSpaceResolver } from "vm-interfaces-core";
     import { GraphicSpaceState } from "vm-interfaces-gspace";
     export interface WindowState {
         readonly space: GraphicSpaceState;

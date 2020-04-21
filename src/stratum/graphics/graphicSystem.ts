@@ -1,6 +1,6 @@
-import { HTMLInputElementsFactory } from "internal-graphic-types";
+import { HTMLInputElementsFactory } from "html-types";
 import { Scene } from "scene-types";
-import { VmBool } from "vm-interfaces-base";
+import { VmBool } from "vm-interfaces-core";
 import { WindowState, GraphicSystemController } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { EventDispatcher } from "~/helpers/eventDispatcher";

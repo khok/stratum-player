@@ -1,4 +1,4 @@
-import { MemoryState } from "vm-interfaces-base";
+import { MemoryState } from "vm-interfaces-core";
 
 export class MemoryManager implements MemoryState {
     defaultDoubleValues: Float64Array;
@@ -35,15 +35,6 @@ export class MemoryManager implements MemoryState {
         this.newStringValues = new Array<string>(stringVarCount).fill("");
     }
 
-    // assertDefaultValuesInitialized() {
-    //     for (let i = 0; i < this.defaultVars.length; i++)
-    //         if (this.defaultVars[i] === undefined) throw new Error(`Переменная ${i} не инициализирована`);
-    // }
-    // isValueInitialized(id: number) {
-    //     //TODO: сделать лучше
-    //     return this.defaultVars[id] !== undefined;
-    // }
-
     initValues() {
         this.newDoubleValues = this.defaultDoubleValues.slice();
         this.newLongValues = this.defaultLongValues.slice();
@@ -67,70 +58,4 @@ export class MemoryManager implements MemoryState {
         )
             throw new Error("Было изменено зарезервированное значение переменной");
     }
-
-    // //FLOATS
-    // setDefaultDoubleValue(id: number, value: number): void {
-    //     this.defaultDoubleVars[id] = value;
-    // }
-    // getDefaultDoubleValue(id: number): number {
-    //     return this.defaultDoubleVars[id];
-    // }
-
-    // setNewDoubleValue(id: number, value: number): void {
-    //     this.newDoubleVars[id] = value;
-    // }
-    // getNewDoubleValue(id: number): number {
-    //     return this.newDoubleVars[id];
-    // }
-
-    // setOldDoubleValue(id: number, value: number): void {
-    //     this.oldDoubleVars[id] = value;
-    // }
-    // getOldDoubleValue(id: number): number {
-    //     return this.oldDoubleVars[id];
-    // }
-
-    // //LONGS
-    // setDefaultLongValue(id: number, value: number): void {
-    //     this.defaultLongVars[id] = value;
-    // }
-    // getDefaultLongValue(id: number): number {
-    //     return this.defaultLongVars[id];
-    // }
-
-    // setNewLongValue(id: number, value: number): void {
-    //     this.newLongVars[id] = value;
-    // }
-    // getNewLongValue(id: number): number {
-    //     return this.newLongVars[id];
-    // }
-
-    // setOldLongValue(id: number, value: number): void {
-    //     this.oldLongVars[id] = value;
-    // }
-    // getOldLongValue(id: number): number {
-    //     return this.oldLongVars[id];
-    // }
-
-    // //STRINGS
-    // setDefaultStringValue(id: number, value: string): void {
-    //     this.defaultStringVars[id] = value;
-    // }
-    // getDefaultStringValue(id: number): string {
-    //     return this.defaultStringVars[id];
-    // }
-
-    // setNewStringValue(id: number, value: string): void {
-    //     this.newStringVars[id] = value;
-    // }
-    // getNewStringValue(id: number): string {
-    //     return this.newStringVars[id];
-    // }
-
-    // setOldStringValue(id: number, value: string): void {
-    //     this.oldStringVars[id] = value;
-    // }
-    // getOldStringValue(id: number): string {
-    //     return this.oldStringVars[id];
-    // }
 }

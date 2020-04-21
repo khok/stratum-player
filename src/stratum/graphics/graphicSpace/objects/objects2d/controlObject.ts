@@ -1,4 +1,4 @@
-import { ControlElementData, Point2D } from "data-types-graphics";
+import { ControlElementData, Point2D } from "vdr-types";
 import { ControlElementVisual, VisualFactory } from "scene-types";
 import { ControlObjectState } from "vm-interfaces-gspace";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";

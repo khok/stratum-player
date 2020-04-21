@@ -1,4 +1,4 @@
-import { ClassData, VarData, LinkData } from "data-types-base";
+import { ClassData, VarData, LinkData } from "cls-types";
 import { ClassSchemeNode, SchemeData } from "./classSchemeNode";
 import { StratumError } from "~/helpers/errors";
 import { ClassPrototype } from "./classPrototype";

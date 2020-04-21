@@ -27,10 +27,10 @@ import { VmContext } from "~/vm/vmContext";
         graphics: <any>{},
     });
     node.computeSchemeRecursive(vm);
-    equal(mmanager.newStringValues[node.stringVarMappingArray![2]], "-0.4+i1.2");
-    equal(mmanager.newStringValues[node.stringVarMappingArray![3]], "-0.4-i1.2");
-    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![2]], mmanager.newDoubleValues[102]);
-    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![3]], mmanager.newDoubleValues[103]);
+    equal(mmanager.newStringValues[node.stringIdToGlobal![2]], "-0.4+i1.2");
+    equal(mmanager.newStringValues[node.stringIdToGlobal![3]], "-0.4-i1.2");
+    equal(mmanager.newDoubleValues[node.doubleIdToGlobal![2]], mmanager.newDoubleValues[102]);
+    equal(mmanager.newDoubleValues[node.doubleIdToGlobal![3]], mmanager.newDoubleValues[103]);
 
     node.applyVarSetRecursive({
         childSets: [],
@@ -46,9 +46,9 @@ import { VmContext } from "~/vm/vmContext";
     mmanager.initValues();
 
     node.computeSchemeRecursive(vm);
-    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![0]], 60);
-    equal(mmanager.newDoubleValues[node.doubleVarMappingArray![1]], 10);
-    equal(mmanager.newStringValues[node.stringVarMappingArray![2]], "60");
-    equal(mmanager.newStringValues[node.stringVarMappingArray![3]], "10");
+    equal(mmanager.newDoubleValues[node.doubleIdToGlobal![0]], 60);
+    equal(mmanager.newDoubleValues[node.doubleIdToGlobal![1]], 10);
+    equal(mmanager.newStringValues[node.stringIdToGlobal![2]], "60");
+    equal(mmanager.newStringValues[node.stringIdToGlobal![3]], "10");
     console.log("Sqr test successful");
 })();

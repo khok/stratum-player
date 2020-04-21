@@ -1,7 +1,7 @@
-import { Element2dData, Point2D } from "data-types-graphics";
+import { Element2dData, Point2D } from "vdr-types";
 import { fabric } from "fabric";
 import { Visual2D } from "scene-types";
-import { VmBool } from "vm-interfaces-base";
+import { VmBool } from "vm-interfaces-core";
 import { GraphicObject } from "..";
 import { BaseObjectMixin } from "../baseObjectMixin";
 

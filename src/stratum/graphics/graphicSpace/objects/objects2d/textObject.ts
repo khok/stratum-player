@@ -19,7 +19,6 @@ export class TextObject extends Object2dMixin implements TextObjectState {
         this._angle = data.angle || 0;
         const textTool = tools.getTool("ttTEXT2D", data.textToolHandle) as TextTool;
         if (!textTool) {
-            //TODO: fix
             throw new StratumError(`Инструмент Текст #${data.textToolHandle} не существует`);
         }
         this.visual = visualFactory.createText({

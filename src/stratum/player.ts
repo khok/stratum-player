@@ -1,4 +1,4 @@
-import { ClassData, VarSetData } from "data-types-base";
+import { ClassData, VarSetData } from "cls-types";
 import { ClassSchemeNode } from "~/core/classSchemeNode";
 import { createClassTree } from "~/core/createClassScheme";
 import { MemoryManager } from "~/core/memoryManager";

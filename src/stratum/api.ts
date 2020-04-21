@@ -2,7 +2,7 @@
  * Все функции экспортируется в неймспейс 'StratumPlayer' (см package.json -> yarn build)
  */
 
-import { ClassData } from "data-types-base";
+import { ClassData } from "cls-types";
 import { JSZipObject } from "jszip";
 import { openZipFromFileList, openZipFromUrl, ReadOptions, readProjectData } from "~/fileReader/fileReaderHelpers";
 import { StratumError } from "./helpers/errors";

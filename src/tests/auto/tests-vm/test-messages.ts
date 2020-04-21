@@ -2,7 +2,7 @@ import { ok } from "assert";
 import { createClassTree } from "~/core/createClassScheme";
 import { Project } from "~/core/project";
 import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
-import { ClassState } from "vm-interfaces-base";
+import { ClassState } from "vm-interfaces-core";
 import { VmContext } from "~/vm/vmContext";
 
 (async function () {
@@ -18,23 +18,23 @@ import { VmContext } from "~/vm/vmContext";
 
     mmanager.initValues();
     //prettier-ignore
-    ok(mmanager.defaultDoubleValues[ch1.doubleVarMappingArray![0]] === 0 && mmanager.newDoubleValues[ch1.doubleVarMappingArray![0]] === 0);
+    ok(mmanager.defaultDoubleValues[ch1.doubleIdToGlobal![0]] === 0 && mmanager.newDoubleValues[ch1.doubleIdToGlobal![0]] === 0);
     //prettier-ignore
-    ok(mmanager.defaultDoubleValues[ch1.doubleVarMappingArray![1]] === 21 && mmanager.newDoubleValues[ch1.doubleVarMappingArray![1]] === 21);
+    ok(mmanager.defaultDoubleValues[ch1.doubleIdToGlobal![1]] === 21 && mmanager.newDoubleValues[ch1.doubleIdToGlobal![1]] === 21);
 
     classTree.computeSchemeRecursive(ctx);
     mmanager.syncValues();
     //prettier-ignore
-    ok(mmanager.oldDoubleValues[ch1.doubleVarMappingArray![0]] === 60 && mmanager.newDoubleValues[ch1.doubleVarMappingArray![0]] === 60);
+    ok(mmanager.oldDoubleValues[ch1.doubleIdToGlobal![0]] === 60 && mmanager.newDoubleValues[ch1.doubleIdToGlobal![0]] === 60);
     //prettier-ignore
-    ok(mmanager.oldDoubleValues[ch1.doubleVarMappingArray![1]] === 25 && mmanager.newDoubleValues[ch1.doubleVarMappingArray![1]] === 25);
+    ok(mmanager.oldDoubleValues[ch1.doubleIdToGlobal![1]] === 25 && mmanager.newDoubleValues[ch1.doubleIdToGlobal![1]] === 25);
 
     classTree.computeSchemeRecursive(ctx);
     mmanager.syncValues();
     //prettier-ignore
-    ok(mmanager.oldDoubleValues[ch1.doubleVarMappingArray![0]] === 120 && mmanager.newDoubleValues[ch1.doubleVarMappingArray![0]] === 120);
+    ok(mmanager.oldDoubleValues[ch1.doubleIdToGlobal![0]] === 120 && mmanager.newDoubleValues[ch1.doubleIdToGlobal![0]] === 120);
     //prettier-ignore
-    ok(mmanager.oldDoubleValues[ch1.doubleVarMappingArray![1]] === 29 && mmanager.newDoubleValues[ch1.doubleVarMappingArray![1]] === 29);
+    ok(mmanager.oldDoubleValues[ch1.doubleIdToGlobal![1]] === 29 && mmanager.newDoubleValues[ch1.doubleIdToGlobal![1]] === 29);
 
     console.log("Message test completed");
 })();

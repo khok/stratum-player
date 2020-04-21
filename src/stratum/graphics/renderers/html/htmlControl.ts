@@ -1,5 +1,5 @@
-import { Point2D, VdrLayers } from "data-types-graphics";
-import { HTMLInputElementsFactory, HtmlTextInputWrapper } from "internal-graphic-types";
+import { Point2D, VdrLayers } from "vdr-types";
+import { HTMLInputElementsFactory, HtmlTextInputWrapper } from "html-types";
 import { ControlElementVisual, ControlVisualOptions } from "scene-types";
 import { StratumError } from "~/helpers/errors";
 

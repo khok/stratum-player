@@ -1,4 +1,4 @@
-import { VarSetData } from "data-types-base";
+import { VarSetData } from "cls-types";
 import { FileSignatureError, StratumError } from "~/helpers/errors";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { RecordType } from "./recordType";

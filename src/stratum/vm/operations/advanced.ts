@@ -19,22 +19,22 @@ function SendMessage(ctx: VmStateContainer, count: number) {
         if (other === current) continue;
 
         for (let i = 0; i < count; i += 2) {
-            const _idCurrent = current.varIdToLowcaseNameMap!.get(vars[i])!;
-            const _idOther = other.varIdToLowcaseNameMap!.get(vars[i + 1])!;
+            const _idCurrent = current.varnameToIdMap!.get(vars[i])!;
+            const _idOther = other.varnameToIdMap!.get(vars[i + 1])!;
             //таким хаком избегаем сравнения с undefined.
             if (_idCurrent > -1 && _idOther > -1) {
-                const currentId1 = current.doubleVarMappingArray![_idCurrent];
-                const otherId1 = other.doubleVarMappingArray![_idOther];
+                const currentId1 = current.doubleIdToGlobal![_idCurrent];
+                const otherId1 = other.doubleIdToGlobal![_idOther];
                 ctx.memoryState.newDoubleValues[otherId1] = ctx.memoryState.oldDoubleValues[otherId1] =
                     ctx.memoryState.newDoubleValues[currentId1];
 
-                const currentId2 = current.longVarMappingArray![_idCurrent];
-                const otherId2 = other.longVarMappingArray![_idOther];
+                const currentId2 = current.longIdToGlobal![_idCurrent];
+                const otherId2 = other.longIdToGlobal![_idOther];
                 ctx.memoryState.newLongValues[otherId2] = ctx.memoryState.oldLongValues[otherId2] =
                     ctx.memoryState.newLongValues[currentId2];
 
-                const currentId3 = current.stringVarMappingArray![_idCurrent];
-                const otherId3 = other.stringVarMappingArray![_idOther];
+                const currentId3 = current.stringIdToGlobal![_idCurrent];
+                const otherId3 = other.stringIdToGlobal![_idOther];
                 ctx.memoryState.newStringValues[otherId3] = ctx.memoryState.oldStringValues[otherId3] =
                     ctx.memoryState.newStringValues[currentId3];
                 // const curValue = current.getNewVarValue``(idCurrent);
@@ -46,19 +46,19 @@ function SendMessage(ctx: VmStateContainer, count: number) {
         other.computeSchemeRecursive(ctx, true);
 
         for (let i = 0; i < count; i += 2) {
-            const _idCurrent = current.varIdToLowcaseNameMap!.get(vars[i])!;
-            const _idOther = other.varIdToLowcaseNameMap!.get(vars[i + 1])!;
+            const _idCurrent = current.varnameToIdMap!.get(vars[i])!;
+            const _idOther = other.varnameToIdMap!.get(vars[i + 1])!;
             if (_idCurrent > -1 && _idOther > -1) {
-                const currentId1 = current.doubleVarMappingArray![_idCurrent];
-                const otherId1 = other.doubleVarMappingArray![_idOther];
+                const currentId1 = current.doubleIdToGlobal![_idCurrent];
+                const otherId1 = other.doubleIdToGlobal![_idOther];
                 ctx.memoryState.newDoubleValues[currentId1] = ctx.memoryState.newDoubleValues[otherId1];
 
-                const currentId2 = current.longVarMappingArray![_idCurrent];
-                const otherId2 = other.longVarMappingArray![_idOther];
+                const currentId2 = current.longIdToGlobal![_idCurrent];
+                const otherId2 = other.longIdToGlobal![_idOther];
                 ctx.memoryState.newLongValues[currentId2] = ctx.memoryState.newLongValues[otherId2];
 
-                const currentId3 = current.stringVarMappingArray![_idCurrent];
-                const otherId3 = other.stringVarMappingArray![_idOther];
+                const currentId3 = current.stringIdToGlobal![_idCurrent];
+                const otherId3 = other.stringIdToGlobal![_idOther];
                 ctx.memoryState.newStringValues[currentId3] = ctx.memoryState.newStringValues[otherId3];
                 // const otherValue = other.getNewVarValue(idOther);
                 // current.setNewVarValue(idCurrent, otherValue);
@@ -153,9 +153,9 @@ function SetVarFloat(ctx: VmStateContainer) {
     const obj = ctx.currentClass.getClassByPath(objectPath);
     if (!obj) return;
 
-    const varId = obj.varIdToLowcaseNameMap!.get(name.toLowerCase())!;
+    const varId = obj.varnameToIdMap!.get(name.toLowerCase())!;
     if (!(varId > -1)) return;
-    const realId = obj.doubleVarMappingArray![varId];
+    const realId = obj.doubleIdToGlobal![varId];
     ctx.memoryState.oldDoubleValues[realId] = value;
     ctx.memoryState.newDoubleValues[realId] = value;
 }

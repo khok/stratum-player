@@ -1,4 +1,4 @@
-// import { Point2D } from "data-types-graphics";
+// import { Point2D } from "vdr-types";
 // import { fabric } from "fabric";
 // import { ControlElementVisual, ControlVisualOptions } from "scene-types";
 // import { StratumError } from "~/helpers/errors";

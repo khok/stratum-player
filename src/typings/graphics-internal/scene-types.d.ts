@@ -1,5 +1,5 @@
 declare module "scene-types" {
-    import { ControlElementData, Point2D, VdrLayers } from "data-types-graphics";
+    import { ControlElementData, Point2D, VdrLayers } from "vdr-types";
     import { BitmapToolState, BrushToolState, PenToolState, TextToolState } from "vm-interfaces-gspace";
 
     interface _VisualBase {

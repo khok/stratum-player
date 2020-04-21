@@ -1,4 +1,4 @@
-import { ClassState, ProjectController, MemoryState } from "vm-interfaces-base";
+import { ClassState, ProjectController, MemoryState } from "vm-interfaces-core";
 import { VmStateContainer, VirtualMachine } from "vm-types";
 import { GraphicSystemController } from "vm-interfaces-graphics";
 

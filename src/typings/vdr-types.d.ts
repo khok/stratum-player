@@ -1,4 +1,4 @@
-declare module "data-types-graphics" {
+declare module "vdr-types" {
     /**
      * Строка вида `rgb(r, g, b)`
      */

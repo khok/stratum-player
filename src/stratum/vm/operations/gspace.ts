@@ -117,7 +117,6 @@ function GetObject2dByName(ctx: VmStateContainer) {
     let group: GroupObjectState | undefined;
     if (groupHandle) {
         const maybeGroup = space.getObject(groupHandle);
-        // TODO: проверить эту ситуацию (фейковая группа или ее нет)
         if (!maybeGroup || maybeGroup.type !== "otGROUP2D") return ctx.pushLong(0);
         group = maybeGroup;
     }
@@ -337,10 +336,10 @@ function GetActualSize2d(ctx: VmStateContainer) {
     const y = obj.height;
     const cl = ctx.currentClass;
 
-    if (isXNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![xId]] = x;
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![xId]] = x;
-    if (isYNew) ctx.memoryState.newDoubleValues[cl.doubleVarMappingArray![yId]] = y;
-    else ctx.memoryState.oldDoubleValues[cl.doubleVarMappingArray![yId]] = y;
+    if (isXNew) ctx.memoryState.newDoubleValues[cl.doubleIdToGlobal![xId]] = x;
+    else ctx.memoryState.oldDoubleValues[cl.doubleIdToGlobal![xId]] = x;
+    if (isYNew) ctx.memoryState.newDoubleValues[cl.doubleIdToGlobal![yId]] = y;
+    else ctx.memoryState.oldDoubleValues[cl.doubleIdToGlobal![yId]] = y;
 
     ctx.pushDouble(1);
 }

@@ -1,6 +1,6 @@
-import { Point2D, VdrLayers } from "data-types-graphics";
+import { Point2D, VdrLayers } from "vdr-types";
 import { fabric } from "fabric";
-import { HTMLInputElementsFactory } from "internal-graphic-types";
+import { HTMLInputElementsFactory } from "html-types";
 import {
     BitmapElementVisual,
     BitmapVisualOptions,

@@ -1,7 +1,7 @@
-import { VmBool } from "vm-interfaces-base";
+import { VmBool } from "vm-interfaces-core";
 import { BitmapToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
-import { Point2D } from "data-types-graphics";
+import { Point2D } from "vdr-types";
 
 export class BitmapTool extends ToolMixin<BitmapTool> implements BitmapToolState {
     private _image?: HTMLImageElement;

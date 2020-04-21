@@ -1,4 +1,4 @@
-import { ImageToolData } from "data-types-graphics";
+import { ImageToolData } from "vdr-types";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { StratumError } from "~/helpers/errors";
 import { readBitmap, readDoubleBitmap } from "~/helpers/imageOperations";
