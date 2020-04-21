@@ -136,8 +136,9 @@ export async function readImageFiles(files: JSZipObject[]) {
  * @remarks
  * не используйте его напрямую - используйте `openZipFromFileList` вместо этого метода
  */
-export async function zipFromBlob(file: Blob | File) {
-    const { files } = await loadAsync(file);
+export async function zipFromBlob(file: Blob | File, encoding?: string) {
+    const decoder = new TextDecoder(encoding || "cp866");
+    const { files } = await loadAsync(file, { decodeFileName: (bytes) => decoder.decode(bytes) });
     return Object.keys(files).map((key) => files[key]);
 }
 
@@ -146,11 +147,11 @@ export async function zipFromBlob(file: Blob | File) {
  * @remarks
  * не используйте его напрямую - используйте `openZipFromUrl` вместо этого метода
  */
-export async function zipFromUrl(url: string) {
+export async function zipFromUrl(url: string, encoding?: string) {
     try {
         const resp = await fetch(url);
         const file = await resp.blob();
-        const zip = await zipFromBlob(file);
+        const zip = await zipFromBlob(file, encoding);
         return zip;
     } catch (e) {
         throw new StratumError(`Невозможно открыть файл ${url}:\n${e}`);

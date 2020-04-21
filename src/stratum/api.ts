@@ -55,6 +55,7 @@ export class ExtendedPlayer extends Player {
 export interface ExtendedPlayerOptions extends PlayerOptions, ReadOptions {
     preloadedLibs?: JSZipObject[];
     continueOnErrorCallback?: (msg: string) => boolean;
+    zipEncoding?: string;
 }
 
 function handlePossibleErrors(collection: Map<string, ClassData>, callback: (msg: string) => boolean) {
@@ -74,13 +75,13 @@ export async function fromZip(zip: JSZipObject[], options?: ExtendedPlayerOption
 }
 
 export async function fromUrl(url: string | string[], options?: ExtendedPlayerOptions) {
-    const zip = await openZipFromUrl(url);
+    const zip = await openZipFromUrl(url, options && options.zipEncoding);
     const addLibs = options && options.preloadedLibs;
     return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
 }
 
 export async function fromFileList(files: FileList, options?: ExtendedPlayerOptions) {
-    const zip = await openZipFromFileList(files);
+    const zip = await openZipFromFileList(files, options && options.zipEncoding);
     const addLibs = options && options.preloadedLibs;
     return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
 }
