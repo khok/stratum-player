@@ -4,30 +4,47 @@ import { StratumError } from "~/helpers/errors";
 import { readBitmap, readDoubleBitmap } from "~/helpers/imageOperations";
 import { BitmapTool } from "./tools";
 
-function loadImage(data: string) {
+function loadImage(data: string, shittyNet: number) {
     const img = new Image();
     return new Promise<HTMLImageElement>(async (res, rej) => {
-        // img.onload = () => setTimeout(() => res(img), Math.random() * 10000); //для дебага
-        img.onload = () => res(img);
+        //для дебага
+        if (shittyNet) img.onload = () => setTimeout(() => res(img), Math.random() * shittyNet);
+        else img.onload = () => res(img);
+
         img.onerror = () => rej();
         img.src = data;
     });
 }
 
-/**
- * Временная реализация загрузчика изображений.
- */
+export interface BitmapToolFactoryData {
+    iconsPath: string;
+    projectImages?: { filename: string; data: Uint8Array }[];
+}
+
+export interface BitmapToolFactoryOptions {
+    shittyNet?: number;
+}
+
 export class BitmapToolFactory {
     private cachedIcons = new Map<string, Promise<HTMLImageElement>>();
     private promises = new Set<Promise<HTMLImageElement>>();
 
-    constructor(private iconsUrlPath: string, private projectImages?: { filename: string; data: Uint8Array }[]) {}
+    private iconsPath: string;
+    private projectImages?: { filename: string; data: Uint8Array }[];
+
+    private shittyNet: number;
+
+    constructor(data: BitmapToolFactoryData, options?: BitmapToolFactoryOptions) {
+        this.iconsPath = data.iconsPath;
+        this.projectImages = data.projectImages;
+        this.shittyNet = (options && options.shittyNet) || 0;
+    }
 
     fromData(data: ImageToolData): BitmapTool {
         //Из данных base64 (требуются размерности)
         if (data.type === "ttDIB2D" || data.type === "ttDOUBLEDIB2D") {
             const tool = new BitmapTool({ x: data.width, y: data.height });
-            const imagePr = loadImage(data.image);
+            const imagePr = loadImage(data.image, this.shittyNet);
             this.promises.add(imagePr.then((image) => (tool.image = image)));
             imagePr.catch(() => {
                 console.error(`Ошибка загрузки изображения ${data.type} #${data.handle}`);
@@ -39,20 +56,20 @@ export class BitmapToolFactory {
         const fname = data.filename.toUpperCase();
         let imagePr = this.cachedIcons.get(fname);
         if (!imagePr) {
-            const url = `${this.iconsUrlPath}/${fname}`;
+            const url = `${this.iconsPath}/${fname}`;
             if (data.type === "ttREFTODIB2D") {
-                imagePr = loadImage(url);
+                imagePr = loadImage(url, this.shittyNet);
             } else {
                 imagePr = fetch(url)
                     .then((res) => res.arrayBuffer())
-                    .then((bytes) => loadImage(readDoubleBitmap(new BinaryStream(bytes)).image));
+                    .then((bytes) => loadImage(readDoubleBitmap(new BinaryStream(bytes)).image, this.shittyNet));
             }
             this.cachedIcons.set(fname, imagePr);
         }
         const tool = new BitmapTool();
         this.promises.add(imagePr.then((image) => (tool.image = image)));
         imagePr.catch(() => {
-            console.error(`Ошибка загрузки изображения ${this.iconsUrlPath}/${fname}`);
+            console.error(`Ошибка загрузки изображения ${this.iconsPath}/${fname}`);
         });
         return tool;
     }
@@ -70,7 +87,7 @@ export class BitmapToolFactory {
         // const { image, width, height } = file.filename.endsWith("bmp") ? readBitmap(stream) : readDoubleBitmap(stream);
         const { image, width, height } = isDouble ? readDoubleBitmap(stream) : readBitmap(stream);
         const tool = new BitmapTool({ x: width, y: height });
-        loadImage(image).then((imageElement) => (tool.image = imageElement));
+        loadImage(image, this.shittyNet).then((imageElement) => (tool.image = imageElement));
         return tool;
     }
 }

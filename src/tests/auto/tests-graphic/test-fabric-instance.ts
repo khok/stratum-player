@@ -16,7 +16,7 @@ import { createComposedScheme } from "~/helpers/graphics";
     const vdr = createComposedScheme(oldvdr, cdata, classesData);
     const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
     const dispatcher = new EventDispatcher();
-    const bmpFactory = new BitmapToolFactory("data/icons");
+    const bmpFactory = new BitmapToolFactory({ iconsPath: "data/icons" });
     const ws = new WindowSystem(bmpFactory, { globalCanvas, dispatcher });
     dispatcher.on("WINDOW_CREATED", (name) => (document.title = name));
 

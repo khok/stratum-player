@@ -3,7 +3,7 @@ import { ClassSchemeNode } from "~/core/classSchemeNode";
 import { createClassTree } from "~/core/createClassScheme";
 import { MemoryManager } from "~/core/memoryManager";
 import { Project, ProjectOptions } from "~/core/project";
-import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
+import { BitmapToolFactory, BitmapToolFactoryOptions } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { WindowSystem, WindowSystemOptions } from "~/graphics/windowSystem";
 import { VmContext } from "~/vm/vmContext";
 import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
@@ -15,7 +15,7 @@ export interface PlayerData {
     images?: { filename: string; data: Uint8Array }[];
 }
 
-export interface PlayerOptions extends ProjectOptions, WindowSystemOptions {
+export interface PlayerOptions extends ProjectOptions, WindowSystemOptions, BitmapToolFactoryOptions {
     iconsPath?: string;
 }
 
@@ -33,7 +33,8 @@ export class Player {
         if (data.varSet) classTree.applyVarSetRecursive(data.varSet);
 
         if (!options) options = {};
-        const bmpFactory = new BitmapToolFactory(options.iconsPath || "data/icons", data.images);
+        const iconsPath = options.iconsPath || "data/icons";
+        const bmpFactory = new BitmapToolFactory({ iconsPath, projectImages: data.images }, options);
         const dispatcher = (options.dispatcher = options.dispatcher || new EventDispatcher());
         const windows = new WindowSystem(bmpFactory, options);
         const project = new Project({ allClasses, classesData }, options);
