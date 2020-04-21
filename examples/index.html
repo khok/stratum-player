@@ -14,7 +14,7 @@
         async function play(type, value) {
             const projectFile = document.getElementById("proj_name").value || "project.spj";
             if (!value) return;
-            const stdLib = await stdlibPromise;
+            const preloadedLibs = await stdlibPromise;
             console.log("Стандартная библиотека имиджей загружена");
             const globalCanvas = document.getElementById("canvas");
             const htmlRoot = document.getElementById("root");
@@ -22,7 +22,7 @@
             const one_step = document.getElementById("one_step");
             controller.removeAttribute("hidden");
             one_step.removeAttribute("hidden");
-            const opts = { graphicOptions: { globalCanvas, htmlRoot }, preloadedLibs: stdLib, projectFile, continueOnErrorCallback: () => true };
+            const opts = { globalCanvas, htmlRoot, preloadedLibs, projectFile, continueOnErrorCallback: () => true };
             const getPlayer = type === "file" ? StratumPlayer.fromFileList(value, opts) : StratumPlayer.fromUrl(`projects/${value}.zip`, opts);
             getPlayer.then(p => {
                 controller.innerHTML = "Пауза";
@@ -58,6 +58,7 @@
     <input id="proj_name" type="text" placeholder="название файла проекта"></input>
     <select id="combobox">
         <option value="" disabled selected>Выберите проект</option>
+        <option value="myach">Интерактивная физика - мяч</option>
         <option value="balls">Много мячиков</option>
         <option value="balls2">Мячики</option>
         <option value="sqr">Квадратное уравнение</option>
