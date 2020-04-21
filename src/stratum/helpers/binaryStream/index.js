@@ -1,8 +1,9 @@
 import bops from "bops";
-import { decode, encode } from "iconv-lite";
 
+const decoder = new TextDecoder("windows-1251");
 function decodeString(bytes) {
-    return encode(decode(bytes, "win1251"), "utf8").toString();
+    // return encode(decode(bytes, "win1251"), "utf8").toString();
+    return decoder.decode(bytes);
 }
 
 export class BinaryStream {
