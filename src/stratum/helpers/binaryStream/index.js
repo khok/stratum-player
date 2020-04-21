@@ -1,5 +1,5 @@
 import bops from "bops";
-import { colorTable } from "~/helpers/colorTable";
+import { systemColorTable } from "~/helpers/systemColorTable";
 
 const decoder = new TextDecoder("windows-1251");
 function decodeString(bytes) {
@@ -47,18 +47,6 @@ export class BinaryStream {
         const long = bops.readInt32LE(this.data, this.streamPosition);
         this.streamPosition += 4;
         return long;
-    }
-
-    readColor() {
-        const bytes = this.readBytes(4);
-        const baseColor = `${bytes[0]},${bytes[1]},${bytes[2]}`;
-        switch (bytes[3]) {
-            case 1:
-                return `rgba(${baseColor},0)`;
-            case 2:
-                return colorTable[bytes[0]] || "black";
-        }
-        return `rgb(${baseColor})`;
     }
 
     readUint() {
@@ -129,4 +117,16 @@ export class BinaryStream {
             y: this.readWord(),
         };
     }
+
+    // readColor() {
+    //     const bytes = this.readBytes(4);
+    //     const baseColor = `${bytes[0]},${bytes[1]},${bytes[2]}`;
+    //     switch (bytes[3]) {
+    //         case 1:
+    //             return `rgba(${baseColor},0)`;
+    //         case 2:
+    //             return systemColorTable[bytes[0]] || "black";
+    //     }
+    //     return `rgb(${baseColor})`;
+    // }
 }

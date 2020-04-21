@@ -15,8 +15,6 @@ export class BinaryStream {
 
     readLong(): number;
 
-    readColor(): string;
-
     readUint(): number;
 
     readDouble(): number;

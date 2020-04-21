@@ -5,7 +5,6 @@ declare module "vm-interfaces-gspace" {
         GroupElementData,
         LineElementData,
         Point2D,
-        StringColor,
         TextElementData,
         ToolData,
         DoubleBitmapElementData,
@@ -15,13 +14,13 @@ declare module "vm-interfaces-gspace" {
 
     export interface PenToolState {
         readonly handle: number;
-        color: StringColor;
+        color: number;
         width: number;
     }
 
     export interface BrushToolState {
         readonly handle: number;
-        color: StringColor;
+        color: number;
         fillType: "SOLID" | "NULL" | "PATTERN" | "HATCED";
         bmpTool: BitmapToolState | undefined;
     }
@@ -30,8 +29,8 @@ declare module "vm-interfaces-gspace" {
         readonly handle: number;
         image?: HTMLImageElement;
         dimensions?: Point2D;
-        setPixel(x: number, y: number, color: StringColor): VmBool;
-        getPixel(x: number, y: number): StringColor;
+        setPixel(x: number, y: number, color: number): VmBool;
+        getPixel(x: number, y: number): number;
     }
 
     export interface FontToolState {
@@ -49,8 +48,8 @@ declare module "vm-interfaces-gspace" {
     export interface TextFragment {
         font: FontToolState;
         stringFragment: StringToolState;
-        foregroundColor: StringColor;
-        backgroundColor: StringColor;
+        foregroundColor: number;
+        backgroundColor: number;
     }
 
     export interface TextToolState {
@@ -59,8 +58,8 @@ declare module "vm-interfaces-gspace" {
         getFragment(index: number): TextFragment;
         updateString(str: StringToolState, idx: number): void;
         updateFont(font: FontToolState, idx: number): void;
-        updateFgColor(color: StringColor, idx: number): void;
-        updateBgColor(color: StringColor, idx: number): void;
+        updateFgColor(color: number, idx: number): void;
+        updateBgColor(color: number, idx: number): void;
         readonly assembledText: { text: string; size: number };
     }
 
@@ -77,14 +76,14 @@ declare module "vm-interfaces-gspace" {
     export interface GraphicSpaceToolsState {
         createBitmap(bmpFilename: string): BitmapToolState;
         createDoubleBitmap(bmpFilename: string): BitmapToolState;
-        createPen(width: number, color: StringColor): PenToolState;
+        createPen(width: number, color: number): PenToolState;
         createFont(fontName: string, size: number, bold: boolean): FontToolState;
         createString(value: string): StringToolState;
         createText(
             font: FontToolState,
             stringFragment: StringToolState,
-            foregroundColor: StringColor,
-            backgroundColor: StringColor
+            foregroundColor: number,
+            backgroundColor: number
         ): TextToolState;
         getTool(type: ToolTypes, handle: number): ToolState | undefined;
         deleteTool(type: ToolTypes, handle: number): VmBool;

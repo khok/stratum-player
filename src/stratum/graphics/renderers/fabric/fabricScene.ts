@@ -21,6 +21,7 @@ import { HtmlControl } from "../html/htmlControl";
 import { FabricBitmap } from "./components/fabricBitmap";
 import { FabricLine } from "./components/fabricLine";
 import { FabricText } from "./components/fabricText";
+import { colorrefToColor } from "~/helpers/varValueFunctions";
 
 type VisualObject = FabricLine | FabricBitmap | FabricText | HtmlControl;
 
@@ -165,7 +166,7 @@ export class FabricScene implements Scene {
     }
 
     updateBrush(brush: BrushToolState) {
-        this.canvas.backgroundColor = brush.color;
+        this.canvas.backgroundColor = colorrefToColor(brush.color);
     }
 
     applyLayers(layers: VdrLayers): void {

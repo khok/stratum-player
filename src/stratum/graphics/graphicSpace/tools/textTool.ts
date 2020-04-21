@@ -2,13 +2,12 @@ import { ToolMixin } from "./toolMixin";
 import { TextToolState, TextFragment } from "vm-interfaces-gspace";
 import { FontTool } from "./fontTool";
 import { StringTool } from "./stringTool";
-import { StringColor } from "vdr-types";
 
 export interface TextToolTextFragment {
     font: FontTool;
     stringFragment: StringTool;
-    foregroundColor: StringColor;
-    backgroundColor: StringColor;
+    foregroundColor: number;
+    backgroundColor: number;
 }
 
 export class TextTool extends ToolMixin<TextTool> implements TextToolState {
@@ -38,11 +37,11 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
         }
         this.update();
     }
-    updateFgColor(color: StringColor, idx: number) {
+    updateFgColor(color: number, idx: number) {
         this.fragments[idx].foregroundColor = color;
         this.update();
     }
-    updateBgColor(color: StringColor, idx: number) {
+    updateBgColor(color: number, idx: number) {
         this.fragments[idx].backgroundColor = color;
         this.update();
     }

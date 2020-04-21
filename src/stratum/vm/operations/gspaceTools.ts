@@ -1,7 +1,6 @@
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
 import { StringToolState, FontToolState, TextToolState } from "vm-interfaces-gspace";
-import { colorrefToString, stringToColorref } from "~/helpers/varValueFunctions";
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
     const space = ctx.graphics.getSpace(spaceHandle);
@@ -71,7 +70,7 @@ function GetTextFgColor2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.pushLong(text ? stringToColorref(text.getFragment(0).foregroundColor) : 0);
+    ctx.pushLong(text ? text.getFragment(0).foregroundColor : 0);
 }
 
 function GetTextBkColor2d(ctx: VmStateContainer) {
@@ -79,7 +78,7 @@ function GetTextBkColor2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const text = _getText(ctx, spaceHandle, textHandle);
-    ctx.pushLong(text ? stringToColorref(text.getFragment(0).backgroundColor) : 0);
+    ctx.pushLong(text ? text.getFragment(0).backgroundColor : 0);
 }
 
 function CreateFont2d(ctx: VmStateContainer) {
@@ -106,8 +105,8 @@ function CreateString2d(ctx: VmStateContainer) {
 }
 
 function CreateText2d(ctx: VmStateContainer) {
-    const bgColor = colorrefToString(ctx.popLong());
-    const fgColor = colorrefToString(ctx.popLong());
+    const bgColor = ctx.popLong();
+    const fgColor = ctx.popLong();
     const stringHandle = ctx.popLong();
     const fontHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
@@ -136,8 +135,8 @@ function CreateRasterText2d(ctx: VmStateContainer) {
 }
 function SetText2d(ctx: VmStateContainer) {
     //HSpace,HText,HFont,HString,~FgColor,~BgColor
-    const bgColor = colorrefToString(ctx.popLong());
-    const fgColor = colorrefToString(ctx.popLong());
+    const bgColor = ctx.popLong();
+    const fgColor = ctx.popLong();
     const stringHandle = ctx.popLong();
     const fontHandle = ctx.popLong();
     const textHandle = ctx.popLong();
@@ -182,7 +181,7 @@ function SetString2d(ctx: VmStateContainer) {
 
 function CreatePen2d(ctx: VmStateContainer) {
     const rop2 = ctx.popDouble();
-    const color = colorrefToString(ctx.popLong());
+    const color = ctx.popLong();
     const width = ctx.popDouble();
     const style = ctx.popDouble();
     const spaceHandle = ctx.popLong();

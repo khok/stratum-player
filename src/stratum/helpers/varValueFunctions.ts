@@ -1,5 +1,5 @@
 import { VarData } from "cls-types";
-import { colorTable } from "./colorTable";
+import { systemColorTable } from "./systemColorTable";
 
 export function createDefaultValue(type: VarData["type"]) {
     switch (type) {
@@ -30,59 +30,39 @@ export function parseVarValue(type: VarData["type"], value: string): string | nu
 /**
  * Вызывать только при парсинге значений по умолчанию.
  */
-export function stringToColorref(value: string) {
+function stringToColorref(value: string) {
     const val = value.toLowerCase().trim();
-    if (val.startsWith("transparent")) return 1;
+    // "transparent"
+    if (val.startsWith("transparent")) return 1 << 24;
 
-    if (val.startsWith("syscolor")) {
-        const color = parseInt(val.split("(")[1].split(")")[0]);
-        return (color << 24) | 2;
-    }
+    // "syscolor(14)"
+    if (val.startsWith("syscolor")) return (2 << 24) | parseInt(val.split("(")[1].split(")")[0]);
 
+    // "rgb(2,4,16)"
     if (val.startsWith("rgb")) {
         const values = val
             .split("(")[1]
             .split(")")[0]
             .split(",")
             .map((v) => parseInt(v));
-        return (values[0] << 24) | (values[1] << 16) | (values[2] << 8);
+        return values[0] | (values[1] << 8) | (values[2] << 16);
     }
 
     throw new Error(`Неизвестный цвет: ${value}`);
-    // const values = new Uint8Array(3);
-    // if (val.startsWith("rgb")) {
-    //     let state = 0,
-    //         start = 0,
-    //         compIdx = 0;
-    //     for (let i = 3; i < val.length && state < 3; i++) {
-    //         switch (state) {
-    //             case 0:
-    //                 if (val[i] === "(") {
-    //                     state = 1;
-    //                     start = i + 1;
-    //                 }
-    //                 break;
-    //             case 1:
-    //                 if (val[i] === "," || val[i] === ")") {
-    //                     values[compIdx++] = parseInt(val.substring(start, i));
-    //                     start = i + 1;
-    //                     if (compIdx === 3) state = 3;
-    //                 }
-    //                 break;
-    //         }
-    //     }
-    // }
 }
 
 /**
- * Вызывается из виртуальной машины
+ * Вызывается из рендерера
  */
-export function colorrefToString(colorref: number) {
-    if (colorref & 1) return "rgba(0,0,0,0)";
-    if (colorref & 2) return colorTable[colorref & 255] || "black";
-    const r = (colorref >> 24) & 255;
-    const g = (colorref >> 16) & 255;
-    const b = (colorref >> 8) & 255;
+export function colorrefToColor(colorref: number) {
+    const lastByte = colorref >> 24;
+    if (lastByte & 1) return "transparent";
+
+    const r = colorref & 255;
+    if (lastByte & 2) return systemColorTable[r] || "black";
+
+    const g = (colorref >> 8) & 255;
+    const b = (colorref >> 16) & 255;
     return `rgb(${r},${g},${b})`;
 }
 

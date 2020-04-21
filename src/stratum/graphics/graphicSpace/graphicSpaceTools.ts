@@ -1,4 +1,3 @@
-import { StringColor } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
 import { GraphicSpaceToolsState, ToolTypes } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
@@ -73,7 +72,7 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         return font;
     }
 
-    createPen(width: number, color: string): PenTool {
+    createPen(width: number, color: number): PenTool {
         const pen = new PenTool(width, color);
         const handle = HandleMap.getFreeHandle(this.pens);
         this.pens.set(handle, pen);
@@ -89,12 +88,7 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         return stringTool;
     }
 
-    createText(
-        font: FontTool,
-        stringFragment: StringTool,
-        foregroundColor: StringColor,
-        backgroundColor: StringColor
-    ): TextTool {
+    createText(font: FontTool, stringFragment: StringTool, foregroundColor: number, backgroundColor: number): TextTool {
         const textTool = new TextTool([{ font, stringFragment, foregroundColor, backgroundColor }]);
         const handle = HandleMap.getFreeHandle(this.texts);
         this.texts.set(handle, textTool);

@@ -25,8 +25,8 @@ function readDataItem(stream) {
 
 function readLogTextItem(stream) {
     return {
-        ltFgColor: stream.readColor(),
-        ltBgColor: stream.readColor(),
+        ltFgColor: stream.readLong(),
+        ltBgColor: stream.readLong(),
         fontHandle: stream.readWord(),
         stringHandle: stream.readWord(),
     };

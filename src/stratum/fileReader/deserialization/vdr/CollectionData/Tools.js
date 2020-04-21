@@ -12,7 +12,7 @@ function readTools(stream) {
 function read_ttPEN2D(stream) {
     return {
         ...readTools(stream),
-        color: stream.readColor(), //не факт, смотреть tools2d.cpp -> 169
+        color: stream.readLong(),
         style: stream.readWord(),
         width: stream.readWord(),
         rop2: stream.readWord(),
@@ -21,7 +21,7 @@ function read_ttPEN2D(stream) {
 function read_ttBRUSH2D(stream) {
     return {
         ...readTools(stream),
-        color: stream.readColor(),
+        color: stream.readLong(),
         style: stream.readWord(),
         hatch: stream.readWord(),
         rop2: stream.readWord(),

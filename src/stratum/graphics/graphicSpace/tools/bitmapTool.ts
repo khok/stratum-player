@@ -16,11 +16,11 @@ export class BitmapTool extends ToolMixin<BitmapTool> implements BitmapToolState
         this._image = value;
         this.dispatchChanges();
     }
-    setPixel(x: number, y: number, color: string): VmBool {
+    setPixel(x: number, y: number, color: number): VmBool {
         throw new Error("Method not implemented.");
         this.dispatchChanges();
     }
-    getPixel(x: number, y: number): string {
+    getPixel(x: number, y: number): number {
         throw new Error("Method not implemented.");
     }
 }

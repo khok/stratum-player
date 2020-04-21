@@ -1,5 +1,4 @@
 import { BrushToolState } from "vm-interfaces-gspace";
-import { StringColor } from "vdr-types";
 import { ToolMixin } from "./toolMixin";
 import { BitmapTool } from "./bitmapTool";
 
@@ -10,10 +9,10 @@ const codeToStyle: { [idx: number]: BrushToolState["fillType"] } = {
 };
 
 export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
-    private _color: StringColor;
+    private _color: number;
     private _fillType: BrushToolState["fillType"];
     private _bmpTool: BitmapTool | undefined;
-    constructor(color: StringColor, style: number, bmpTool?: BitmapTool) {
+    constructor(color: number, style: number, bmpTool?: BitmapTool) {
         super();
         this._color = color;
         this._fillType = codeToStyle[style] || "HATCED";

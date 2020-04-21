@@ -1,11 +1,10 @@
-import { StringColor } from "vdr-types";
 import { PenToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 
 export class PenTool extends ToolMixin<PenTool> implements PenToolState {
-    private _color: string;
+    private _color: number;
     private _width: number;
-    constructor(width: number, color: StringColor) {
+    constructor(width: number, color: number) {
         super();
         this._color = color;
         this._width = width;

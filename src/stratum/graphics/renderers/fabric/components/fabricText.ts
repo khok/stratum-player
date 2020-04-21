@@ -3,6 +3,7 @@ import { fabric } from "fabric";
 import { TextElementVisual, TextVisualOptions } from "scene-types";
 import { TextToolState } from "vm-interfaces-gspace";
 import { fabricConfigObjectOptions } from "../fabricConfig";
+import { colorrefToColor } from "~/helpers/varValueFunctions";
 
 const textScaleCoof = 0.65;
 
@@ -30,8 +31,8 @@ export class FabricText implements TextElementVisual {
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
             angle: -(angle || 0) * 0.1,
-            backgroundColor: firstFrag.backgroundColor,
-            fill: firstFrag.foregroundColor,
+            backgroundColor: colorrefToColor(firstFrag.backgroundColor),
+            fill: colorrefToColor(firstFrag.foregroundColor),
             fontWeight: firstFrag.font.bold ? "bold" : "normal",
             fontFamily: firstFrag.font.name,
             visible: isVisible,
@@ -96,8 +97,8 @@ export class FabricText implements TextElementVisual {
             text,
             // fontSize: size * textScaleCoof,
             fontSize: size,
-            backgroundColor: firstFrag.backgroundColor,
-            fill: firstFrag.foregroundColor,
+            backgroundColor: colorrefToColor(firstFrag.backgroundColor),
+            fill: colorrefToColor(firstFrag.foregroundColor),
             fontWeight: firstFrag.font.bold ? "bold" : "normal",
             fontFamily: firstFrag.font.name,
         });

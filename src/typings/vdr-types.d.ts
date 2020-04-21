@@ -1,8 +1,4 @@
 declare module "vdr-types" {
-    /**
-     * Строка вида `rgb(r, g, b)`
-     */
-    export type StringColor = string;
     export type BmpImage = string;
     export type Point2D = { x: number; y: number };
 
@@ -12,7 +8,7 @@ declare module "vdr-types" {
 
     export interface BrushToolData extends _ToolDataBase {
         type: "ttBRUSH2D";
-        color: StringColor;
+        color: number;
         style: number;
         hatch: number;
         rop2: number;
@@ -21,7 +17,7 @@ declare module "vdr-types" {
 
     export interface PenToolData extends _ToolDataBase {
         type: "ttPEN2D";
-        color: StringColor;
+        color: number;
         style: number;
         width: number;
         rop2: number;
@@ -55,8 +51,8 @@ declare module "vdr-types" {
     export interface TextToolData extends _ToolDataBase {
         type: "ttTEXT2D";
         textCollection: {
-            ltFgColor: StringColor;
-            ltBgColor: StringColor;
+            ltFgColor: number;
+            ltBgColor: number;
             fontHandle: number;
             stringHandle: number;
         }[];

@@ -1,4 +1,4 @@
-export const colorTable = [
+export const systemColorTable = [
     "gray",
     "blue",
     "navy",

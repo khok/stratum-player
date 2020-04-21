@@ -3,12 +3,13 @@ import { Point2D, VdrLayers } from "vdr-types";
 import { LineElementVisual, LineVisualOptions } from "scene-types";
 import { BrushToolState, PenToolState } from "vm-interfaces-gspace";
 import { fabricConfigObjectOptions } from "../fabricConfig";
+import { colorrefToColor } from "~/helpers/varValueFunctions";
 
 function getFillValue(brush?: BrushToolState) {
     if (!brush) return undefined;
     switch (brush.fillType) {
         case "SOLID":
-            return brush.color;
+            return colorrefToColor(brush.color);
         case "PATTERN":
             const bmp = brush.bmpTool;
             return bmp && bmp.image ? new fabric.Pattern({ source: bmp.image }) : "white";
@@ -42,7 +43,7 @@ export class FabricLine implements LineElementVisual {
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
             fill: getFillValue(brush),
-            stroke: pen && pen.color,
+            stroke: pen && colorrefToColor(pen.color),
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible,
         };
@@ -124,7 +125,7 @@ export class FabricLine implements LineElementVisual {
     }
 
     updatePen(pen: PenToolState): void {
-        this.obj.set({ strokeWidth: pen.width, stroke: pen.color });
+        this.obj.set({ strokeWidth: pen.width, stroke: colorrefToColor(pen.color) });
         this.requestRedraw();
     }
     updateBrush(brush: BrushToolState): void {

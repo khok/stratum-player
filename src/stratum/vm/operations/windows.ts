@@ -1,6 +1,5 @@
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { colorrefToString } from "~/helpers/varValueFunctions";
 
 // OPENSCHEMEWINDOW, name "OpenSchemeWindow" arg "STRING","STRING","STRING" ret "HANDLE" out 201
 function OpenSchemeWindow(ctx: VmStateContainer) {
@@ -89,7 +88,7 @@ function SetWindowTransparent(ctx: VmStateContainer) {
 // VM_SETWINDOWTRANSPARENTCOLOR, name "SetWindowTransparentColor" arg "STRING", "COLORREF" ret "FLOAT" out 783
 //Функция устанавливает цвет окна, который не будет отображаться в окне, т.е. окно в местах, где находится этот цвет, будет полностью прозрачным.
 function SetWindowTransparentColor(ctx: VmStateContainer) {
-    const color = colorrefToString(ctx.popLong());
+    const color = ctx.popLong();
     const winName = ctx.popString();
     ctx.pushDouble(1);
 }
