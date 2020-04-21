@@ -1,5 +1,5 @@
 import { ClassData, VarData, LinkData } from "cls-types";
-import { ClassSchemeNode, SchemeData } from "./classSchemeNode";
+import { ClassTreeNode, OnSchemeData } from "./classTreeNode";
 import { StratumError } from "~/helpers/errors";
 import { ClassPrototype } from "./classPrototype";
 import { HandleMap } from "~/helpers/handleMap";
@@ -85,7 +85,7 @@ class VarArrayNode {
         name: string,
         classes: Map<string, { childInfo: ClassData["childInfo"]; links: ClassData["links"]; proto: ClassPrototype }>,
         reqIndex: (type: VarData["type"]) => number,
-        private schemeData?: Omit<SchemeData, "parent">
+        private schemeData?: Omit<OnSchemeData, "parent">
     ) {
         const klass = classes.get(name);
         if (!klass) throw new StratumError(`Класс ${name} не найден`);
@@ -114,17 +114,17 @@ class VarArrayNode {
         return this.proto.name;
     }
 
-    toClassSchemeNode(parentData?: SchemeData): ClassSchemeNode {
+    toClassTree(onSchemeData?: OnSchemeData): ClassTreeNode {
         const { vars, proto, childs } = this;
-        const parentNode = new ClassSchemeNode({
+        const parentNode = new ClassTreeNode({
             proto,
             varIndexMap: vars && vars.map((v) => v.getIndexAndType()),
-            schemeData: parentData,
+            onSchemeData: onSchemeData,
         });
         if (childs) {
-            const nodeChilds = HandleMap.create<ClassSchemeNode>();
+            const nodeChilds = HandleMap.create<ClassTreeNode>();
             childs.forEach((c, handle) =>
-                nodeChilds.set(handle, c.toClassSchemeNode(c.schemeData && { ...c.schemeData, parent: parentNode }))
+                nodeChilds.set(handle, c.toClassTree(c.schemeData && { ...c.schemeData, parent: parentNode }))
             );
             parentNode.setChilds(nodeChilds);
         }
@@ -147,7 +147,7 @@ function dataToProtos(classes: Map<string, ClassData>) {
     return protos;
 }
 
-//ClassData -> ClassPrototype(ClassData) -> VarArrayNode(ClassData, ClassPrototype) -> ClassSchemeNode(VarArrayNode, ClassPrototype)
+//ClassData -> ClassPrototype(ClassData) -> VarArrayNode(ClassData, ClassPrototype) -> ClassTreeNode(VarArrayNode, ClassPrototype)
 
 export function createClassTree(rootName: string, classesData: Map<string, ClassData>) {
     //Переводим "сырые" считанные данные в прототипы классов.
@@ -170,7 +170,7 @@ export function createClassTree(rootName: string, classesData: Map<string, Class
     };
 
     //Создаем граф переменных и конвертируем его в граф классов.
-    const classTree = new VarArrayNode(rootName, protos, counter).toClassSchemeNode();
+    const classTree = new VarArrayNode(rootName, protos, counter).toClassTree();
 
     const mmanager = new MemoryManager({ doubleVarCount, longVarCount, stringVarCount });
     //Инициализируем память каждого узла графа.

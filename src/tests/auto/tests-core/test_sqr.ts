@@ -1,6 +1,6 @@
 import { equal } from "assert";
 import { ClassPrototype } from "~/core/classPrototype";
-import { ClassSchemeNode } from "~/core/classSchemeNode";
+import { ClassTreeNode } from "~/core/classTreeNode";
 import { MemoryManager } from "~/core/memoryManager";
 import { readClassBodyData, readClassHeaderData } from "~/fileReader/deserialization";
 import { openStreamFromUrl } from "~/fileReader/fileReaderHelpers";
@@ -11,7 +11,7 @@ import { VmContext } from "~/vm/vmContext";
     const header = readClassHeaderData(stream);
     const { vars, bytecode } = readClassBodyData(stream, { ...header, fileName: "" }, { parseBytecode: true });
 
-    const node = new ClassSchemeNode({
+    const node = new ClassTreeNode({
         proto: new ClassPrototype(name, { vars, code: bytecode!.parsed }),
         // varIndexMap: Array.from({ length: vars!.length }, (_, i) => i + 100),
         varIndexMap: vars!.map((v, i) => ({ type: v.type, globalIdx: i + 100 })),

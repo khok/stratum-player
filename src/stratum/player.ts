@@ -1,6 +1,6 @@
 import { ClassData, VarSetData } from "cls-types";
-import { ClassSchemeNode } from "~/core/classSchemeNode";
-import { createClassTree } from "~/core/createClassScheme";
+import { ClassTreeNode } from "~/core/classTreeNode";
+import { createClassTree } from "~/core/createClassTree";
 import { MemoryManager } from "~/core/memoryManager";
 import { Project, ProjectOptions } from "~/core/project";
 import { BitmapToolFactory, BitmapToolFactoryOptions } from "~/graphics/graphicSpace/bitmapToolFactory";
@@ -21,7 +21,7 @@ export interface PlayerOptions extends ProjectOptions, GraphicSystemOptions, Bit
 
 export class Player {
     private vm: VmContext;
-    private classTree: ClassSchemeNode;
+    private classTree: ClassTreeNode;
     private mmanager: MemoryManager;
     private graphics: GraphicSystem;
     private dispatcher: EventDispatcher;

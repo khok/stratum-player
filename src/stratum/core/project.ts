@@ -3,10 +3,10 @@ import { ProjectController, VmBool } from "vm-interfaces-core";
 import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { MyResolver } from "~/graphics/graphicSystem";
 import { createComposedScheme } from "~/helpers/graphics";
-import { ClassSchemeNode } from "./classSchemeNode";
+import { ClassTreeNode } from "./classTreeNode";
 
 export interface ProjectData {
-    allClasses: ClassSchemeNode[];
+    allClasses: ClassTreeNode[];
     classesData: Map<string, ClassData>;
 }
 
@@ -15,7 +15,7 @@ export interface ProjectOptions {
 }
 
 export class Project implements ProjectController {
-    private classNodes: ClassSchemeNode[];
+    private classNodes: ClassTreeNode[];
     private classesData: Map<string, ClassData>;
 
     constructor(data: ProjectData, private options?: ProjectOptions) {
@@ -42,7 +42,7 @@ export class Project implements ProjectController {
         const idx = cl.fileName.lastIndexOf("\\");
         return cl.fileName.substr(0, idx + 1);
     }
-    *getClassesByProtoName(className: string): IterableIterator<ClassSchemeNode> {
+    *getClassesByProtoName(className: string): IterableIterator<ClassTreeNode> {
         //TODO: ПЕРЕПИСАТЬ
         for (const node of this.classNodes) if (node.protoName === className) yield node;
     }

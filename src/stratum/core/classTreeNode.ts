@@ -9,21 +9,21 @@ import { ClassPrototype } from "./classPrototype";
 import { StratumError } from "~/helpers/errors";
 import { MemoryManager } from "./memoryManager";
 
-export interface SchemeData {
-    parent: ClassSchemeNode;
+export interface OnSchemeData {
+    parent: ClassTreeNode;
     handle: number;
     position: Point2D;
     name: string;
 }
 
-export interface ClassSchemeNodeOptions {
+export interface ClassTreeNodeOptions {
     proto: ClassPrototype;
     varIndexMap?: { globalIdx: number; type: VarData["type"] }[];
-    schemeData?: SchemeData;
+    onSchemeData?: OnSchemeData;
 }
 
-export class ClassSchemeNode implements ClassState {
-    private static createDisableGetter(ci: ClassSchemeNode): () => boolean {
+export class ClassTreeNode implements ClassState {
+    private static createDisableGetter(ci: ClassTreeNode): () => boolean {
         const enableVarid = ci.varnameToIdMap!.get("_enable");
         const disableVarId = ci.varnameToIdMap!.get("_disable");
 
@@ -41,8 +41,8 @@ export class ClassSchemeNode implements ClassState {
     private readonly proto: ClassPrototype;
     private mmanager?: MemoryManager;
     private isDisabled: () => boolean;
-    private childs?: HandleMap<ClassSchemeNode>;
-    private schemeData?: SchemeData;
+    private childs?: HandleMap<ClassTreeNode>;
+    private onSchemeData?: OnSchemeData;
     private captureEventsFromHandle = 0;
     private hasCode: boolean;
 
@@ -55,9 +55,9 @@ export class ClassSchemeNode implements ClassState {
     readonly longIdToGlobal?: Uint16Array;
     readonly stringIdToGlobal?: Uint16Array;
 
-    constructor({ proto, varIndexMap, schemeData }: ClassSchemeNodeOptions) {
+    constructor({ proto, varIndexMap, onSchemeData }: ClassTreeNodeOptions) {
         this.proto = proto;
-        this.schemeData = schemeData;
+        this.onSchemeData = onSchemeData;
 
         if (varIndexMap) {
             const varCount = varIndexMap.length;
@@ -84,11 +84,11 @@ export class ClassSchemeNode implements ClassState {
             }
         }
         this.canReceiveEvents = !!(this.varnameToIdMap && this.varnameToIdMap.get("msg"));
-        this.isDisabled = this.varnameToIdMap ? ClassSchemeNode.createDisableGetter(this) : () => false;
+        this.isDisabled = this.varnameToIdMap ? ClassTreeNode.createDisableGetter(this) : () => false;
         this.hasCode = !!proto.code;
     }
 
-    setChilds(childs: HandleMap<ClassSchemeNode>) {
+    setChilds(childs: HandleMap<ClassTreeNode>) {
         this.childs = childs;
     }
 
@@ -137,10 +137,10 @@ export class ClassSchemeNode implements ClassState {
                 //Если знач. по умолчанию нет, пытаемся получить специальное значение переменной.
                 //prettier-ignore
                 switch(`${curVar.type} ${curVar.lowCaseName}`) {
-                    case "FLOAT orgx": defValue = this.schemeData && this.schemeData.position.x; break;
-                    case "FLOAT orgy": defValue = this.schemeData && this.schemeData.position.y; break;
-                    case "HANDLE _hobject": defValue = this.schemeData && this.schemeData.handle; break;
-                    case "STRING _objname": defValue = this.schemeData && this.schemeData.name; break;
+                    case "FLOAT orgx": defValue = this.onSchemeData && this.onSchemeData.position.x; break;
+                    case "FLOAT orgy": defValue = this.onSchemeData && this.onSchemeData.position.y; break;
+                    case "HANDLE _hobject": defValue = this.onSchemeData && this.onSchemeData.handle; break;
+                    case "STRING _objname": defValue = this.onSchemeData && this.onSchemeData.name; break;
                     case "STRING _classname": defValue = this.protoName; break;
                 }
             }
@@ -158,7 +158,7 @@ export class ClassSchemeNode implements ClassState {
      */
     applyVarSetRecursive(varSet: VarSetData) {
         if (!this.mmanager) throw new StratumError("Значения по умолчанию не инициализированы");
-        if (this.protoName === varSet.classname && (!this.schemeData || this.schemeData.handle === varSet.handle)) {
+        if (this.protoName === varSet.classname && (!this.onSchemeData || this.onSchemeData.handle === varSet.handle)) {
             const { varData } = varSet;
             varData.forEach(({ name, value }) => {
                 if (!this.varTypes) return;
@@ -178,7 +178,7 @@ export class ClassSchemeNode implements ClassState {
     }
 
     get parent() {
-        return this.schemeData && this.schemeData.parent;
+        return this.onSchemeData && this.onSchemeData.parent;
     }
 
     getClassByPath(path: string): ClassState | undefined {
@@ -192,13 +192,13 @@ export class ClassSchemeNode implements ClassState {
         throw Error(`getClassesByPath() для пути ${path} не реализован`);
     }
 
-    private _collectNodes(nodes: ClassSchemeNode[]) {
+    private _collectNodes(nodes: ClassTreeNode[]) {
         if (this.childs) this.childs.forEach((c) => c._collectNodes(nodes));
         nodes.push(this);
     }
 
     collectNodes() {
-        const nodes = new Array<ClassSchemeNode>();
+        const nodes = new Array<ClassTreeNode>();
         this._collectNodes(nodes);
         return nodes;
     }
@@ -225,7 +225,9 @@ export class ClassSchemeNode implements ClassState {
         const prevCmdIdx = ctx.substituteState(this);
         executeCode(ctx, this.proto.code!);
         if (ctx.hasError)
-            ctx.addErrorInfo(`в классе ${this.schemeData ? "#" + this.schemeData.handle + " " : ""}${this.protoName}`);
+            ctx.addErrorInfo(
+                `в классе ${this.onSchemeData ? "#" + this.onSchemeData.handle + " " : ""}${this.protoName}`
+            );
         else ctx.returnState(prevClass, prevCmdIdx);
     }
 }

@@ -1,4 +1,4 @@
-import { createClassTree } from "~/core/createClassScheme";
+import { createClassTree } from "~/core/createClassTree";
 import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 import { equal } from "assert";
 

@@ -1,5 +1,5 @@
 import { ok } from "assert";
-import { createClassTree } from "~/core/createClassScheme";
+import { createClassTree } from "~/core/createClassTree";
 import { Project } from "~/core/project";
 import { readProjectData, openZipFromUrl } from "~/fileReader/fileReaderHelpers";
 import { ClassState } from "vm-interfaces-core";
