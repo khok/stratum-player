@@ -482,7 +482,7 @@ function CHR_STRING(ctx: VmStateContainer) {
     ctx.pushString(String.fromCharCode(ctx.popDouble()));
 }
 function FLOAT_TO_STRING(ctx: VmStateContainer) {
-    ctx.pushString(ctx.popDouble().toString());
+    ctx.pushString((Math.floor(ctx.popDouble() * 10000) / 10000).toString());
 }
 function STRING_TO_FLOAT(ctx: VmStateContainer) {
     ctx.pushDouble(parseFloat(ctx.popString()) || 0);
