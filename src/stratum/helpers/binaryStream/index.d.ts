@@ -11,11 +11,11 @@ export class BinaryStream {
 
     readByte(): number;
 
+    readInt16(): number;
+
     readWord(): number;
 
     readLong(): number;
-
-    readUint(): number;
 
     readDouble(): number;
 

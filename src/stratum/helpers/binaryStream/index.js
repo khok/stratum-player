@@ -37,8 +37,14 @@ export class BinaryStream {
         return byte;
     }
 
-    readWord() {
+    readInt16() {
         const word = bops.readInt16LE(this.data, this.streamPosition);
+        this.streamPosition += 2;
+        return word;
+    }
+
+    readWord() {
+        const word = bops.readUInt16LE(this.data, this.streamPosition);
         this.streamPosition += 2;
         return word;
     }
@@ -47,12 +53,6 @@ export class BinaryStream {
         const long = bops.readInt32LE(this.data, this.streamPosition);
         this.streamPosition += 4;
         return long;
-    }
-
-    readUint() {
-        const uint = bops.readUInt32LE(this.data, this.streamPosition);
-        this.streamPosition += 4;
-        return uint;
     }
 
     readDouble() {
@@ -80,28 +80,22 @@ export class BinaryStream {
 
     //Используется в коде ВМ, где количество байт всегда кратно 2
     readStringTrimmed() {
-        const size = bops.readInt16LE(this.data, this.streamPosition);
+        const size = this.readWord();
 
-        const strStart = this.streamPosition + 2;
-        const preEnd = strStart + size * 2 - 2;
-        const strEnd = preEnd + (this.data[preEnd] !== 0);
+        const startPos = this.streamPosition;
+        const endPos = startPos + (size - 1) * 2;
 
-        const value = decodeString(bops.subarray(this.data, strStart, strEnd));
-
-        this.streamPosition += (size + 1) * 2;
-
+        const value = decodeString(bops.subarray(this.data, startPos, this.data[endPos] === 0 ? endPos : endPos + 1));
+        this.streamPosition += size * 2;
         return value;
     }
 
     readFixedString(size) {
-        return decodeString(this.readBytes(size));
+        return size > 0 ? decodeString(this.readBytes(size)) : "";
     }
 
     readString() {
-        const size = bops.readInt16LE(this.data, this.streamPosition);
-        this.streamPosition += 2;
-        if (size <= 0) return "";
-        return decodeString(this.readBytes(size));
+        return this.readFixedString(this.readWord());
     }
 
     readPoint2D() {
@@ -113,8 +107,8 @@ export class BinaryStream {
 
     readIntegerPoint2D() {
         return {
-            x: this.readWord(),
-            y: this.readWord(),
+            x: this.readInt16(),
+            y: this.readInt16(),
         };
     }
 

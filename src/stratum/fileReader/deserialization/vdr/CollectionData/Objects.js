@@ -75,7 +75,7 @@ function readBitmap(stream) {
         ...readObject2D(stream),
         bmpOrigin: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
         bmpSize: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
-        bmpAngle: stream.readWord(),
+        bmpAngle: stream.readInt16(),
     };
 }
 
@@ -98,7 +98,7 @@ function read_otTEXT2D(stream) {
         ...readObject2D(stream),
         textToolHandle: stream.readWord(),
         delta: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
-        angle: stream.readWord(),
+        angle: stream.readInt16(),
     };
 }
 // function read_otVIEW3D2D(stream) {

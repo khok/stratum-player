@@ -4,7 +4,7 @@ import { readBitmap, readDoubleBitmap } from "~/helpers/imageOperations";
 
 function readTools(stream) {
     return {
-        refCount: stream.readWord(), //Выкидывается
+        refCount: stream.readWord(),
         handle: stream.readWord(),
     };
 }
@@ -13,18 +13,18 @@ function read_ttPEN2D(stream) {
     return {
         ...readTools(stream),
         color: stream.readLong(),
-        style: stream.readWord(),
-        width: stream.readWord(),
-        rop2: stream.readWord(),
+        style: stream.readInt16(),
+        width: stream.readInt16(),
+        rop2: stream.readInt16(),
     };
 }
 function read_ttBRUSH2D(stream) {
     return {
         ...readTools(stream),
         color: stream.readLong(),
-        style: stream.readWord(),
-        hatch: stream.readWord(),
-        rop2: stream.readWord(),
+        style: stream.readInt16(),
+        hatch: stream.readInt16(),
+        rop2: stream.readInt16(),
         dibHandle: stream.readWord(),
     };
 }
@@ -47,11 +47,11 @@ function read_ttFONT2D(stream) {
     //Структуру искать как typedef struct tagOldLOGFONT
     const data = {
         ...header,
-        height: stream.readWord(),
-        width: stream.readWord(),
-        escapement: stream.readWord(),
-        orientation: stream.readWord(),
-        weight: stream.readWord(),
+        height: stream.readInt16(),
+        width: stream.readInt16(),
+        escapement: stream.readInt16(),
+        orientation: stream.readInt16(),
+        weight: stream.readInt16(),
         italic: stream.readByte(),
         underline: stream.readByte(),
         strikeOut: stream.readByte(),
