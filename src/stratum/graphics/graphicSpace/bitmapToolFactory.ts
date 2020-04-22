@@ -22,7 +22,7 @@ export interface BitmapToolFactoryData {
 }
 
 export interface BitmapToolFactoryOptions {
-    shittyNet?: number;
+    debug_shittyNet?: number;
 }
 
 export class BitmapToolFactory {
@@ -37,7 +37,7 @@ export class BitmapToolFactory {
     constructor(data: BitmapToolFactoryData, options?: BitmapToolFactoryOptions) {
         this.iconsPath = data.iconsPath;
         this.projectImages = data.projectImages;
-        this.shittyNet = (options && options.shittyNet) || 0;
+        this.shittyNet = (options && options.debug_shittyNet) || 0;
     }
 
     fromData(data: ImageToolData): BitmapTool {

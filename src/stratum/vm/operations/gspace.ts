@@ -109,15 +109,24 @@ function GetObject2dByName(ctx: VmStateContainer) {
     const groupHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    if (objectName === "") return ctx.pushLong(0);
+    if (objectName === "") {
+        ctx.pushLong(0);
+        return;
+    }
 
     const space = ctx.graphics.getSpace(spaceHandle);
-    if (!space) return ctx.pushLong(0);
+    if (!space) {
+        ctx.pushLong(0);
+        return;
+    }
 
     let group: GroupObjectState | undefined;
     if (groupHandle) {
         const maybeGroup = space.getObject(groupHandle);
-        if (!maybeGroup || maybeGroup.type !== "otGROUP2D") return ctx.pushLong(0);
+        if (!maybeGroup || maybeGroup.type !== "otGROUP2D") {
+            ctx.pushLong(0);
+            return;
+        }
         group = maybeGroup;
     }
     const object = space.findObjectByName(objectName, group);

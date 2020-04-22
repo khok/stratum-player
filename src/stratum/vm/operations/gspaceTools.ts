@@ -124,15 +124,6 @@ function CreateText2d(ctx: VmStateContainer) {
     ctx.pushLong(space ? space.tools.createText(font, stringTool, fgColor, bgColor).handle : 0);
 }
 
-function CreateRasterText2d(ctx: VmStateContainer) {
-    const angle = ctx.popDouble();
-    const y = ctx.popDouble();
-    const x = ctx.popDouble();
-    const textHandle = ctx.popLong();
-    const spaceHandle = ctx.popLong();
-    const space = ctx.graphics.getSpace(spaceHandle);
-    ctx.pushLong(space ? space.createText(x, y, angle, textHandle).handle : 0);
-}
 function SetText2d(ctx: VmStateContainer) {
     //HSpace,HText,HFont,HString,~FgColor,~BgColor
     const bgColor = ctx.popLong();
@@ -209,7 +200,6 @@ export function initGraphicTools(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.CREATEFONT2D, CreateFont2d);
     addOperation(Opcode.CREATESTRING2D, CreateString2d);
     addOperation(Opcode.CREATETEXT2D, CreateText2d);
-    addOperation(Opcode.CREATERASTERTEXT2D, CreateRasterText2d);
     addOperation(Opcode.VM_SETLOGTEXT2D, SetText2d);
     addOperation(Opcode.SETLOGSTRING2D, SetString2d);
     addOperation(Opcode.CREATEPEN2D, CreatePen2d);

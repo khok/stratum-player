@@ -17,10 +17,12 @@ export interface ProjectOptions {
 export class Project implements ProjectController {
     private classNodes: ClassTreeNode[];
     private classesData: Map<string, ClassData>;
+    private disableSchemeCompose: boolean;
 
-    constructor(data: ProjectData, private options?: ProjectOptions) {
+    constructor(data: ProjectData, options?: ProjectOptions) {
         this.classNodes = data.allClasses;
         this.classesData = data.classesData;
+        this.disableSchemeCompose = (options && options.debug_disableSchemeCompose) || false;
     }
 
     createSchemeInstance(className: string): MyResolver | undefined {
@@ -28,7 +30,7 @@ export class Project implements ProjectController {
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const vdr =
-            (!this.options || !this.options.debug_disableSchemeCompose) && data.childInfo
+            data.childInfo && !this.disableSchemeCompose
                 ? createComposedScheme(data.scheme, data.childInfo, this.classesData)
                 : data.scheme;
         return ({ bmpFactory, scene }) => GraphicSpace.fromVdr(className, vdr, bmpFactory, scene);

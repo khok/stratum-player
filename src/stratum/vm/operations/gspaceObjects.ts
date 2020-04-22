@@ -45,6 +45,16 @@ function CreateBitmap2d(ctx: VmStateContainer) {
     ctx.pushLong(space ? space.createBitmap(x, y, bitmapToolHandle, false).handle : 0);
 }
 
+function CreateRasterText2d(ctx: VmStateContainer) {
+    const angle = ctx.popDouble();
+    const y = ctx.popDouble();
+    const x = ctx.popDouble();
+    const textToolHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+    const space = ctx.graphics.getSpace(spaceHandle);
+    ctx.pushLong(space ? space.createText(x, y, angle, textToolHandle).handle : 0);
+}
+
 // FLOAT DeleteObject2d(HANDLE HSpace, HANDLE HObject)
 function DeleteObject2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
@@ -59,5 +69,6 @@ export function initGraphicObjects(addOperation: (opcode: number, operation: Ope
     addOperation(Opcode.CREATELINE2D, CreateLine2d);
     addOperation(Opcode.CREATEGROUP2D, CreateGroup2d as Operation);
     addOperation(Opcode.CREATEBITMAP2D, CreateBitmap2d);
+    addOperation(Opcode.CREATERASTERTEXT2D, CreateRasterText2d);
     addOperation(Opcode.DELETEOBJECT2D, DeleteObject2d);
 }
