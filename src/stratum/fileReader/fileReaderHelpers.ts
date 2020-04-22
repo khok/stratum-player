@@ -19,11 +19,11 @@ export async function openStreamFromUrl(url: string) {
     return new BinaryStream(file);
 }
 
-export type ReadOptions = {
+export interface ReadOptions {
     projectFile?: string;
     sttFile?: string;
     customRootClass?: string;
-};
+}
 
 export async function readProjectData(data: JSZipObject[], options?: ReadOptions) {
     if (!options) options = {};

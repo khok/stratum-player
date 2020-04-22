@@ -1,12 +1,12 @@
 import { FontToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
 
-export type FontToolOptions = {
+export interface FontToolOptions {
     fontName: string;
     size: number;
     weight?: number;
     height?: number;
-};
+}
 
 export class FontTool extends ToolMixin<FontTool> implements FontToolState {
     private _name: string;

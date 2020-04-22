@@ -1,6 +1,8 @@
 declare module "vdr-types" {
-    export type BmpImage = string;
-    export type Point2D = { x: number; y: number };
+    export interface Point2D {
+        x: number;
+        y: number;
+    }
 
     interface _ToolDataBase {
         handle: number;
@@ -60,14 +62,14 @@ declare module "vdr-types" {
 
     export interface BitmapToolData extends _ToolDataBase {
         type: "ttDIB2D";
-        image: BmpImage;
+        image: string;
         width: number;
         height: number;
     }
 
     export interface DoubleBitmapToolData extends _ToolDataBase {
         type: "ttDOUBLEDIB2D";
-        image: BmpImage;
+        image: string;
         width: number;
         height: number;
     }
