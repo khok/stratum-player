@@ -210,11 +210,12 @@ export function readClassBodyData(
     }
 
     if (next === RecordType.CR_CODE) {
-        const codesize = stream.readLong();
-        const original = stream.readBytes(codesize * 2);
+        const codesize = stream.readLong() * 2;
+        const substream = stream.substream(codesize);
+        const original = stream.readBytes(codesize);
         res.bytecode = {
             original,
-            parsed: blocks.parseBytecode ? parseBytecode(new BinaryStream(original), codesize) : undefined,
+            parsed: blocks.parseBytecode ? parseBytecode(substream, codesize) : undefined,
         };
         next = stream.readWord();
     }

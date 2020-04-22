@@ -23,7 +23,7 @@ function findSingleFile(zipFiles: JSZipObject[], ending: string, mustExist = tru
 }
 
 async function unzipFile(file: JSZipObject) {
-    const data = await file.async("uint8array");
+    const data = await file.async("arraybuffer");
     return { filename: file.name.replace(/\//g, "\\"), data };
 }
 

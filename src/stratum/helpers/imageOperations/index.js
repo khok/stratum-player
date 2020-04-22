@@ -1,7 +1,7 @@
-import { decode } from "./bmpDecoder";
 import { PNG } from "pngjs";
-import { BinaryStream } from "~/helpers/binaryStream";
 import { StratumError } from "~/helpers/errors";
+import { bytesToBase64 } from "./base64";
+import { decode } from "./bmpDecoder";
 
 function applyAlphaMask(imageBytes, maskBytes) {
     const { width, height, data: imageData } = decode(imageBytes);
@@ -26,7 +26,7 @@ export function readBitmap(stream) {
     const bmpBytes = stream.readBytes(readBitmapSize(stream));
 
     const { width, height } = decode(bmpBytes);
-    const image = "data:image/bmp;base64," + new BinaryStream(bmpBytes).readBase64(bmpBytes.length);
+    const image = "data:image/bmp;base64," + bytesToBase64(bmpBytes);
     return { image, width, height };
 }
 
@@ -35,6 +35,6 @@ export function readDoubleBitmap(stream) {
     const maskBytes = stream.readBytes(readBitmapSize(stream));
 
     const { data, width, height } = applyAlphaMask(bmpBytes, maskBytes);
-    const image = "data:image/png;base64," + new BinaryStream(data).readBase64(data.length);
+    const image = "data:image/png;base64," + bytesToBase64(data);
     return { image, width, height };
 }

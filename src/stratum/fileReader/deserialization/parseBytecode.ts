@@ -66,7 +66,7 @@ export function parseBytecode(stream: BinaryStream, codesize: number): ParsedCod
     const codepoints: number[] = [];
 
     const start = stream.position;
-    const end = start + codesize * 2;
+    const end = start + codesize;
 
     while (stream.position < end) {
         const codepoint = stream.position - start;
