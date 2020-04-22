@@ -1,3 +1,4 @@
+import { ProjectFile } from "other-types";
 import { ImageToolData } from "vdr-types";
 import { BinaryStream } from "~/helpers/binaryStream";
 import { StratumError } from "~/helpers/errors";
@@ -18,7 +19,7 @@ function loadImage(data: string, shittyNet: number) {
 
 export interface BitmapToolFactoryData {
     iconsPath: string;
-    projectImages?: { filename: string; data: Uint8Array }[];
+    projectImages?: ProjectFile[];
 }
 
 export interface BitmapToolFactoryOptions {
@@ -30,7 +31,7 @@ export class BitmapToolFactory {
     private promises = new Set<Promise<HTMLImageElement>>();
 
     private iconsPath: string;
-    private projectImages?: { filename: string; data: Uint8Array }[];
+    private projectImages?: ProjectFile[];
 
     private shittyNet: number;
 

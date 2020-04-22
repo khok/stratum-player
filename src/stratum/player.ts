@@ -1,4 +1,5 @@
 import { ClassData, VarSetData } from "cls-types";
+import { ProjectFile } from "other-types";
 import { ClassTreeNode } from "~/core/classTreeNode";
 import { createClassTree } from "~/core/createClassTree";
 import { MemoryManager } from "~/core/memoryManager";
@@ -12,7 +13,7 @@ export interface PlayerData {
     rootName: string;
     classesData: Map<string, ClassData>;
     varSet?: VarSetData;
-    images?: { filename: string; data: Uint8Array }[];
+    images?: ProjectFile[];
 }
 
 export interface PlayerOptions extends ProjectOptions, GraphicSystemOptions, BitmapToolFactoryOptions {
