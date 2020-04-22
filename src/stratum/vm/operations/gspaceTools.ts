@@ -1,6 +1,6 @@
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { StringToolState, FontToolState, TextToolState } from "vm-interfaces-gspace";
+import { StringToolState, FontToolState, TextToolState, PenToolState, BrushToolState } from "vm-interfaces-gspace";
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
     const space = ctx.graphics.getSpace(spaceHandle);
@@ -181,6 +181,74 @@ function CreatePen2d(ctx: VmStateContainer) {
     ctx.pushLong(space ? space.tools.createPen(width, color).handle : 0);
 }
 
+// FLOAT SetPenROP2d(HANDLE HSpace, HANDLE HPen, FLOAT rop)
+function SetPenROP2d(ctx: VmStateContainer) {
+    const rop = ctx.popDouble();
+    const penHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.graphics.getSpace(spaceHandle);
+    if (!space) {
+        ctx.pushDouble(0);
+        return;
+    }
+    const pen = space.tools.getTool("ttPEN2D", penHandle) as PenToolState;
+    ctx.pushDouble(pen ? 1 : 0);
+}
+
+// HANDLE CreateBrush2d(HANDLE HSpace, FLOAT Style, FLOAT Hatch, COLORREF Color, HANDLE HDib, FLOAT Type)
+function CreateBrush2d(ctx: VmStateContainer) {
+    const type = ctx.popDouble();
+    const dibHandle = ctx.popLong();
+    const color = ctx.popLong();
+    const hatch = ctx.popDouble();
+    const style = ctx.popDouble();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.graphics.getSpace(spaceHandle);
+    // console.log(spaceHandle);
+    ctx.pushLong(space ? space.tools.createBrush(color, style, dibHandle).handle : 0);
+}
+
+// FLOAT SetBrushColor2d(HANDLE HSpace, HANDLE HBrush, COLORREF Color)
+function SetBrushColor2d(ctx: VmStateContainer) {
+    const color = ctx.popLong();
+    const brushHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.graphics.getSpace(spaceHandle);
+    if (!space) {
+        ctx.pushDouble(0);
+        return;
+    }
+    const brush = space.tools.getTool("ttBRUSH2D", brushHandle) as BrushToolState;
+    if (!brush) {
+        ctx.pushDouble(0);
+        return;
+    }
+    brush.color = color;
+    ctx.pushDouble(1);
+}
+
+// FLOAT SetBrushROP2d(HANDLE HSpace, HANDLE HBrush, FLOAT rop)
+function SetBrushROP2d(ctx: VmStateContainer) {
+    const rop = ctx.popDouble();
+    const brushHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.graphics.getSpace(spaceHandle);
+    if (!space) {
+        ctx.pushDouble(0);
+        return;
+    }
+    const brush = space.tools.getTool("ttBRUSH2D", brushHandle) as BrushToolState;
+    if (!brush) {
+        ctx.pushDouble(0);
+        return;
+    }
+    ctx.pushDouble(1);
+}
+
 // HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
 function CreateDIB2d(ctx: VmStateContainer) {
     const bmpFilename = ctx.popString();
@@ -203,5 +271,9 @@ export function initGraphicTools(addOperation: (opcode: number, operation: Opera
     addOperation(Opcode.VM_SETLOGTEXT2D, SetText2d);
     addOperation(Opcode.SETLOGSTRING2D, SetString2d);
     addOperation(Opcode.CREATEPEN2D, CreatePen2d);
+    addOperation(Opcode.SETPENROP2D, SetPenROP2d);
+    addOperation(Opcode.CREATEBRUSH2D, CreateBrush2d);
+    addOperation(Opcode.SETBRUSHCOLOR2D, SetBrushColor2d);
+    addOperation(Opcode.SETBRUSHROP2D, SetBrushROP2d);
     addOperation(Opcode.CREATEDID2D, CreateDIB2d);
 }

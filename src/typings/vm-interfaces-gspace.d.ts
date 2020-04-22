@@ -77,6 +77,7 @@ declare module "vm-interfaces-gspace" {
         createBitmap(bmpFilename: string): BitmapToolState;
         createDoubleBitmap(bmpFilename: string): BitmapToolState;
         createPen(width: number, color: number): PenToolState;
+        createBrush(color: number, style: number, dibHandle: number): BrushToolState;
         createFont(fontName: string, size: number, bold: boolean): FontToolState;
         createString(value: string): StringToolState;
         createText(

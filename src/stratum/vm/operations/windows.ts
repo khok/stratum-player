@@ -3,7 +3,7 @@ import { Opcode } from "~/helpers/vmConstants";
 
 // OPENSCHEMEWINDOW, name "OpenSchemeWindow" arg "STRING","STRING","STRING" ret "HANDLE" out 201
 function OpenSchemeWindow(ctx: VmStateContainer) {
-    const flags = ctx.popString();
+    const attrib = ctx.popString();
     const classname = ctx.popString();
     const winName = ctx.popString();
     const window = ctx.graphics.getWindow(winName);
@@ -12,7 +12,27 @@ function OpenSchemeWindow(ctx: VmStateContainer) {
         return;
     }
     const resolver = ctx.project.createSchemeInstance(classname);
-    ctx.pushLong(resolver ? ctx.graphics.createSchemeWindow(winName, flags, resolver) : 0);
+    ctx.pushLong(resolver ? ctx.graphics.createSchemeWindow(winName, attrib, resolver) : 0);
+}
+
+// HANDLE LoadSpaceWindow(STRING WindowName, STRING FileName, STRING Attribute)
+function LoadSpaceWindow(ctx: VmStateContainer) {
+    const attrib = ctx.popString();
+    const fileName = ctx.popString();
+    const winName = ctx.popString();
+    const window = ctx.graphics.getWindow(winName);
+    if (window) {
+        ctx.pushLong(window.space.handle);
+        return;
+    }
+
+    if (fileName !== "") {
+        ctx.setError(`Вызов LoadSpaceWindow с fileName=${fileName} не реализован.`);
+        return;
+    }
+
+    const resolver = ctx.project.createSchemeInstance(ctx.currentClass.getClassByPath("\\")!.protoName);
+    ctx.pushLong(resolver ? ctx.graphics.createSchemeWindow(winName, attrib, resolver) : 0);
 }
 
 // ISWINDOWEXIST, name "IsWindowExist"    arg "STRING" ret "FLOAT" out 214
@@ -115,6 +135,7 @@ function GetWindowProp(ctx: VmStateContainer) {
 
 export function initWindows(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.OPENSCHEMEWINDOW, OpenSchemeWindow);
+    addOperation(Opcode.LOADSPACEWINDOW, LoadSpaceWindow);
     addOperation(Opcode.ISWINDOWEXIST, IsWindowExist);
     addOperation(Opcode.CLOSEWINDOW, CloseWindow);
     addOperation(Opcode.V_GETHSPBYNAME, GetWindowSpace);

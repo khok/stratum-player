@@ -80,8 +80,8 @@ export class GraphicSystem implements GraphicSystemOptions, GraphicSystemControl
         return this;
     }
 
-    createSchemeWindow(windowName: string, flags: string, createSpace: MyResolver): number {
-        if (flags !== "") console.warn(`Флаги окна не поддерживаются: "${flags}"`);
+    createSchemeWindow(windowName: string, attrib: string, createSpace: MyResolver): number {
+        if (attrib !== "") console.warn(`Атрибуты окна не поддерживаются: "${attrib}"`);
         if (this.hasWindow(windowName)) throw new StratumError(`Окно ${windowName} уже существует`);
 
         let canvas: HTMLCanvasElement;

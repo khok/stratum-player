@@ -80,6 +80,15 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         return pen;
     }
 
+    createBrush(color: number, style: number, dibHandle: number): BrushTool {
+        const bmpTool = this.getTool("ttDIB2D", dibHandle) as BitmapTool;
+        const brush = new BrushTool(color, style, bmpTool);
+        const handle = HandleMap.getFreeHandle(this.brushes);
+        this.brushes.set(handle, brush);
+        brush.handle = handle;
+        return brush;
+    }
+
     createString(value: string): StringTool {
         const stringTool = new StringTool(value);
         const handle = HandleMap.getFreeHandle(this.strings);
