@@ -15,6 +15,7 @@
     "dependencies": {
         "@types/fabric": "^3.6.2",
         "@types/jszip": "^3.1.7",
+        "@types/pngjs": "^3.4.2",
         "fabric": "^3.6.3",
         "jszip": "^3.2.2",
         "pngjs": "^3.4.0"
