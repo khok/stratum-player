@@ -1,13 +1,16 @@
 import { ClassData } from "cls-types";
+import { ProjectFile } from "other-types";
+import { VectorDrawData } from "vdr-types";
 import { ProjectController, VmBool } from "vm-interfaces-core";
-import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
-import { MyResolver } from "~/graphics/graphicSystem";
+import { readVectorDrawData } from "~/fileReader/deserialization";
+import { BinaryStream } from "~/helpers/binaryStream";
 import { createComposedScheme } from "~/helpers/graphics";
 import { ClassTreeNode } from "./classTreeNode";
 
 export interface ProjectData {
     allClasses: ClassTreeNode[];
     classesData: Map<string, ClassData>;
+    projectFiles?: ProjectFile[];
 }
 
 export interface ProjectOptions {
@@ -17,24 +20,32 @@ export interface ProjectOptions {
 export class Project implements ProjectController {
     private classNodes: ClassTreeNode[];
     private classesData: Map<string, ClassData>;
+    private files?: ProjectFile[];
     private disableSchemeCompose: boolean;
 
     constructor(data: ProjectData, options?: ProjectOptions) {
+        this.files = data.projectFiles;
         this.classNodes = data.allClasses;
         this.classesData = data.classesData;
         this.disableSchemeCompose = (options && options.debug_disableSchemeCompose) || false;
     }
 
-    createSchemeInstance(className: string): MyResolver | undefined {
+    getClassScheme(className: string): VectorDrawData | undefined {
         const data = this.classesData.get(className);
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
-        const vdr =
-            data.childInfo && !this.disableSchemeCompose
-                ? createComposedScheme(data.scheme, data.childInfo, this.classesData)
-                : data.scheme;
-        return ({ bmpFactory, scene }) => new GraphicSpace({ sourceFilename: className, scene, bmpFactory, vdr });
+        const { scheme, childInfo } = data;
+        if (childInfo && !this.disableSchemeCompose) return createComposedScheme(scheme, childInfo, this.classesData);
+        else return scheme;
     }
+
+    loadSchemeFromFile(fileName: string): VectorDrawData | undefined {
+        if (!this.files) return undefined;
+        const name = fileName.replace(/\\\\/g, "\\").toLowerCase();
+        const file = this.files.find((f) => f.filename.toLowerCase().endsWith(name));
+        return file && readVectorDrawData(new BinaryStream(file.data));
+    }
+
     hasClass(className: string): VmBool {
         return this.classesData.get(className) ? 1 : 0;
     }

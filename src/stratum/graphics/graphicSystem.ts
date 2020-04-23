@@ -1,7 +1,7 @@
 import { HTMLInputElementsFactory } from "html-types";
-import { Scene } from "scene-types";
+import { VectorDrawData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
-import { WindowState, GraphicSystemController } from "vm-interfaces-graphics";
+import { GraphicSystemController, WindowState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { HandleMap } from "~/helpers/handleMap";
@@ -34,7 +34,7 @@ class Window implements WindowState {
     }
 
     getProp(prop: "classname" | "filename"): string {
-        return this.space.sourceFilename;
+        return this.space.sourceName;
     }
 }
 
@@ -51,8 +51,6 @@ export interface GraphicSystemOptions {
     globalCanvas?: HTMLCanvasElement;
     disableSceneResize?: boolean;
 }
-
-export type MyResolver = (data: { bmpFactory: BitmapToolFactory; scene: Scene }) => GraphicSpace;
 
 export class GraphicSystem implements GraphicSystemOptions, GraphicSystemController {
     screenWidth: number = 0;
@@ -80,7 +78,7 @@ export class GraphicSystem implements GraphicSystemOptions, GraphicSystemControl
         return this;
     }
 
-    createSchemeWindow(windowName: string, attrib: string, createSpace: MyResolver): number {
+    createSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawData, sourceName?: string): number {
         if (attrib !== "") console.warn(`Атрибуты окна не поддерживаются: "${attrib}"`);
         if (this.hasWindow(windowName)) throw new StratumError(`Окно ${windowName} уже существует`);
 
@@ -94,16 +92,24 @@ export class GraphicSystem implements GraphicSystemOptions, GraphicSystemControl
             if (this.dispatcher) this.dispatcher.dispatch("WINDOW_CREATED", windowName);
             canvas = this.globalCanvas;
         }
-        const scene = new FabricScene({ canvas, inputFactory: this.inputFactory });
+
+        const { bmpFactory, inputFactory } = this;
 
         const spaceHandle = HandleMap.getFreeHandle(this.spaces);
-        const space = createSpace({ scene, bmpFactory: this.bmpFactory });
+        const space = new GraphicSpace({
+            bmpFactory,
+            sourceName,
+            vdr,
+            scene: new FabricScene({ canvas, inputFactory }),
+        });
         space.handle = spaceHandle;
         this.spaces.set(spaceHandle, space);
+
         this.windows.set(
             windowName,
             new Window(space, { x: canvas.width, y: canvas.height }, !this.disableSceneResize)
         );
+
         this.spaceToWinNameMap.set(spaceHandle, windowName);
         return spaceHandle;
     }

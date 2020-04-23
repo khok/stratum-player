@@ -1,5 +1,6 @@
 declare module "vm-interfaces-graphics" {
-    import { VmBool, GraphicSpaceResolver } from "vm-interfaces-core";
+    import { VectorDrawData } from "vdr-types";
+    import { VmBool } from "vm-interfaces-core";
     import { GraphicSpaceState } from "vm-interfaces-gspace";
     export interface WindowState {
         readonly space: GraphicSpaceState;
@@ -23,7 +24,7 @@ declare module "vm-interfaces-graphics" {
         readonly screenHeight: number;
         readonly screenWidth: number;
 
-        createSchemeWindow(windowName: string, flags: string, schemeResolver: GraphicSpaceResolver): number;
+        createSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawData, sourceName?: string): number;
         hasWindow(windowName: string): VmBool;
         getWindow(windowName: string): WindowState | undefined;
         getSpace(spaceHandle: number): GraphicSpaceState | undefined;

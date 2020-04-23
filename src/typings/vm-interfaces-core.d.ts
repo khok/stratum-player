@@ -1,10 +1,9 @@
 declare module "vm-interfaces-core" {
-    import { VmStateContainer } from "vm-types";
-    import { GraphicSpaceState } from "vm-interfaces-gspace";
     import { VarData } from "cls-types";
+    import { VectorDrawData } from "vdr-types";
+    import { VmStateContainer } from "vm-types";
 
     export type VmBool = 0 | 1;
-    export type GraphicSpaceResolver = (options?: any) => GraphicSpaceState;
 
     export interface MemoryState {
         oldDoubleValues: Float64Array;
@@ -42,7 +41,8 @@ declare module "vm-interfaces-core" {
     }
 
     export interface ProjectController {
-        createSchemeInstance(className: string): GraphicSpaceResolver | undefined;
+        getClassScheme(className: string): VectorDrawData | undefined;
+        loadSchemeFromFile(fileName: string): VectorDrawData | undefined;
         hasClass(className: string): VmBool;
         getClassDir(className: string): string;
         getClassesByProtoName(className: string): IterableIterator<ClassState>;

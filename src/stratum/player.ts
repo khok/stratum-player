@@ -13,7 +13,7 @@ export interface PlayerData {
     rootName: string;
     classesData: Map<string, ClassData>;
     varSet?: VarSetData;
-    images?: ProjectFile[];
+    projectFiles?: ProjectFile[];
 }
 
 export interface PlayerOptions extends ProjectOptions, GraphicSystemOptions, BitmapToolFactoryOptions {
@@ -35,10 +35,11 @@ export class Player {
 
         if (!options) options = {};
         const iconsPath = options.iconsPath || "data/icons";
-        const bmpFactory = new BitmapToolFactory({ iconsPath, projectImages: data.images }, options);
+        const { projectFiles } = data;
+        const bmpFactory = new BitmapToolFactory({ iconsPath, projectImages: projectFiles }, options);
         const dispatcher = (options.dispatcher = options.dispatcher || new EventDispatcher());
         const graphics = new GraphicSystem(bmpFactory, options);
-        const project = new Project({ allClasses, classesData }, options);
+        const project = new Project({ allClasses, classesData, projectFiles }, options);
 
         this.vm = new VmContext({ graphics, project, memoryState: mmanager });
         this.classTree = classTree;

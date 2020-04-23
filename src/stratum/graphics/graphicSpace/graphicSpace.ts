@@ -21,7 +21,7 @@ export interface GraphicSpaceSubsciber {
 export interface GraphicSpaceOptions {
     scene: Scene;
     bmpFactory: BitmapToolFactory;
-    sourceFilename?: string;
+    sourceName?: string;
     vdr?: VectorDrawData;
 }
 
@@ -37,11 +37,11 @@ export class GraphicSpace implements GraphicSpaceState {
     private _originY: number = 0;
     private subs = new Array<GraphicSpaceSubsciber>();
 
-    readonly sourceFilename: string;
+    readonly sourceName: string;
 
     constructor(data: GraphicSpaceOptions) {
         const { vdr, bmpFactory, scene } = data;
-        this.sourceFilename = data.sourceFilename || "";
+        this.sourceName = data.sourceName || "";
         this.scene = scene;
         this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
         this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));

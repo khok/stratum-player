@@ -1,7 +1,6 @@
 import { equal } from "assert";
 import { openZipFromUrl, readProjectData } from "~/fileReader/fileReaderHelpers";
 import { BitmapToolFactory } from "~/graphics/graphicSpace/bitmapToolFactory";
-import { GraphicSpace } from "~/graphics/graphicSpace/graphicSpace";
 import { GroupObject } from "~/graphics/graphicSpace/objects";
 import { GraphicSystem } from "~/graphics/graphicSystem";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
@@ -10,8 +9,8 @@ import { createComposedScheme } from "~/helpers/graphics";
 (async function () {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
     const { classesData } = await readProjectData(zip);
-    const sourceFilename = "WorkSpace";
-    const cl = classesData.get(sourceFilename)!;
+    const sourceName = "WorkSpace";
+    const cl = classesData.get(sourceName)!;
     const cdata = cl.childInfo!;
     const oldvdr = cl.scheme!;
     const vdr = createComposedScheme(oldvdr, cdata, classesData);
@@ -21,12 +20,9 @@ import { createComposedScheme } from "~/helpers/graphics";
     const gs = new GraphicSystem(bmpFactory, { globalCanvas, dispatcher });
     dispatcher.on("WINDOW_CREATED", (name) => (document.title = name));
 
-    gs.createSchemeWindow(
-        "Test Window",
-        "",
-        ({ bmpFactory, scene }) => new GraphicSpace({ sourceFilename, vdr, bmpFactory, scene })
-    );
-    equal(document.title, "Test Window");
+    const wname = "Test Window";
+    gs.createSchemeWindow(wname, "", vdr, sourceName);
+    equal(document.title, wname);
     const space = gs.getSpace(1)!;
     bmpFactory.allImagesLoaded.then(() => space.scene.render());
     setTimeout(() => {

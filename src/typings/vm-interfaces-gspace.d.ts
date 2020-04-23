@@ -154,7 +154,7 @@ declare module "vm-interfaces-gspace" {
         readonly tools: GraphicSpaceToolsState;
         readonly originX: number;
         readonly originY: number;
-        readonly sourceFilename: string;
+        readonly sourceName: string;
         setOrigin(x: number, y: number): VmBool;
 
         createText(x: number, y: number, angle: number, textToolHandle: number): TextObjectState;

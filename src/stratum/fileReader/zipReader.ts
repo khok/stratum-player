@@ -10,6 +10,10 @@ function findFiles(files: JSZipObject[], ending: string) {
     return files.filter(({ name }) => name.toLowerCase().endsWith(ending.toLowerCase()));
 }
 
+function findFilesByRegex(files: JSZipObject[], regex: RegExp) {
+    return files.filter(({ name }) => name.match(regex));
+}
+
 function findSingleFile(zipFiles: JSZipObject[], ending: string, mustExist = true): JSZipObject {
     const files = findFiles(zipFiles, ending);
 
@@ -125,8 +129,8 @@ export async function readVarsFile(files: JSZipObject[], filename: string) {
     return readVarSetData(new BinaryStream(varSetBytes.data));
 }
 
-export async function readImageFiles(files: JSZipObject[]) {
-    const extFiles = findFiles(files, ".bmp");
+export async function readProjectFiles(files: JSZipObject[]) {
+    const extFiles = findFilesByRegex(files, /\.(bmp|dbm|vdr)$/i);
     const data = await Promise.all(extFiles.map((f) => unzipFile(f)));
     return data;
 }

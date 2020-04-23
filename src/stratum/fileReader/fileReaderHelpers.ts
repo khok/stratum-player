@@ -1,6 +1,6 @@
 import { JSZipObject } from "jszip";
 import { BinaryStream } from "~/helpers/binaryStream";
-import { zipFromUrl, readClassFiles, readProjectFile, readVarsFile, zipFromBlob, readImageFiles } from "./zipReader";
+import { zipFromUrl, readClassFiles, readProjectFile, readVarsFile, zipFromBlob, readProjectFiles } from "./zipReader";
 
 export async function openZipFromUrl(url: string | string[], encoding?: string): Promise<JSZipObject[]> {
     if (typeof url === "string") url = [url];
@@ -33,6 +33,6 @@ export async function readProjectData(data: JSZipObject[], options?: ReadOptions
     const rootName = options.customRootClass || (await readProjectFile(data, projectFile));
     const classesData = await readClassFiles(data, rootName);
     const varSet = await readVarsFile(data, sttFile);
-    const images = await readImageFiles(data);
-    return { rootName, classesData, varSet, images };
+    const projectFiles = await readProjectFiles(data);
+    return { rootName, classesData, varSet, projectFiles };
 }

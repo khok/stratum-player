@@ -11,8 +11,8 @@ function OpenSchemeWindow(ctx: VmStateContainer) {
         ctx.pushLong(window.space.handle);
         return;
     }
-    const resolver = ctx.project.createSchemeInstance(classname);
-    ctx.pushLong(resolver ? ctx.graphics.createSchemeWindow(winName, attrib, resolver) : 0);
+    const vdr = ctx.project.getClassScheme(classname);
+    ctx.pushLong(vdr ? ctx.graphics.createSchemeWindow(winName, attrib, vdr, classname) : 0);
 }
 
 // HANDLE LoadSpaceWindow(STRING WindowName, STRING FileName, STRING Attribute)
@@ -31,8 +31,7 @@ function LoadSpaceWindow(ctx: VmStateContainer) {
         return;
     }
 
-    const resolver = ctx.project.createSchemeInstance(ctx.currentClass.getClassByPath("\\")!.protoName);
-    ctx.pushLong(resolver ? ctx.graphics.createSchemeWindow(winName, attrib, resolver) : 0);
+    ctx.pushLong(ctx.graphics.createSchemeWindow(winName, attrib));
 }
 
 // ISWINDOWEXIST, name "IsWindowExist"    arg "STRING" ret "FLOAT" out 214
