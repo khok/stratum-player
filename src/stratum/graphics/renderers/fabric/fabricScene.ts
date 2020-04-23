@@ -166,7 +166,9 @@ export class FabricScene implements Scene {
     }
 
     updateBrush(brush: BrushToolState) {
-        this.canvas.backgroundColor = colorrefToColor(brush.color);
+        const { bmpTool, color } = brush;
+        if (bmpTool && bmpTool.image) this.canvas.backgroundImage = new fabric.Image(bmpTool.image);
+        else this.canvas.backgroundColor = colorrefToColor(color);
     }
 
     //Управление порядком отображения объектов.
