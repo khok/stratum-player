@@ -1,6 +1,6 @@
-import { Point2D, VdrLayers } from "vdr-types";
 import { HTMLInputElementsFactory, HtmlTextInputWrapper } from "html-types";
 import { ControlElementVisual, ControlVisualOptions } from "scene-types";
+import { Point2D } from "vdr-types";
 import { StratumError } from "~/helpers/errors";
 
 export class HtmlControl implements ControlElementVisual {
@@ -11,6 +11,7 @@ export class HtmlControl implements ControlElementVisual {
     private visibleArea: Point2D;
     readonly selectable: boolean;
     private inp: HtmlTextInputWrapper;
+
     constructor(
         { handle, isVisible, position, classname, controlSize, text }: ControlVisualOptions,
         private viewRef: Point2D,
@@ -58,10 +59,6 @@ export class HtmlControl implements ControlElementVisual {
         const diffX = x - this.posX;
         const diffY = y - this.posY;
         return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
-    }
-
-    applyLayers(layers: VdrLayers): void {
-        // throw new Error("Method not implemented.");
     }
 
     show(): void {

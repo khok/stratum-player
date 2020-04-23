@@ -19,7 +19,7 @@ export class ControlObject extends Object2dMixin implements ControlObjectState {
             handle: data.handle,
             position: data.position,
             isVisible: !!this.isVisible,
-            selectable: !!this.selectable,
+            selectable: !!this.isSelectable,
             classname: data.classname,
             text: data.text,
             controlSize: data.controlSize,

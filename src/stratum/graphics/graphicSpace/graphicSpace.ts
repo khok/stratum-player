@@ -18,48 +18,55 @@ export interface GraphicSpaceSubsciber {
     ctx: VmStateContainer;
 }
 
+export interface GraphicSpaceOptions {
+    scene: Scene;
+    bmpFactory: BitmapToolFactory;
+    sourceFilename?: string;
+    vdr?: VectorDrawData;
+}
+
 /**
  * Графическое пространство, содержащее инструменты и объекты.
  */
 export class GraphicSpace implements GraphicSpaceState {
-    static fromVdr(sourceFilename: string, vdr: VectorDrawData, bmpFactory: BitmapToolFactory, scene: Scene) {
-        const tools = createTools(vdr, bmpFactory);
-        const objects = vdr.elements && createObjects(vdr.elements, tools, scene);
-        return new GraphicSpace({ ...vdr, tools, objects, sourceFilename }, scene);
-    }
-
     handle = 0;
+    readonly scene: Scene;
     readonly tools: GraphicSpaceTools;
-    private allObjects: HandleMap<GraphicObject>;
+    private objects: HandleMap<GraphicObject>;
     private _originX: number = 0;
     private _originY: number = 0;
     private subs = new Array<GraphicSpaceSubsciber>();
 
     readonly sourceFilename: string;
 
-    constructor(
-        data: VectorDrawData & {
-            tools?: GraphicSpaceTools;
-            objects?: HandleMap<GraphicObject>;
-            sourceFilename: string;
-        },
-        public scene: Scene
-    ) {
-        this.sourceFilename = data.sourceFilename;
-        this.setOrigin(data.origin.x, data.origin.y);
-        this.tools = data.tools || new GraphicSpaceTools();
-        this.allObjects = data.objects || HandleMap.create<GraphicObject>();
-        if (data.brushHandle) {
-            const brush = this.tools.getTool("ttBRUSH2D", data.brushHandle) as BrushTool;
+    constructor(data: GraphicSpaceOptions) {
+        const { vdr, bmpFactory, scene } = data;
+        this.sourceFilename = data.sourceFilename || "";
+        this.scene = scene;
+        this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
+        this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
+
+        const tools = vdr ? createTools(vdr, bmpFactory) : new GraphicSpaceTools({ bmpFactory });
+        const elements = vdr && vdr.elements;
+        const objects = elements ? createObjects(elements, tools, scene) : HandleMap.create<GraphicObject>();
+
+        this.tools = tools;
+        this.objects = objects;
+
+        if (!vdr) return;
+        const { brushHandle, origin, layers, elementOrder } = vdr;
+
+        if (origin) this.setOrigin(origin.x, origin.y);
+        if (brushHandle) {
+            const brush = tools.getTool("ttBRUSH2D", brushHandle) as BrushTool;
             if (brush) {
                 brush.subscribe(this, () => this.scene.updateBrush(brush));
                 this.scene.updateBrush(brush);
             }
         }
-        scene.applyLayers(data.layers);
-        if (data.elementOrder) this.scene.placeObjects(data.elementOrder);
-        this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
-        this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
+        if (layers) for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.hiddenLayers = layers;
+
+        if (elementOrder) this.scene.placeObjects(elementOrder);
     }
 
     get originX() {
@@ -78,7 +85,7 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     createText(x: number, y: number, angle: number, textToolHandle: number): TextObject {
-        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new TextObject(
             {
                 handle,
@@ -89,14 +96,14 @@ export class GraphicSpace implements GraphicSpaceState {
             this.tools,
             this.scene
         );
-        this.allObjects.set(handle, obj);
+        this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
         obj.handle = handle;
         return obj;
     }
 
     createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): BitmapObject {
-        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new BitmapObject(
             {
                 handle,
@@ -108,14 +115,14 @@ export class GraphicSpace implements GraphicSpaceState {
             this.tools,
             this.scene
         );
-        this.allObjects.set(handle, obj);
+        this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
         obj.handle = handle;
         return obj;
     }
 
     createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObject {
-        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new LineObject(
             {
                 handle,
@@ -127,7 +134,7 @@ export class GraphicSpace implements GraphicSpaceState {
             this.tools,
             this.scene
         );
-        this.allObjects.set(handle, obj);
+        this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
         obj.handle = handle;
         return obj;
@@ -142,9 +149,9 @@ export class GraphicSpace implements GraphicSpaceState {
             else items[i] = obj;
         }
 
-        const handle = HandleMap.getFreeHandle(this.allObjects);
+        const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new GroupObject({ handle, items });
-        this.allObjects.set(handle, obj);
+        this.objects.set(handle, obj);
         obj.handle = handle;
         return obj;
     }
@@ -162,11 +169,11 @@ export class GraphicSpace implements GraphicSpaceState {
 
     getObject(handle: number): GraphicObject | undefined {
         // if (handle === 0) return undefined; //unlikely
-        return this.allObjects.get(handle);
+        return this.objects.get(handle);
     }
 
     deleteObject(handle: number): VmBool {
-        const obj = this.allObjects.get(handle);
+        const obj = this.objects.get(handle);
         if (!obj) return 0;
         if (obj.type !== "otGROUP2D") {
             obj.destroy();
@@ -176,13 +183,13 @@ export class GraphicSpace implements GraphicSpaceState {
             obj.destroy();
             for (const item of items) this.deleteObject(item.handle);
         }
-        this.allObjects.delete(handle);
+        this.objects.delete(handle);
         return 1;
     }
 
     deleteGroup(group: GroupObject): VmBool {
         group.destroy();
-        this.allObjects.delete(group.handle);
+        this.objects.delete(group.handle);
         return 1;
     }
 
@@ -255,7 +262,7 @@ export class GraphicSpace implements GraphicSpaceState {
 
     findObjectByName(objectName: string, group?: GroupObject): GraphicObject | undefined {
         if (!group) {
-            for (const obj of this.allObjects.values()) if (obj.name === objectName) return obj;
+            for (const obj of this.objects.values()) if (obj.name === objectName) return obj;
             return undefined;
         }
 
@@ -279,6 +286,7 @@ export class GraphicSpace implements GraphicSpaceState {
         }
         return obj;
     }
+
     isIntersect(obj1: GraphicObject, obj2: GraphicObject): VmBool {
         // if(obj1.positionX === obj2.positionX && obj1.positionY === obj2.positionY) return 1;
         const xmin1 = obj1.positionX;

@@ -1,11 +1,11 @@
-import { Point2D, VdrLayers } from "vdr-types";
 import { fabric } from "fabric";
 import { TextElementVisual, TextVisualOptions } from "scene-types";
+import { Point2D } from "vdr-types";
 import { TextToolState } from "vm-interfaces-gspace";
-import { fabricConfigObjectOptions } from "../fabricConfig";
 import { colorrefToColor } from "~/helpers/varValueFunctions";
+import { fabricConfigObjectOptions } from "../fabricConfig";
 
-const textScaleCoof = 0.65;
+// const textScaleCoof = 0.65;
 
 export class FabricText implements TextElementVisual {
     readonly type = "text";
@@ -71,22 +71,19 @@ export class FabricText implements TextElementVisual {
     }
 
     testIntersect(x: number, y: number) {
+        if (!this.obj.visible) return false;
         const diffX = x - this.posX;
         const diffY = y - this.posY;
         return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
     }
 
-    applyLayers(layers: VdrLayers): void {
-        // throw new Error("Method not implemented.");
-    }
-
     show(): void {
-        this.obj.visible = true;
+        this.obj.set({ visible: true });
         this.requestRedraw();
     }
 
     hide(): void {
-        this.obj.visible = false;
+        this.obj.set({ visible: false });
         this.requestRedraw();
     }
 

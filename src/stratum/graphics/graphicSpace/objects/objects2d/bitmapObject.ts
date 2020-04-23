@@ -1,23 +1,22 @@
-import { BitmapElementData, DoubleBitmapElementData, Point2D } from "vdr-types";
 import { BitmapElementVisual, VisualFactory } from "scene-types";
+import { BitmapElementData, DoubleBitmapElementData, Point2D } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
 import { BitmapObjectState, GraphicSpaceToolsState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { BitmapTool } from "../../tools";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";
 
-interface _BmpObjectOptionsBase extends Object2dOptions {
+export interface BitmapObjectOptions extends Object2dOptions {
+    type: BitmapElementData["type"];
     bmpOrigin?: Point2D;
     bmpSize?: Point2D;
-}
-
-export interface BitmapObjectOptions extends _BmpObjectOptionsBase {
-    type: BitmapElementData["type"];
     dibHandle: number;
 }
 
-export interface DoubleBitmapObjectOptions extends _BmpObjectOptionsBase {
+export interface DoubleBitmapObjectOptions extends Object2dOptions {
     type: DoubleBitmapElementData["type"];
+    bmpOrigin?: Point2D;
+    bmpSize?: Point2D;
     doubleDibHandle: number;
 }
 
@@ -44,18 +43,7 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             x: data.size && data.bmpSize ? data.size.x / data.bmpSize.x : 1,
             y: data.size && data.bmpSize ? data.size.y / data.bmpSize.y : 1,
         };
-        // if (!data.size) {
-        //     const { image, dimensions } = bmpTool;
-        //     this.width = dimensions ? dimensions.width : image.width;
-        //     this.height = dimensions ? dimensions.height : image.height;
-        // } else if (data.bmpSize) {
-        //     scale = {
-        //         x: data.size.x / data.bmpSize.x,
-        //         y: data.size.y / data.bmpSize.y,
-        //     };
-        // }
 
-        // const bmpOrigin = data.bmpOrigin || { x: 0, y: 0 };
         const bmpSize = data.bmpSize || data.size || bmpTool.dimensions;
         if (!bmpSize) {
             throw new Error(`Битовая карта ${bmpTool.handle}: у изображения нет размеров`);
@@ -65,7 +53,7 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             handle: data.handle,
             position: data.position,
             isVisible: !!this.isVisible,
-            selectable: !!this.selectable,
+            selectable: !!this.isSelectable,
             scale,
             bmpSize,
             bmpOrigin: data.bmpOrigin,

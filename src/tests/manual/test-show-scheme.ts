@@ -19,6 +19,6 @@ export async function _show_scheme(name: string, opts: ReadOptions) {
     console.dir(scheme);
     const scene = new FabricScene({ canvas, inputFactory: new HtmlFactory(htmlRoot) });
     const bmpFactory = new BitmapToolFactory({ iconsPath: "data/icons" });
-    GraphicSpace.fromVdr("", scheme, bmpFactory, scene);
+    new GraphicSpace({ vdr: scheme, bmpFactory, scene });
     bmpFactory.allImagesLoaded.then(() => scene.render());
 }

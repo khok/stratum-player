@@ -61,6 +61,12 @@ export class BinaryStream {
         return long;
     }
 
+    readULong() {
+        const long = this.view.getUint32(this.pos, true);
+        this.pos += 4;
+        return long;
+    }
+
     readDouble() {
         const double = this.view.getFloat64(this.pos, true);
         this.pos += 8;

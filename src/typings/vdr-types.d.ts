@@ -168,15 +168,13 @@ declare module "vdr-types" {
         textTools?: TextToolData[];
     }
 
-    export type VdrLayers = [boolean, boolean, boolean, boolean];
-
     export interface VectorDrawData extends VectorDrawToolsData {
         origin: Point2D;
         brushHandle?: number;
         state: number;
         defaultFlags: number;
         fileversion: number;
-        layers: VdrLayers;
+        layers: number;
         minVersion: number;
         elements?: ElementData[];
         elementOrder?: number[];

@@ -1,9 +1,9 @@
 import { fabric } from "fabric";
-import { Point2D, VdrLayers } from "vdr-types";
 import { LineElementVisual, LineVisualOptions } from "scene-types";
+import { Point2D } from "vdr-types";
 import { BrushToolState, PenToolState } from "vm-interfaces-gspace";
-import { fabricConfigObjectOptions } from "../fabricConfig";
 import { colorrefToColor } from "~/helpers/varValueFunctions";
+import { fabricConfigObjectOptions } from "../fabricConfig";
 
 function getFillValue(brush?: BrushToolState) {
     if (!brush) return undefined;
@@ -26,15 +26,12 @@ export class FabricLine implements LineElementVisual {
     obj: fabric.Polyline;
     readonly handle: number;
     readonly selectable: boolean;
-    private layerVisible = true;
-    private options: number;
 
     constructor(
-        { handle, points, position, options, isVisible, selectable, brush, pen }: LineVisualOptions,
+        { handle, points, position, isVisible, selectable, brush, pen }: LineVisualOptions,
         private viewRef: Point2D,
         private requestRedraw: () => void
     ) {
-        this.options = options || 0;
         this.handle = handle;
         this.posX = position.x;
         this.posY = position.y;
@@ -104,23 +101,19 @@ export class FabricLine implements LineElementVisual {
     }
 
     testIntersect(x: number, y: number) {
+        if (!this.obj.visible) return false;
         const diffX = x - this.posX;
         const diffY = y - this.posY;
         return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
     }
 
-    applyLayers(layers: VdrLayers): void {
-        this.layerVisible = this.options !== 6144 || !layers[3];
-        this.show();
-    }
-
     show(): void {
-        this.obj.visible = this.layerVisible && true;
+        this.obj.set({ visible: true });
         this.requestRedraw();
     }
 
     hide(): void {
-        this.obj.visible = false;
+        this.obj.set({ visible: false });
         this.requestRedraw();
     }
 

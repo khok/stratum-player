@@ -35,6 +35,8 @@ function readOldFormat(stream, res, _pos) {
     res.otPRIMARYCOLLECTION = primData;
     res.otOBJECTCOLLECTION = objData;
 
+    res.layers = 0;
+
     stream.seek(toolPos);
     const cc = stream.readWord();
 
@@ -56,8 +58,7 @@ function readNewFormat(stream, res) {
     res.scale_mul = stream.readPoint2D();
     res.state = stream.readWord();
     res.brushHandle = stream.readWord();
-    const layers = stream.readBytes(4);
-    res.layers = [!!layers[0], !!layers[1], !!layers[2], !!layers[3]];
+    res.layers = stream.readULong();
     res.defaultFlags = stream.readWord();
 
     while (root.hasData()) {

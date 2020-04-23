@@ -2,11 +2,9 @@ import { VmBool } from "vm-interfaces-core";
 import { GroupObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { GraphicObject } from ".";
-import { BaseObjectMixin } from "./baseObjectMixin";
+import { BaseObjectMixin, ObjectOptions } from "./baseObjectMixin";
 
-export interface GroupObjectOptions {
-    handle: number;
-    name?: string;
+export interface GroupObjectOptions extends ObjectOptions {
     items?: GraphicObject[];
 }
 

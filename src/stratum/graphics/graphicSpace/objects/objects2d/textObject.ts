@@ -25,7 +25,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
             handle: data.handle,
             position: data.position,
             isVisible: !!this.isVisible,
-            selectable: !!this.selectable,
+            selectable: !!this.isSelectable,
             angle: data.angle,
             textTool,
         });

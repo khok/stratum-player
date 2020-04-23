@@ -33,7 +33,7 @@ export class Project implements ProjectController {
             data.childInfo && !this.disableSchemeCompose
                 ? createComposedScheme(data.scheme, data.childInfo, this.classesData)
                 : data.scheme;
-        return ({ bmpFactory, scene }) => GraphicSpace.fromVdr(className, vdr, bmpFactory, scene);
+        return ({ bmpFactory, scene }) => new GraphicSpace({ sourceFilename: className, scene, bmpFactory, vdr });
     }
     hasClass(className: string): VmBool {
         return this.classesData.get(className) ? 1 : 0;

@@ -1,5 +1,5 @@
 declare module "scene-types" {
-    import { ControlElementData, Point2D, VdrLayers } from "vdr-types";
+    import { ControlElementData, Point2D } from "vdr-types";
     import { BitmapToolState, BrushToolState, PenToolState, TextToolState } from "vm-interfaces-gspace";
 
     interface _VisualBase {
@@ -8,7 +8,6 @@ declare module "scene-types" {
         setAngle(angle: number): void;
         show(): void;
         hide(): void;
-        applyLayers(layers: VdrLayers): void;
         getVisibleAreaSize(): Point2D;
     }
 
@@ -47,7 +46,6 @@ declare module "scene-types" {
         pen?: PenToolState;
         brush?: BrushToolState;
         arrows?: unknown;
-        options?: number;
     }
 
     export interface TextVisualOptions extends VisualOptions {
@@ -77,7 +75,6 @@ declare module "scene-types" {
 
     export interface Scene extends VisualFactory {
         updateBrush(brush: BrushToolState): void;
-        applyLayers(layers: VdrLayers): void;
 
         //Управление порядком отображения объектов.
         /**

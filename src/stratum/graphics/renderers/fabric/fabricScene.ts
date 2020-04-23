@@ -1,4 +1,3 @@
-import { Point2D, VdrLayers } from "vdr-types";
 import { fabric } from "fabric";
 import { HTMLInputElementsFactory } from "html-types";
 import {
@@ -12,16 +11,17 @@ import {
     TextElementVisual,
     TextVisualOptions,
 } from "scene-types";
+import { Point2D } from "vdr-types";
 import { BrushToolState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
+import { colorrefToColor } from "~/helpers/varValueFunctions";
 import { MessageCode } from "~/helpers/vmConstants";
 import { systemKeysTemp } from "~/vm/operations/system";
 import { HtmlControl } from "../html/htmlControl";
 import { FabricBitmap } from "./components/fabricBitmap";
 import { FabricLine } from "./components/fabricLine";
 import { FabricText } from "./components/fabricText";
-import { colorrefToColor } from "~/helpers/varValueFunctions";
 
 type VisualObject = FabricLine | FabricBitmap | FabricText | HtmlControl;
 
@@ -167,10 +167,6 @@ export class FabricScene implements Scene {
 
     updateBrush(brush: BrushToolState) {
         this.canvas.backgroundColor = colorrefToColor(brush.color);
-    }
-
-    applyLayers(layers: VdrLayers): void {
-        for (const obj of this.objects.values()) obj.applyLayers(layers);
     }
 
     //Управление порядком отображения объектов.
