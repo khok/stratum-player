@@ -1,6 +1,6 @@
+import { GroupObjectState } from "vm-interfaces-gspace";
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { GroupObjectState } from "vm-interfaces-gspace";
 
 function _getObject(ctx: VmStateContainer, spaceHandle: number, objectHandle: number) {
     const space = ctx.graphics.getSpace(spaceHandle);
@@ -13,8 +13,7 @@ function SetShowObject2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    if (obj) obj.isVisible = visibility && 1;
-    ctx.pushDouble(obj ? 1 : 0);
+    ctx.pushDouble(obj ? obj.setVisibility(visibility && 1) : 0);
 }
 
 // args: "HANDLE,HANDLE  ret HANDLE"
@@ -39,8 +38,7 @@ function SetZOrder2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    if (obj) obj.zOrder = zOrder;
-    ctx.pushDouble(obj ? 1 : 0);
+    ctx.pushDouble(obj ? obj.setZorder(zOrder) : 0);
 }
 
 //args: "HANDLE,HANDLE,FLOAT,FLOAT,FLOAT  ret FLOAT";
@@ -204,12 +202,7 @@ function DelGroupItem2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    if (obj && obj.parent) {
-        obj.parent.removeItem(obj);
-        ctx.pushDouble(1);
-    } else {
-        ctx.pushDouble(0);
-    }
+    ctx.pushDouble(obj && obj.parent ? obj.parent.removeItem(obj) : 0);
 }
 
 function SetControlText2d(ctx: VmStateContainer) {
@@ -217,13 +210,9 @@ function SetControlText2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    if (obj && obj.type === "otCONTROL2D") {
-        obj.text = text;
-        ctx.pushDouble(1);
-    } else {
-        ctx.pushDouble(0);
-    }
+    ctx.pushDouble(obj && obj.type === "otCONTROL2D" ? obj.setText(text) : 0);
 }
+
 function GetControlText2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
@@ -291,15 +280,13 @@ function IsObjectsIntersect2d(ctx: VmStateContainer) {
     const obj1Handle = ctx.popLong();
     const spaceHandle = ctx.popLong();
     const space = ctx.graphics.getSpace(spaceHandle);
-    if (space) {
-        const obj1 = space.getObject(obj1Handle);
-        const obj2 = space.getObject(obj2Handle);
-        if (obj1 && obj2) {
-            ctx.pushDouble(space.isIntersect(obj1, obj2));
-            return;
-        }
+    if (!space) {
+        ctx.pushDouble(0);
+        return;
     }
-    ctx.pushDouble(0);
+    const obj1 = space.getObject(obj1Handle);
+    const obj2 = space.getObject(obj2Handle);
+    ctx.pushDouble(obj1 && obj2 ? space.isIntersect(obj1, obj2) : 0);
 }
 
 // FLOAT SetObjectName2d(HANDLE HSpace, HANDLE HObject, STRING Name)
@@ -309,12 +296,7 @@ function SetObjectName2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    if (obj) {
-        obj.name = name;
-        ctx.pushDouble(1);
-    } else {
-        ctx.pushDouble(0);
-    }
+    ctx.pushDouble(obj ? obj.setName(name) : 0);
 }
 
 // FLOAT ObjectToTop2d(HANDLE HSpace, HANDLE HObject)
@@ -360,12 +342,12 @@ function GetGroupItem2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const group = _getObject(ctx, spaceHandle, groupHandle);
-    if (group !== undefined && group.type === "otGROUP2D") {
-        const obj = group.getItem(index);
-        ctx.pushLong(obj ? obj.handle : 0);
-    } else {
+    if (!group || group.type !== "otGROUP2D") {
         ctx.pushLong(0);
+        return;
     }
+    const obj = group.getItem(index);
+    ctx.pushLong(obj ? obj.handle : 0);
 }
 
 // FLOAT DeleteGroup2d(HANDLE HSpace, HANDLE HGroup)
@@ -374,12 +356,12 @@ function DeleteGroup2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const space = ctx.graphics.getSpace(spaceHandle);
-    if (space) {
-        const group = space.getObject(groupHandle);
-        ctx.pushDouble(group !== undefined && group.type === "otGROUP2D" ? space.deleteGroup(group) : 0);
-    } else {
+    if (!space) {
         ctx.pushDouble(0);
+        return;
     }
+    const group = space.getObject(groupHandle);
+    ctx.pushDouble(group && group.type === "otGROUP2D" ? space.deleteGroup(group) : 0);
 }
 
 export function initGraphics(addOperation: (opcode: number, operation: Operation) => void) {

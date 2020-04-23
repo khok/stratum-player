@@ -17,11 +17,7 @@ function GetTextObject2d(ctx: VmStateContainer) {
         return;
     }
     const obj = space.getObject(objectHandle);
-    if (!obj || obj.type !== "otTEXT2D") {
-        ctx.pushLong(0);
-        return;
-    }
-    ctx.pushLong(obj.textTool.handle);
+    ctx.pushLong(obj && obj.type === "otTEXT2D" ? obj.textTool.handle : 0);
 }
 
 function GetTextCount2d(ctx: VmStateContainer) {
@@ -50,10 +46,6 @@ function GetString2d(ctx: VmStateContainer) {
         return;
     }
     const tool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
-    if (!tool) {
-        ctx.pushString("");
-        return;
-    }
     ctx.pushString(tool ? tool.text : "");
 }
 
@@ -151,6 +143,7 @@ function SetText2d(ctx: VmStateContainer) {
     textTool.updateBgColor(bgColor, 0);
     ctx.pushDouble(1);
 }
+
 function SetString2d(ctx: VmStateContainer) {
     //~HSpace,~HString,~text
     const text = ctx.popString();
@@ -162,12 +155,7 @@ function SetString2d(ctx: VmStateContainer) {
         return;
     }
     const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
-    if (!stringTool) {
-        ctx.pushDouble(0);
-        return;
-    }
-    stringTool.text = text;
-    ctx.pushDouble(1);
+    ctx.pushDouble(stringTool ? stringTool.setText(text) : 0);
 }
 
 function CreatePen2d(ctx: VmStateContainer) {
@@ -206,7 +194,6 @@ function CreateBrush2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const space = ctx.graphics.getSpace(spaceHandle);
-    // console.log(spaceHandle);
     ctx.pushLong(space ? space.tools.createBrush(color, style, dibHandle).handle : 0);
 }
 
@@ -222,12 +209,7 @@ function SetBrushColor2d(ctx: VmStateContainer) {
         return;
     }
     const brush = space.tools.getTool("ttBRUSH2D", brushHandle) as BrushToolState;
-    if (!brush) {
-        ctx.pushDouble(0);
-        return;
-    }
-    brush.color = color;
-    ctx.pushDouble(1);
+    ctx.pushDouble(brush ? brush.setColor(color) : 0);
 }
 
 // FLOAT SetBrushROP2d(HANDLE HSpace, HANDLE HBrush, FLOAT rop)
@@ -242,11 +224,7 @@ function SetBrushROP2d(ctx: VmStateContainer) {
         return;
     }
     const brush = space.tools.getTool("ttBRUSH2D", brushHandle) as BrushToolState;
-    if (!brush) {
-        ctx.pushDouble(0);
-        return;
-    }
-    ctx.pushDouble(1);
+    ctx.pushDouble(brush ? 1 : 0);
 }
 
 // HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
