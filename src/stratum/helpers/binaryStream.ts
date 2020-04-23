@@ -1,8 +1,4 @@
 const decoder = new TextDecoder("windows-1251");
-function decodeString(bytes: ArrayBuffer) {
-    // return encode(decode(bytes, "win1251"), "utf8").toString();
-    return decoder.decode(bytes);
-}
 
 export class BinaryStream {
     private pos: number = 0;
@@ -30,7 +26,7 @@ export class BinaryStream {
     }
 
     readFixedString(size: number) {
-        return size > 0 ? decodeString(this.readBytes(size)) : "";
+        return size > 0 ? decoder.decode(this.readBytes(size)) : "";
     }
 
     substream(length: number) {

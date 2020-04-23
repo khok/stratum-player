@@ -1,18 +1,27 @@
 import { VarData } from "cls-types";
-import { systemColorTable } from "./systemColorTable";
-
-export function createDefaultValue(type: VarData["type"]) {
-    switch (type) {
-        case "FLOAT":
-            return 0;
-        case "HANDLE":
-            return 0;
-        case "STRING":
-            return "";
-        case "COLORREF":
-            return "rgb(0, 0, 0)";
-    }
-}
+const systemColorTable = [
+    "gray",
+    "blue",
+    "navy",
+    "gray",
+    "#b5b5b5",
+    "white",
+    "black",
+    "black",
+    "black",
+    "white",
+    "gray",
+    "gray",
+    "gray",
+    "navy",
+    "white",
+    "#b5b5b5",
+    "gray",
+    "gray",
+    "black",
+    "gray",
+    "white",
+];
 
 export function parseVarValue(type: VarData["type"], value: string): string | number {
     switch (type) {
@@ -65,5 +74,3 @@ export function colorrefToColor(colorref: number) {
     const b = (colorref >> 16) & 255;
     return `rgb(${r},${g},${b})`;
 }
-
-// console.log(colorrefToString(stringToColorref("RgB(21,    35,255    )")));

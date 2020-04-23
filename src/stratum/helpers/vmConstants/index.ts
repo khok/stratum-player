@@ -1,3 +1,3 @@
-export { Opcode } from "./opcode";
 export { MessageCode } from "./messageCode";
-export { VmOperandTypes as operandTypes } from "./operandTypes";
+export { Opcode } from "./opcode";
+export { operandTypes } from "./operandTypes";

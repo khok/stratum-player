@@ -1,14 +1,14 @@
 import { Opcode } from "./opcode";
 import { OperandType } from "vm-types";
 
-export const VmOperandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIMUM_code + 1);
+export const operandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIMUM_code);
 
 (function () {
     function setOperand(opcode: number, operandType: OperandType) {
-        if (VmOperandTypes[opcode]) throw "Operand already set: " + opcode;
-        VmOperandTypes[opcode] = operandType;
+        if (operandTypes[opcode]) throw "Operand already set: " + opcode;
+        operandTypes[opcode] = operandType;
     }
-    //Base
+
     setOperand(Opcode.PUSH_FLOAT_const, "double");
     setOperand(Opcode.vmPUSH_LONG_const, "long");
     setOperand(Opcode.PUSH_STRING_CONST, "string");
@@ -31,7 +31,6 @@ export const VmOperandTypes = new Array<OperandType | undefined>(Opcode.VM_MAXIM
     setOperand(Opcode.PUSHPTRNEW, "varId");
     setOperand(Opcode.PUSHPTR, "varId");
 
-    //Advanced
     //                      o
     //                     /|\
     //                      |\
