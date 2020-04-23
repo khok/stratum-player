@@ -1,5 +1,5 @@
-import { Element2dData, ElementData, VectorDrawToolsData } from "vdr-types";
 import { VisualFactory } from "scene-types";
+import { Element2dData, ElementData, VectorDrawToolsData } from "vdr-types";
 import { GraphicSpaceToolsState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
@@ -53,7 +53,12 @@ function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visu
     }
 }
 
-export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+export function createObjects(
+    elements: ElementData[],
+    tools: GraphicSpaceToolsState,
+    visualFactory: VisualFactory,
+    layers: number
+) {
     const allObjects = HandleMap.create<GraphicObject>();
 
     const groups: { obj: GroupObject; handle: number; data: number[] }[] = [];
@@ -65,6 +70,7 @@ export function createObjects(elements: ElementData[], tools: GraphicSpaceToolsS
             groups.push({ obj, handle, data: elementData.childHandles });
         } else {
             obj = create2dObject(elementData, tools, visualFactory);
+            obj.hiddenLayers = layers;
         }
         obj.handle = handle;
         allObjects.set(handle, obj);

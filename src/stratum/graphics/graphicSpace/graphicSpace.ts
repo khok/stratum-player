@@ -1,5 +1,5 @@
-import { Point2D, VectorDrawData } from "vdr-types";
 import { Scene } from "scene-types";
+import { Point2D, VectorDrawData } from "vdr-types";
 import { ClassState, VmBool } from "vm-interfaces-core";
 import { GraphicSpaceState } from "vm-interfaces-gspace";
 import { VmStateContainer } from "vm-types";
@@ -36,6 +36,7 @@ export class GraphicSpace implements GraphicSpaceState {
     private _originX: number = 0;
     private _originY: number = 0;
     private subs = new Array<GraphicSpaceSubsciber>();
+    private layers = 0;
 
     readonly sourceName: string;
 
@@ -46,27 +47,26 @@ export class GraphicSpace implements GraphicSpaceState {
         this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
         this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
 
-        const tools = vdr ? createTools(vdr, bmpFactory) : new GraphicSpaceTools({ bmpFactory });
-        const elements = vdr && vdr.elements;
-        const objects = elements ? createObjects(elements, tools, scene) : HandleMap.create<GraphicObject>();
-
-        this.tools = tools;
-        this.objects = objects;
+        this.tools = vdr ? createTools(vdr, bmpFactory) : new GraphicSpaceTools({ bmpFactory });
+        this.objects =
+            vdr && vdr.elements
+                ? createObjects(vdr.elements, this.tools, scene, vdr.layers)
+                : HandleMap.create<GraphicObject>();
 
         if (!vdr) return;
-        const { brushHandle, origin, layers, elementOrder } = vdr;
+        const { brushHandle, origin, elementOrder } = vdr;
 
         if (origin) this.setOrigin(origin.x, origin.y);
         if (brushHandle) {
-            const brush = tools.getTool("ttBRUSH2D", brushHandle) as BrushTool;
+            const brush = this.tools.getTool("ttBRUSH2D", brushHandle) as BrushTool;
             if (brush) {
                 brush.subscribe(this, () => this.scene.updateBrush(brush));
                 this.scene.updateBrush(brush);
             }
         }
-        if (layers) for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.hiddenLayers = layers;
 
         if (elementOrder) this.scene.placeObjects(elementOrder);
+        this.layers = vdr.layers;
     }
 
     get originX() {
@@ -78,10 +78,16 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     setOrigin(x: number, y: number): VmBool {
+        if (x === this._originX && y === this.originY) return 1;
         this._originX = x;
         this._originY = y;
         this.scene.translateView(x, y);
         return 1;
+    }
+
+    setLayers(layers: number) {
+        if (this.layers !== layers)
+            for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.hiddenLayers = layers;
     }
 
     createText(x: number, y: number, angle: number, textToolHandle: number): TextObject {
@@ -226,14 +232,11 @@ export class GraphicSpace implements GraphicSpaceState {
                 ((sub.objectHandle ? controlHandle === sub.objectHandle : true) || sub.klass.isCapturingEvents(this.handle));
 
             if (!shouldReceiveEvent || !sub.klass.canReceiveEvents) return;
-            // sub.klass.setVarValueByLowCaseName("msg", code);
-            // sub.klass.setVarValueByLowCaseName("_hobject", controlHandle);
-            // sub.klass.setVarValueByLowCaseName("iditem", -1);
-            // sub.klass.setVarValueByLowCaseName("wnotifycode", 768); //EN_CHANGE = 768
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "msg", code);
             GraphicSpace.setKlassLongValueByLowCaseName(sub, "_hobject", controlHandle);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "iditem", -1);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "wnotifycode", 768); //EN_CHANGE = 768
+            sub.klass.computeSchemeRecursive(sub.ctx, true);
         });
     }
 
@@ -247,11 +250,6 @@ export class GraphicSpace implements GraphicSpaceState {
                 const handleMatch = obj ? obj.handle === sub.objectHandle : false;
                 if (!handleMatch && !this.scene.testVisualIntersection(sub.objectHandle, x, y)) return;
             }
-
-            // sub.klass.setVarValueByLowCaseName("msg", code);
-            // sub.klass.setVarValueByLowCaseName("xpos", x);
-            // sub.klass.setVarValueByLowCaseName("ypos", y);
-            // sub.klass.setVarValueByLowCaseName("fwkeys", 0);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "msg", code);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "xpos", x);
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "ypos", y);
