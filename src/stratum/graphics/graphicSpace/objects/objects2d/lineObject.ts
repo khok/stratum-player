@@ -37,12 +37,22 @@ export class LineObject extends Object2dMixin implements LineObjectState {
             this.width = area.x;
             this.height = area.y;
         }
-        this.pen = pen;
-        this.brush = brush;
+        this.changePen(pen);
+        this.changeBrush(brush);
     }
+
+    get pen() {
+        return this._pen;
+    }
+
+    get brush() {
+        return this._brush;
+    }
+
     getPoint(index: number): Point2D {
         return this.points[index];
     }
+
     setPointPosition(index: number, x: number, y: number): VmBool {
         const p = this.points[index];
         if (!p) return 0;
@@ -52,6 +62,7 @@ export class LineObject extends Object2dMixin implements LineObjectState {
         this.visual.setPointPosition(index, x, y);
         return 1;
     }
+
     addPoint(index: number, x: number, y: number): VmBool {
         if (index === -1) {
             this.points.push({ x, y });
@@ -61,22 +72,21 @@ export class LineObject extends Object2dMixin implements LineObjectState {
         this.visual.addPoint(index, x, y);
         return 1;
     }
-    get pen() {
-        return this._pen;
-    }
-    set pen(value) {
+
+    changePen(value: PenTool | undefined): VmBool {
         if (this.pen) this.pen.unsubscribe(this);
         if (value) value.subscribe(this, () => this.visual.updatePen(value));
         this._pen = value;
+        return 1;
     }
-    get brush() {
-        return this._brush;
-    }
-    set brush(value) {
+
+    changeBrush(value: BrushTool | undefined): VmBool {
         if (this.brush) this.brush.unsubscribe(this);
         if (value) value.subscribe(this, () => this.visual.updateBrush(value));
         this._brush = value;
+        return 1;
     }
+
     protected unsubFromTools() {
         if (this.pen) this.pen.unsubscribe(this);
         if (this.brush) this.brush.unsubscribe(this);

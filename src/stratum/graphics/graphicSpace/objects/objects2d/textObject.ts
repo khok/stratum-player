@@ -1,4 +1,5 @@
 import { TextElementVisual, VisualFactory } from "scene-types";
+import { VmBool } from "vm-interfaces-core";
 import { GraphicSpaceToolsState, TextObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
 import { TextTool } from "../../tools";
@@ -37,14 +38,18 @@ export class TextObject extends Object2dMixin implements TextObjectState {
         this._text = textTool;
         textTool.subscribe(this, () => this.visual.updateTextTool(textTool));
     }
+
     get textTool(): TextTool {
         return this._text;
     }
-    set textTool(value) {
+
+    changeTextTool(value: TextTool): VmBool {
         this._text.unsubscribe(this);
         this._text = value;
         value.subscribe(this, () => this.visual.updateTextTool(value));
+        return 1;
     }
+
     protected unsubFromTools(): void {
         this.textTool.unsubscribe(this);
     }

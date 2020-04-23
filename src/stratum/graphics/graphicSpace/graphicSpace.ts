@@ -40,9 +40,8 @@ export class GraphicSpace implements GraphicSpaceState {
 
     readonly sourceName: string;
 
-    constructor(data: GraphicSpaceOptions) {
-        const { vdr, bmpFactory, scene } = data;
-        this.sourceName = data.sourceName || "";
+    constructor({ sourceName, vdr, bmpFactory, scene }: GraphicSpaceOptions) {
+        this.sourceName = sourceName || "";
         this.scene = scene;
         this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
         this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
@@ -90,14 +89,15 @@ export class GraphicSpace implements GraphicSpaceState {
             for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.hiddenLayers = layers;
     }
 
-    createText(x: number, y: number, angle: number, textToolHandle: number): TextObject {
+    createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObject {
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new TextObject(
+        const obj = new LineObject(
             {
                 handle,
-                angle,
-                position: { x, y },
-                textToolHandle,
+                brushHandle,
+                penHandle,
+                points,
+                position: points[0],
             },
             this.tools,
             this.scene
@@ -127,15 +127,14 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
-    createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObject {
+    createText(x: number, y: number, angle: number, textToolHandle: number): TextObject {
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new LineObject(
+        const obj = new TextObject(
             {
                 handle,
-                brushHandle,
-                penHandle,
-                points,
-                position: points[0],
+                angle,
+                position: { x, y },
+                textToolHandle,
             },
             this.tools,
             this.scene
@@ -162,19 +161,7 @@ export class GraphicSpace implements GraphicSpaceState {
         return obj;
     }
 
-    moveObjectToTop(handle: number): VmBool {
-        const obj = this.getObject(handle);
-        if (!obj) return 0;
-        if (obj.type === "otGROUP2D") {
-            for (const item of obj.items) this.moveObjectToTop(item.handle);
-        } else {
-            this.scene.moveObjectToTop(obj.visual);
-        }
-        return 1;
-    }
-
     getObject(handle: number): GraphicObject | undefined {
-        // if (handle === 0) return undefined; //unlikely
         return this.objects.get(handle);
     }
 
@@ -197,6 +184,57 @@ export class GraphicSpace implements GraphicSpaceState {
         group.destroy();
         this.objects.delete(group.handle);
         return 1;
+    }
+
+    moveObjectToTop(handle: number): VmBool {
+        const obj = this.getObject(handle);
+        if (!obj) return 0;
+        if (obj.type === "otGROUP2D") {
+            for (const item of obj.items) this.moveObjectToTop(item.handle);
+        } else {
+            this.scene.moveObjectToTop(obj.visual);
+        }
+        return 1;
+    }
+
+    findObjectByName(objectName: string, group?: GroupObject): GraphicObject | undefined {
+        if (!group) {
+            for (const obj of this.objects.values()) if (obj.name === objectName) return obj;
+            return undefined;
+        }
+
+        for (const item of group.items) {
+            if (item.name === objectName) return item;
+            if (item.type === "otGROUP2D") {
+                const result = this.findObjectByName(objectName, item);
+                if (result) return result;
+            }
+        }
+        return undefined;
+    }
+
+    getObjectFromPoint(x: number, y: number) {
+        const handle = this.scene.getVisualHandleFromPoint(x, y);
+        if (!handle) return undefined;
+        let obj = this.getObject(handle);
+        if (!obj) return undefined;
+        while (obj.parent) {
+            obj = obj.parent;
+        }
+        return obj;
+    }
+
+    isIntersect(obj1: GraphicObject, obj2: GraphicObject): VmBool {
+        // if(obj1.positionX === obj2.positionX && obj1.positionY === obj2.positionY) return 1;
+        const xmin1 = obj1.positionX;
+        const xmax1 = xmin1 + obj1.width;
+        const ymin1 = obj1.positionY;
+        const ymax1 = ymin1 + obj1.height;
+        const xmin2 = obj2.positionX;
+        const xmax2 = xmin2 + obj2.width;
+        const ymin2 = obj2.positionY;
+        const ymax2 = ymin2 + obj2.height;
+        return xmax1 >= xmin2 && xmax2 >= xmin1 && ymax1 >= ymin2 && ymax2 >= ymin1 ? 1 : 0;
     }
 
     subscribe(ctx: VmStateContainer, klass: ClassState, msg: MessageCode, objectHandle: number, flags: number): void {
@@ -256,45 +294,5 @@ export class GraphicSpace implements GraphicSpaceState {
             GraphicSpace.setKlassDoubleValueByLowCaseName(sub, "fwkeys", buttons);
             sub.klass.computeSchemeRecursive(sub.ctx, true);
         });
-    }
-
-    findObjectByName(objectName: string, group?: GroupObject): GraphicObject | undefined {
-        if (!group) {
-            for (const obj of this.objects.values()) if (obj.name === objectName) return obj;
-            return undefined;
-        }
-
-        for (const item of group.items) {
-            if (item.name === objectName) return item;
-            if (item.type === "otGROUP2D") {
-                const result = this.findObjectByName(objectName, item);
-                if (result) return result;
-            }
-        }
-        return undefined;
-    }
-
-    getObjectFromPoint(x: number, y: number) {
-        const handle = this.scene.getVisualHandleFromPoint(x, y);
-        if (!handle) return undefined;
-        let obj = this.getObject(handle);
-        if (!obj) return undefined;
-        while (obj.parent) {
-            obj = obj.parent;
-        }
-        return obj;
-    }
-
-    isIntersect(obj1: GraphicObject, obj2: GraphicObject): VmBool {
-        // if(obj1.positionX === obj2.positionX && obj1.positionY === obj2.positionY) return 1;
-        const xmin1 = obj1.positionX;
-        const xmax1 = xmin1 + obj1.width;
-        const ymin1 = obj1.positionY;
-        const ymax1 = ymin1 + obj1.height;
-        const xmin2 = obj2.positionX;
-        const xmax2 = xmin2 + obj2.width;
-        const ymin2 = obj2.positionY;
-        const ymax2 = ymin2 + obj2.height;
-        return xmax1 >= xmin2 && xmax2 >= xmin1 && ymax1 >= ymin2 && ymax2 >= ymin1 ? 1 : 0;
     }
 }

@@ -1,5 +1,6 @@
-import { ControlElementData, Point2D } from "vdr-types";
 import { ControlElementVisual, VisualFactory } from "scene-types";
+import { ControlElementData, Point2D } from "vdr-types";
+import { VmBool } from "vm-interfaces-core";
 import { ControlObjectState } from "vm-interfaces-gspace";
 import { Object2dMixin, Object2dOptions } from "./object2dMixin";
 
@@ -30,11 +31,15 @@ export class ControlObject extends Object2dMixin implements ControlObjectState {
             this.height = area.y;
         }
     }
-    set text(value) {
-        this.visual.setText(value);
-    }
+
     get text(): string {
         return this.visual.getText();
     }
+
+    setText(value: string): VmBool {
+        this.visual.setText(value);
+        return 1;
+    }
+
     protected unsubFromTools() {}
 }

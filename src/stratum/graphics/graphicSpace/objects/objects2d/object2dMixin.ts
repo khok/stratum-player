@@ -40,10 +40,6 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         this.wasShowed = !!this._isVisible;
     }
 
-    get angle() {
-        return this.type === "otTEXT2D" ? this._angle : 0;
-    }
-
     setPosition(x: number, y: number): VmBool {
         if (this.positionX === x && this.positionY === y) return 1;
         this.positionX = x;
@@ -60,8 +56,11 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         return 1;
     }
 
+    get angle() {
+        return this.type === "otTEXT2D" ? this._angle : 0;
+    }
+
     rotate(centerX: number, centerY: number, angleRad: number): VmBool {
-        // console.log(angleRad);
         const { positionX, positionY } = this;
         //TODO: убрать зависимость от fabric
         const point = fabric.util.rotatePoint(
@@ -78,19 +77,25 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         return 1;
     }
 
-    protected abstract unsubFromTools(): void;
-    destroy() {
-        if (this.parent) this.parent.removeItem(this._subclassInstance);
-        this.unsubFromTools();
+    get zOrder(): number {
+        return 1; //TODO: ???
     }
 
-    get zOrder(): number {
-        //TODO: fix;
+    setZorder(zOrder: number): VmBool {
+        // throw new Error("Method not implemented.");
         return 1;
     }
 
-    set zOrder(value) {
-        // throw new Error("Method not implemented.");
+    get isVisible(): VmBool {
+        return this._isVisible;
+    }
+
+    setVisibility(value: VmBool): VmBool {
+        if (value === this._isVisible) return 1;
+        this._isVisible = value;
+        if (value && this._layerVisible) this.showVisual();
+        else this.hideVisual();
+        return 1;
     }
 
     private showVisual() {
@@ -105,17 +110,6 @@ export abstract class Object2dMixin extends BaseObjectMixin {
     private hideVisual() {
         this.visual.hide();
         this.wasShowed = false;
-    }
-
-    get isVisible(): VmBool {
-        return this._isVisible;
-    }
-
-    set isVisible(value) {
-        if (value === this._isVisible) return;
-        this._isVisible = value;
-        if (value && this._layerVisible) this.showVisual();
-        else this.hideVisual();
     }
 
     get isSelectable(): VmBool {
@@ -144,4 +138,10 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         this._layer = value;
         this.updateLayerVisibility(!!(this._hiddenLayers >> value));
     }
+
+    destroy() {
+        if (this.parent) this.parent.removeItem(this._subclassInstance);
+        this.unsubFromTools();
+    }
+    protected abstract unsubFromTools(): void;
 }

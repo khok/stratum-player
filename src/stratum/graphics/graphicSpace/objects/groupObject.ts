@@ -77,12 +77,6 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         return 1;
     }
 
-    destroy() {
-        this.items.forEach((o) => (o._parent = undefined));
-        this.items = [];
-        if (this.parent) this.parent.removeItem(this._subclassInstance);
-    }
-
     //obj2d operations
     private handleChildChanges = true;
     handleChildTransform(childX: number, childY: number, childWidth: number, childHeight: number) {
@@ -134,15 +128,23 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         return 1; //TODO: ???
     }
 
-    set zOrder(value) {
+    setZorder(zOrder: number): VmBool {
         // throw new Error("Method not implemented.");
+        return 1;
     }
 
     get isVisible(): VmBool {
         return 1;
     }
 
-    set isVisible(value) {
+    setVisibility(value: VmBool): VmBool {
         if (!value) throw new StratumError("Попытка скрыть объект-группу. На данный момент это не реализовано");
+        else return 1;
+    }
+
+    destroy() {
+        this.items.forEach((o) => (o._parent = undefined));
+        this.items = [];
+        if (this.parent) this.parent.removeItem(this._subclassInstance);
     }
 }

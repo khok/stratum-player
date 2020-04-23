@@ -1,7 +1,7 @@
-import { ToolMixin } from "./toolMixin";
-import { TextToolState, TextFragment } from "vm-interfaces-gspace";
+import { TextFragment, TextToolState } from "vm-interfaces-gspace";
 import { FontTool } from "./fontTool";
 import { StringTool } from "./stringTool";
+import { ToolMixin } from "./toolMixin";
 
 export interface TextToolTextFragment {
     font: FontTool;
@@ -12,13 +12,32 @@ export interface TextToolTextFragment {
 
 export class TextTool extends ToolMixin<TextTool> implements TextToolState {
     private cachedString?: { text: string; size: number };
+
     constructor(private fragments: TextToolTextFragment[]) {
         super();
-        this.fragments.forEach(({ font, stringFragment }, idx) => {
+        this.fragments.forEach(({ font, stringFragment }) => {
             font.subscribe(this, () => this.update());
             stringFragment.subscribe(this, () => this.update());
         });
     }
+
+    get textCount(): number {
+        return this.fragments.length;
+    }
+
+    get assembledText(): { text: string; size: number } {
+        if (!this.cachedString) {
+            const text = this.fragments.reduce((acc, f) => acc + f.stringFragment.text, "");
+            const size = this.fragments.reduce((acc, f) => acc + f.font.size, 0) / this.fragments.length;
+            this.cachedString = { text, size };
+        }
+        return this.cachedString;
+    }
+
+    getFragment(index: number): TextFragment {
+        return this.fragments[index];
+    }
+
     updateString(str: StringTool, idx: number) {
         const oldFrag = this.fragments[idx].stringFragment;
         if (oldFrag !== str) {
@@ -28,6 +47,7 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
         }
         this.update();
     }
+
     updateFont(font: FontTool, idx: number) {
         const oldFont = this.fragments[idx].font;
         if (oldFont !== font) {
@@ -37,10 +57,12 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
         }
         this.update();
     }
+
     updateFgColor(color: number, idx: number) {
         this.fragments[idx].foregroundColor = color;
         this.update();
     }
+
     updateBgColor(color: number, idx: number) {
         this.fragments[idx].backgroundColor = color;
         this.update();
@@ -51,20 +73,6 @@ export class TextTool extends ToolMixin<TextTool> implements TextToolState {
         this.dispatchChanges();
     }
 
-    get textCount(): number {
-        return this.fragments.length;
-    }
-    getFragment(index: number): TextFragment {
-        return this.fragments[index];
-    }
-    get assembledText(): { text: string; size: number } {
-        if (!this.cachedString) {
-            const text = this.fragments.reduce((acc, f) => acc + f.stringFragment.text, "");
-            const size = this.fragments.reduce((acc, f) => acc + f.font.size, 0) / this.fragments.length;
-            this.cachedString = { text, size };
-        }
-        return this.cachedString;
-    }
     unsubFromTools() {
         this.fragments.forEach(({ font, stringFragment }) => {
             font.unsubscribe(this);

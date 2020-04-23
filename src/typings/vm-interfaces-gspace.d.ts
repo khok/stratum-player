@@ -2,33 +2,41 @@ declare module "vm-interfaces-gspace" {
     import {
         BitmapElementData,
         ControlElementData,
+        DoubleBitmapElementData,
         GroupElementData,
         LineElementData,
         Point2D,
         TextElementData,
         ToolData,
-        DoubleBitmapElementData,
     } from "vdr-types";
     import { ClassState, VmBool } from "vm-interfaces-core";
     import { VmStateContainer } from "vm-types";
 
     export interface PenToolState {
         readonly handle: number;
-        color: number;
-        width: number;
+        readonly color: number;
+        readonly width: number;
+
+        setColor(color: number): VmBool;
+        setWidth(width: number): VmBool;
     }
 
     export interface BrushToolState {
         readonly handle: number;
-        color: number;
-        fillType: "SOLID" | "NULL" | "PATTERN" | "HATCED";
-        bmpTool: BitmapToolState | undefined;
+        readonly color: number;
+        readonly fillType: "SOLID" | "NULL" | "PATTERN" | "HATCED";
+        readonly bmpTool: BitmapToolState | undefined;
+
+        setColor(color: number): VmBool;
+        setFillType(value: BrushToolState["fillType"]): VmBool;
+        changeBmpTool(tool: BitmapToolState | undefined): VmBool;
     }
 
     export interface BitmapToolState {
         readonly handle: number;
-        image?: HTMLImageElement;
-        dimensions?: Point2D;
+        readonly image?: HTMLImageElement;
+        readonly dimensions?: Point2D;
+
         setPixel(x: number, y: number, color: number): VmBool;
         getPixel(x: number, y: number): number;
     }
@@ -42,25 +50,27 @@ declare module "vm-interfaces-gspace" {
 
     export interface StringToolState {
         readonly handle: number;
-        text: string;
+        readonly text: string;
+        setText(value: string): VmBool;
     }
 
     export interface TextFragment {
-        font: FontToolState;
-        stringFragment: StringToolState;
-        foregroundColor: number;
-        backgroundColor: number;
+        readonly font: FontToolState;
+        readonly stringFragment: StringToolState;
+        readonly foregroundColor: number;
+        readonly backgroundColor: number;
     }
 
     export interface TextToolState {
         readonly handle: number;
         readonly textCount: number;
+        readonly assembledText: { text: string; size: number };
+
         getFragment(index: number): TextFragment;
         updateString(str: StringToolState, idx: number): void;
         updateFont(font: FontToolState, idx: number): void;
         updateFgColor(color: number, idx: number): void;
         updateBgColor(color: number, idx: number): void;
-        readonly assembledText: { text: string; size: number };
     }
 
     export type ToolState =
@@ -90,52 +100,66 @@ declare module "vm-interfaces-gspace" {
         deleteTool(type: ToolTypes, handle: number): VmBool;
     }
 
-    export interface _2DObjBaseState {
+    interface _2DObjBaseState {
         readonly handle: number;
         readonly parent: GroupObjectState | undefined;
-        name: string;
+
+        readonly name: string;
+        setName(name: string): VmBool;
 
         readonly positionX: number;
         readonly positionY: number;
         setPosition(x: number, y: number): VmBool;
 
-        readonly angle: number;
-        rotate(centerX: number, centerY: number, angleRad: number): VmBool;
-
         readonly width: number;
         readonly height: number;
         setSize(width: number, height: number): VmBool;
 
-        zOrder: number;
-        isVisible: VmBool;
+        readonly angle: number;
+        rotate(centerX: number, centerY: number, angleRad: number): VmBool;
+
+        readonly zOrder: number;
+        setZorder(zOrder: number): VmBool;
+
+        readonly isVisible: VmBool;
+        setVisibility(visible: VmBool): VmBool;
     }
 
     export interface LineObjectState extends _2DObjBaseState {
         readonly type: LineElementData["type"];
-        pen: PenToolState | undefined;
-        brush: BrushToolState | undefined;
+        readonly pen: PenToolState | undefined;
+        readonly brush: BrushToolState | undefined;
+
         getPoint(index: number): Point2D;
         setPointPosition(index: number, x: number, y: number): VmBool;
         addPoint(index: number, x: number, y: number): VmBool;
+
+        changePen(pen: PenToolState | undefined): VmBool;
+        changeBrush(brush: BrushToolState | undefined): VmBool;
     }
+
     export interface ControlObjectState extends _2DObjBaseState {
         readonly type: ControlElementData["type"];
-        text: string;
+        readonly text: string;
+        setText(value: string): VmBool;
     }
+
     export interface TextObjectState extends _2DObjBaseState {
         readonly type: TextElementData["type"];
-        textTool: TextToolState;
+        readonly textTool: TextToolState;
+        changeTextTool(textTool: TextToolState): VmBool;
     }
-    interface _BmpBase extends _2DObjBaseState {
-        setRect(x: number, y: number, width: number, height: number): VmBool;
-    }
-    export interface BitmapObjectState extends _BmpBase {
+    export interface BitmapObjectState extends _2DObjBaseState {
         readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
-        bmpTool: BitmapToolState;
+        readonly bmpTool: BitmapToolState;
+
         setRect(x: number, y: number, width: number, height: number): VmBool;
+        changeBmpTool(tool: BitmapToolState): VmBool;
     }
+
     export interface GroupObjectState extends _2DObjBaseState {
         readonly type: GroupElementData["type"];
+
         getItem(index: number): GraphicObjectState | undefined;
         hasItem(obj: GraphicObjectState): VmBool;
         addItem(obj: GraphicObjectState): VmBool;
@@ -151,10 +175,11 @@ declare module "vm-interfaces-gspace" {
 
     export interface GraphicSpaceState {
         readonly handle: number;
+        readonly sourceName: string;
         readonly tools: GraphicSpaceToolsState;
+
         readonly originX: number;
         readonly originY: number;
-        readonly sourceName: string;
         setOrigin(x: number, y: number): VmBool;
 
         createText(x: number, y: number, angle: number, textToolHandle: number): TextObjectState;
@@ -166,10 +191,10 @@ declare module "vm-interfaces-gspace" {
         deleteGroup(object: GroupObjectState): VmBool;
         moveObjectToTop(handle: number): VmBool;
 
-        subscribe(ctx: VmStateContainer, klass: ClassState, msg: number, objectHandle: number, flags: number): void;
-
         findObjectByName(objectName: string, group?: GroupObjectState): GraphicObjectState | undefined;
         getObjectFromPoint(x: number, y: number): GraphicObjectState | undefined;
         isIntersect(obj: GraphicObjectState, obj2: GraphicObjectState): VmBool;
+
+        subscribe(ctx: VmStateContainer, klass: ClassState, msg: number, objectHandle: number, flags: number): void;
     }
 }

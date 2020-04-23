@@ -64,22 +64,26 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
             this.width = area.x;
             this.height = area.y;
         }
-        bmpTool.subscribe(this, () => this.visual.updateBitmap(bmpTool));
         this._bmpTool = bmpTool;
-    }
-    setRect(x: number, y: number, width: number, height: number): VmBool {
-        this.visual.setRect(x, y, width, height);
-        return 1;
+        bmpTool.subscribe(this, () => this.visual.updateBitmap(bmpTool));
     }
 
     get bmpTool() {
         return this._bmpTool;
     }
-    set bmpTool(value) {
+
+    setRect(x: number, y: number, width: number, height: number): VmBool {
+        this.visual.setRect(x, y, width, height);
+        return 1;
+    }
+
+    changeBmpTool(value: BitmapTool): VmBool {
         this.bmpTool.unsubscribe(this);
         value.subscribe(this, () => this.visual.updateBitmap(value));
         this._bmpTool = value;
+        return 1;
     }
+
     protected unsubFromTools() {
         if (this.bmpTool) this.bmpTool.unsubscribe(this);
     }

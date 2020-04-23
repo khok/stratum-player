@@ -85,7 +85,6 @@ export class BitmapToolFactory {
         const file = this.projectImages.find((f) => f.filename.toLowerCase().endsWith(name));
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
         const stream = new BinaryStream(file.data);
-        // const { image, width, height } = file.filename.endsWith("bmp") ? readBitmap(stream) : readDoubleBitmap(stream);
         const { image, width, height } = isDouble ? readDoubleBitmap(stream) : readBitmap(stream);
         const tool = new BitmapTool({ x: width, y: height });
         loadImage(image, this.shittyNet).then((imageElement) => (tool.image = imageElement));
