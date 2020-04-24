@@ -60,7 +60,7 @@ function read_ttFONT2D(stream) {
         clipPrecision: stream.readByte(),
         quality: stream.readByte(),
         pitchAndFamily: stream.readByte(),
-        fontName: stream.readCharSeq(),
+        fontName: stream.readCharSeq(32),
     };
     stream.seek(pos + 50);
 

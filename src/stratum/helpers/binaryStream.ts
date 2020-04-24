@@ -71,11 +71,12 @@ export class BinaryStream {
 
     /**
      * Нуль-терминированная строка.
+     * Максимальный размер строки будет составлять `limit - 1` байт.
      */
-    readCharSeq() {
+    readCharSeq(limit: number) {
         const strStart = this.pos;
         let size = 0;
-        while (this.view.getUint8(strStart + ++size) !== 0);
+        while (size < limit - 1 && this.view.getUint8(strStart + ++size) !== 0);
 
         const value = this.readFixedString(size);
         this.pos += 1; //нуль-терминатор

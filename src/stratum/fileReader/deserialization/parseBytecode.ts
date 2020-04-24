@@ -8,7 +8,7 @@ function readFunctionData(stream: BinaryStream): FunctionOperand {
 
     const pos = stream.position;
 
-    const funcName = stream.readCharSeq();
+    const funcName = stream.readCharSeq(offset);
 
     stream.seek(pos + offset);
 
@@ -34,7 +34,7 @@ function readFunctionData(stream: BinaryStream): FunctionOperand {
 function readDllFunctionData(stream: BinaryStream) {
     const offset = stream.readWord() * 2;
     const pos = stream.position;
-    const funcName = stream.readCharSeq();
+    const funcName = stream.readCharSeq(offset);
     stream.seek(pos + offset);
     return funcName;
 }
