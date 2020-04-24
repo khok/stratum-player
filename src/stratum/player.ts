@@ -6,8 +6,8 @@ import { MemoryManager } from "~/core/memoryManager";
 import { Project, ProjectOptions } from "~/core/project";
 import { BitmapToolFactory, BitmapToolFactoryOptions } from "~/graphics/graphicSpace/bitmapToolFactory";
 import { GraphicSystem, GraphicSystemOptions } from "~/graphics/graphicSystem";
+import { EventDispatcher, EventType } from "~/helpers/eventDispatcher";
 import { VmContext } from "~/vm/vmContext";
-import { EventDispatcher, EventType } from "./helpers/eventDispatcher";
 
 export interface PlayerData {
     rootName: string;

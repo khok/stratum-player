@@ -6,9 +6,8 @@ import { StratumError } from "~/helpers/errors";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { HandleMap } from "~/helpers/handleMap";
 import { HtmlFactory } from "~/helpers/htmlFactory";
-import { BitmapToolFactory } from "./graphicSpace/bitmapToolFactory";
-import { GraphicSpace } from "./graphicSpace/graphicSpace";
-import { FabricScene } from "./renderers/fabric/fabricScene";
+import { BitmapToolFactory, GraphicSpace } from "./graphicSpace";
+import { FabricScene } from "./renderers";
 
 class Window implements WindowState {
     constructor(public space: GraphicSpace, private size: { x: number; y: number }, private resizable: boolean) {}

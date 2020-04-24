@@ -5,10 +5,10 @@
 import { ClassData } from "cls-types";
 import { JSZipObject } from "jszip";
 import { openZipFromFileList, openZipFromUrl, ReadOptions, readProjectData } from "~/fileReader/fileReaderHelpers";
-import { StratumError } from "./helpers/errors";
-import { formatMissingCommands, showMissingCommands } from "./helpers/showMissingCommands";
-import { Player, PlayerData, PlayerOptions } from "./player";
-import { VmOperations } from "./vm/operations";
+import { StratumError } from "~/helpers/errors";
+import { formatMissingCommands, showMissingCommands } from "~/helpers/showMissingCommands";
+import { Player, PlayerData, PlayerOptions } from "~/player";
+import { VmOperations } from "~/vm/operations";
 
 export class ExtendedPlayer extends Player {
     private paused: boolean = false;

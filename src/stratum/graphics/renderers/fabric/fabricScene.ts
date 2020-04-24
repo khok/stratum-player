@@ -18,10 +18,8 @@ import { HandleMap } from "~/helpers/handleMap";
 import { colorrefToColor } from "~/helpers/varValueFunctions";
 import { MessageCode } from "~/helpers/vmConstants";
 import { systemKeysTemp } from "~/vm/operations/system";
-import { HtmlControl } from "../html/htmlControl";
-import { FabricBitmap } from "./components/fabricBitmap";
-import { FabricLine } from "./components/fabricLine";
-import { FabricText } from "./components/fabricText";
+import { HtmlControl } from "..";
+import { FabricBitmap, FabricLine, FabricText } from "./components";
 
 type VisualObject = FabricLine | FabricBitmap | FabricText | HtmlControl;
 
