@@ -134,7 +134,7 @@ class BmpDecoder {
             bitn !== "bit1" &&
             bitn !== "bit4" &&
             bitn !== "bit8" &&
-            bitn != "bit15" &&
+            bitn !== "bit15" &&
             bitn !== "bit16" &&
             bitn !== "bit24" &&
             bitn !== "bit32"

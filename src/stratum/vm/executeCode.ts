@@ -36,11 +36,10 @@ export function executeCode(ctx: VmContext, { code, numberOperands, stringOperan
             }
         }
     } catch (e) {
-        if (!(e instanceof TypeError)) throw e;
         const message = `Функция не реализована: ${realCommandNames[cmd! & OPCODE_MASK]} (${
             Opcode[cmd! & OPCODE_MASK]
-        })`;
-        // rapidBytecodePrint(ctx.currentClass.protoName, ctx.project.classCollection);
+        }) (индекс опкода: ${ctx.nextCmdIndex - 1})`;
+        // rapidBytecodePrint(ctx.currentClass.protoName, ctx.project.classesData);
         ctx.setError(message);
     }
 }
