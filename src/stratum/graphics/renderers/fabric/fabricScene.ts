@@ -28,14 +28,86 @@ type VisualObject = FabricLine | FabricBitmap | FabricText | HtmlControl;
 const downCodes = [MessageCode.WM_LBUTTONDOWN, MessageCode.WM_MBUTTONDOWN, MessageCode.WM_RBUTTONDOWN];
 const upCodes = [MessageCode.WM_LBUTTONUP, MessageCode.WM_MBUTTONUP, MessageCode.WM_RBUTTONUP];
 
-function convertButtons(buttons: number) {
+function convertTouch(touch: Touch, rect: DOMRect) {
+    return { buttons: 1, button: 0, x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+function convertMouse(event: MouseEvent) {
+    const { offsetX, offsetY, buttons, button } = event;
     const lmb = buttons & 1 ? 1 : 0;
     const rmb = buttons & 2 ? 2 : 0;
     const wheel = buttons & 4 ? 16 : 0;
-    return lmb | rmb | wheel;
+    return { buttons: lmb | rmb | wheel, button, x: offsetX, y: offsetY };
 }
 
 export class FabricScene implements Scene {
+    static bindEventsToCanvas(canvas: HTMLCanvasElement, scene: FabricScene) {
+        canvas.oncontextmenu = (e) => e.preventDefault();
+
+        let preventMouse = false;
+        let lastTouch: Touch | undefined = undefined;
+        canvas.addEventListener("touchstart", (e) => {
+            preventMouse = true;
+            if (e.touches.length > 1 && lastTouch) {
+                scene.raiseEvent(convertTouch(lastTouch, canvas.getBoundingClientRect()), "up");
+                lastTouch = undefined;
+                return;
+            }
+
+            if (lastTouch !== undefined) return;
+
+            const t = e.changedTouches[0];
+            lastTouch = t;
+            scene.raiseEvent(convertTouch(t, canvas.getBoundingClientRect()), "down");
+        });
+        canvas.addEventListener("touchend", (e) => {
+            preventMouse = true;
+            if (lastTouch === undefined) return;
+            const t = e.changedTouches[lastTouch.identifier];
+            if (!t) return;
+
+            lastTouch = undefined;
+            scene.raiseEvent(convertTouch(t, canvas.getBoundingClientRect()), "up");
+        });
+        canvas.addEventListener("touchmove", (e) => {
+            preventMouse = true;
+            if (e.touches.length < 2) e.preventDefault();
+
+            if (lastTouch === undefined) return;
+            const t = e.changedTouches[lastTouch.identifier];
+            if (!t) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const data = convertTouch(t, rect);
+            if (data.x < 0 || data.y < 0 || data.x > rect.width || data.y > rect.height)
+                scene.raiseEvent(convertTouch(lastTouch, rect), "up");
+            else scene.raiseEvent(data, "move");
+            lastTouch = t;
+        });
+
+        //mouse
+        canvas.addEventListener("mousedown", (e) => {
+            if (preventMouse) {
+                preventMouse = false;
+                return;
+            }
+            scene.raiseEvent(convertMouse(e), "down");
+        });
+        canvas.addEventListener("mouseup", (e) => {
+            if (preventMouse) {
+                preventMouse = false;
+                return;
+            }
+            scene.raiseEvent(convertMouse(e), "up");
+        });
+        canvas.addEventListener("mouseleave", (e) => {
+            scene.raiseEvent(convertMouse(e), "up");
+        });
+        canvas.addEventListener("mousemove", (e) => {
+            scene.raiseEvent(convertMouse(e), "move");
+        });
+    }
+
     private canvas: fabric.StaticCanvas;
     private objects: HandleMap<VisualObject> = HandleMap.create();
     private objectsByZReversed: VisualObject[] = [];
@@ -55,69 +127,34 @@ export class FabricScene implements Scene {
             preserveObjectStacking: true,
             renderOnAddRemove: false,
         });
-
-        //context menu
-        canvas.oncontextmenu = (e) => e.preventDefault();
-
-        //touch
-        canvas.addEventListener("touchstart", (e) => {
-            systemKeysTemp[1] = 1;
-            this.raiseEvent({ eventType: "touch", e }, "down");
-            // e.preventDefault();
-        });
-        canvas.addEventListener("touchend", (e) => {
-            systemKeysTemp[1] = 0;
-            this.raiseEvent({ eventType: "touch", e }, "up");
-            // e.preventDefault();
-        });
-        canvas.addEventListener("touchmove", (e) => {
-            this.raiseEvent({ eventType: "touch", e }, "move");
-            // e.preventDefault();
-        });
-
-        //mouse
-        canvas.addEventListener("mousedown", (e) => {
-            systemKeysTemp[1] = 1;
-            this.raiseEvent({ eventType: "mouse", e }, "down");
-        });
-        canvas.addEventListener("mouseup", (e) => {
-            systemKeysTemp[1] = 0;
-            this.raiseEvent({ eventType: "mouse", e }, "up");
-        });
-        canvas.addEventListener("mousemove", (e) => this.raiseEvent({ eventType: "mouse", e }, "move"));
+        FabricScene.bindEventsToCanvas(canvas, this);
     }
 
     // preventMoveEvent = false;
     private raiseEvent(
-        data: { eventType: "touch"; e: TouchEvent } | { eventType: "mouse"; e: MouseEvent },
-        type: "down" | "move" | "up"
+        { x, y, buttons, button }: { x: number; y: number; buttons: number; button: number },
+        type: "down" | "up" | "move"
     ) {
         // if (type === "move" && this.preventMoveEvent) return;
         // if (type !== "move") {
         //     this.preventMoveEvent = true;
         //     setTimeout(() => (this.preventMoveEvent = false), 50);
         // }
-        const rect = this.canvas.getElement().getBoundingClientRect();
+        const xv = x + this.view.x;
+        const yv = y + this.view.y;
 
-        //prettier-ignore
-        const x = (data.eventType === "mouse" ? data.e.offsetX : data.e.changedTouches[0].clientX - rect.left) + this.view.x;
-        const y =
-            (data.eventType === "mouse" ? data.e.offsetY : data.e.changedTouches[0].clientY - rect.top) + this.view.y;
-        const buttons = data.eventType === "mouse" ? convertButtons(data.e.buttons) : type === "up" ? 0 : 1;
         switch (type) {
+            case "down":
+                systemKeysTemp[1] = 1;
+                this.mouseSubs.forEach((s) => s(downCodes[button] || MessageCode.WM_LBUTTONDOWN, buttons, xv, yv));
+                break;
+            case "up":
+                systemKeysTemp[1] = 0;
+                this.mouseSubs.forEach((s) => s(upCodes[button] || MessageCode.WM_LBUTTONUP, 0, xv, yv));
+                break;
             case "move":
-                this.mouseSubs.forEach((s) => s(MessageCode.WM_MOUSEMOVE, buttons, x, y));
-                return;
-            case "up": {
-                const code = upCodes[data.eventType === "mouse" ? data.e.button : 0];
-                if (code) this.mouseSubs.forEach((s) => s(code, buttons, x, y));
-                return;
-            }
-            case "down": {
-                const code = downCodes[data.eventType === "mouse" ? data.e.button : 0];
-                if (code) this.mouseSubs.forEach((s) => s(code, buttons, x, y));
-                return;
-            }
+                this.mouseSubs.forEach((s) => s(MessageCode.WM_MOUSEMOVE, buttons, xv, yv));
+                break;
         }
     }
 
