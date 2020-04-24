@@ -1,10 +1,9 @@
 import { Operation, VmStateContainer } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
-import { StringToolState, FontToolState, TextToolState, PenToolState, BrushToolState } from "vm-interfaces-gspace";
 
 function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
     const space = ctx.graphics.getSpace(spaceHandle);
-    return space && (space.tools.getTool("ttTEXT2D", textHandle) as TextToolState);
+    return space && space.tools.texts.get(textHandle);
 }
 
 function GetTextObject2d(ctx: VmStateContainer) {
@@ -45,7 +44,7 @@ function GetString2d(ctx: VmStateContainer) {
         ctx.pushString("");
         return;
     }
-    const tool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
+    const tool = space.tools.strings.get(stringHandle);
     ctx.pushString(tool ? tool.text : "");
 }
 
@@ -120,14 +119,14 @@ function SetText2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const textTool = space.tools.getTool("ttTEXT2D", textHandle) as TextToolState;
+    const textTool = space.tools.texts.get(textHandle);
     if (!textTool) {
         ctx.pushDouble(0);
         return;
     }
-    const fontTool = space.tools.getTool("ttFONT2D", fontHandle) as FontToolState;
+    const fontTool = space.tools.fonts.get(fontHandle);
     if (fontTool) textTool.updateFont(fontTool, 0);
-    const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
+    const stringTool = space.tools.strings.get(stringHandle);
     if (stringTool) textTool.updateString(stringTool, 0);
     textTool.updateFgColor(fgColor, 0);
     textTool.updateBgColor(bgColor, 0);
@@ -144,7 +143,7 @@ function SetString2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
+    const stringTool = space.tools.strings.get(stringHandle);
     ctx.pushDouble(stringTool ? stringTool.setText(text) : 0);
 }
 
@@ -156,7 +155,7 @@ function CreatePen2d(ctx: VmStateContainer) {
     const spaceHandle = ctx.popLong();
 
     const space = ctx.graphics.getSpace(spaceHandle);
-    ctx.pushLong(space ? space.tools.createPen(width, color).handle : 0);
+    ctx.pushLong(space ? space.tools.createPen(width, color, style).handle : 0);
 }
 
 // FLOAT SetPenROP2d(HANDLE HSpace, HANDLE HPen, FLOAT rop)
@@ -170,7 +169,7 @@ function SetPenROP2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const pen = space.tools.getTool("ttPEN2D", penHandle) as PenToolState;
+    const pen = space.tools.pens.get(penHandle);
     ctx.pushDouble(pen ? 1 : 0);
 }
 
@@ -198,7 +197,7 @@ function SetBrushColor2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const brush = space.tools.getTool("ttBRUSH2D", brushHandle) as BrushToolState;
+    const brush = space.tools.brushes.get(brushHandle);
     ctx.pushDouble(brush ? brush.setColor(color) : 0);
 }
 
@@ -213,7 +212,7 @@ function SetBrushROP2d(ctx: VmStateContainer) {
         ctx.pushDouble(0);
         return;
     }
-    const brush = space.tools.getTool("ttBRUSH2D", brushHandle) as BrushToolState;
+    const brush = space.tools.brushes.get(brushHandle);
     ctx.pushDouble(brush ? 1 : 0);
 }
 

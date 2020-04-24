@@ -1,52 +1,39 @@
+import { NormalOmit } from "other-types";
 import { BitmapElementVisual, VisualFactory } from "scene-types";
-import { BitmapElementData, DoubleBitmapElementData, Point2D } from "vdr-types";
+import { BitmapElementData, DoubleBitmapElementData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
-import { BitmapObjectState, GraphicSpaceToolsState } from "vm-interfaces-gspace";
+import { BitmapObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
+import { GraphicSpaceTools } from "../../graphicSpaceTools";
 import { BitmapTool } from "../../tools";
-import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+import { Object2dMixin } from "./object2dMixin";
 
-export interface BitmapObjectOptions extends Object2dOptions {
-    type: BitmapElementData["type"];
-    bmpOrigin?: Point2D;
-    bmpSize?: Point2D;
-    dibHandle: number;
-}
+type elData = BitmapElementData | DoubleBitmapElementData;
+type omitKeys = "name" | "options" | "size" | "bmpSize" | "bmpAngle" | "bmpOrigin";
 
-export interface DoubleBitmapObjectOptions extends Object2dOptions {
-    type: DoubleBitmapElementData["type"];
-    bmpOrigin?: Point2D;
-    bmpSize?: Point2D;
-    doubleDibHandle: number;
-}
+export type BitmapObjectOptions = Partial<elData> & NormalOmit<elData, omitKeys>;
 
 export class BitmapObject extends Object2dMixin implements BitmapObjectState {
     readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
     readonly visual: BitmapElementVisual;
     private _bmpTool: BitmapTool;
-    constructor(
-        data: BitmapObjectOptions | DoubleBitmapObjectOptions,
-        tools: GraphicSpaceToolsState,
-        visualFactory: VisualFactory
-    ) {
+    constructor(data: BitmapObjectOptions, visualFactory: VisualFactory, tools: GraphicSpaceTools) {
         super(data);
         this.type = data.type;
-        const toolType = data.type === "otBITMAP2D" ? "ttDIB2D" : "ttDOUBLEDIB2D";
-        const toolHandle = data.type === "otBITMAP2D" ? data.dibHandle : data.doubleDibHandle;
-        const bmpTool = tools.getTool(toolType, toolHandle) as BitmapTool;
-        if (!bmpTool) {
-            //prettier-ignore
-            throw new StratumError(`${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта #${toolHandle} не существует`);
-        }
+
+        const bhandle = data.bmpHandle;
+        const bmpTool = data.type === "otBITMAP2D" ? tools.bitmaps.get(bhandle) : tools.doubleBitmaps.get(bhandle);
+
+        const textType = `Инструмент ${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта`;
+        if (!bmpTool) throw new StratumError(`${textType} #${bhandle} не существует`);
+
+        const bmpSize = data.bmpSize || data.size || bmpTool.dimensions;
+        if (!bmpSize) throw new Error(`${textType}: у изображения нет размеров`);
+
         const scale = {
             x: data.size && data.bmpSize ? data.size.x / data.bmpSize.x : 1,
             y: data.size && data.bmpSize ? data.size.y / data.bmpSize.y : 1,
         };
-
-        const bmpSize = data.bmpSize || data.size || bmpTool.dimensions;
-        if (!bmpSize) {
-            throw new Error(`Битовая карта ${bmpTool.handle}: у изображения нет размеров`);
-        }
 
         this.visual = visualFactory.createBitmap({
             handle: data.handle,

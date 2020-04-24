@@ -95,7 +95,6 @@ function updateRefsFromToolsToTools(
             break;
         }
         case "bitmapTools": {
-            //а почему не doubleBitmapTools?
             updateHandles(tools.brushTools, "dibHandle", map);
             break;
         }
@@ -125,14 +124,14 @@ function updateRefsFromElementsToTools(
         case "bitmapTools":
             updateHandles(
                 (elements as BitmapElementData[]).filter((t) => t.type === "otBITMAP2D"),
-                "dibHandle",
+                "bmpHandle",
                 map
             );
             break;
         case "doubleBitmapTools":
             updateHandles(
                 (elements as DoubleBitmapElementData[]).filter((t) => t.type === "otDOUBLEBITMAP2D"),
-                "doubleDibHandle",
+                "bmpHandle",
                 map
             );
             break;
@@ -295,6 +294,6 @@ export class VdrMerger {
         } else {
             scheme.doubleBitmapTools = [iconBmpTool];
         }
-        stubIcon.doubleDibHandle = iconBmpTool.handle = freeHandle;
+        stubIcon.bmpHandle = iconBmpTool.handle = freeHandle;
     }
 }

@@ -1,11 +1,9 @@
+import { PartialRequiredData } from "other-types";
+import { ElementBaseData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
 import { GroupObject } from ".";
 
-export interface ObjectOptions {
-    handle: number;
-    options?: number;
-    name?: string;
-}
+export type ObjectOptions = PartialRequiredData<ElementBaseData, "handle">;
 
 export abstract class BaseObjectMixin {
     readonly handle: number;

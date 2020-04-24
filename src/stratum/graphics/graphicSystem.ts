@@ -95,23 +95,23 @@ export class GraphicSystem implements GraphicSystemOptions, GraphicSystemControl
 
         const { bmpFactory, inputFactory } = this;
 
-        const spaceHandle = HandleMap.getFreeHandle(this.spaces);
+        const handle = HandleMap.getFreeHandle(this.spaces);
         const space = new GraphicSpace({
+            handle,
             bmpFactory,
             sourceName,
             vdr,
             scene: new FabricScene({ canvas, inputFactory }),
         });
-        space.handle = spaceHandle;
-        this.spaces.set(spaceHandle, space);
+        this.spaces.set(handle, space);
 
         this.windows.set(
             windowName,
             new Window(space, { x: canvas.width, y: canvas.height }, !this.disableSceneResize)
         );
 
-        this.spaceToWinNameMap.set(spaceHandle, windowName);
-        return spaceHandle;
+        this.spaceToWinNameMap.set(handle, windowName);
+        return handle;
     }
 
     getWindowBySpaceHandle(spaceHandle: number) {

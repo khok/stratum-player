@@ -1,26 +1,26 @@
+import { PartialOptionalData } from "other-types";
 import { TextElementVisual, VisualFactory } from "scene-types";
+import { TextElementData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
-import { GraphicSpaceToolsState, TextObjectState } from "vm-interfaces-gspace";
+import { TextObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
+import { GraphicSpaceTools } from "../../graphicSpaceTools";
 import { TextTool } from "../../tools";
-import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+import { Object2dMixin } from "./object2dMixin";
 
-export interface TextObjectOptions extends Object2dOptions {
-    textToolHandle: number;
-    angle?: number;
-}
+type omitKeys = "name" | "options" | "size" | "angle" | "delta";
+
+export type TextObjectOptions = PartialOptionalData<TextElementData, omitKeys>;
 
 export class TextObject extends Object2dMixin implements TextObjectState {
     readonly type = "otTEXT2D";
     readonly visual: TextElementVisual;
     private _text: TextTool;
-    constructor(data: TextObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+    constructor(data: TextObjectOptions, visualFactory: VisualFactory, tools: GraphicSpaceTools) {
         super(data);
         this._angle = data.angle || 0;
-        const textTool = tools.getTool("ttTEXT2D", data.textToolHandle) as TextTool;
-        if (!textTool) {
-            throw new StratumError(`Инструмент Текст #${data.textToolHandle} не существует`);
-        }
+        const textTool = tools.texts.get(data.textToolHandle);
+        if (!textTool) throw new StratumError(`Инструмент Текст #${data.textToolHandle} не существует`);
         this.visual = visualFactory.createText({
             handle: data.handle,
             position: data.position,

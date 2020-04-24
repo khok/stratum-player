@@ -76,20 +76,7 @@ function readBitmap(stream) {
         bmpOrigin: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
         bmpSize: stream.fileversion < 0x200 ? stream.readIntegerPoint2D() : stream.readPoint2D(),
         bmpAngle: stream.readInt16(),
-    };
-}
-
-function read_otBITMAP2D(stream) {
-    return {
-        ...readBitmap(stream),
-        dibHandle: stream.readWord(),
-    };
-}
-
-function read_otDOUBLEBITMAP2D(stream) {
-    return {
-        ...readBitmap(stream),
-        doubleDibHandle: stream.readWord(),
+        bmpHandle: stream.readWord(),
     };
 }
 
@@ -151,8 +138,8 @@ export default function init(funcs) {
     //funcs.otCAMERA3D = read_otCAMERA3D;
     //funcs.otLIGHT3D = read_otLIGHT3D;
     funcs.otLINE2D = read_otLINE2D;
-    funcs.otBITMAP2D = read_otBITMAP2D;
-    funcs.otDOUBLEBITMAP2D = read_otDOUBLEBITMAP2D;
+    funcs.otBITMAP2D = readBitmap;
+    funcs.otDOUBLEBITMAP2D = readBitmap;
     funcs.otTEXT2D = read_otTEXT2D;
     //funcs.otVIEW3D2D = read_otVIEW3D2D;
     // funcs.otUSEROBJECT2D = read_otUSEROBJECT2D;

@@ -84,11 +84,19 @@ declare module "vm-interfaces-gspace" {
     export type ToolTypes = Exclude<ToolData["type"], "ttREFTODOUBLEDIB2D" | "ttREFTODIB2D">;
 
     export interface GraphicSpaceToolsState {
+        readonly bitmaps: ReadonlyMap<number, BitmapToolState>;
+        readonly brushes: ReadonlyMap<number, BrushToolState>;
+        readonly doubleBitmaps: ReadonlyMap<number, BitmapToolState>;
+        readonly fonts: ReadonlyMap<number, FontToolState>;
+        readonly pens: ReadonlyMap<number, PenToolState>;
+        readonly strings: ReadonlyMap<number, StringToolState>;
+        readonly texts: ReadonlyMap<number, TextToolState>;
+
         createBitmap(bmpFilename: string): BitmapToolState;
-        createDoubleBitmap(bmpFilename: string): BitmapToolState;
-        createPen(width: number, color: number): PenToolState;
         createBrush(color: number, style: number, dibHandle: number): BrushToolState;
+        createDoubleBitmap(bmpFilename: string): BitmapToolState;
         createFont(fontName: string, size: number, bold: boolean): FontToolState;
+        createPen(width: number, color: number, style: number): PenToolState;
         createString(value: string): StringToolState;
         createText(
             fontHandle: number,
@@ -96,7 +104,7 @@ declare module "vm-interfaces-gspace" {
             foregroundColor: number,
             backgroundColor: number
         ): TextToolState;
-        getTool(type: ToolTypes, handle: number): ToolState | undefined;
+
         deleteTool(type: ToolTypes, handle: number): VmBool;
     }
 

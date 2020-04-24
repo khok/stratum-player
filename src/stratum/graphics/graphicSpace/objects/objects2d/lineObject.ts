@@ -1,15 +1,16 @@
-import { Point2D } from "vdr-types";
+import { PartialOptionalData } from "other-types";
 import { LineElementVisual, VisualFactory } from "scene-types";
+import { LineElementData, Point2D } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
-import { GraphicSpaceToolsState, LineObjectState } from "vm-interfaces-gspace";
+import { LineObjectState } from "vm-interfaces-gspace";
+import { StratumError } from "~/helpers/errors";
+import { GraphicSpaceTools } from "../../graphicSpaceTools";
 import { BrushTool, PenTool } from "../../tools";
-import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+import { Object2dMixin } from "./object2dMixin";
 
-export interface LineObjectOptions extends Object2dOptions {
-    penHandle?: number;
-    brushHandle?: number;
-    points: Point2D[];
-}
+type omitKeys = "name" | "options" | "size" | "brushHandle" | "penHandle";
+
+export type LineObjectOptions = PartialOptionalData<LineElementData, omitKeys>;
 
 export class LineObject extends Object2dMixin implements LineObjectState {
     readonly type = "otLINE2D";
@@ -17,27 +18,33 @@ export class LineObject extends Object2dMixin implements LineObjectState {
     private _pen: PenTool | undefined;
     private _brush: BrushTool | undefined;
     private points: Point2D[];
-    constructor(data: LineObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+    constructor(data: LineObjectOptions, visualFactory: VisualFactory, tools?: GraphicSpaceTools) {
         super(data);
         this.points = data.points.slice();
-        const pen = data.penHandle ? (tools.getTool("ttPEN2D", data.penHandle) as PenTool) : undefined;
-        const brush = data.brushHandle ? (tools.getTool("ttBRUSH2D", data.brushHandle) as BrushTool) : undefined;
+        if (data.penHandle) {
+            const pen = tools && tools.pens.get(data.penHandle);
+            if (!pen) throw new StratumError(`Инструмент Карандаш ${data.penHandle} не существует`);
+            this.changePen(pen);
+        }
+        if (data.brushHandle) {
+            const brush = tools && tools.brushes.get(data.brushHandle);
+            if (!brush) throw new StratumError(`Инструмент Кисть ${data.brushHandle} не существует`);
+            this.changeBrush(brush);
+        }
         this.visual = visualFactory.createLine({
             handle: data.handle,
             position: data.position,
             isVisible: !!this.isVisible,
             selectable: !!this.isSelectable,
             points: this.points,
-            pen,
-            brush,
+            pen: this.pen,
+            brush: this.brush,
         });
         if (!data.size) {
             const area = this.visual.getVisibleAreaSize();
             this.width = area.x;
             this.height = area.y;
         }
-        this.changePen(pen);
-        this.changeBrush(brush);
     }
 
     get pen() {

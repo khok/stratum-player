@@ -92,23 +92,23 @@ declare module "vdr-types" {
 
     export type ToolData = BrushToolData | PenToolData | FontToolData | StringToolData | TextToolData | ImageToolData;
 
-    interface _ElementBaseData {
+    export interface ElementBaseData {
         handle: number;
         options: number;
         name: string;
     }
 
-    interface _Element2dBaseData extends _ElementBaseData {
+    export interface Element2dBaseData extends ElementBaseData {
         position: Point2D;
         size: Point2D;
     }
 
-    export interface GroupElementData extends _ElementBaseData {
+    export interface GroupElementData extends ElementBaseData {
         type: "otGROUP2D";
         childHandles: number[];
     }
 
-    export interface LineElementData extends _Element2dBaseData {
+    export interface LineElementData extends Element2dBaseData {
         type: "otLINE2D";
         penHandle: number;
         brushHandle: number;
@@ -116,7 +116,7 @@ declare module "vdr-types" {
         arrows?: Uint8Array;
     }
 
-    interface _BitmapBaseData extends _Element2dBaseData {
+    interface _BitmapBaseData extends Element2dBaseData {
         bmpOrigin: Point2D;
         bmpSize: Point2D;
         bmpAngle: number;
@@ -124,22 +124,22 @@ declare module "vdr-types" {
 
     export interface BitmapElementData extends _BitmapBaseData {
         type: "otBITMAP2D";
-        dibHandle: number;
+        bmpHandle: number;
     }
 
     export interface DoubleBitmapElementData extends _BitmapBaseData {
         type: "otDOUBLEBITMAP2D";
-        doubleDibHandle: number;
+        bmpHandle: number;
     }
 
-    export interface TextElementData extends _Element2dBaseData {
+    export interface TextElementData extends Element2dBaseData {
         type: "otTEXT2D";
         textToolHandle: number;
         delta: number;
         angle: number;
     }
 
-    export interface ControlElementData extends _Element2dBaseData {
+    export interface ControlElementData extends Element2dBaseData {
         type: "otCONTROL2D";
         classname: "Edit" | "Button" | "ComboBox";
         text: string;

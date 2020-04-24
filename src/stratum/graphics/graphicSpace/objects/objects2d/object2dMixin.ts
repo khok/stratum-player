@@ -1,16 +1,14 @@
 import { fabric } from "fabric";
+import { PartialOptionalData } from "other-types";
 import { Visual2D } from "scene-types";
-import { Element2dData, Point2D } from "vdr-types";
+import { Element2dBaseData, Element2dData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
 import { Object2dBase } from "vm-interfaces-gspace";
-import { BaseObjectMixin, ObjectOptions } from "../baseObjectMixin";
+import { BaseObjectMixin } from "../baseObjectMixin";
 
 const radToDeg = 180 / Math.PI;
 
-export interface Object2dOptions extends ObjectOptions {
-    position: Point2D;
-    size?: Point2D;
-}
+export type Object2dOptions = PartialOptionalData<Element2dBaseData, "name" | "options" | "size">;
 
 export abstract class Object2dMixin extends BaseObjectMixin implements Object2dBase {
     abstract readonly type: Element2dData["type"];

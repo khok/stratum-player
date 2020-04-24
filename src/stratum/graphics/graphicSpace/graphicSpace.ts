@@ -3,13 +3,13 @@ import { Point2D, VectorDrawData } from "vdr-types";
 import { ClassState, VmBool } from "vm-interfaces-core";
 import { GraphicSpaceState } from "vm-interfaces-gspace";
 import { VmStateContainer } from "vm-types";
+import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { MessageCode } from "~/helpers/vmConstants";
 import { BitmapToolFactory } from "./bitmapToolFactory";
 import { createObjects, createTools } from "./createToolsAndObjects";
 import { GraphicSpaceTools } from "./graphicSpaceTools";
 import { BitmapObject, GraphicObject, GroupObject, LineObject, TextObject } from "./objects";
-import { BrushTool } from "./tools";
 
 export interface GraphicSpaceSubsciber {
     msg: MessageCode;
@@ -19,53 +19,56 @@ export interface GraphicSpaceSubsciber {
 }
 
 export interface GraphicSpaceOptions {
-    scene: Scene;
-    bmpFactory: BitmapToolFactory;
+    handle: number;
     sourceName?: string;
     vdr?: VectorDrawData;
+    bmpFactory: BitmapToolFactory;
+    scene: Scene;
 }
 
 /**
  * Графическое пространство, содержащее инструменты и объекты.
  */
 export class GraphicSpace implements GraphicSpaceState {
-    handle = 0;
-    readonly scene: Scene;
-    readonly tools: GraphicSpaceTools;
     private objects: HandleMap<GraphicObject>;
     private _originX: number = 0;
     private _originY: number = 0;
     private subs = new Array<GraphicSpaceSubsciber>();
-    private layers = 0;
+    private layers: number = 0;
 
+    readonly handle: number;
     readonly sourceName: string;
+    readonly tools: GraphicSpaceTools;
+    readonly scene: Scene;
 
-    constructor({ sourceName, vdr, bmpFactory, scene }: GraphicSpaceOptions) {
+    constructor({ handle, sourceName, vdr, bmpFactory, scene }: GraphicSpaceOptions) {
+        this.handle = handle;
         this.sourceName = sourceName || "";
         this.scene = scene;
-        this.scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
-        this.scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
 
-        this.tools = vdr ? createTools(vdr, bmpFactory) : new GraphicSpaceTools({ bmpFactory });
-        this.objects =
-            vdr && vdr.elements
-                ? createObjects(vdr.elements, this.tools, scene, vdr.layers)
-                : HandleMap.create<GraphicObject>();
+        if (vdr) {
+            const { origin, layers, brushHandle, elements, elementOrder } = vdr;
 
-        if (!vdr) return;
-        const { brushHandle, origin, elementOrder } = vdr;
+            this.setOrigin(origin.x, origin.y);
+            this.layers = layers;
+            this.tools = createTools(vdr, bmpFactory);
 
-        if (origin) this.setOrigin(origin.x, origin.y);
-        if (brushHandle) {
-            const brush = this.tools.getTool("ttBRUSH2D", brushHandle) as BrushTool;
-            if (brush) {
+            if (brushHandle) {
+                const brush = this.tools.brushes.get(brushHandle);
+                if (!brush) throw new StratumError(`Инструмент Кисть #${brushHandle} не существует`);
                 brush.subscribe(this, () => this.scene.updateBrush(brush));
-                this.scene.updateBrush(brush);
+                scene.updateBrush(brush);
             }
+
+            this.objects = elements ? createObjects(elements, scene, this.tools, layers) : HandleMap.create();
+            if (elementOrder) scene.placeObjects(elementOrder);
+        } else {
+            this.tools = new GraphicSpaceTools({ bmpFactory });
+            this.objects = HandleMap.create();
         }
 
-        if (elementOrder) this.scene.placeObjects(elementOrder);
-        this.layers = vdr.layers;
+        scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
+        scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
     }
 
     get originX() {
@@ -99,26 +102,25 @@ export class GraphicSpace implements GraphicSpaceState {
                 points,
                 position: points[0],
             },
-            this.tools,
-            this.scene
+            this.scene,
+            this.tools
         );
         this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
         return obj;
     }
 
-    createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): BitmapObject {
+    createBitmap(x: number, y: number, bmpHandle: number, isDouble: boolean): BitmapObject {
         const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new BitmapObject(
             {
                 handle,
-                dibHandle,
-                doubleDibHandle: dibHandle,
+                bmpHandle,
                 position: { x, y },
                 type: isDouble ? "otDOUBLEBITMAP2D" : "otBITMAP2D",
             },
-            this.tools,
-            this.scene
+            this.scene,
+            this.tools
         );
         this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
@@ -134,8 +136,8 @@ export class GraphicSpace implements GraphicSpaceState {
                 position: { x, y },
                 textToolHandle,
             },
-            this.tools,
-            this.scene
+            this.scene,
+            this.tools
         );
         this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);

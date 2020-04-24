@@ -20,23 +20,23 @@ export interface GraphicSpaceToolsData {
  */
 export class GraphicSpaceTools implements GraphicSpaceToolsState {
     private bmpFactory: BitmapToolFactory;
-    private bitmaps: HandleMap<BitmapTool>;
-    private brushes: HandleMap<BrushTool>;
-    private doubleBitmaps: HandleMap<BitmapTool>;
-    private fonts: HandleMap<FontTool>;
-    private pens: HandleMap<PenTool>;
-    private strings: HandleMap<StringTool>;
-    private texts: HandleMap<TextTool>;
+    readonly bitmaps: HandleMap<BitmapTool>;
+    readonly brushes: HandleMap<BrushTool>;
+    readonly doubleBitmaps: HandleMap<BitmapTool>;
+    readonly fonts: HandleMap<FontTool>;
+    readonly pens: HandleMap<PenTool>;
+    readonly strings: HandleMap<StringTool>;
+    readonly texts: HandleMap<TextTool>;
 
     constructor(data: GraphicSpaceToolsData) {
         this.bmpFactory = data.bmpFactory;
-        this.bitmaps = data.bitmaps || HandleMap.create<BitmapTool>();
-        this.brushes = data.brushes || HandleMap.create<BrushTool>();
-        this.doubleBitmaps = data.doubleBitmaps || HandleMap.create<BitmapTool>();
-        this.fonts = data.fonts || HandleMap.create<FontTool>();
-        this.pens = data.pens || HandleMap.create<PenTool>();
-        this.strings = data.strings || HandleMap.create<StringTool>();
-        this.texts = data.texts || HandleMap.create<TextTool>();
+        this.bitmaps = data.bitmaps || HandleMap.create();
+        this.brushes = data.brushes || HandleMap.create();
+        this.doubleBitmaps = data.doubleBitmaps || HandleMap.create();
+        this.fonts = data.fonts || HandleMap.create();
+        this.pens = data.pens || HandleMap.create();
+        this.strings = data.strings || HandleMap.create();
+        this.texts = data.texts || HandleMap.create();
     }
 
     createBitmap(bmpFilename: string) {
@@ -44,6 +44,13 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         const bmp = this.bmpFactory.fromProjectFile(handle, bmpFilename, false);
         this.bitmaps.set(handle, bmp);
         return bmp;
+    }
+
+    createBrush(color: number, style: number, dibHandle: number): BrushTool {
+        const handle = HandleMap.getFreeHandle(this.brushes);
+        const brush = new BrushTool({ handle, color, style, dibHandle }, this.bitmaps);
+        this.brushes.set(handle, brush);
+        return brush;
     }
 
     createDoubleBitmap(bmpFilename: string) {
@@ -60,18 +67,11 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         return font;
     }
 
-    createPen(width: number, color: number): PenTool {
+    createPen(width: number, color: number, style: number): PenTool {
         const handle = HandleMap.getFreeHandle(this.pens);
-        const pen = new PenTool({ handle, width, color });
+        const pen = new PenTool({ handle, width, color, style });
         this.pens.set(handle, pen);
         return pen;
-    }
-
-    createBrush(color: number, style: number, dibHandle: number): BrushTool {
-        const handle = HandleMap.getFreeHandle(this.brushes);
-        const brush = new BrushTool({ handle, color, style, dibHandle }, this.bitmaps);
-        this.brushes.set(handle, brush);
-        return brush;
     }
 
     createString(text: string): StringTool {
@@ -89,41 +89,22 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
         return textTool;
     }
 
-    getTool(type: ToolTypes, handle: number) {
-        switch (type) {
-            case "ttPEN2D":
-                return this.pens.get(handle);
-            case "ttBRUSH2D":
-                return this.brushes.get(handle);
-            case "ttDIB2D":
-                return this.bitmaps.get(handle);
-            case "ttDOUBLEDIB2D":
-                return this.doubleBitmaps.get(handle);
-            case "ttFONT2D":
-                return this.fonts.get(handle);
-            case "ttSTRING2D":
-                return this.strings.get(handle);
-            case "ttTEXT2D":
-                return this.texts.get(handle);
-        }
-    }
-
     deleteTool(type: ToolTypes, handle: number): VmBool {
         switch (type) {
-            case "ttPEN2D":
-                return this.pens.delete(handle) ? 1 : 0;
+            case "ttDIB2D":
+                return this.bitmaps.delete(handle) ? 1 : 0;
             case "ttBRUSH2D":
                 const brush = this.brushes.get(handle);
                 if (!brush) return 0;
                 brush.unsubFromBitmapTool();
                 this.brushes.delete(handle);
                 return 1;
-            case "ttDIB2D":
-                return this.bitmaps.delete(handle) ? 1 : 0;
             case "ttDOUBLEDIB2D":
                 return this.doubleBitmaps.delete(handle) ? 1 : 0;
             case "ttFONT2D":
                 return this.fonts.delete(handle) ? 1 : 0;
+            case "ttPEN2D":
+                return this.pens.delete(handle) ? 1 : 0;
             case "ttSTRING2D":
                 return this.strings.delete(handle) ? 1 : 0;
             case "ttTEXT2D":

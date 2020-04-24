@@ -1,14 +1,12 @@
+import { PartialOptionalData } from "other-types";
 import { ControlElementVisual, VisualFactory } from "scene-types";
-import { ControlElementData, Point2D } from "vdr-types";
+import { ControlElementData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
 import { ControlObjectState } from "vm-interfaces-gspace";
-import { Object2dMixin, Object2dOptions } from "./object2dMixin";
+import { Object2dMixin } from "./object2dMixin";
 
-export interface ControlObjectOptions extends Object2dOptions {
-    classname: ControlElementData["classname"];
-    text?: string;
-    controlSize: Point2D;
-}
+type omitKeys = "name" | "options" | "size" | "exStyle" | "dwStyle" | "id" | "text";
+export type ControlObjectOptions = PartialOptionalData<ControlElementData, omitKeys>;
 
 export class ControlObject extends Object2dMixin implements ControlObjectState {
     readonly type = "otCONTROL2D";

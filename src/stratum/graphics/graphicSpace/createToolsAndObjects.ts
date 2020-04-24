@@ -1,6 +1,5 @@
 import { VisualFactory } from "scene-types";
-import { Element2dData, ElementData, VectorDrawToolsData } from "vdr-types";
-import { GraphicSpaceToolsState } from "vm-interfaces-gspace";
+import { Element2dData, ElementData, GroupElementData, VectorDrawToolsData } from "vdr-types";
 import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { BitmapToolFactory } from "./bitmapToolFactory";
@@ -22,16 +21,15 @@ export function createTools(tools: VectorDrawToolsData, bmpFactory: BitmapToolFa
     return new GraphicSpaceTools({ bitmaps, brushes, doubleBitmaps, fonts, pens, strings, texts, bmpFactory });
 }
 
-function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
+function create2dObject(data: Element2dData, visualFactory: VisualFactory, tools: GraphicSpaceTools) {
     switch (data.type) {
         case "otLINE2D":
-            return new LineObject(data, tools, visualFactory);
+            return new LineObject(data, visualFactory, tools);
         case "otBITMAP2D":
-            return new BitmapObject(data, tools, visualFactory);
         case "otDOUBLEBITMAP2D":
-            return new BitmapObject(data, tools, visualFactory);
+            return new BitmapObject(data, visualFactory, tools);
         case "otTEXT2D":
-            return new TextObject(data, tools, visualFactory);
+            return new TextObject(data, visualFactory, tools);
         case "otCONTROL2D":
             return new ControlObject(data, visualFactory);
     }
@@ -39,32 +37,32 @@ function create2dObject(data: Element2dData, tools: GraphicSpaceToolsState, visu
 
 export function createObjects(
     elements: ElementData[],
-    tools: GraphicSpaceToolsState,
     visualFactory: VisualFactory,
+    tools: GraphicSpaceTools,
     layers: number
 ) {
     const allObjects = HandleMap.create<GraphicObject>();
 
-    const groups: { obj: GroupObject; handle: number; data: number[] }[] = [];
-    for (const elementData of elements) {
-        const { handle } = elementData;
+    const groups: { obj: GroupObject; data: GroupElementData }[] = [];
+    for (const data of elements) {
+        const { handle } = data;
         let obj: GraphicObject;
-        if (elementData.type === "otGROUP2D") {
-            obj = new GroupObject(elementData);
-            groups.push({ obj, handle, data: elementData.childHandles });
+        if (data.type === "otGROUP2D") {
+            obj = new GroupObject(data);
+            groups.push({ obj, data });
         } else {
-            obj = create2dObject(elementData, tools, visualFactory);
+            obj = create2dObject(data, visualFactory, tools);
             obj.setHiddenLayers(layers);
         }
         allObjects.set(handle, obj);
     }
 
-    for (const { obj, handle, data } of groups) {
-        const childs = data.map((h) => {
+    for (const { obj, data } of groups) {
+        const childs = data.childHandles.map((h) => {
             const child = allObjects.get(h);
-            if (!child) throw new StratumError(`Группа #${handle} ссылается на несуществующий объект #${h}`);
+            if (!child) throw new StratumError(`Группа #${data.handle} ссылается на несуществующий объект #${h}`);
             if (child.parent)
-                throw new StratumError(`Группа #${handle} ссылается на объект #${h}, уже состоящий в другой группе`);
+                throw new StratumError(`Группа #${data.handle} ссылается на объект #${h}, состоящий в другой группе`);
             return child;
         });
         obj.addItems(childs);
