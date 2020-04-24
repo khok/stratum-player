@@ -1,6 +1,5 @@
 import { VmBool } from "vm-interfaces-core";
 import { GraphicSpaceToolsState, ToolTypes } from "vm-interfaces-gspace";
-import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { BitmapToolFactory } from "./bitmapToolFactory";
 import { BitmapTool, BrushTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
@@ -20,7 +19,7 @@ export interface GraphicSpaceToolsData {
  * Контейнер инструментов графического пространства.
  */
 export class GraphicSpaceTools implements GraphicSpaceToolsState {
-    private bmpFactory?: BitmapToolFactory;
+    private bmpFactory: BitmapToolFactory;
     private bitmaps: HandleMap<BitmapTool>;
     private brushes: HandleMap<BrushTool>;
     private doubleBitmaps: HandleMap<BitmapTool>;
@@ -29,79 +28,64 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
     private strings: HandleMap<StringTool>;
     private texts: HandleMap<TextTool>;
 
-    constructor(data?: GraphicSpaceToolsData) {
-        this.bmpFactory = data && data.bmpFactory;
-        this.bitmaps = (data && data.bitmaps) || HandleMap.create<BitmapTool>();
-        this.brushes = (data && data.brushes) || HandleMap.create<BrushTool>();
-        this.doubleBitmaps = (data && data.doubleBitmaps) || HandleMap.create<BitmapTool>();
-        this.fonts = (data && data.fonts) || HandleMap.create<FontTool>();
-        this.pens = (data && data.pens) || HandleMap.create<PenTool>();
-        this.strings = (data && data.strings) || HandleMap.create<StringTool>();
-        this.texts = (data && data.texts) || HandleMap.create<TextTool>();
-        if (!data) return;
-        for (const k in data) {
-            if (k === "bmpFactory") continue;
-            const mp = (data as any)[k] as HandleMap<{ handle: number }> | undefined;
-            if (mp) mp.forEach((c, handle) => (c.handle = handle));
-        }
+    constructor(data: GraphicSpaceToolsData) {
+        this.bmpFactory = data.bmpFactory;
+        this.bitmaps = data.bitmaps || HandleMap.create<BitmapTool>();
+        this.brushes = data.brushes || HandleMap.create<BrushTool>();
+        this.doubleBitmaps = data.doubleBitmaps || HandleMap.create<BitmapTool>();
+        this.fonts = data.fonts || HandleMap.create<FontTool>();
+        this.pens = data.pens || HandleMap.create<PenTool>();
+        this.strings = data.strings || HandleMap.create<StringTool>();
+        this.texts = data.texts || HandleMap.create<TextTool>();
     }
 
     createBitmap(bmpFilename: string) {
-        if (!this.bmpFactory) throw new StratumError("Отсутствует зависимость BitmapToolFactory!");
-        const bmp = this.bmpFactory.fromProjectFile(bmpFilename, false);
         const handle = HandleMap.getFreeHandle(this.bitmaps);
+        const bmp = this.bmpFactory.fromProjectFile(handle, bmpFilename, false);
         this.bitmaps.set(handle, bmp);
-        bmp.handle = handle;
         return bmp;
     }
 
     createDoubleBitmap(bmpFilename: string) {
-        if (!this.bmpFactory) throw new StratumError("Отсутствует зависимость BitmapToolFactory!");
-        const bmp = this.bmpFactory.fromProjectFile(bmpFilename, true);
         const handle = HandleMap.getFreeHandle(this.doubleBitmaps);
+        const bmp = this.bmpFactory.fromProjectFile(handle, bmpFilename, true);
         this.doubleBitmaps.set(handle, bmp);
-        bmp.handle = handle;
         return bmp;
     }
 
     createFont(fontName: string, size: number, bold: boolean): FontTool {
-        const font = new FontTool({ fontName, size, weight: +bold });
         const handle = HandleMap.getFreeHandle(this.fonts);
+        const font = new FontTool({ handle, fontName, size, weight: +bold });
         this.fonts.set(handle, font);
-        font.handle = handle;
         return font;
     }
 
     createPen(width: number, color: number): PenTool {
-        const pen = new PenTool(width, color);
         const handle = HandleMap.getFreeHandle(this.pens);
+        const pen = new PenTool({ handle, width, color });
         this.pens.set(handle, pen);
-        pen.handle = handle;
         return pen;
     }
 
     createBrush(color: number, style: number, dibHandle: number): BrushTool {
-        const bmpTool = this.getTool("ttDIB2D", dibHandle) as BitmapTool;
-        const brush = new BrushTool(color, style, bmpTool);
         const handle = HandleMap.getFreeHandle(this.brushes);
+        const brush = new BrushTool({ handle, color, style, dibHandle }, this.bitmaps);
         this.brushes.set(handle, brush);
-        brush.handle = handle;
         return brush;
     }
 
-    createString(value: string): StringTool {
-        const stringTool = new StringTool(value);
+    createString(text: string): StringTool {
         const handle = HandleMap.getFreeHandle(this.strings);
+        const stringTool = new StringTool({ handle, text });
         this.strings.set(handle, stringTool);
-        stringTool.handle = handle;
         return stringTool;
     }
 
-    createText(font: FontTool, stringFragment: StringTool, foregroundColor: number, backgroundColor: number): TextTool {
-        const textTool = new TextTool([{ font, stringFragment, foregroundColor, backgroundColor }]);
+    createText(fontHandle: number, stringHandle: number, foregroundColor: number, backgroundColor: number): TextTool {
         const handle = HandleMap.getFreeHandle(this.texts);
+        const textCollection = [{ fontHandle, stringHandle, foregroundColor, backgroundColor }];
+        const textTool = new TextTool({ handle, textCollection }, this.fonts, this.strings);
         this.texts.set(handle, textTool);
-        textTool.handle = handle;
         return textTool;
     }
 

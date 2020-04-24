@@ -103,17 +103,7 @@ function CreateText2d(ctx: VmStateContainer) {
     const fontHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
     const space = ctx.graphics.getSpace(spaceHandle);
-    if (!space) {
-        ctx.pushLong(0);
-        return;
-    }
-    const font = space.tools.getTool("ttFONT2D", fontHandle) as FontToolState;
-    const stringTool = space.tools.getTool("ttSTRING2D", stringHandle) as StringToolState;
-    if (!font || !stringTool) {
-        ctx.pushLong(0);
-        return;
-    }
-    ctx.pushLong(space ? space.tools.createText(font, stringTool, fgColor, bgColor).handle : 0);
+    ctx.pushLong(space ? space.tools.createText(fontHandle, stringHandle, fgColor, bgColor).handle : 0);
 }
 
 function SetText2d(ctx: VmStateContainer) {

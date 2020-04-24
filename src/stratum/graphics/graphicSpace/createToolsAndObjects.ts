@@ -9,31 +9,15 @@ import { BitmapObject, ControlObject, GraphicObject, GroupObject, LineObject, Te
 import { BrushTool, FontTool, PenTool, StringTool, TextTool } from "./tools";
 
 export function createTools(tools: VectorDrawToolsData, bmpFactory: BitmapToolFactory): GraphicSpaceTools {
-    //prettier-ignore
-    const bitmaps = tools.bitmapTools && HandleMap.create(tools.bitmapTools.map(b => [b.handle, bmpFactory.fromData(b)]));
+    const { bitmapTools, brushTools, doubleBitmapTools: dbmps, fontTools, penTools, stringTools, textTools } = tools;
 
-    //prettier-ignore
-    const brushes = tools.brushTools && HandleMap.create(tools.brushTools.map(b => [b.handle, new BrushTool(b.color, b.style, bitmaps && bitmaps.get(b.dibHandle))]));
-
-    //prettier-ignore
-    const doubleBitmaps = tools.doubleBitmapTools && HandleMap.create(tools.doubleBitmapTools.map(b => [b.handle, bmpFactory.fromData(b)]));
-
-    //prettier-ignore
-    const fonts = tools.fontTools && HandleMap.create(tools.fontTools.map(f => [f.handle, new FontTool(f)]));
-
-    //prettier-ignore
-    const pens = tools.penTools && HandleMap.create(tools.penTools.map(p => [p.handle, new PenTool(p.width, p.color)]));
-
-    //prettier-ignore
-    const strings = tools.stringTools && HandleMap.create(tools.stringTools.map(s => [s.handle, new StringTool(s.data)]));
-
-    //prettier-ignore
-    const texts = tools.textTools && HandleMap.create(tools.textTools.map(t => [t.handle, new TextTool( t.textCollection.map(tt => ({
-            font: fonts!.get(tt.fontHandle)!,
-            stringFragment: strings!.get(tt.stringHandle)!,
-            foregroundColor: tt.ltFgColor,
-            backgroundColor: tt.ltBgColor,
-        })) )]));
+    const bitmaps = bitmapTools && HandleMap.create(bitmapTools.map((b) => [b.handle, bmpFactory.fromData(b)]));
+    const brushes = brushTools && HandleMap.create(brushTools.map((b) => [b.handle, new BrushTool(b, bitmaps)]));
+    const doubleBitmaps = dbmps && HandleMap.create(dbmps.map((b) => [b.handle, bmpFactory.fromData(b)]));
+    const fonts = fontTools && HandleMap.create(fontTools.map((f) => [f.handle, new FontTool(f)]));
+    const pens = penTools && HandleMap.create(penTools.map((p) => [p.handle, new PenTool(p)]));
+    const strings = stringTools && HandleMap.create(stringTools.map((s) => [s.handle, new StringTool(s)]));
+    const texts = textTools && HandleMap.create(textTools.map((t) => [t.handle, new TextTool(t, fonts!, strings!)]));
 
     return new GraphicSpaceTools({ bitmaps, brushes, doubleBitmaps, fonts, pens, strings, texts, bmpFactory });
 }

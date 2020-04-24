@@ -77,7 +77,7 @@ function read_ttFONT2D(stream) {
 function read_ttSTRING2D(stream) {
     return {
         ...readTools(stream),
-        data: stream.readString(),
+        text: stream.readString(),
     };
 }
 function read_ttTEXT2D(stream) {

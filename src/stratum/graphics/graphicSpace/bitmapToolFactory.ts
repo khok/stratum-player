@@ -44,7 +44,7 @@ export class BitmapToolFactory {
     fromData(data: ImageToolData): BitmapTool {
         //Из данных base64 (требуются размерности)
         if (data.type === "ttDIB2D" || data.type === "ttDOUBLEDIB2D") {
-            const tool = new BitmapTool({ x: data.width, y: data.height });
+            const tool = new BitmapTool(data);
             const imagePr = loadImage(data.image, this.shittyNet);
             this.promises.add(imagePr.then((image) => (tool.image = image)));
             imagePr.catch(() => {
@@ -67,7 +67,7 @@ export class BitmapToolFactory {
             }
             this.cachedIcons.set(fname, imagePr);
         }
-        const tool = new BitmapTool();
+        const tool = new BitmapTool(data);
         this.promises.add(imagePr.then((image) => (tool.image = image)));
         imagePr.catch(() => {
             console.error(`Ошибка загрузки изображения ${this.iconsPath}/${fname}`);
@@ -79,14 +79,14 @@ export class BitmapToolFactory {
         return Promise.all(this.promises);
     }
 
-    fromProjectFile(bmpFilename: string, isDouble: boolean): BitmapTool {
+    fromProjectFile(handle: number, bmpFilename: string, isDouble: boolean): BitmapTool {
         if (!this.projectImages) throw new StratumError(`В каталоге проекта нет изображений`);
         const name = bmpFilename.replace(/\\\\/g, "\\").toLowerCase();
         const file = this.projectImages.find((f) => f.filename.toLowerCase().endsWith(name));
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
         const stream = new BinaryStream(file.data);
         const { image, width, height } = isDouble ? readDoubleBitmap(stream) : readBitmap(stream);
-        const tool = new BitmapTool({ x: width, y: height });
+        const tool = new BitmapTool({ handle, width, height });
         loadImage(image, this.shittyNet).then((imageElement) => (tool.image = imageElement));
         return tool;
     }

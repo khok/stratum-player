@@ -1,4 +1,8 @@
+import { NormalOmit } from "other-types";
+import { TextToolData } from "vdr-types";
 import { TextFragment, TextToolState } from "vm-interfaces-gspace";
+import { StratumError } from "~/helpers/errors";
+import { HandleMap } from "~/helpers/handleMap";
 import { FontTool } from "./fontTool";
 import { StringTool } from "./stringTool";
 import { ToolMixin } from "./toolMixin";
@@ -10,14 +14,24 @@ export interface TextToolTextFragment {
     backgroundColor: number;
 }
 
+export type TextToolOptions = NormalOmit<TextToolData, "type">;
+
 export class TextTool extends ToolMixin<TextTool> implements TextToolState {
     private cachedString?: { text: string; size: number };
+    private fragments: TextToolTextFragment[];
 
-    constructor(private fragments: TextToolTextFragment[]) {
-        super();
-        this.fragments.forEach(({ font, stringFragment }) => {
+    constructor(data: TextToolOptions, fonts: HandleMap<FontTool>, strings: HandleMap<StringTool>) {
+        super(data);
+        this.fragments = data.textCollection.map(({ fontHandle, stringHandle, foregroundColor, backgroundColor }) => {
+            const font = fonts.get(fontHandle);
+            if (!font) throw new StratumError(`Инструмент Шрифт #${fontHandle} не существует`);
             font.subscribe(this, () => this.update());
+
+            const stringFragment = strings.get(stringHandle);
+            if (!stringFragment) throw new StratumError(`Инструмент Строка #${stringHandle} не существует`);
             stringFragment.subscribe(this, () => this.update());
+
+            return { font, stringFragment, foregroundColor, backgroundColor };
         });
     }
 

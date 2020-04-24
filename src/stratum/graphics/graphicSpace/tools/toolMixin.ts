@@ -1,6 +1,10 @@
 export abstract class ToolMixin<T extends ToolMixin<T>> {
-    handle = 0;
+    readonly handle: number;
     private subs = new Map<Object, { fn: (data?: unknown) => void; data?: unknown }>();
+
+    constructor(data: { handle: number }) {
+        this.handle = data.handle;
+    }
 
     subscribe(subscriber: Object, fn: (data?: unknown) => void, data?: unknown) {
         this.subs.set(subscriber, { fn, data });

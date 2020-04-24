@@ -91,8 +91,8 @@ declare module "vm-interfaces-gspace" {
         createFont(fontName: string, size: number, bold: boolean): FontToolState;
         createString(value: string): StringToolState;
         createText(
-            font: FontToolState,
-            stringFragment: StringToolState,
+            fontHandle: number,
+            stringHandle: number,
             foregroundColor: number,
             backgroundColor: number
         ): TextToolState;

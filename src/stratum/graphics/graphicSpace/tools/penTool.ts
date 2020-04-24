@@ -1,15 +1,19 @@
+import { PartialOptionalData } from "other-types";
+import { PenToolData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
 import { PenToolState } from "vm-interfaces-gspace";
 import { ToolMixin } from "./toolMixin";
+
+export type PenToolOptions = PartialOptionalData<PenToolData, "rop2" | "style">;
 
 export class PenTool extends ToolMixin<PenTool> implements PenToolState {
     private _color: number;
     private _width: number;
 
-    constructor(width: number, color: number) {
-        super();
-        this._color = color;
-        this._width = width;
+    constructor(data: PenToolOptions) {
+        super(data);
+        this._color = data.color;
+        this._width = data.width;
     }
 
     get color() {

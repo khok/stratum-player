@@ -47,14 +47,14 @@ declare module "vdr-types" {
 
     export interface StringToolData extends _ToolDataBase {
         type: "ttSTRING2D";
-        data: string;
+        text: string;
     }
 
     export interface TextToolData extends _ToolDataBase {
         type: "ttTEXT2D";
         textCollection: {
-            ltFgColor: number;
-            ltBgColor: number;
+            foregroundColor: number;
+            backgroundColor: number;
             fontHandle: number;
             stringHandle: number;
         }[];
