@@ -17,14 +17,14 @@ function readFunctionData(stream: BinaryStream): FunctionOperand {
     const argTypes = new Array<number>(argCount);
 
     for (let i = argCount - 1; i >= 0; i--) {
-        const argType = stream.readWord();
+        const argType = stream.readInt16();
 
         if (argType > 0) throw "not released yet";
 
         argTypes[i] = argType;
     }
 
-    const returnType = stream.readWord();
+    const returnType = stream.readInt16();
 
     if (returnType > 0) throw "not released yet";
 
