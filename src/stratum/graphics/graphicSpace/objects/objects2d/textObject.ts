@@ -12,9 +12,8 @@ export interface TextObjectOptions extends Object2dOptions {
 
 export class TextObject extends Object2dMixin implements TextObjectState {
     readonly type = "otTEXT2D";
-    protected readonly _subclassInstance: this = this;
+    readonly visual: TextElementVisual;
     private _text: TextTool;
-    visual: TextElementVisual;
     constructor(data: TextObjectOptions, tools: GraphicSpaceToolsState, visualFactory: VisualFactory) {
         super(data);
         this._angle = data.angle || 0;
@@ -50,7 +49,7 @@ export class TextObject extends Object2dMixin implements TextObjectState {
         return 1;
     }
 
-    protected unsubFromTools(): void {
+    unsubFromTools(): void {
         this.textTool.unsubscribe(this);
     }
 }

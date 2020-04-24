@@ -22,9 +22,8 @@ export interface DoubleBitmapObjectOptions extends Object2dOptions {
 
 export class BitmapObject extends Object2dMixin implements BitmapObjectState {
     readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
+    readonly visual: BitmapElementVisual;
     private _bmpTool: BitmapTool;
-    protected readonly _subclassInstance: this = this;
-    visual: BitmapElementVisual;
     constructor(
         data: BitmapObjectOptions | DoubleBitmapObjectOptions,
         tools: GraphicSpaceToolsState,
@@ -84,7 +83,7 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
         return 1;
     }
 
-    protected unsubFromTools() {
-        if (this.bmpTool) this.bmpTool.unsubscribe(this);
+    unsubFromTools() {
+        this.bmpTool.unsubscribe(this);
     }
 }

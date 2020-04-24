@@ -8,7 +8,7 @@ export interface ObjectOptions {
 }
 
 export abstract class BaseObjectMixin {
-    handle: number;
+    readonly handle: number;
     private _name: string;
     protected options: number;
     _parent: GroupObject | undefined;

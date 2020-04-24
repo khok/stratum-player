@@ -100,7 +100,7 @@ declare module "vm-interfaces-gspace" {
         deleteTool(type: ToolTypes, handle: number): VmBool;
     }
 
-    interface _2DObjBaseState {
+    export interface Object2dBase {
         readonly handle: number;
         readonly parent: GroupObjectState | undefined;
 
@@ -125,7 +125,7 @@ declare module "vm-interfaces-gspace" {
         setVisibility(visible: VmBool): VmBool;
     }
 
-    export interface LineObjectState extends _2DObjBaseState {
+    export interface LineObjectState extends Object2dBase {
         readonly type: LineElementData["type"];
         readonly pen: PenToolState | undefined;
         readonly brush: BrushToolState | undefined;
@@ -138,18 +138,18 @@ declare module "vm-interfaces-gspace" {
         changeBrush(brush: BrushToolState | undefined): VmBool;
     }
 
-    export interface ControlObjectState extends _2DObjBaseState {
+    export interface ControlObjectState extends Object2dBase {
         readonly type: ControlElementData["type"];
         readonly text: string;
         setText(value: string): VmBool;
     }
 
-    export interface TextObjectState extends _2DObjBaseState {
+    export interface TextObjectState extends Object2dBase {
         readonly type: TextElementData["type"];
         readonly textTool: TextToolState;
         changeTextTool(textTool: TextToolState): VmBool;
     }
-    export interface BitmapObjectState extends _2DObjBaseState {
+    export interface BitmapObjectState extends Object2dBase {
         readonly type: (BitmapElementData | DoubleBitmapElementData)["type"];
         readonly bmpTool: BitmapToolState;
 
@@ -157,7 +157,7 @@ declare module "vm-interfaces-gspace" {
         changeBmpTool(tool: BitmapToolState): VmBool;
     }
 
-    export interface GroupObjectState extends _2DObjBaseState {
+    export interface GroupObjectState extends Object2dBase {
         readonly type: GroupElementData["type"];
 
         getItem(index: number): GraphicObjectState | undefined;
@@ -188,7 +188,7 @@ declare module "vm-interfaces-gspace" {
         createGroup(objectHandles: number[]): GroupObjectState | undefined;
         getObject(handle: number): GraphicObjectState | undefined;
         deleteObject(handle: number): VmBool;
-        deleteGroup(object: GroupObjectState): VmBool;
+        deleteGroup(groupHandle: number): VmBool;
         moveObjectToTop(handle: number): VmBool;
 
         findObjectByName(objectName: string, group?: GroupObjectState): GraphicObjectState | undefined;

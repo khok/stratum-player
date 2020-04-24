@@ -9,7 +9,6 @@ export interface GroupObjectOptions extends ObjectOptions {
 }
 
 export class GroupObject extends BaseObjectMixin implements GroupObjectState {
-    protected _subclassInstance: this = this;
     readonly type = "otGROUP2D";
     readonly angle = 0;
     positionX: number = 0;
@@ -49,6 +48,14 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     hasItem(obj: GraphicObject): VmBool {
         return obj.parent === this ? 1 : 0;
     }
+
+    private addItemFast(obj: GraphicObject): VmBool {
+        if (obj.parent === this) return 0;
+        if (!this.items.includes(obj)) this.items.push(obj);
+        obj._parent = this;
+        return 1;
+    }
+
     addItem(obj: GraphicObject): VmBool {
         if (this.addItemFast(obj)) this.recalcCoords();
         return 1;
@@ -57,13 +64,6 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     addItems(items: GraphicObject[]): VmBool {
         for (const it of items) this.addItemFast(it);
         this.recalcCoords();
-        return 1;
-    }
-
-    private addItemFast(obj: GraphicObject): VmBool {
-        if (obj.parent === this) return 0;
-        if (!this.items.includes(obj)) this.items.push(obj);
-        obj._parent = this;
         return 1;
     }
 
@@ -142,9 +142,9 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         else return 1;
     }
 
-    destroy() {
+    removeAllItems() {
+        //удаляем быстрым спосбом
         this.items.forEach((o) => (o._parent = undefined));
         this.items = [];
-        if (this.parent) this.parent.removeItem(this._subclassInstance);
     }
 }

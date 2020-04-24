@@ -86,7 +86,7 @@ export class GraphicSpace implements GraphicSpaceState {
 
     setLayers(layers: number) {
         if (this.layers !== layers)
-            for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.hiddenLayers = layers;
+            for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.setHiddenLayers(layers);
     }
 
     createLine(points: Point2D[], penHandle: number, brushHandle: number): LineObject {
@@ -104,7 +104,6 @@ export class GraphicSpace implements GraphicSpaceState {
         );
         this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
-        obj.handle = handle;
         return obj;
     }
 
@@ -123,7 +122,6 @@ export class GraphicSpace implements GraphicSpaceState {
         );
         this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
-        obj.handle = handle;
         return obj;
     }
 
@@ -141,7 +139,6 @@ export class GraphicSpace implements GraphicSpaceState {
         );
         this.objects.set(handle, obj);
         this.scene.appendObjectToEnd(obj.visual);
-        obj.handle = handle;
         return obj;
     }
 
@@ -149,7 +146,7 @@ export class GraphicSpace implements GraphicSpaceState {
         const items = new Array<GraphicObject>(objectHandles.length);
         for (let i = 0; i < objectHandles.length; i++) {
             const handle = objectHandles[i];
-            const obj = this.getObject(handle);
+            const obj = this.objects.get(handle);
             if (!obj) console.warn(`Попытка создать группу с несуществующим объектом ${handle}`);
             else items[i] = obj;
         }
@@ -157,7 +154,6 @@ export class GraphicSpace implements GraphicSpaceState {
         const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new GroupObject({ handle, items });
         this.objects.set(handle, obj);
-        obj.handle = handle;
         return obj;
     }
 
@@ -168,26 +164,30 @@ export class GraphicSpace implements GraphicSpaceState {
     deleteObject(handle: number): VmBool {
         const obj = this.objects.get(handle);
         if (!obj) return 0;
+
+        if (obj.parent) obj.parent.removeItem(obj);
         if (obj.type !== "otGROUP2D") {
-            obj.destroy();
+            if (obj.type !== "otCONTROL2D") obj.unsubFromTools();
             this.scene.removeObject(obj.visual);
         } else {
             const items = obj.items;
-            obj.destroy();
+            obj.removeAllItems();
             for (const item of items) this.deleteObject(item.handle);
         }
         this.objects.delete(handle);
         return 1;
     }
 
-    deleteGroup(group: GroupObject): VmBool {
-        group.destroy();
-        this.objects.delete(group.handle);
+    deleteGroup(groupHandle: number): VmBool {
+        const group = this.objects.get(groupHandle);
+        if (!group || group.type !== "otGROUP2D") return 0;
+        group.removeAllItems();
+        this.objects.delete(groupHandle);
         return 1;
     }
 
     moveObjectToTop(handle: number): VmBool {
-        const obj = this.getObject(handle);
+        const obj = this.objects.get(handle);
         if (!obj) return 0;
         if (obj.type === "otGROUP2D") {
             for (const item of obj.items) this.moveObjectToTop(item.handle);
@@ -216,7 +216,7 @@ export class GraphicSpace implements GraphicSpaceState {
     getObjectFromPoint(x: number, y: number) {
         const handle = this.scene.getVisualHandleFromPoint(x, y);
         if (!handle) return undefined;
-        let obj = this.getObject(handle);
+        let obj = this.objects.get(handle);
         if (!obj) return undefined;
         while (obj.parent) {
             obj = obj.parent;

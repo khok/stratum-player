@@ -2,7 +2,7 @@ import { fabric } from "fabric";
 import { Visual2D } from "scene-types";
 import { Element2dData, Point2D } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
-import { GraphicObject } from "..";
+import { Object2dBase } from "vm-interfaces-gspace";
 import { BaseObjectMixin, ObjectOptions } from "../baseObjectMixin";
 
 const radToDeg = 180 / Math.PI;
@@ -12,11 +12,9 @@ export interface Object2dOptions extends ObjectOptions {
     size?: Point2D;
 }
 
-export abstract class Object2dMixin extends BaseObjectMixin {
-    protected abstract readonly _subclassInstance: Object2dMixin & GraphicObject;
-
+export abstract class Object2dMixin extends BaseObjectMixin implements Object2dBase {
     abstract readonly type: Element2dData["type"];
-    abstract visual: Visual2D;
+    abstract readonly visual: Visual2D;
 
     positionX: number = 0;
     positionY: number = 0;
@@ -123,7 +121,7 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         else this.hideVisual();
     }
 
-    set hiddenLayers(value: number) {
+    setHiddenLayers(value: number) {
         if (this._hiddenLayers === value) return;
         this._hiddenLayers = value;
         this.updateLayerVisibility(!((value >> this._layer) & 1));
@@ -133,15 +131,9 @@ export abstract class Object2dMixin extends BaseObjectMixin {
         return this._layer;
     }
 
-    set layer(value: number) {
+    setLayer(value: number) {
         if (this._layer === value) return;
         this._layer = value;
-        this.updateLayerVisibility(!!(this._hiddenLayers >> value));
+        this.updateLayerVisibility(!((this._hiddenLayers >> value) & 1));
     }
-
-    destroy() {
-        if (this.parent) this.parent.removeItem(this._subclassInstance);
-        this.unsubFromTools();
-    }
-    protected abstract unsubFromTools(): void;
 }

@@ -12,8 +12,7 @@ export interface ControlObjectOptions extends Object2dOptions {
 
 export class ControlObject extends Object2dMixin implements ControlObjectState {
     readonly type = "otCONTROL2D";
-    protected readonly _subclassInstance: this = this;
-    visual: ControlElementVisual;
+    readonly visual: ControlElementVisual;
     constructor(data: ControlObjectOptions, visualFactory: VisualFactory) {
         super(data);
         this.visual = visualFactory.createControl({
@@ -40,6 +39,4 @@ export class ControlObject extends Object2dMixin implements ControlObjectState {
         this.visual.setText(value);
         return 1;
     }
-
-    protected unsubFromTools() {}
 }

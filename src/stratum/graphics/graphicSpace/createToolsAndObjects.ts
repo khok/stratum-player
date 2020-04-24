@@ -70,9 +70,8 @@ export function createObjects(
             groups.push({ obj, handle, data: elementData.childHandles });
         } else {
             obj = create2dObject(elementData, tools, visualFactory);
-            obj.hiddenLayers = layers;
+            obj.setHiddenLayers(layers);
         }
-        obj.handle = handle;
         allObjects.set(handle, obj);
     }
 
