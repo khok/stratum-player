@@ -1,5 +1,5 @@
 export abstract class ToolMixin<T extends ToolMixin<T>> {
-    readonly handle: number;
+    handle: number;
     private subs = new Map<Object, { fn: (data?: unknown) => void; data?: unknown }>();
 
     constructor(data: { handle: number }) {

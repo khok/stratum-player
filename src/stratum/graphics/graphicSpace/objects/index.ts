@@ -10,4 +10,5 @@ export { BitmapObject, BitmapObjectOptions };
 export { ControlObject, ControlObjectOptions };
 export { GroupObject, GroupObjectOptions };
 
-export type GraphicObject = LineObject | TextObject | BitmapObject | ControlObject | GroupObject;
+export type GraphicObject2d = LineObject | TextObject | BitmapObject | ControlObject;
+export type GraphicObject = GraphicObject2d | GroupObject;

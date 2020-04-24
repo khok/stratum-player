@@ -8,6 +8,7 @@ declare module "vm-interfaces-gspace" {
         Point2D,
         TextElementData,
         ToolData,
+        VectorDrawData,
     } from "vdr-types";
     import { ClassState, VmBool } from "vm-interfaces-core";
     import { VmStateContainer } from "vm-types";
@@ -183,12 +184,13 @@ declare module "vm-interfaces-gspace" {
 
     export interface GraphicSpaceState {
         readonly handle: number;
-        readonly sourceName: string;
         readonly tools: GraphicSpaceToolsState;
 
         readonly originX: number;
         readonly originY: number;
         setOrigin(x: number, y: number): VmBool;
+
+        mergeVdr(vdr: VectorDrawData, x: number, y: number): number;
 
         createText(x: number, y: number, angle: number, textToolHandle: number): TextObjectState;
         createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): BitmapObjectState;

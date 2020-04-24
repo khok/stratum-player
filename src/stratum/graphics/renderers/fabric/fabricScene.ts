@@ -209,17 +209,14 @@ export class FabricScene implements Scene {
     //Управление порядком отображения объектов.
     //
     placeObjects(order: number[]): void {
-        this.objectsByZReversed.forEach((c) => {
-            if (c.type !== "control") this.canvas.remove(c.obj);
-        });
-        const objsByZ = [];
+        const newObjs = [];
         for (const handle of order) {
             const obj = this.objects.get(handle);
             if (!obj) throw new StratumError(`Объект #${handle} не найден на сцене`);
             if (obj.type !== "control") this.canvas.add(obj.obj);
-            objsByZ.push(obj);
+            newObjs.push(obj);
         }
-        this.objectsByZReversed = objsByZ.reverse();
+        this.objectsByZReversed = newObjs.reverse().concat(this.objectsByZReversed);
         this.requestRedraw();
     }
 
@@ -233,6 +230,19 @@ export class FabricScene implements Scene {
         if (obj.type !== "control") obj.obj.bringToFront();
         const obzr = this.objectsByZReversed;
         this.objectsByZReversed = [obj].concat(obzr.filter((o) => o !== obj));
+        this.requestRedraw();
+    }
+
+    moveObjectRangeToTop(visuals: VisualObject[]) {
+        const newObjs: VisualObject[] = [];
+        for (const obj of this.objectsByZReversed.reverse()) {
+            if (visuals.includes(obj)) {
+                if (obj.type !== "control") obj.obj.bringToFront();
+                newObjs.push(obj);
+            }
+        }
+        const obzr = this.objectsByZReversed;
+        this.objectsByZReversed = newObjs.reverse().concat(obzr.filter((o) => !newObjs.includes(o)));
         this.requestRedraw();
     }
 

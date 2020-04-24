@@ -85,6 +85,7 @@ declare module "scene-types" {
         /** Добавляет объект с дескриптором `handle` на сцену поверх остальных. */
         appendObjectToEnd(visual: Visual2D): void;
         moveObjectToTop(visual: Visual2D): void;
+        moveObjectRangeToTop(visual: Visual2D[]): void;
         removeObject(visual: Visual2D): void;
 
         //изменение точки обзора, размеров сцены

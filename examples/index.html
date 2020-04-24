@@ -12,7 +12,8 @@
             document.getElementById("combobox").addEventListener("change", e => play("ref", e.target.value));
         };
         async function play(type, value) {
-            const projectFile = document.getElementById("proj_name").value || "project.spj";
+            const projectFile = document.getElementById("proj_name").value;
+			const sttFile = document.getElementById("stt_name").value;
             if (!value) return;
             const preloadedLibs = await stdlibPromise;
             console.log("Стандартная библиотека имиджей загружена");
@@ -22,7 +23,7 @@
             const one_step = document.getElementById("one_step");
             controller.removeAttribute("hidden");
             one_step.removeAttribute("hidden");
-            const opts = { globalCanvas, htmlRoot, preloadedLibs, projectFile, continueOnErrorCallback: () => true };
+            const opts = { globalCanvas, htmlRoot, preloadedLibs, projectFile, sttFile, continueOnErrorCallback: () => true };
             const getPlayer = type === "file" ? StratumPlayer.fromFileList(value, opts) : StratumPlayer.fromUrl(`projects/${value}.zip`, opts);
             getPlayer.then(p => {
                 controller.innerHTML = "Пауза";
@@ -52,11 +53,12 @@
     </script>
 </head>
 <body>
-    <a>Версия 3.1.1</a>
+    <a>Версия 3.2.0</a>
     <input id="file_drop" type="file" accept=".zip" />
     <button id="one_step" hidden style="height: 50px">Один шаг</button>
     <button id="controller" hidden style="height: 50px">Пауза</button>
     <input id="proj_name" type="text" placeholder="название файла проекта"></input>
+	<input id="stt_name" type="text" placeholder="название файла переменных"></input>
     <select id="combobox">
         <option value="" disabled selected>Выберите проект</option>
         <option value="myach">Интерактивная физика - мяч</option>

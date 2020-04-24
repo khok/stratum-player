@@ -1,5 +1,5 @@
 import { Scene } from "scene-types";
-import { Point2D, VectorDrawData } from "vdr-types";
+import { ElementData, Point2D, VectorDrawData } from "vdr-types";
 import { ClassState, VmBool } from "vm-interfaces-core";
 import { GraphicSpaceState } from "vm-interfaces-gspace";
 import { VmStateContainer } from "vm-types";
@@ -66,6 +66,43 @@ export class GraphicSpace implements GraphicSpaceState {
 
         scene.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
         scene.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
+    }
+
+    mergeVdr(vdr: VectorDrawData, x: number, y: number) {
+        const tools = createTools(vdr, this.tools.bmpFactory);
+        const topLevelItems: GraphicObject[] = [];
+
+        const map = new Map<number, number>();
+        if (vdr.elements) {
+            let lastHandle = 0;
+            const mappedElements: ElementData[] = vdr.elements.map((el) => {
+                const newHandle = (lastHandle = HandleMap.getFreeHandle(this.objects, lastHandle));
+                map.set(el.handle, newHandle);
+                return { ...el, handle: newHandle };
+            });
+            mappedElements.forEach((el) => {
+                if (el.type === "otGROUP2D") el.childHandles = el.childHandles.map((h) => map.get(h)!);
+            });
+            for (const obj of createObjects(mappedElements, this.scene, tools, vdr.layers).values()) {
+                this.objects.set(obj.handle, obj);
+                if (!obj.parent) topLevelItems.push(obj);
+            }
+        }
+        this.tools.merge(tools);
+        if (topLevelItems.length === 0) throw new StratumError("VDR файл не содержит элементов");
+
+        let root: GraphicObject;
+        if (topLevelItems.length > 1) {
+            const handle = HandleMap.getFreeHandle(this.objects);
+            root = new GroupObject({ handle, items: topLevelItems });
+            this.objects.set(handle, root);
+        } else {
+            root = topLevelItems[0];
+        }
+
+        root.setPosition(x, y);
+        if (vdr.elementOrder) this.scene.placeObjects(vdr.elementOrder.map((h) => map.get(h)!));
+        return root.handle;
     }
 
     get originX() {
@@ -189,7 +226,7 @@ export class GraphicSpace implements GraphicSpaceState {
         const obj = this.objects.get(handle);
         if (!obj) return 0;
         if (obj.type === "otGROUP2D") {
-            for (const item of obj.items) this.moveObjectToTop(item.handle);
+            this.scene.moveObjectRangeToTop(obj.getItemsRecursive().map((t) => t.visual));
         } else {
             this.scene.moveObjectToTop(obj.visual);
         }

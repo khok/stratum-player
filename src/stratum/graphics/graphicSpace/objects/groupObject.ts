@@ -1,7 +1,7 @@
 import { VmBool } from "vm-interfaces-core";
 import { GroupObjectState } from "vm-interfaces-gspace";
 import { StratumError } from "~/helpers/errors";
-import { GraphicObject } from ".";
+import { GraphicObject, GraphicObject2d } from ".";
 import { BaseObjectMixin, ObjectOptions } from "./baseObjectMixin";
 
 export interface GroupObjectOptions extends ObjectOptions {
@@ -18,7 +18,7 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
     items: GraphicObject[] = [];
     constructor(data: GroupObjectOptions) {
         super(data);
-        if (data.items) this.addItems(data.items);
+        if (data.items && data.items.length !== 0) this.addItems(data.items);
     }
 
     private recalcCoords() {
@@ -75,6 +75,15 @@ export class GroupObject extends BaseObjectMixin implements GroupObjectState {
         this.items.splice(index, 1);
         this.recalcCoords();
         return 1;
+    }
+
+    getItemsRecursive(items?: GraphicObject2d[]) {
+        if (!items) items = [];
+        for (const item of this.items) {
+            if (item.type === "otGROUP2D") item.getItemsRecursive(items);
+            else items.push(item);
+        }
+        return items;
     }
 
     //obj2d operations

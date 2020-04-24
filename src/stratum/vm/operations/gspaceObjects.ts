@@ -1,6 +1,24 @@
 import { VmStateContainer, Operation } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
 
+// HANDLE CreateObjectFromFile2D(HANDLE HSpace, STRING FileName, FLOAT x, FLOAT y, FLOAT Flags)
+function CreateObjectFromFile2D(ctx: VmStateContainer) {
+    const flags = ctx.popDouble();
+    const y = ctx.popDouble();
+    const x = ctx.popDouble();
+    const fileName = ctx.popString();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.graphics.getSpace(spaceHandle);
+    if (!space) {
+        ctx.pushLong(0);
+        return;
+    }
+
+    const vdr = ctx.project.loadSchemeFromFile(fileName);
+    ctx.pushLong(vdr ? space.mergeVdr(vdr, x, y) : 0);
+}
+
 function CreatePolyLine2d(ctx: VmStateContainer, coordCount: number) {
     const pointCount = coordCount / 2;
     const points = new Array(pointCount);
@@ -65,6 +83,7 @@ function DeleteObject2d(ctx: VmStateContainer) {
 }
 
 export function initGraphicObjects(addOperation: (opcode: number, operation: Operation) => void) {
+    addOperation(Opcode.V_CREATEOBJECTFROMFILE, CreateObjectFromFile2D);
     addOperation(Opcode.CREATEPOLYLINE2D, CreatePolyLine2d as Operation);
     addOperation(Opcode.CREATELINE2D, CreateLine2d);
     addOperation(Opcode.CREATEGROUP2D, CreateGroup2d as Operation);

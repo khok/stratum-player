@@ -19,7 +19,7 @@ export interface GraphicSpaceToolsData {
  * Контейнер инструментов графического пространства.
  */
 export class GraphicSpaceTools implements GraphicSpaceToolsState {
-    private bmpFactory: BitmapToolFactory;
+    readonly bmpFactory: BitmapToolFactory;
     readonly bitmaps: HandleMap<BitmapTool>;
     readonly brushes: HandleMap<BrushTool>;
     readonly doubleBitmaps: HandleMap<BitmapTool>;
@@ -114,5 +114,42 @@ export class GraphicSpaceTools implements GraphicSpaceToolsState {
                 this.texts.delete(handle);
                 return 1;
         }
+    }
+    merge(tools: GraphicSpaceTools) {
+        tools.bitmaps.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.bitmaps);
+            t.handle = handle;
+            this.bitmaps.set(handle, t);
+        });
+        tools.brushes.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.brushes);
+            t.handle = handle;
+            this.brushes.set(handle, t);
+        });
+        tools.doubleBitmaps.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.doubleBitmaps);
+            t.handle = handle;
+            this.doubleBitmaps.set(handle, t);
+        });
+        tools.fonts.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.fonts);
+            t.handle = handle;
+            this.fonts.set(handle, t);
+        });
+        tools.pens.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.pens);
+            t.handle = handle;
+            this.pens.set(handle, t);
+        });
+        tools.strings.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.strings);
+            t.handle = handle;
+            this.strings.set(handle, t);
+        });
+        tools.texts.forEach((t) => {
+            const handle = HandleMap.getFreeHandle(this.texts);
+            t.handle = handle;
+            this.texts.set(handle, t);
+        });
     }
 }
