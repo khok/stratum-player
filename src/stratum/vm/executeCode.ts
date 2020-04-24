@@ -36,6 +36,7 @@ export function executeCode(ctx: VmContext, { code, numberOperands, stringOperan
             }
         }
     } catch (e) {
+        console.error(e);
         const message = `Функция не реализована: ${realCommandNames[cmd! & OPCODE_MASK]} (${
             Opcode[cmd! & OPCODE_MASK]
         }) (индекс опкода: ${ctx.nextCmdIndex - 1})`;

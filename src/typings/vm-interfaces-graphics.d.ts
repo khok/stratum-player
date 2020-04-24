@@ -15,6 +15,13 @@ declare module "vm-interfaces-graphics" {
         getProp(prop: "classname" | "filename"): string;
     }
 
+    export interface CreateWindowOptions {
+        classname?: string;
+        filename?: string;
+    }
+
+    export type CreateSchemeWindowOptions = CreateWindowOptions & { vdr: VectorDrawData };
+
     export interface GraphicSystemController {
         readonly areaOriginX: number;
         readonly areaOriginY: number;
@@ -24,7 +31,7 @@ declare module "vm-interfaces-graphics" {
         readonly screenHeight: number;
         readonly screenWidth: number;
 
-        createSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawData, sourceName?: string): number;
+        createSchemeWindow(windowName: string, attrib: string, data?: CreateSchemeWindowOptions): number;
         hasWindow(windowName: string): VmBool;
         getWindow(windowName: string): WindowState | undefined;
         getSpace(spaceHandle: number): GraphicSpaceState | undefined;

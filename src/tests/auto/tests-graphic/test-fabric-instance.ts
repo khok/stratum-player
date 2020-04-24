@@ -9,8 +9,8 @@ import { createComposedScheme } from "~/helpers/graphics";
 (async function () {
     const zip = await openZipFromUrl(["/test_projects/balls.zip", "/data/library.zip"]);
     const { classesData } = await readProjectData(zip);
-    const sourceName = "WorkSpace";
-    const cl = classesData.get(sourceName)!;
+    const classname = "WorkSpace";
+    const cl = classesData.get(classname)!;
     const cdata = cl.childInfo!;
     const oldvdr = cl.scheme!;
     const vdr = createComposedScheme(oldvdr, cdata, classesData);
@@ -21,7 +21,7 @@ import { createComposedScheme } from "~/helpers/graphics";
     dispatcher.on("WINDOW_CREATED", (name) => (document.title = name));
 
     const wname = "Test Window";
-    gs.createSchemeWindow(wname, "", vdr, sourceName);
+    gs.createSchemeWindow(wname, "", { vdr, classname });
     equal(document.title, wname);
     const space = gs.getSpace(1)!;
     bmpFactory.allImagesLoaded.then(() => space.scene.render());

@@ -12,13 +12,13 @@ function OpenSchemeWindow(ctx: VmStateContainer) {
         return;
     }
     const vdr = ctx.project.getClassScheme(classname);
-    ctx.pushLong(vdr ? ctx.graphics.createSchemeWindow(winName, attrib, vdr, classname) : 0);
+    ctx.pushLong(vdr ? ctx.graphics.createSchemeWindow(winName, attrib, { classname, vdr }) : 0);
 }
 
 // HANDLE LoadSpaceWindow(STRING WindowName, STRING FileName, STRING Attribute)
 function LoadSpaceWindow(ctx: VmStateContainer) {
     const attrib = ctx.popString();
-    const fileName = ctx.popString();
+    const filename = ctx.popString();
     const winName = ctx.popString();
     const window = ctx.graphics.getWindow(winName);
     if (window) {
@@ -26,8 +26,8 @@ function LoadSpaceWindow(ctx: VmStateContainer) {
         return;
     }
 
-    if (fileName !== "") {
-        ctx.setError(`Вызов LoadSpaceWindow с fileName=${fileName} не реализован.`);
+    if (filename !== "") {
+        ctx.setError(`Вызов LoadSpaceWindow с fileName=${filename} не реализован.`);
         return;
     }
 

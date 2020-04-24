@@ -1,7 +1,6 @@
 import { HTMLInputElementsFactory } from "html-types";
-import { VectorDrawData } from "vdr-types";
 import { VmBool } from "vm-interfaces-core";
-import { GraphicSystemController, WindowState } from "vm-interfaces-graphics";
+import { CreateSchemeWindowOptions, GraphicSystemController, WindowState } from "vm-interfaces-graphics";
 import { StratumError } from "~/helpers/errors";
 import { EventDispatcher } from "~/helpers/eventDispatcher";
 import { HandleMap } from "~/helpers/handleMap";
@@ -9,31 +8,53 @@ import { HtmlFactory } from "~/helpers/htmlFactory";
 import { BitmapToolFactory, GraphicSpace } from "./graphicSpace";
 import { FabricScene } from "./renderers";
 
+export interface WindowOptions {
+    space: GraphicSpace;
+    size: { width: number; height: number };
+    resizable: boolean;
+    names: {
+        filename?: string;
+        classname?: string;
+    };
+}
+
 class Window implements WindowState {
-    constructor(public space: GraphicSpace, private size: { x: number; y: number }, private resizable: boolean) {}
+    private resizable: boolean;
+    private classname: string;
+    private filename: string;
+
+    readonly space: GraphicSpace;
+
     originX: number = 0;
     originY: number = 0;
+    width: number;
+    height: number;
+
+    constructor(data: WindowOptions) {
+        this.space = data.space;
+        this.width = data.size.width;
+        this.height = data.size.height;
+        this.resizable = data.resizable;
+        this.classname = data.names.classname || "";
+        this.filename = data.names.filename || "";
+    }
+
     setOrigin(x: number, y: number): VmBool {
         this.originX = x;
         this.originY = y;
         return 1;
     }
-    get width(): number {
-        return this.size.x;
-    }
-    get height(): number {
-        return this.size.y;
-    }
+
     setSize(width: number, height: number): VmBool {
-        this.size.x = width;
-        this.size.y = height;
+        this.width = width;
+        this.height = height;
         if (this.resizable) this.space.scene.adaptToNewSize(width, height);
         else console.warn("Программное изменение размеров окна отключено");
         return 1;
     }
 
     getProp(prop: "classname" | "filename"): string {
-        return this.space.sourceName;
+        return prop === "classname" ? this.classname : this.filename;
     }
 }
 
@@ -77,7 +98,7 @@ export class GraphicSystem implements GraphicSystemOptions, GraphicSystemControl
         return this;
     }
 
-    createSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawData, sourceName?: string): number {
+    createSchemeWindow(windowName: string, attrib: string, data?: CreateSchemeWindowOptions): number {
         if (attrib !== "") console.warn(`Атрибуты окна не поддерживаются: "${attrib}"`);
         if (this.hasWindow(windowName)) throw new StratumError(`Окно ${windowName} уже существует`);
 
@@ -98,15 +119,19 @@ export class GraphicSystem implements GraphicSystemOptions, GraphicSystemControl
         const space = new GraphicSpace({
             handle,
             bmpFactory,
-            sourceName,
-            vdr,
+            vdr: data && data.vdr,
             scene: new FabricScene({ canvas, inputFactory }),
         });
         this.spaces.set(handle, space);
 
         this.windows.set(
             windowName,
-            new Window(space, { x: canvas.width, y: canvas.height }, !this.disableSceneResize)
+            new Window({
+                space,
+                size: { width: canvas.width, height: canvas.height },
+                resizable: !this.disableSceneResize,
+                names: data || {},
+            })
         );
 
         this.spaceToWinNameMap.set(handle, windowName);

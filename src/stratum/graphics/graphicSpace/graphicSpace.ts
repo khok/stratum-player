@@ -20,7 +20,6 @@ export interface GraphicSpaceSubsciber {
 
 export interface GraphicSpaceOptions {
     handle: number;
-    sourceName?: string;
     vdr?: VectorDrawData;
     bmpFactory: BitmapToolFactory;
     scene: Scene;
@@ -37,13 +36,11 @@ export class GraphicSpace implements GraphicSpaceState {
     private layers: number = 0;
 
     readonly handle: number;
-    readonly sourceName: string;
     readonly tools: GraphicSpaceTools;
     readonly scene: Scene;
 
-    constructor({ handle, sourceName, vdr, bmpFactory, scene }: GraphicSpaceOptions) {
+    constructor({ handle, vdr, bmpFactory, scene }: GraphicSpaceOptions) {
         this.handle = handle;
-        this.sourceName = sourceName || "";
         this.scene = scene;
 
         if (vdr) {
@@ -240,8 +237,8 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     subscribe(ctx: VmStateContainer, klass: ClassState, msg: MessageCode, objectHandle: number, flags: number): void {
-        if (this.subs.some((s) => s.klass === klass && s.msg === msg)) {
-            console.warn(`Попытка повторной подписки на сообщение ${MessageCode[msg]} классом ${klass.protoName}`);
+        if (this.subs.some((s) => s.klass === klass && s.msg === msg && objectHandle === objectHandle)) {
+            console.warn(`Повторный RegisterObject(${klass.protoName}, ${MessageCode[msg]}, #${objectHandle})`);
             return;
         }
         this.subs.push({ ctx, klass, objectHandle, msg });
