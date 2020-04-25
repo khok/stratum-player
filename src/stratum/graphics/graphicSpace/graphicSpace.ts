@@ -282,19 +282,19 @@ export class GraphicSpace implements GraphicSpaceState {
     }
 
     private static setKlassDoubleValueByLowCaseName(sub: GraphicSpaceSubsciber, name: string, value: number) {
-        const _id = sub.klass.varnameToIdMap!.get(name)!;
-        if (_id > -1) {
-            const id = sub.klass.doubleIdToGlobal![_id];
-            sub.ctx.memoryState.newDoubleValues[id] = value;
-            sub.ctx.memoryState.oldDoubleValues[id] = value;
+        const varId = sub.klass.varnameToIdMap!.get(name);
+        if (varId !== undefined) {
+            const realId = sub.klass.doubleIdToGlobal![varId];
+            sub.ctx.memoryState.newDoubleValues[realId] = value;
+            sub.ctx.memoryState.oldDoubleValues[realId] = value;
         }
     }
     private static setKlassLongValueByLowCaseName(sub: GraphicSpaceSubsciber, name: string, value: number) {
-        const _id = sub.klass.varnameToIdMap!.get(name)!;
-        if (_id > -1) {
-            const id = sub.klass.longIdToGlobal![_id];
-            sub.ctx.memoryState.newLongValues[id] = value;
-            sub.ctx.memoryState.oldLongValues[id] = value;
+        const varId = sub.klass.varnameToIdMap!.get(name);
+        if (varId !== undefined) {
+            const realId = sub.klass.longIdToGlobal![varId];
+            sub.ctx.memoryState.newLongValues[realId] = value;
+            sub.ctx.memoryState.oldLongValues[realId] = value;
         }
     }
 

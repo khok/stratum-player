@@ -46,7 +46,7 @@ import { MemoryManager } from "~/core/memoryManager";
         project: {} as any,
         memoryState: mmanager,
     });
-    ctx.substituteState(cl);
+    ctx.pushClass(cl);
     // printBytecode(data, bytecode!.parsed!);
     executeCode(ctx, bytecode!.parsed!);
     equal(mmanager.newStringValues[2], "-0.4+i1.2");

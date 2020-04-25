@@ -45,7 +45,7 @@ declare module "vm-interfaces-core" {
         loadSchemeFromFile(fileName: string): VectorDrawData | undefined;
         hasClass(className: string): VmBool;
         getClassDir(className: string): string;
-        getClassesByProtoName(className: string): IterableIterator<ClassState>;
+        getClassesByProtoName(className: string): ClassState[];
     }
 
     export interface InputSystemController {

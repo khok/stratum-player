@@ -3,6 +3,8 @@ import { Opcode } from "~/helpers/vmConstants";
 
 function SendMessage(ctx: VmStateContainer, count: number) {
     const vars = new Array<string>(count);
+    const ids = new Uint16Array(count);
+    let realCount = 0;
     for (let i = count - 1; i >= 0; i--) vars[i] = ctx.popString().toLowerCase();
     const className = ctx.popString();
     const path = ctx.popString();
@@ -12,57 +14,60 @@ function SendMessage(ctx: VmStateContainer, count: number) {
     }
 
     if (!ctx.canExecuteClass) return;
+    const nodes = ctx.project.getClassesByProtoName(className);
+    if (nodes.length === 0) return;
 
     const current = ctx.currentClass;
+    const mem = ctx.memoryState;
 
-    for (const other of ctx.project.getClassesByProtoName(className)) {
+    for (let i = 0; i < count; i += 2) {
+        const idCur = current.varnameToIdMap!.get(vars[i]);
+        if (idCur === undefined) continue;
+        ids[realCount] = idCur;
+        const idOther = nodes[0].varnameToIdMap!.get(vars[i + 1]);
+        if (idOther === undefined) continue;
+        ids[realCount + 1] = idOther;
+        realCount += 2;
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+        const other = nodes[i];
         if (other === current) continue;
 
-        for (let i = 0; i < count; i += 2) {
-            const _idCurrent = current.varnameToIdMap!.get(vars[i])!;
-            const _idOther = other.varnameToIdMap!.get(vars[i + 1])!;
-            //таким хаком избегаем сравнения с undefined.
-            if (_idCurrent > -1 && _idOther > -1) {
-                const currentId1 = current.doubleIdToGlobal![_idCurrent];
-                const otherId1 = other.doubleIdToGlobal![_idOther];
-                ctx.memoryState.newDoubleValues[otherId1] = ctx.memoryState.oldDoubleValues[otherId1] =
-                    ctx.memoryState.newDoubleValues[currentId1];
+        for (let i = 0; i < realCount; i += 2) {
+            const idCur = ids[i];
+            const idOther = ids[i + 1];
 
-                const currentId2 = current.longIdToGlobal![_idCurrent];
-                const otherId2 = other.longIdToGlobal![_idOther];
-                ctx.memoryState.newLongValues[otherId2] = ctx.memoryState.oldLongValues[otherId2] =
-                    ctx.memoryState.newLongValues[currentId2];
+            const currentId1 = current.doubleIdToGlobal![idCur];
+            const otherId1 = other.doubleIdToGlobal![idOther];
+            mem.newDoubleValues[otherId1] = mem.oldDoubleValues[otherId1] = mem.newDoubleValues[currentId1];
 
-                const currentId3 = current.stringIdToGlobal![_idCurrent];
-                const otherId3 = other.stringIdToGlobal![_idOther];
-                ctx.memoryState.newStringValues[otherId3] = ctx.memoryState.oldStringValues[otherId3] =
-                    ctx.memoryState.newStringValues[currentId3];
-                // const curValue = current.getNewVarValue``(idCurrent);
-                // other.setOldVarValue(idOther, curValue);
-                // other.setNewVarValue(idOther, curValue);
-            }
+            const currentId2 = current.longIdToGlobal![idCur];
+            const otherId2 = other.longIdToGlobal![idOther];
+            mem.newLongValues[otherId2] = mem.oldLongValues[otherId2] = mem.newLongValues[currentId2];
+
+            const currentId3 = current.stringIdToGlobal![idCur];
+            const otherId3 = other.stringIdToGlobal![idOther];
+            mem.newStringValues[otherId3] = mem.oldStringValues[otherId3] = mem.newStringValues[currentId3];
         }
 
         other.computeSchemeRecursive(ctx, true);
 
         for (let i = 0; i < count; i += 2) {
-            const _idCurrent = current.varnameToIdMap!.get(vars[i])!;
-            const _idOther = other.varnameToIdMap!.get(vars[i + 1])!;
-            if (_idCurrent > -1 && _idOther > -1) {
-                const currentId1 = current.doubleIdToGlobal![_idCurrent];
-                const otherId1 = other.doubleIdToGlobal![_idOther];
-                ctx.memoryState.newDoubleValues[currentId1] = ctx.memoryState.newDoubleValues[otherId1];
+            const idCur = ids[i];
+            const idOther = ids[i + 1];
 
-                const currentId2 = current.longIdToGlobal![_idCurrent];
-                const otherId2 = other.longIdToGlobal![_idOther];
-                ctx.memoryState.newLongValues[currentId2] = ctx.memoryState.newLongValues[otherId2];
+            const currentId1 = current.doubleIdToGlobal![idCur];
+            const otherId1 = other.doubleIdToGlobal![idOther];
+            mem.newDoubleValues[currentId1] = mem.newDoubleValues[otherId1];
 
-                const currentId3 = current.stringIdToGlobal![_idCurrent];
-                const otherId3 = other.stringIdToGlobal![_idOther];
-                ctx.memoryState.newStringValues[currentId3] = ctx.memoryState.newStringValues[otherId3];
-                // const otherValue = other.getNewVarValue(idOther);
-                // current.setNewVarValue(idCurrent, otherValue);
-            }
+            const currentId2 = current.longIdToGlobal![idCur];
+            const otherId2 = other.longIdToGlobal![idOther];
+            mem.newLongValues[currentId2] = mem.newLongValues[otherId2];
+
+            const currentId3 = current.stringIdToGlobal![idCur];
+            const otherId3 = other.stringIdToGlobal![idOther];
+            mem.newStringValues[currentId3] = mem.newStringValues[otherId3];
         }
     }
 }
@@ -152,9 +157,9 @@ function SetVarFloat(ctx: VmStateContainer) {
 
     const obj = ctx.currentClass.getClassByPath(objectPath);
     if (!obj) return;
+    const varId = obj.varnameToIdMap!.get(name.toLowerCase());
+    if (varId === undefined) return;
 
-    const varId = obj.varnameToIdMap!.get(name.toLowerCase())!;
-    if (!(varId > -1)) return;
     const realId = obj.doubleIdToGlobal![varId];
     ctx.memoryState.oldDoubleValues[realId] = value;
     ctx.memoryState.newDoubleValues[realId] = value;

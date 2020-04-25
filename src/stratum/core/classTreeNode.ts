@@ -41,7 +41,8 @@ export class ClassTreeNode implements ClassState {
     private readonly proto: ClassPrototype;
     private mmanager?: MemoryManager;
     private isDisabled: () => boolean;
-    private childs?: HandleMap<ClassTreeNode>;
+    private childMap?: HandleMap<ClassTreeNode>;
+    private childs?: ClassTreeNode[];
     private onSchemeData?: OnSchemeData;
     private captureEventsFromHandle = 0;
     private hasCode: boolean;
@@ -89,7 +90,8 @@ export class ClassTreeNode implements ClassState {
     }
 
     setChilds(childs: HandleMap<ClassTreeNode>) {
-        this.childs = childs;
+        this.childMap = childs;
+        this.childs = [...this.childMap.values()];
     }
 
     get protoName() {
@@ -169,7 +171,7 @@ export class ClassTreeNode implements ClassState {
             });
         }
 
-        const myChilds = this.childs;
+        const myChilds = this.childMap;
         if (myChilds)
             varSet.childSets.forEach((childSet) => {
                 const child = myChilds.get(childSet.handle);
@@ -218,16 +220,20 @@ export class ClassTreeNode implements ClassState {
     computeSchemeRecursive(ctx: VmContext, force: boolean = false) {
         if (ctx.hasError || (!force && this.isDisabled())) return;
 
-        if (this.childs) for (const child of this.childs.values()) child.computeSchemeRecursive(ctx);
+        const childs = this.childs;
+        if (childs) for (let i = 0; i < childs.length; i++) childs[i].computeSchemeRecursive(ctx);
+
         if (this.hasCode === false) return;
 
         const prevClass = ctx.currentClass;
-        const prevCmdIdx = ctx.substituteState(this);
+        const prevCmdIdx = ctx.pushClass(this);
+
         executeCode(ctx, this.proto.code!);
-        if (ctx.hasError)
-            ctx.addErrorInfo(
-                `в классе ${this.onSchemeData ? "#" + this.onSchemeData.handle + " " : ""}${this.protoName}`
-            );
-        else ctx.returnState(prevClass, prevCmdIdx);
+        ctx.popClass(prevClass, prevCmdIdx);
+
+        if (ctx.hasError) {
+            const msg = `\nв классе ${this.onSchemeData ? "#" + this.onSchemeData.handle + " " : ""}${this.protoName}`;
+            ctx.addErrorInfo(msg);
+        }
     }
 }

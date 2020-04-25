@@ -19,6 +19,7 @@ export interface ProjectOptions {
 
 export class Project implements ProjectController {
     private classNodes: ClassTreeNode[];
+    private classNodeCache = new Map<string, ClassTreeNode[]>();
     private classesData: Map<string, ClassData>;
     private files?: ProjectFile[];
     private disableSchemeCompose: boolean;
@@ -55,8 +56,11 @@ export class Project implements ProjectController {
         const idx = cl.fileName.lastIndexOf("\\");
         return cl.fileName.substr(0, idx + 1);
     }
-    *getClassesByProtoName(className: string): IterableIterator<ClassTreeNode> {
-        //TODO: ПЕРЕПИСАТЬ
-        for (const node of this.classNodes) if (node.protoName === className) yield node;
+    getClassesByProtoName(className: string): ClassTreeNode[] {
+        const nodes = this.classNodeCache.get(className);
+        if (nodes) return nodes;
+        const nodes2 = this.classNodes.filter((n) => n.protoName === className);
+        this.classNodeCache.set(className, nodes2);
+        return nodes2;
     }
 }

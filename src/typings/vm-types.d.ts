@@ -37,8 +37,8 @@ declare module "vm-types" {
     }
 
     export interface VirtualMachine {
-        substituteState(newState: ClassState): number;
-        returnState(prevState: ClassState, commandIndex: number): void;
+        pushClass(newState: ClassState): number;
+        popClass(prevState: ClassState, commandIndex: number): void;
         // nextCommandIndex(): number;
         nextCmdIndex: number;
         setCodeLength(length: number): void;
