@@ -10,6 +10,7 @@ import { StratumError } from "~/helpers/errors";
 const codeToStyle: { [idx: number]: BrushToolState["fillType"] } = {
     0: "SOLID",
     1: "NULL",
+    2: "HATCED",
     3: "PATTERN",
 };
 
@@ -23,8 +24,9 @@ export class BrushTool extends ToolMixin<BrushTool> implements BrushToolState {
     constructor(data: BrushToolOptions, bitmaps?: HandleMap<BitmapTool>) {
         super(data);
         this._color = data.color;
-        this._fillType = codeToStyle[data.style] || "HATCED";
+        this._fillType = codeToStyle[data.style];
         if (this._fillType === "HATCED") console.warn(`Стиль заливки HATCED не реализован`);
+        if (!this._fillType) console.warn(`Неизвестный тип заливки: ${data.style}`);
         if (data.dibHandle) {
             const bmp = bitmaps && bitmaps.get(data.dibHandle);
             if (!bmp) throw new StratumError(`Инструмент Кисть ${data.dibHandle} не существует`);

@@ -40,7 +40,7 @@ export class FabricLine implements LineElementVisual {
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
             fill: getFillValue(brush),
-            stroke: pen && colorrefToColor(pen.color),
+            stroke: pen && pen.style !== "NULL" ? colorrefToColor(pen.color) : undefined,
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible,
         };

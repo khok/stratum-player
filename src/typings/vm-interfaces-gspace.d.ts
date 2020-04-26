@@ -17,6 +17,7 @@ declare module "vm-interfaces-gspace" {
         readonly handle: number;
         readonly color: number;
         readonly width: number;
+        readonly style: "SOLID" | "DASH" | "DOT" | "DASHDOT" | "DASHDOTDOT" | "NULL";
 
         setColor(color: number): VmBool;
         setWidth(width: number): VmBool;
