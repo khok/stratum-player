@@ -2,7 +2,7 @@
     "author": "Maxim Khokhryakov",
     "license": "MIT",
     "name": "stratum-player",
-    "version": "4.0.0",
+    "version": "0.1.0",
     "scripts": {
         "test": "parcel src/stratum/testLoader-single.html",
         "test-all": "parcel src/stratum/testLoader-all.html",
@@ -17,7 +17,7 @@
         "@types/jszip": "^3.1.7",
         "@types/pngjs": "^3.4.2",
         "fabric": "^3.6.3",
-        "jszip": "^3.2.2",
+        "jszip": "^3.3.0",
         "pngjs": "^3.4.0"
     },
     "prettier": {
