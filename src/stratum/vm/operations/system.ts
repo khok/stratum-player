@@ -41,7 +41,7 @@ function system(ctx: VmStateContainer, paramCount: number) {
     const params = new Array<number>(paramCount);
     for (let i = paramCount - 1; i >= 0; i--) params[i] = ctx.popDouble();
     const command = ctx.popDouble();
-    console.warn(`Вызов операции System(${command}, ${params})\n${systemCommands[command]}`);
+    console.warn(`Вызов System(${command}, ${params})\n${systemCommands[command]}`);
     ctx.pushDouble(1);
 }
 
@@ -149,6 +149,21 @@ function GetTickCount(ctx: VmStateContainer) {
     ctx.pushDouble(new Date().getTime() - start);
 }
 
+// StdHyperJump(HANDLE hSpace, FLOAT x, y, HANDLE hObject, FLOAT flags)
+function StdHyperJump(ctx: VmStateContainer) {
+    const flags = ctx.popDouble();
+    const handle = ctx.popLong();
+    const y = ctx.popDouble();
+    const x = ctx.popDouble();
+    const spaceHandle = ctx.popLong();
+
+    const space = ctx.graphics.getSpace(spaceHandle);
+    if (!space) return;
+    const obj = space.getObject(handle);
+    if (!obj) return;
+    console.warn(`Вызов StdHyperJump(${spaceHandle}, ${x}, ${y}, ${handle}, ${flags})`);
+}
+
 export function initSystem(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.GETAKEYSTATE, GetAsyncKeyState);
     addOperation(Opcode.V_CLOSEALL, CloseAll);
@@ -166,4 +181,5 @@ export function initSystem(addOperation: (opcode: number, operation: Operation) 
     addOperation(Opcode.VM_GETDATE, GetDate);
     addOperation(Opcode.VM_GETTIME, GetTime);
     addOperation(Opcode.GETTICKCOUNT, GetTickCount);
+    addOperation(Opcode.STDHYPERJUMP, StdHyperJump);
 }

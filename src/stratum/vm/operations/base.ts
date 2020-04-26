@@ -12,7 +12,7 @@ function _PUSH_FLOAT(ctx: VmStateContainer, varId: number) {
 }
 
 function PUSH_FLOAT_PTR(ctx: VmStateContainer) {
-    throw "PUSH_FLOAT_PTR: NIMP";
+    throw "PUSH_FLOAT_PTR: не реализовано";
 }
 
 //Float pop
@@ -23,7 +23,7 @@ function _POP_FLOAT_OLD(ctx: VmStateContainer, varId: number) {
     ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleIdToGlobal![varId]] = ctx.popDouble();
 }
 function POP_FLOAT_PTR(ctx: VmStateContainer) {
-    throw "POP_FLOAT_PTR: NIMP";
+    throw "POP_FLOAT_PTR: не реализовано";
 }
 
 //Long push
@@ -41,7 +41,7 @@ function vm_POP_LONG(ctx: VmStateContainer, varId: number) {
 }
 
 function vm_POP_LONG_OLD(ctx: VmStateContainer) {
-    throw "vm_POP_LONG_OLD: NIMP";
+    throw "vm_POP_LONG_OLD: не реализовано";
 }
 
 //String push
@@ -59,7 +59,7 @@ function _POP_STRING(ctx: VmStateContainer, varId: number) {
 }
 
 function _POP_STRING_OLD(ctx: VmStateContainer) {
-    throw "_POP_STRING_OLD: NIMP";
+    throw "_POP_STRING_OLD: не реализовано";
 }
 
 //Pointer push
@@ -120,19 +120,19 @@ function V_COS(ctx: VmStateContainer) {
     ctx.pushDouble(Math.cos(ctx.popDouble()));
 }
 function V_ASIN(ctx: VmStateContainer) {
-    throw "V_ASIN: NIMP";
+    throw "V_ASIN: не реализовано";
 }
 function V_ACOS(ctx: VmStateContainer) {
-    throw "V_ACOS: NIMP";
+    throw "V_ACOS: не реализовано";
 }
 function V_ATAN(ctx: VmStateContainer) {
-    throw "V_ATAN: NIMP";
+    throw "V_ATAN: не реализовано";
 }
 function V_TAN(ctx: VmStateContainer) {
-    throw "V_TAN: NIMP";
+    throw "V_TAN: не реализовано";
 }
 function V_EXP(ctx: VmStateContainer) {
-    throw "V_EXP: NIMP";
+    throw "V_EXP: не реализовано";
 }
 function V_SQRT(ctx: VmStateContainer) {
     const value = ctx.popDouble();
@@ -143,10 +143,10 @@ function V_SQR(ctx: VmStateContainer) {
     ctx.pushDouble(value * value);
 }
 function V_ED(ctx: VmStateContainer) {
-    throw "V_ED: NIMP";
+    throw "V_ED: не реализовано";
 }
 function V_DELTA(ctx: VmStateContainer) {
-    throw "V_DELTA: NIMP";
+    throw "V_DELTA: не реализовано";
 }
 function V_MUL_F(ctx: VmStateContainer) {
     ctx.pushDouble(ctx.popDouble() * ctx.popDouble());
@@ -165,7 +165,7 @@ function V_SUB_F(ctx: VmStateContainer) {
     ctx.pushDouble(a - b);
 }
 // function V_BIG_SUB : VmStateContainer (ctx) {
-//     throw 'V_BIG_SUB: NIMP'
+//     throw 'V_BIG_SUB: не реализовано'
 // }
 function V_MOD(ctx: VmStateContainer) {
     const y = ctx.popDouble();
@@ -179,7 +179,7 @@ function V_LG(ctx: VmStateContainer) {
     ctx.pushDouble(Math.log10(ctx.popDouble()));
 }
 function V_LOG(ctx: VmStateContainer) {
-    throw "V_LOG: NIMP";
+    throw "V_LOG: не реализовано";
     // const value = ctx.popFloat();
     // const base = ctx.popFloat();
     //ctx.// pushFloat(log(value)/(base ? log(base) : 1));
@@ -213,13 +213,13 @@ function V_ABS(ctx: VmStateContainer) {
     ctx.pushDouble(Math.abs(ctx.popDouble()));
 }
 function V_SGN(ctx: VmStateContainer) {
-    throw "V_SGN: NIMP";
+    throw "V_SGN: не реализовано";
 }
 function V_RAD(ctx: VmStateContainer) {
-    throw "V_RAD: NIMP";
+    throw "V_RAD: не реализовано";
 }
 function V_DEG(ctx: VmStateContainer) {
-    throw "V_DEG: NIMP";
+    throw "V_DEG: не реализовано";
 }
 
 function V_AND(ctx: VmStateContainer) {
@@ -237,7 +237,7 @@ function V_NOT(ctx: VmStateContainer) {
 }
 
 function V_STOP(ctx: VmStateContainer) {
-    throw "V_STOP: NIMP";
+    throw "V_STOP: не реализовано";
 }
 function V_UN_MINUS(ctx: VmStateContainer) {
     ctx.pushDouble(-ctx.popDouble());
@@ -249,10 +249,10 @@ function V_OR_BINARY(ctx: VmStateContainer) {
     ctx.pushDouble(ctx.popDouble() | ctx.popDouble());
 }
 function V_SHR(ctx: VmStateContainer) {
-    throw "V_SHR: NIMP";
+    throw "V_SHR: не реализовано";
 }
 function V_SHL(ctx: VmStateContainer) {
-    throw "V_SHL: NIMP";
+    throw "V_SHL: не реализовано";
 }
 function V_EQUAL(ctx: VmStateContainer) {
     ctx.pushDouble(Number(ctx.popDouble() === ctx.popDouble()));
@@ -302,13 +302,13 @@ function V_EDI(ctx: VmStateContainer) {
     ctx.pushDouble(Number(ctx.popLong() > 0));
 }
 function V_ANDI(ctx: VmStateContainer) {
-    throw "V_ANDI: NIMP";
+    throw "V_ANDI: не реализовано";
     const a = ctx.popLong();
     const b = ctx.popLong();
     ctx.pushLong(a && b);
 }
 function V_ORI(ctx: VmStateContainer) {
-    throw "V_ORI: NIMP";
+    throw "V_ORI: не реализовано";
     const a = ctx.popLong();
     const b = ctx.popLong();
     ctx.pushLong(a || b);
@@ -317,98 +317,7 @@ function V_NOTI(ctx: VmStateContainer) {
     ctx.pushDouble(Number(ctx.popLong() === 0));
 }
 function V_NOTbin(ctx: VmStateContainer) {
-    throw "V_NOTbin: NIMP";
-}
-
-function V_MCREATE(ctx: VmStateContainer) {
-    throw "V_MCREATE: NIMP";
-}
-function V_MDELETE(ctx: VmStateContainer) {
-    throw "V_MDELETE: NIMP";
-}
-function V_MFILL(ctx: VmStateContainer) {
-    throw "V_MFILL: NIMP";
-}
-function V_MGET(ctx: VmStateContainer) {
-    throw "V_MGET: NIMP";
-}
-function V_MPUT(ctx: VmStateContainer) {
-    throw "V_MPUT: NIMP";
-}
-function V_MEDITOR(ctx: VmStateContainer) {
-    throw "V_MEDITOR: NIMP";
-}
-function V_MDIAG(ctx: VmStateContainer) {
-    throw "V_MDIAG: NIMP";
-}
-function V_MADDX(ctx: VmStateContainer) {
-    throw "V_MADDX: NIMP";
-}
-function V_MSUBX(ctx: VmStateContainer) {
-    throw "V_MSUBX: NIMP";
-}
-function V_MDET(ctx: VmStateContainer) {
-    throw "V_MDET: NIMP";
-}
-function V_MDELTA(ctx: VmStateContainer) {
-    throw "V_MDELTA: NIMP";
-}
-function V_MED(ctx: VmStateContainer) {
-    throw "V_MED: NIMP";
-}
-function V_MDIVX(ctx: VmStateContainer) {
-    throw "V_MDIVX: NIMP";
-}
-function V_MMULX(ctx: VmStateContainer) {
-    throw "V_MMULX: NIMP";
-}
-function V_TRANSP(ctx: VmStateContainer) {
-    throw "V_TRANSP: NIMP";
-}
-function V_MADDC(ctx: VmStateContainer) {
-    throw "V_MADDC: NIMP";
-}
-function V_MNOT(ctx: VmStateContainer) {
-    throw "V_MNOT: NIMP";
-}
-function V_MSUM(ctx: VmStateContainer) {
-    throw "V_MSUM: NIMP";
-}
-
-function V_MSUBC(ctx: VmStateContainer) {
-    throw "V_MSUBC: NIMP";
-}
-function V_MMULC(ctx: VmStateContainer) {
-    throw "V_MMULC: NIMP";
-}
-
-function V_MDIVC(ctx: VmStateContainer) {
-    throw "V_MDIVC: NIMP";
-}
-function V_MMUL(ctx: VmStateContainer) {
-    throw "V_MMUL: NIMP";
-}
-function V_MGLUE(ctx: VmStateContainer) {
-    throw "V_MGLUE: NIMP";
-}
-function V_MCUT(ctx: VmStateContainer) {
-    throw "V_MCUT: NIMP";
-}
-function V_MMOVE(ctx: VmStateContainer) {
-    throw "V_MMOVE: NIMP";
-}
-function V_MOBR(ctx: VmStateContainer) {
-    throw "V_MOBR: NIMP";
-}
-
-function V_MLOAD(ctx: VmStateContainer) {
-    throw "V_MLOAD: NIMP";
-}
-function V_MSAVEAS(ctx: VmStateContainer) {
-    throw "V_MSAVEAS: NIMP";
-}
-function V_MDIM(ctx: VmStateContainer) {
-    throw "V_MDIM: NIMP";
+    throw "V_NOTbin: не реализовано";
 }
 
 function SCHANGE(ctx: VmStateContainer) {
@@ -440,43 +349,43 @@ function SUBSTR_STRING(ctx: VmStateContainer) {
     ctx.pushString(str.substr(from, length));
 }
 function POS_STRING(ctx: VmStateContainer) {
-    throw "POS_STRING: NIMP";
+    throw "POS_STRING: не реализовано";
 }
 function REPLICATE_STRING(ctx: VmStateContainer) {
-    throw "REPLICATE_STRING: NIMP";
+    throw "REPLICATE_STRING: не реализовано";
 }
 function LOWER_STRING(ctx: VmStateContainer) {
-    throw "LOWER_STRING: NIMP";
+    throw "LOWER_STRING: не реализовано";
 }
 function UPPER_STRING(ctx: VmStateContainer) {
-    throw "UPPER_STRING: NIMP";
+    throw "UPPER_STRING: не реализовано";
 }
 function ANSI_TO_OEM_STRING(ctx: VmStateContainer) {
-    throw "ANSI_TO_OEM_STRING: NIMP";
+    throw "ANSI_TO_OEM_STRING: не реализовано";
 }
 function OEM_TO_ANSI_STRING(ctx: VmStateContainer) {
-    throw "OEM_TO_ANSI_STRING: NIMP";
+    throw "OEM_TO_ANSI_STRING: не реализовано";
 }
 function COMPARE_STRING(ctx: VmStateContainer) {
-    throw "COMPARE_STRING: NIMP";
+    throw "COMPARE_STRING: не реализовано";
 }
 function COMPAREI_STRING(ctx: VmStateContainer) {
-    throw "COMPAREI_STRING: NIMP";
+    throw "COMPAREI_STRING: не реализовано";
 }
 function LENGTH_STRING(ctx: VmStateContainer) {
     ctx.pushDouble(ctx.popString().length);
 }
 function LTRIM_STRING(ctx: VmStateContainer) {
-    throw "LTRIM_STRING: NIMP";
+    throw "LTRIM_STRING: не реализовано";
 }
 function RTRIM_STRING(ctx: VmStateContainer) {
-    throw "RTRIM_STRING: NIMP";
+    throw "RTRIM_STRING: не реализовано";
 }
 function ALLTRIM_STRING(ctx: VmStateContainer) {
-    throw "ALLTRIM_STRING: NIMP";
+    throw "ALLTRIM_STRING: не реализовано";
 }
 function ASCII_STRING(ctx: VmStateContainer) {
-    throw "ASCII_STRING: NIMP";
+    throw "ASCII_STRING: не реализовано";
 }
 function CHR_STRING(ctx: VmStateContainer) {
     ctx.pushString(String.fromCharCode(ctx.popDouble()));
@@ -587,35 +496,6 @@ export function initBase(addOperation: (opcode: number, operation: Operation) =>
     addOperation(Opcode.V_ORI, V_ORI);
     addOperation(Opcode.V_NOTI, V_NOTI);
     addOperation(Opcode.V_NOTbin, V_NOTbin);
-    addOperation(Opcode.V_MCREATE, V_MCREATE);
-    addOperation(Opcode.V_MDELETE, V_MDELETE);
-    addOperation(Opcode.V_MFILL, V_MFILL);
-    addOperation(Opcode.V_MGET, V_MGET);
-    addOperation(Opcode.V_MPUT, V_MPUT);
-    addOperation(Opcode.V_MEDITOR, V_MEDITOR);
-    addOperation(Opcode.V_MDIAG, V_MDIAG);
-    addOperation(Opcode.V_MADDX, V_MADDX);
-    addOperation(Opcode.V_MSUBX, V_MSUBX);
-    addOperation(Opcode.V_MDET, V_MDET);
-    addOperation(Opcode.V_MDELTA, V_MDELTA);
-    addOperation(Opcode.V_MED, V_MED);
-    addOperation(Opcode.V_MDIVX, V_MDIVX);
-    addOperation(Opcode.V_MMULX, V_MMULX);
-    addOperation(Opcode.V_TRANSP, V_TRANSP);
-    addOperation(Opcode.V_MADDC, V_MADDC);
-    addOperation(Opcode.V_MNOT, V_MNOT);
-    addOperation(Opcode.V_MSUM, V_MSUM);
-    addOperation(Opcode.V_MSUBC, V_MSUBC);
-    addOperation(Opcode.V_MMULC, V_MMULC);
-    addOperation(Opcode.V_MDIVC, V_MDIVC);
-    addOperation(Opcode.V_MMUL, V_MMUL);
-    addOperation(Opcode.V_MGLUE, V_MGLUE);
-    addOperation(Opcode.V_MCUT, V_MCUT);
-    addOperation(Opcode.V_MMOVE, V_MMOVE);
-    addOperation(Opcode.V_MOBR, V_MOBR);
-    addOperation(Opcode.V_MLOAD, V_MLOAD);
-    addOperation(Opcode.V_MSAVEAS, V_MSAVEAS);
-    addOperation(Opcode.V_MDIM, V_MDIM);
     addOperation(Opcode.SCHANGE, SCHANGE);
     addOperation(Opcode.PLUS_STRING, PLUS_STRING);
     addOperation(Opcode.LEFT_STRING, LEFT_STRING);
