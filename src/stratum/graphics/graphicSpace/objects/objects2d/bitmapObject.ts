@@ -24,7 +24,7 @@ export class BitmapObject extends Object2dMixin implements BitmapObjectState {
         const bhandle = data.bmpHandle;
         const bmpTool = data.type === "otBITMAP2D" ? tools.bitmaps.get(bhandle) : tools.doubleBitmaps.get(bhandle);
 
-        const textType = `Инструмент ${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта`;
+        const textType = `Инструмент ${data.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта #${data.handle}`;
         if (!bmpTool) throw new StratumError(`${textType} #${bhandle} не существует`);
 
         const bmpSize = data.bmpSize || data.size || bmpTool.dimensions;

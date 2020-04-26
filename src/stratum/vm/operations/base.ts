@@ -198,6 +198,7 @@ function V_MIN(ctx: VmStateContainer) {
 function V_AVERAGE(ctx: VmStateContainer) {
     ctx.pushDouble((ctx.popDouble() + ctx.popDouble()) / 2);
 }
+//округляет число arg1 с точностью arg2
 function V_ROUND(ctx: VmStateContainer) {
     const dec = Math.pow(10, Math.floor(ctx.popDouble()));
     const value = ctx.popDouble();
@@ -223,13 +224,13 @@ function V_DEG(ctx: VmStateContainer) {
 }
 
 function V_AND(ctx: VmStateContainer) {
-    const a = ctx.popDouble();
-    const b = ctx.popDouble();
+    const a = ctx.popDouble() && 1;
+    const b = ctx.popDouble() && 1;
     ctx.pushDouble(a && b);
 }
 function V_OR(ctx: VmStateContainer) {
-    const a = ctx.popDouble();
-    const b = ctx.popDouble();
+    const a = ctx.popDouble() && 1;
+    const b = ctx.popDouble() && 1;
     ctx.pushDouble(a || b);
 }
 function V_NOT(ctx: VmStateContainer) {
@@ -303,14 +304,14 @@ function V_EDI(ctx: VmStateContainer) {
 }
 function V_ANDI(ctx: VmStateContainer) {
     throw "V_ANDI: не реализовано";
-    const a = ctx.popLong();
-    const b = ctx.popLong();
+    const a = ctx.popLong() && 1;
+    const b = ctx.popLong() && 1;
     ctx.pushLong(a && b);
 }
 function V_ORI(ctx: VmStateContainer) {
     throw "V_ORI: не реализовано";
-    const a = ctx.popLong();
-    const b = ctx.popLong();
+    const a = ctx.popLong() && 1;
+    const b = ctx.popLong() && 1;
     ctx.pushLong(a || b);
 }
 function V_NOTI(ctx: VmStateContainer) {
@@ -390,20 +391,26 @@ function ASCII_STRING(ctx: VmStateContainer) {
 function CHR_STRING(ctx: VmStateContainer) {
     ctx.pushString(String.fromCharCode(ctx.popDouble()));
 }
-function FLOAT_TO_STRING(ctx: VmStateContainer) {
-    ctx.pushString((Math.floor(ctx.popDouble() * 10000) / 10000).toString());
-}
+
 function STRING_TO_FLOAT(ctx: VmStateContainer) {
     ctx.pushDouble(parseFloat(ctx.popString()) || 0);
 }
+
+function floatToString(float: number) {
+    return (Math.round(float * 100000) / 100000).toString();
+}
+
+function FLOAT_TO_STRING(ctx: VmStateContainer) {
+    ctx.pushString(floatToString(ctx.popDouble()));
+}
 function PLUS_STRING_FLOAT(ctx: VmStateContainer) {
-    const b = ctx.popDouble();
+    const b = floatToString(ctx.popDouble());
     const a = ctx.popString();
     ctx.pushString(a + b);
 }
 function PLUS_FLOAT_STRING(ctx: VmStateContainer) {
     const b = ctx.popString();
-    const a = ctx.popDouble();
+    const a = floatToString(ctx.popDouble());
     ctx.pushString(a + b);
 }
 
@@ -515,8 +522,8 @@ export function initBase(addOperation: (opcode: number, operation: Operation) =>
     addOperation(Opcode.ALLTRIM_STRING, ALLTRIM_STRING);
     addOperation(Opcode.ASCII_STRING, ASCII_STRING);
     addOperation(Opcode.CHR_STRING, CHR_STRING);
-    addOperation(Opcode.FLOAT_TO_STRING, FLOAT_TO_STRING);
     addOperation(Opcode.STRING_TO_FLOAT, STRING_TO_FLOAT);
+    addOperation(Opcode.FLOAT_TO_STRING, FLOAT_TO_STRING);
     addOperation(Opcode.PLUS_STRING_FLOAT, PLUS_STRING_FLOAT);
     addOperation(Opcode.PLUS_FLOAT_STRING, PLUS_FLOAT_STRING);
 }
