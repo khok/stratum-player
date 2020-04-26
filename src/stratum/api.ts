@@ -4,15 +4,21 @@
 
 import { ClassData } from "cls-types";
 import { JSZipObject } from "jszip";
-import { openZipFromFileList, openZipFromUrl, ReadOptions, readProjectData } from "~/fileReader/fileReaderHelpers";
+import {
+    openZipFromFileList,
+    openZipFromUrl,
+    ProjectContent,
+    ReadOptions,
+    readProjectData,
+} from "~/fileReader/fileReaderHelpers";
 import { StratumError } from "~/helpers/errors";
 import { formatMissingCommands, showMissingCommands } from "~/helpers/showMissingCommands";
-import { Player, PlayerData, PlayerOptions } from "~/player";
+import { Player, PlayerOptions } from "~/player";
 import { VmOperations } from "~/vm/operations";
 
 export class ExtendedPlayer extends Player {
     private paused: boolean = false;
-    constructor(data: PlayerData, options?: PlayerOptions) {
+    constructor(data: ProjectContent, options?: PlayerOptions) {
         super(data, options);
     }
 

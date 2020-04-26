@@ -42,8 +42,12 @@ export class Project implements ProjectController {
 
     loadSchemeFromFile(fileName: string): VectorDrawData | undefined {
         if (!this.files) return undefined;
-        const name = fileName.replace(/\\\\/g, "\\").toLowerCase();
-        const file = this.files.find((f) => f.filename.toLowerCase().endsWith(name));
+        const name = fileName
+            .split("\\")
+            .filter((n) => n)
+            .join("\\")
+            .toLowerCase();
+        const file = this.files.find((f) => f.filename.toLowerCase() === name);
         return file && readVectorDrawData(new BinaryStream(file.data));
     }
 

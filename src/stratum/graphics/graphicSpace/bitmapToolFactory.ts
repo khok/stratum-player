@@ -81,8 +81,12 @@ export class BitmapToolFactory {
 
     fromProjectFile(handle: number, bmpFilename: string, isDouble: boolean): BitmapTool {
         if (!this.projectImages) throw new StratumError(`В каталоге проекта нет изображений`);
-        const name = bmpFilename.replace(/\\\\/g, "\\").toLowerCase();
-        const file = this.projectImages.find((f) => f.filename.toLowerCase().endsWith(name));
+        const name = bmpFilename
+            .split("\\")
+            .filter((n) => n)
+            .join("\\")
+            .toLowerCase();
+        const file = this.projectImages.find((f) => f.filename.toLowerCase() === name);
         if (!file) throw new StratumError(`Файл ${bmpFilename} не найден`);
         const stream = new BinaryStream(file.data);
         const { image, width, height } = isDouble ? readDoubleBitmap(stream) : readBitmap(stream);

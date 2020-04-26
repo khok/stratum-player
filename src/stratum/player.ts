@@ -1,5 +1,3 @@
-import { ClassData, VarSetData } from "cls-types";
-import { ProjectFile } from "other-types";
 import { ClassTreeNode } from "~/core/classTreeNode";
 import { createClassTree } from "~/core/createClassTree";
 import { MemoryManager } from "~/core/memoryManager";
@@ -8,13 +6,7 @@ import { BitmapToolFactory, BitmapToolFactoryOptions } from "~/graphics/graphicS
 import { GraphicSystem, GraphicSystemOptions } from "~/graphics/graphicSystem";
 import { EventDispatcher, EventType } from "~/helpers/eventDispatcher";
 import { VmContext } from "~/vm/vmContext";
-
-export interface PlayerData {
-    rootName: string;
-    classesData: Map<string, ClassData>;
-    varSet?: VarSetData;
-    projectFiles?: ProjectFile[];
-}
+import { ProjectContent } from "./fileReader/fileReaderHelpers";
 
 export interface PlayerOptions extends ProjectOptions, GraphicSystemOptions, BitmapToolFactoryOptions {
     iconsPath?: string;
@@ -27,7 +19,7 @@ export class Player {
     private graphics: GraphicSystem;
     private dispatcher: EventDispatcher;
 
-    constructor(data: PlayerData, options?: PlayerOptions) {
+    constructor(data: ProjectContent, options?: PlayerOptions) {
         const { classesData } = data;
         const { classTree, mmanager } = createClassTree(data.rootName, classesData);
         const allClasses = classTree.collectNodes();

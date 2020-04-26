@@ -1,6 +1,17 @@
+import { ClassData, VarSetData } from "cls-types";
 import { JSZipObject } from "jszip";
+import { ProjectFile } from "other-types";
 import { BinaryStream } from "~/helpers/binaryStream";
-import { zipFromUrl, readClassFiles, readProjectFile, readVarsFile, zipFromBlob, readProjectFiles } from "./zipReader";
+import {
+    cutFilename,
+    readClassFiles,
+    readProjectFile,
+    readProjectFiles,
+    readVarsFile,
+    zipFromBlob,
+    zipFromUrl,
+    ZipFiles,
+} from "./zipReader";
 
 export async function openZipFromUrl(url: string | string[], encoding?: string): Promise<JSZipObject[]> {
     if (typeof url === "string") url = [url];
@@ -23,16 +34,40 @@ export interface ReadOptions {
     projectFile?: string;
     sttFile?: string;
     customRootClass?: string;
+    baseDir?: string;
 }
 
-export async function readProjectData(data: JSZipObject[], options?: ReadOptions) {
-    if (!options) options = {};
-    const projectFile = options.projectFile || "project.spj";
-    const sttFile = options.sttFile || "_preload.stt";
+export interface ProjectContent {
+    rootName: string;
+    classesData: Map<string, ClassData>;
+    varSet?: VarSetData;
+    projectFiles: ProjectFile[];
+}
 
-    const rootName = options.customRootClass || (await readProjectFile(data, projectFile));
-    const classesData = await readClassFiles(data, rootName);
-    const varSet = await readVarsFile(data, sttFile);
-    const projectFiles = await readProjectFiles(data);
-    return { rootName, classesData, varSet, projectFiles };
+//TODO: отличать директории основного проекта и библиотек,
+// поскольку rootDepth урезает пути библиотек.
+export async function readProjectData(files: JSZipObject[], options?: ReadOptions): Promise<ProjectContent> {
+    if (!options) options = {};
+    const prjFileName = options.projectFile || "project.spj";
+
+    const zipFiles: ZipFiles = options.customRootClass
+        ? {
+              files,
+              baseDir: options.baseDir || "",
+              rootClassName: options.customRootClass,
+              baseDirDepth: options.baseDir ? options.baseDir.split("/").length : 0,
+          }
+        : await readProjectFile(files, prjFileName);
+
+    const sttFileName = zipFiles.baseDir + (options.sttFile || "_preload.stt");
+
+    const [classesData, varSet, projectFiles] = await Promise.all([
+        readClassFiles(zipFiles),
+        readVarsFile(files, sttFileName),
+        readProjectFiles(zipFiles),
+    ]);
+    const rootName = zipFiles.rootClassName;
+    const filenames = files.map((f) => cutFilename(f.name, zipFiles.baseDirDepth));
+
+    return { rootName, classesData: classesData!, varSet, projectFiles: projectFiles!, filenames };
 }

@@ -6,44 +6,58 @@ import { readClassBodyData, readClassHeaderData, readProjectName, readVarSetData
 
 type ExtendedHeader = ClassData & { _stream: BinaryStream };
 
-function findFiles(files: JSZipObject[], ending: string) {
-    return files.filter(({ name }) => name.toLowerCase().endsWith(ending.toLowerCase()));
+export interface ZipFiles {
+    rootClassName: string;
+    baseDir: string;
+    baseDirDepth: number;
+    files: JSZipObject[];
 }
 
-function findFilesByRegex(files: JSZipObject[], regex: RegExp) {
+export function cutFilename(name: string, rootDepth: number) {
+    return name.split("/").slice(rootDepth).join("\\");
+}
+
+async function unzip(file: JSZipObject) {
+    return file.async("arraybuffer");
+}
+
+function filterFiles(files: JSZipObject[], ending: string): JSZipObject[] {
+    const lcname = ending.toLowerCase();
+    return files.filter(({ name }) => name.toLowerCase().endsWith(lcname));
+}
+
+function filterByRegex(files: JSZipObject[], regex: RegExp): JSZipObject[] {
     return files.filter(({ name }) => name.match(regex));
 }
 
-function findSingleFile(zipFiles: JSZipObject[], ending: string, mustExist = true): JSZipObject {
-    const files = findFiles(zipFiles, ending);
+function findSingleFile(files: JSZipObject[], ending: string, mustExist = true): JSZipObject {
+    const res = filterFiles(files, ending);
 
-    if (mustExist && files.length === 0) throw new StratumError(`Файл "${ending}" не найден`);
-    if (files.length > 1) {
-        const fileString = files.map((f) => f.name).join(";\n");
+    if (mustExist && res.length === 0) throw new StratumError(`Файл "${ending}" не найден`);
+    if (res.length > 1) {
+        const fileString = res.map((f) => f.name).join(";\n");
         throw new StratumError(`Найдено несколько файлов с именем: "${ending}":\n${fileString}`);
     }
 
-    return files[0];
+    return res[0];
 }
 
-async function unzipFile(file: JSZipObject) {
-    const data = await file.async("arraybuffer");
-    return { filename: file.name.replace(/\//g, "\\"), data };
-}
-
-function unzipFilesWithExt(files: JSZipObject[], ext: string) {
-    if (!ext.startsWith(".")) ext = "." + ext;
-    const extFiles = findFiles(files, ext);
-    return Promise.all(extFiles.map(unzipFile));
+function unzipFiles(files: ZipFiles, ext: RegExp) {
+    return Promise.all(
+        filterByRegex(files.files, ext).map(async (f) => ({
+            data: await unzip(f),
+            filename: cutFilename(f.name, files.baseDirDepth),
+        }))
+    );
 }
 
 //Ищет все CLS-файлы и читает их заголовки, искл. blacklist
 const clsBlacklist = ["COLORREF", "HANDLE", "POINTER"];
 
-async function loadHeaders(files: JSZipObject[]) {
+async function loadHeaders(files: ZipFiles) {
     const res = new Map<string, ExtendedHeader>();
 
-    const classesBytes = await unzipFilesWithExt(files, "cls");
+    const classesBytes = await unzipFiles(files, /\.cls$/i);
 
     classesBytes.forEach(({ filename, data }) => {
         const stream = new BinaryStream(data);
@@ -85,10 +99,10 @@ function loadProjectClasses(headers: Map<string, ExtendedHeader>, className: str
  * @param files данные ZIP-архива с файлами классов
  * @param mainClassName имя корневого класса
  */
-export async function readClassFiles(files: JSZipObject[], mainClassName: string) {
+export async function readClassFiles(files: ZipFiles) {
     const headers = await loadHeaders(files);
     const res = new Map<string, ClassData>();
-    loadProjectClasses(headers, mainClassName, res);
+    loadProjectClasses(headers, files.rootClassName, res);
     return res;
 }
 
@@ -97,7 +111,7 @@ export async function readClassFiles(files: JSZipObject[], mainClassName: string
  * @param files данные ZIP-архива с файлами классов
  * @param silent не выбрасывать ошибки при чтении
  */
-export async function readAllClassFiles(files: JSZipObject[], silent = false) {
+export async function readAllClassFiles(files: ZipFiles, silent = false) {
     const headers = await loadHeaders(files);
     const res = new Map<string, ClassData>();
     for (const header of headers) {
@@ -115,24 +129,27 @@ export async function readAllClassFiles(files: JSZipObject[], silent = false) {
     return res;
 }
 
-export async function readProjectFile(files: JSZipObject[], filename: string) {
+export async function readProjectFile(files: JSZipObject[], filename: string): Promise<ZipFiles> {
     const file = findSingleFile(files, filename);
     if (!file) throw new StratumError(`Файл проекта ${filename} не найден`);
-    const prjBytes = await unzipFile(file);
-    return readProjectName(new BinaryStream(prjBytes.data));
+    const parts = file.name.split("/");
+    const baseDirDepth = parts.length - 1;
+    const baseDir = file.name.substr(0, file.name.lastIndexOf("/") + 1);
+    const prjBytes = await unzip(file);
+    const rootClassName = readProjectName(new BinaryStream(prjBytes));
+    return { rootClassName, baseDirDepth, baseDir, files };
 }
 
 export async function readVarsFile(files: JSZipObject[], filename: string) {
-    const file = findSingleFile(files, filename, false);
+    const lcname = filename.toLowerCase();
+    const file = files.find((n) => n.name.toLowerCase() === lcname);
     if (!file) return undefined;
-    const varSetBytes = await unzipFile(file);
-    return readVarSetData(new BinaryStream(varSetBytes.data));
+    const varSetBytes = await unzip(file);
+    return readVarSetData(new BinaryStream(varSetBytes));
 }
 
-export async function readProjectFiles(files: JSZipObject[]) {
-    const extFiles = findFilesByRegex(files, /\.(bmp|dbm|vdr)$/i);
-    const data = await Promise.all(extFiles.map((f) => unzipFile(f)));
-    return data;
+export async function readProjectFiles(files: ZipFiles) {
+    return unzipFiles(files, /\.(bmp|dbm|vdr)$/i);
 }
 
 /**
