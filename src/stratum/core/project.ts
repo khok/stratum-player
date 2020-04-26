@@ -10,6 +10,7 @@ import { ClassTreeNode } from "./classTreeNode";
 export interface ProjectData {
     allClasses: ClassTreeNode[];
     classesData: Map<string, ClassData>;
+    filenames: string[];
     projectFiles?: ProjectFile[];
 }
 
@@ -23,11 +24,13 @@ export class Project implements ProjectController {
     private classesData: Map<string, ClassData>;
     private files?: ProjectFile[];
     private disableSchemeCompose: boolean;
+    private filenames: string[];
 
     constructor(data: ProjectData, options?: ProjectOptions) {
         this.files = data.projectFiles;
         this.classNodes = data.allClasses;
         this.classesData = data.classesData;
+        this.filenames = data.filenames;
         this.disableSchemeCompose = (options && options.debug_disableSchemeCompose) || false;
     }
 
@@ -51,15 +54,21 @@ export class Project implements ProjectController {
         return file && readVectorDrawData(new BinaryStream(file.data));
     }
 
+    fileExist(fileName: string): VmBool {
+        return this.filenames.includes(fileName.toLowerCase()) ? 1 : 0;
+    }
+
     hasClass(className: string): VmBool {
         return this.classesData.get(className) ? 1 : 0;
     }
+
     getClassDir(className: string): string {
         const cl = this.classesData.get(className);
         if (!cl) return "";
         const idx = cl.fileName.lastIndexOf("\\");
         return cl.fileName.substr(0, idx + 1);
     }
+
     getClassesByProtoName(className: string): ClassTreeNode[] {
         const nodes = this.classNodeCache.get(className);
         if (nodes) return nodes;

@@ -27,11 +27,11 @@ export class Player {
 
         if (!options) options = {};
         const iconsPath = options.iconsPath || "data/icons";
-        const { projectFiles } = data;
+        const { projectFiles, filenames } = data;
         const bmpFactory = new BitmapToolFactory({ iconsPath, projectImages: projectFiles }, options);
         const dispatcher = (options.dispatcher = options.dispatcher || new EventDispatcher());
         const graphics = new GraphicSystem(bmpFactory, options);
-        const project = new Project({ allClasses, classesData, projectFiles }, options);
+        const project = new Project({ allClasses, classesData, projectFiles, filenames }, options);
 
         this.vm = new VmContext({ graphics, project, memoryState: mmanager });
         this.classTree = classTree;

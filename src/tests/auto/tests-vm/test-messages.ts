@@ -7,13 +7,13 @@ import { VmContext } from "~/vm/vmContext";
 
 (async function () {
     const zipFiles = await openZipFromUrl("/test_projects/test_messages.zip");
-    const { classesData, rootName, varSet } = await readProjectData(zipFiles);
+    const { classesData, rootName, varSet, filenames } = await readProjectData(zipFiles);
     const { classTree, mmanager } = createClassTree(rootName, classesData);
     classTree.applyVarSetRecursive(varSet!);
     const allClasses = classTree.collectNodes();
     const ch1 = (classTree as any).childs.get(2) as ClassState;
 
-    const project = new Project({ allClasses, classesData });
+    const project = new Project({ allClasses, classesData, filenames });
     const ctx = new VmContext({ graphics: {} as any, project, memoryState: mmanager });
 
     mmanager.initValues();

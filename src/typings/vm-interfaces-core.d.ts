@@ -43,6 +43,7 @@ declare module "vm-interfaces-core" {
     export interface ProjectController {
         getClassScheme(className: string): VectorDrawData | undefined;
         loadSchemeFromFile(fileName: string): VectorDrawData | undefined;
+        fileExist(fileName: string): VmBool;
         hasClass(className: string): VmBool;
         getClassDir(className: string): string;
         getClassesByProtoName(className: string): ClassState[];

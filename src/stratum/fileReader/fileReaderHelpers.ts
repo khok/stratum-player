@@ -42,6 +42,7 @@ export interface ProjectContent {
     classesData: Map<string, ClassData>;
     varSet?: VarSetData;
     projectFiles: ProjectFile[];
+    filenames: string[];
 }
 
 //TODO: отличать директории основного проекта и библиотек,

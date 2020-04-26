@@ -160,7 +160,9 @@ export async function readProjectFiles(files: ZipFiles) {
 export async function zipFromBlob(file: Blob | File, encoding?: string) {
     const decoder = new TextDecoder(encoding || "cp866");
     const { files } = await loadAsync(file, { decodeFileName: (bytes) => decoder.decode(bytes) });
-    return Object.keys(files).map((key) => files[key]);
+    return Object.keys(files)
+        .map((key) => files[key])
+        .filter((f) => !f.dir);
 }
 
 /**

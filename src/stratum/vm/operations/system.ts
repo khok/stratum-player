@@ -51,6 +51,11 @@ function GetClassDirectory(ctx: VmStateContainer) {
     ctx.pushString(ctx.project.getClassDir(className));
 }
 
+// FLOAT FileExist(STRING Name)
+function FileExist(ctx: VmStateContainer) {
+    ctx.pushDouble(ctx.project.fileExist(ctx.popString()));
+}
+
 // STRING AddSlash(STRING FileName)
 function AddSlash(ctx: VmStateContainer) {
     const path = ctx.popString();
@@ -156,6 +161,7 @@ export function initSystem(addOperation: (opcode: number, operation: Operation) 
     addOperation(Opcode.VM_GETWORKAREAWIDTH, GetWorkAreaWidth);
     addOperation(Opcode.VM_GETWORKAREAHEIGHT, GetWorkAreaHeight);
     addOperation(Opcode.GETCLASSDIR, GetClassDirectory);
+    addOperation(Opcode.VM_FILEEXIST, FileExist);
     addOperation(Opcode.ADDSLASH, AddSlash);
     addOperation(Opcode.VM_GETDATE, GetDate);
     addOperation(Opcode.VM_GETTIME, GetTime);
