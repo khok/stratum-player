@@ -12,7 +12,7 @@ function GetAsyncKeyState(ctx: VmStateContainer) {
 }
 
 function CloseAll(ctx: VmStateContainer) {
-    throw new Error("Не умею останавливаться");
+    ctx.requestStop();
 }
 
 const systemCommands: { [idx: number]: string } = {
