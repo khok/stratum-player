@@ -47,17 +47,17 @@ export class Player {
         return this;
     }
 
-    get error() {
-        return this.vm.error;
-    }
-
     init() {
         throw new Error("Не реализовано");
     }
 
     step() {
         this.classTree.computeSchemeRecursive(this.vm);
-        if (this.vm.hasError || this.vm.shouldStop) return false;
+        if (this.vm.shouldStop) {
+            if (this.vm.error) this.dispatcher.dispatch("VM_ERROR", this.vm.error);
+            else this.dispatcher.dispatch("PROJECT_STOPPED");
+            return false;
+        }
         this.mmanager.syncValues();
         this.mmanager.assertZeroIndexEmpty();
         return true;
@@ -67,7 +67,8 @@ export class Player {
         return this.graphics.renderAll();
     }
 
-    on(event: EventType, fn: (...data: any) => void) {
+    on<T extends keyof EventType>(event: T, fn: EventType[T]) {
         this.dispatcher.on(event, fn);
+        return this;
     }
 }

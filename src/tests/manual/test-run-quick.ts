@@ -1,25 +1,21 @@
 import { fromUrl, ExtendedPlayerOptions } from "~/api";
 
 //Запуск проекта `name` с использованием api.ts
-export async function _run_test_quick(name: string, opts: ExtendedPlayerOptions, timeout: number) {
+export async function _run_test_quick(name: string, opts: ExtendedPlayerOptions, timeout?: number) {
     const player = await fromUrl([`test_projects/${name}.zip`, "/data/library.zip"], opts);
     console.dir(player);
     if (!player) return;
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
     const htmlRoot = document.getElementById("root")!;
-    player.setGraphicOptions({ globalCanvas: canvas, htmlRoot });
-    player.on("WINDOW_CREATED", (name) => (document.title = name));
-    setTimeout(() => player.pause(), timeout);
-    try {
-        await player.play();
-    } catch (e) {
-        console.error(e);
-        return;
-    }
-    console.log("Тест завершен");
-    // for (let i = 0; i < 10; i++) {
-    //     await new Promise((res) => setTimeout(res, 400));
-    //     player.oneStep();
-    //     console.log("Шаг ", i + 1);
-    // }
+    player
+        .setGraphicOptions({ globalCanvas, htmlRoot })
+        .on("WINDOW_CREATED", (name) => (document.title = name))
+        .on("VM_ERROR", (err) => console.error(err))
+        .on("PROJECT_STOPPED", () => console.log("Проект остановен"))
+        .play();
+    if (timeout)
+        setTimeout(() => {
+            console.log("Тест завершен");
+            player.stopPlay();
+        }, timeout);
 }

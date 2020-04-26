@@ -85,6 +85,7 @@ export class VmContext implements VmStateContainer, VirtualMachine {
     setError(message: string) {
         this._error = message;
         this._hasError = true;
+        this._stopped = true;
         this.jumpTo(this.codeLength - 1);
     }
 

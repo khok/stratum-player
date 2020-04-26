@@ -1,13 +1,16 @@
-export type EventType = "WINDOW_CREATED";
+export interface EventType {
+    WINDOW_CREATED: (name: string) => void;
+    PROJECT_STOPPED: () => void;
+    VM_ERROR: (error: string) => void;
+}
 
 export class EventDispatcher {
-    subs: { event: EventType; fn: (...data: any) => void }[] = [];
-    dispatch(event: EventType, ...data: any) {
-        this.subs.forEach((s) => {
-            if (s.event === event) s.fn(...data);
-        });
+    subs = new Map<keyof EventType, (...data: any) => void>();
+    dispatch<T extends keyof EventType>(event: T, ...data: Parameters<EventType[T]>) {
+        const sub = this.subs.get(event);
+        if (sub) sub(...data);
     }
-    on(event: EventType, fn: (...data: any) => void) {
-        this.subs.push({ event, fn });
+    on<T extends keyof EventType>(event: T, fn: EventType[T]) {
+        this.subs.set(event, fn);
     }
 }
