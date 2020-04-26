@@ -11,7 +11,7 @@ import { VmContext } from "~/vm/vmContext";
     const { classTree, mmanager } = createClassTree(rootName, classesData);
     classTree.applyVarSetRecursive(varSet!);
     const allClasses = classTree.collectNodes();
-    const ch1 = (classTree as any).childs.get(2) as ClassState;
+    const ch1 = (classTree as any).childMap.get(2) as ClassState;
 
     const project = new Project({ allClasses, classesData, filenames });
     const ctx = new VmContext({ graphics: {} as any, project, memoryState: mmanager });
