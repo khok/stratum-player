@@ -26,7 +26,7 @@ declare module "vm-interfaces-core" {
         readonly longIdToGlobal?: Uint16Array;
         readonly stringIdToGlobal?: Uint16Array;
 
-        getClassByPath(path: string): ClassState | undefined;
+        getClassByLowCasePath(path: string): ClassState | undefined;
 
         startCaptureEvents(spaceHandle: number): void;
         stopCaptureEvents(): void;

@@ -16,6 +16,22 @@ function SetShowObject2d(ctx: VmStateContainer) {
     ctx.pushDouble(obj ? obj.setVisibility(visibility && 1) : 0);
 }
 
+// ShowObject2d(HANDLE HSpace, HANDLE HObject)
+function ShowObject2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (obj) obj.setVisibility(1);
+}
+
+// HideObject2d(HANDLE HSpace, HANDLE HObject)
+function HideObject2d(ctx: VmStateContainer) {
+    const objectHandle = ctx.popLong();
+    const spaceHandle = ctx.popLong();
+    const obj = _getObject(ctx, spaceHandle, objectHandle);
+    if (obj) obj.setVisibility(0);
+}
+
 // args: "HANDLE,HANDLE  ret HANDLE"
 function GetObjectParent2d(ctx: VmStateContainer) {
     const objectHandle = ctx.popLong();
@@ -376,6 +392,8 @@ export function initGraphics(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.ROTATEOBJECT2D, RotateObject2d);
     addOperation(Opcode.SETOBJECTSIZE2D, SetObjectSize2d);
     addOperation(Opcode.SETSHOWOBJECT2D, SetShowObject2d);
+    addOperation(Opcode.SHOWOBJECT2D, ShowObject2d);
+    addOperation(Opcode.HIDEOBJECT2D, HideObject2d);
     addOperation(Opcode.SETZORDER2D, SetZOrder2d);
     addOperation(Opcode.GETZORDER2D, GetZOrder2d);
     addOperation(Opcode.VM_GETACTUALWIDTH, GetActualWidth2d);

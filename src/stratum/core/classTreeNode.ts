@@ -1,12 +1,13 @@
-import { VarSetData, VarData } from "cls-types";
+import { VarData, VarSetData } from "cls-types";
 import { Point2D } from "vdr-types";
 import { ClassState } from "vm-interfaces-core";
+import { ParsedCode } from "vm-types";
+import { StratumError } from "~/helpers/errors";
 import { HandleMap } from "~/helpers/handleMap";
 import { parseVarValue } from "~/helpers/varValueFunctions";
 import { executeCode } from "~/vm/executeCode";
 import { VmContext } from "~/vm/vmContext";
 import { ClassPrototype } from "./classPrototype";
-import { StratumError } from "~/helpers/errors";
 import { MemoryManager } from "./memoryManager";
 
 export interface OnSchemeData {
@@ -38,14 +39,22 @@ export class ClassTreeNode implements ClassState {
         return res;
     }
 
-    private readonly proto: ClassPrototype;
+    private proto: ClassPrototype;
+
     private mmanager?: MemoryManager;
     private isDisabled: () => boolean;
-    private childMap?: HandleMap<ClassTreeNode>;
+    private root: ClassTreeNode;
+    private parent?: ClassTreeNode;
     private childs?: ClassTreeNode[];
+    private childHandleMap?: HandleMap<ClassTreeNode>;
+    private schemeNameMap: Map<string, ClassTreeNode | undefined>;
     private onSchemeData?: OnSchemeData;
-    private captureEventsFromHandle = 0;
+    private schemeName: string = "";
+    private captureEventsFromSpace = 0;
     private hasCode: boolean;
+    private code?: ParsedCode;
+
+    readonly protoName: string;
 
     readonly canReceiveEvents: boolean;
 
@@ -58,7 +67,13 @@ export class ClassTreeNode implements ClassState {
 
     constructor({ proto, varIndexMap, onSchemeData }: ClassTreeNodeOptions) {
         this.proto = proto;
-        this.onSchemeData = onSchemeData;
+        this.protoName = proto.name;
+        this.code = proto.code;
+        if (onSchemeData) {
+            this.onSchemeData = onSchemeData;
+            this.parent = onSchemeData.parent;
+            this.schemeName = onSchemeData.name;
+        }
 
         if (varIndexMap) {
             const varCount = varIndexMap.length;
@@ -87,15 +102,21 @@ export class ClassTreeNode implements ClassState {
         this.canReceiveEvents = !!(this.varnameToIdMap && this.varnameToIdMap.get("msg"));
         this.isDisabled = this.varnameToIdMap ? ClassTreeNode.createDisableGetter(this) : () => false;
         this.hasCode = !!proto.code;
+        let root: ClassTreeNode = this;
+        while (root.parent) root = root.parent;
+        this.root = root;
+        this.schemeNameMap = new Map([
+            ["", this],
+            ["..", this.parent],
+            ["\\", this.root],
+        ]);
     }
 
     setChilds(childs: HandleMap<ClassTreeNode>) {
-        this.childMap = childs;
-        this.childs = [...this.childMap.values()];
-    }
-
-    get protoName() {
-        return this.proto.name;
+        this.childHandleMap = childs;
+        this.childs = [...this.childHandleMap.values()];
+        this.schemeNameMap = new Map(this.childs.map((c) => [c.schemeName.toLowerCase(), c]));
+        this.schemeNameMap.set("", this).set("..", this.parent).set("\\", this.root);
     }
 
     private setDefaultVarValue(type: VarData["type"], idx: number, value: string | number) {
@@ -171,7 +192,7 @@ export class ClassTreeNode implements ClassState {
             });
         }
 
-        const myChilds = this.childMap;
+        const myChilds = this.childHandleMap;
         if (myChilds)
             varSet.childSets.forEach((childSet) => {
                 const child = myChilds.get(childSet.handle);
@@ -179,19 +200,16 @@ export class ClassTreeNode implements ClassState {
             });
     }
 
-    get parent() {
-        return this.onSchemeData && this.onSchemeData.parent;
-    }
-
-    getClassByPath(path: string): ClassState | undefined {
-        //вернуть этот класс
+    getClassByLowCasePath(path: string): ClassTreeNode | undefined {
         if (path === "") return this;
-        //вернуть родительский
-        if (path === "..") return this.parent;
-        //вернуть корень иерархии
-        if (path === "\\") return this.parent ? this.parent.getClassByPath("\\") : this;
-
-        throw Error(`getClassesByPath() для пути ${path} не реализован`);
+        const filter = path.split("\\");
+        let root = path[0] === "\\" ? this.root : this;
+        for (let i = 0; i < filter.length; i++) {
+            const cl = root.schemeNameMap.get(filter[i]);
+            if (!cl) return undefined;
+            root = cl;
+        }
+        return root;
     }
 
     private _collectNodes(nodes: ClassTreeNode[]) {
@@ -206,15 +224,15 @@ export class ClassTreeNode implements ClassState {
     }
 
     startCaptureEvents(spaceHandle: number): void {
-        this.captureEventsFromHandle = spaceHandle;
+        this.captureEventsFromSpace = spaceHandle;
     }
 
     stopCaptureEvents(): void {
-        this.captureEventsFromHandle = 0;
+        this.captureEventsFromSpace = 0;
     }
 
     isCapturingEvents(spaceHandle: number): boolean {
-        return this.captureEventsFromHandle === spaceHandle;
+        return this.captureEventsFromSpace === spaceHandle;
     }
 
     computeSchemeRecursive(ctx: VmContext, force: boolean = false) {
@@ -228,7 +246,7 @@ export class ClassTreeNode implements ClassState {
         const prevClass = ctx.currentClass;
         const prevCmdIdx = ctx.pushClass(this);
 
-        executeCode(ctx, this.proto.code!);
+        executeCode(ctx, this.code!);
         ctx.popClass(prevClass, prevCmdIdx);
 
         if (ctx.hasError) {

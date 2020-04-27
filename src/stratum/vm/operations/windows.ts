@@ -132,6 +132,12 @@ function GetWindowProp(ctx: VmStateContainer) {
     ctx.pushString(window && (prop === "classname" || prop === "filename") ? window.getProp(prop) : "");
 }
 
+// FLOAT IsWindowVisible(STRING WindowName)
+function IsWindowVisible(ctx: VmStateContainer) {
+    const winname = ctx.popString();
+    ctx.pushDouble(1);
+}
+
 export function initWindows(addOperation: (opcode: number, operation: Operation) => void) {
     addOperation(Opcode.OPENSCHEMEWINDOW, OpenSchemeWindow);
     addOperation(Opcode.LOADSPACEWINDOW, LoadSpaceWindow);
@@ -151,4 +157,5 @@ export function initWindows(addOperation: (opcode: number, operation: Operation)
     addOperation(Opcode.VM_SETWINDOWOWNER, SetWindowOwner);
     addOperation(Opcode.V_GETNAMEBYHSP, GetWindowName);
     addOperation(Opcode.VM_GETWINDOWPROP, GetWindowProp);
+    addOperation(Opcode.ISWINDOWVISIBLE, IsWindowVisible);
 }

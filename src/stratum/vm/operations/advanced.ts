@@ -1,4 +1,4 @@
-import { Operation, VmStateContainer } from "vm-types";
+import { Operation, VmStateContainer, FunctionOperand } from "vm-types";
 import { Opcode } from "~/helpers/vmConstants";
 
 function SendMessage(ctx: VmStateContainer, count: number) {
@@ -104,20 +104,16 @@ function RegisterObjectByWindowName(ctx: VmStateContainer) {
 
 //V_GETCLASS, name "GetClassName" arg "STRING" ret "STRING" out 398
 function GetClassName(ctx: VmStateContainer) {
-    const res = ctx.currentClass.getClassByPath(ctx.popString());
+    const res = ctx.currentClass.getClassByLowCasePath(ctx.popString().toLowerCase());
     ctx.pushString(res ? res.protoName : "");
 }
 
 //NOTREL
-// function VFUNCTION(ctx: IContext, data: VmFunctionOperand) {
-//     const { funcName, argCount, returnType } = data;
-
-//     for (let i = 0; i < argCount; i++) ctx.stackPop();
-
-//     console.log("CALLING FUNCTION " + funcName);
-//     if (returnType) ctx.stackPush("function_result");
-//     // throw 'VUNFCTION NOT RELEASED'
-// }
+function VFUNCTION(ctx: VmStateContainer, data: FunctionOperand) {
+    // const { funcName, argCount, returnType } = data;
+    if (data) console.log(data);
+    throw new Error("Вызов функций не реализован");
+}
 
 //NOTREL
 // function DLLFUNCTION(ctx, _data) {
@@ -141,7 +137,7 @@ function SetCapture(ctx: VmStateContainer) {
     const path = ctx.popString();
     const spaceHandle = ctx.popLong();
 
-    const obj = ctx.currentClass.getClassByPath(path);
+    const obj = ctx.currentClass.getClassByLowCasePath(path.toLowerCase());
     if (!obj) return;
     obj.startCaptureEvents(spaceHandle);
 }
@@ -155,7 +151,7 @@ function SetVarFloat(ctx: VmStateContainer) {
     const name = ctx.popString();
     const objectPath = ctx.popString();
 
-    const obj = ctx.currentClass.getClassByPath(objectPath);
+    const obj = ctx.currentClass.getClassByLowCasePath(objectPath.toLowerCase());
     if (!obj) return;
     const varId = obj.varnameToIdMap!.get(name.toLowerCase());
     if (varId === undefined) return;
@@ -163,6 +159,19 @@ function SetVarFloat(ctx: VmStateContainer) {
     const realId = obj.doubleIdToGlobal![varId];
     ctx.memoryState.oldDoubleValues[realId] = value;
     ctx.memoryState.newDoubleValues[realId] = value;
+}
+
+function GetVarColorref(ctx: VmStateContainer) {
+    const name = ctx.popString();
+    const objectPath = ctx.popString();
+
+    const obj = ctx.currentClass.getClassByLowCasePath(objectPath.toLowerCase());
+    if (!obj) return;
+    const varId = obj.varnameToIdMap!.get(name.toLowerCase());
+    if (varId === undefined) return;
+
+    const realId = obj.longIdToGlobal![varId];
+    ctx.pushLong(ctx.memoryState.newDoubleValues[realId]);
 }
 
 export function initAdvanced(addOperation: (opcode: number, operation: Operation) => void) {
@@ -173,8 +182,9 @@ export function initAdvanced(addOperation: (opcode: number, operation: Operation
     addOperation(Opcode.V_SETCAPTURE, SetCapture);
     addOperation(Opcode.V_RELEASECAPTURE, ReleaseCapture);
     addOperation(Opcode.V_SETVARF, SetVarFloat);
+    addOperation(Opcode.V_GETVARH, GetVarColorref);
 
-    // addCommand(Opcode.VFUNCTION, VFUNCTION);
+    addOperation(Opcode.VFUNCTION, VFUNCTION as Operation);
     // addCommand(Opcode.DLLFUNCTION, DLLFUNCTION);
     // addCommand(Opcode.SETGROUPITEMS2D, SETGROUPITEMS2D);
     // addCommand(Opcode.VM_ADDPRIMITIVE3D, VM_ADDPRIMITIVE3D);
