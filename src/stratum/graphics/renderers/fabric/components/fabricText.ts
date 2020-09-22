@@ -1,13 +1,13 @@
 import { fabric } from "fabric";
-import { TextElementVisual, TextVisualOptions } from "scene-types";
-import { Point2D } from "vdr-types";
-import { TextToolState } from "vm-interfaces-gspace";
-import { colorrefToColor } from "~/helpers/varValueFunctions";
-import { fabricConfigObjectOptions } from "../fabricConfig";
+import { RenderableText, RenderableTextParams } from "~/graphics/scene/interfaces";
+import { SceneTextTool } from "~/graphics/scene/tools";
+import { Point2D } from "~/helpers/types";
+import { colorRefToColor } from "~/common/colorrefParsers";
+import { objectOptions } from "../fabricConfig";
 
 // const textScaleCoof = 0.65;
 
-export class FabricText implements TextElementVisual {
+export class FabricText implements RenderableText {
     readonly type = "text";
     private posX: number;
     private posY: number;
@@ -17,7 +17,7 @@ export class FabricText implements TextElementVisual {
     readonly selectable: boolean;
 
     constructor(
-        { handle, isVisible, selectable, position, angle, textTool }: TextVisualOptions,
+        { handle, isVisible, selectable, position, angle, textTool }: RenderableTextParams,
         private viewRef: Point2D,
         private requestRedraw: () => void
     ) {
@@ -27,12 +27,12 @@ export class FabricText implements TextElementVisual {
         const { text, size: textSize } = textTool.assembledText;
         const firstFrag = textTool.getFragment(0);
         const opts: fabric.ITextOptions = {
-            ...fabricConfigObjectOptions,
+            ...objectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
             angle: -(angle || 0) * 0.1,
-            backgroundColor: colorrefToColor(firstFrag.backgroundColor),
-            fill: colorrefToColor(firstFrag.foregroundColor),
+            backgroundColor: colorRefToColor(firstFrag.backgroundColor),
+            fill: colorRefToColor(firstFrag.foregroundColor),
             fontWeight: firstFrag.font.bold ? "bold" : "normal",
             fontFamily: firstFrag.font.name,
             visible: isVisible,
@@ -87,15 +87,15 @@ export class FabricText implements TextElementVisual {
         this.requestRedraw();
     }
 
-    updateTextTool(textTool: TextToolState): void {
+    updateTextTool(textTool: SceneTextTool): void {
         const { text, size } = textTool.assembledText;
         const firstFrag = textTool.getFragment(0);
         this.obj.set({
             text,
             // fontSize: size * textScaleCoof,
             fontSize: size,
-            backgroundColor: colorrefToColor(firstFrag.backgroundColor),
-            fill: colorrefToColor(firstFrag.foregroundColor),
+            backgroundColor: colorRefToColor(firstFrag.backgroundColor),
+            fill: colorRefToColor(firstFrag.foregroundColor),
             fontWeight: firstFrag.font.bold ? "bold" : "normal",
             fontFamily: firstFrag.font.name,
         });

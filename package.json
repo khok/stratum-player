@@ -4,13 +4,13 @@
     "name": "stratum-player",
     "version": "0.1.0",
     "scripts": {
-        "test": "parcel src/stratum/testLoader-single.html",
-        "test-all": "parcel src/stratum/testLoader-all.html",
-        "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global StratumPlayer --out-file stratum.js"
+        "test": "parcel src/stratum/test.html",
+        "autotest": "parcel src/stratum/autotest.html",
+        "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global stratum --out-file stratum.js"
     },
     "devDependencies": {
         "parcel-plugin-static-files-copy": "^2.2.0",
-        "typescript": "^3.5.3"
+        "typescript": "^3.9.3"
     },
     "dependencies": {
         "@types/fabric": "^3.6.2",
@@ -23,7 +23,7 @@
     "prettier": {
         "endOfLine": "lf",
         "tabWidth": 4,
-        "printWidth": 120
+        "printWidth": 140
     },
     "staticFiles": {
         "watcherGlob": "**/*.zip"

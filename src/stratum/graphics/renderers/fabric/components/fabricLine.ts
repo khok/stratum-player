@@ -1,15 +1,15 @@
 import { fabric } from "fabric";
-import { LineElementVisual, LineVisualOptions } from "scene-types";
-import { Point2D } from "vdr-types";
-import { BrushToolState, PenToolState } from "vm-interfaces-gspace";
-import { colorrefToColor } from "~/helpers/varValueFunctions";
-import { fabricConfigObjectOptions } from "../fabricConfig";
+import { RenderableLine, RenderableLineParams } from "~/graphics/scene/interfaces";
+import { SceneBrushTool, ScenePenTool } from "~/graphics/scene/tools";
+import { Point2D } from "~/helpers/types";
+import { colorRefToColor } from "~/common/colorrefParsers";
+import { objectOptions } from "../fabricConfig";
 
-function getFillValue(brush?: BrushToolState) {
+function getFillValue(brush?: SceneBrushTool) {
     if (!brush) return undefined;
     switch (brush.fillType) {
         case "SOLID":
-            return colorrefToColor(brush.color);
+            return colorRefToColor(brush.color);
         case "PATTERN":
             const bmp = brush.bmpTool;
             return bmp && bmp.image ? new fabric.Pattern({ source: bmp.image }) : "white";
@@ -18,7 +18,7 @@ function getFillValue(brush?: BrushToolState) {
     }
 }
 
-export class FabricLine implements LineElementVisual {
+export class FabricLine implements RenderableLine {
     readonly type = "line";
     private posX: number;
     private posY: number;
@@ -28,7 +28,7 @@ export class FabricLine implements LineElementVisual {
     readonly selectable: boolean;
 
     constructor(
-        { handle, points, position, isVisible, selectable, brush, pen }: LineVisualOptions,
+        { handle, points, position, isVisible, selectable, brush, pen }: RenderableLineParams,
         private viewRef: Point2D,
         private requestRedraw: () => void
     ) {
@@ -36,11 +36,11 @@ export class FabricLine implements LineElementVisual {
         this.posX = position.x;
         this.posY = position.y;
         const opts: fabric.IPolylineOptions = {
-            ...fabricConfigObjectOptions,
+            ...objectOptions,
             left: position.x - viewRef.x,
             top: position.y - viewRef.y,
             fill: getFillValue(brush),
-            stroke: pen && pen.style !== "NULL" ? colorrefToColor(pen.color) : undefined,
+            stroke: pen && pen.style !== "NULL" ? colorRefToColor(pen.color) : undefined,
             strokeWidth: pen ? pen.width || 0.5 : 0,
             visible: isVisible,
         };
@@ -117,11 +117,11 @@ export class FabricLine implements LineElementVisual {
         this.requestRedraw();
     }
 
-    updatePen(pen: PenToolState): void {
-        this.obj.set({ strokeWidth: pen.width, stroke: colorrefToColor(pen.color) });
+    updatePen(pen: ScenePenTool): void {
+        this.obj.set({ strokeWidth: pen.width, stroke: colorRefToColor(pen.color) });
         this.requestRedraw();
     }
-    updateBrush(brush: BrushToolState): void {
+    updateBrush(brush: SceneBrushTool): void {
         this.obj.set({ fill: getFillValue(brush) });
         this.requestRedraw();
     }

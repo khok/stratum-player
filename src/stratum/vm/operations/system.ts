@@ -1,18 +1,19 @@
-import { Operation, VmStateContainer } from "vm-types";
-import { Opcode } from "~/helpers/vmConstants";
+import { OpCode } from "../consts";
+import { ExecutionContext } from "../executionContext";
+import { Operation } from "../types";
 
 /**
  * Сделать нормально
  */
 export const systemKeysTemp = new Uint8Array(2);
 
-function GetAsyncKeyState(ctx: VmStateContainer) {
+function GetAsyncKeyState(ctx: ExecutionContext) {
     const key = ctx.popDouble();
     ctx.pushDouble(systemKeysTemp[key]);
 }
 
-function CloseAll(ctx: VmStateContainer) {
-    ctx.requestStop();
+function CloseAll(ctx: ExecutionContext) {
+    ctx.executionStopped = true;
 }
 
 const systemCommands: { [idx: number]: string } = {
@@ -37,41 +38,40 @@ const systemCommands: { [idx: number]: string } = {
         Вызов диалога со свойствами трехмерного объекта`,
 };
 
-function system(ctx: VmStateContainer, paramCount: number) {
-    const params = new Array<number>(paramCount);
-    for (let i = paramCount - 1; i >= 0; i--) params[i] = ctx.popDouble();
+function System(ctx: ExecutionContext, argCount: number) {
+    const args = new Array<number>(argCount);
+    for (let i = argCount - 1; i >= 0; i--) args[i] = ctx.popDouble();
     const command = ctx.popDouble();
-    console.warn(`Вызов System(${command}, ${params})\n${systemCommands[command]}`);
+    console.warn(`Вызов System(${command}, ${args})\n${systemCommands[command]}`);
     ctx.pushDouble(1);
 }
 
 // STRING GetClassDirectory(STRING ClassName)
-function GetClassDirectory(ctx: VmStateContainer) {
-    const className = ctx.popString();
-    ctx.pushString(ctx.project.getClassDir(className));
+function GetClassDirectory(ctx: ExecutionContext) {
+    ctx.pushString(ctx.project.getClassDirectory(ctx.popString()));
 }
 
 // FLOAT FileExist(STRING Name)
-function FileExist(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.project.fileExist(ctx.popString()));
+function FileExist(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.project.isFileExist(ctx.popString()));
 }
 
 // STRING AddSlash(STRING FileName)
-function AddSlash(ctx: VmStateContainer) {
+function AddSlash(ctx: ExecutionContext) {
     const path = ctx.popString();
     ctx.pushString(path[path.length - 1] === "\\" ? path : path + "\\");
 }
 
-function setNewDoubleValue(ctx: VmStateContainer, id: number, value: number) {
-    ctx.memoryState.newDoubleValues[ctx.currentClass.doubleIdToGlobal![id]] = value;
+function setNewDoubleValue(ctx: ExecutionContext, id: number, value: number) {
+    ctx.memoryManager.newDoubleValues[ctx.classVars.globalIds[id]] = value;
 }
 
-function setOldDoubleValue(ctx: VmStateContainer, id: number, value: number) {
-    ctx.memoryState.oldDoubleValues[ctx.currentClass.doubleIdToGlobal![id]] = value;
+function setOldDoubleValue(ctx: ExecutionContext, id: number, value: number) {
+    ctx.memoryManager.oldDoubleValues[ctx.classVars.globalIds[id]] = value;
 }
 
 // GetDate(FLOAT &year, FLOAT &mon, FLOAT &day)
-function GetDate(ctx: VmStateContainer) {
+function GetDate(ctx: ExecutionContext) {
     const isDayNew = ctx.popLong();
     const dayId = ctx.popLong();
     const isMonthNew = ctx.popLong();
@@ -92,7 +92,7 @@ function GetDate(ctx: VmStateContainer) {
 }
 
 // GetTime(FLOAT hour, FLOAT min, FLOAT sec, FLOAT hund)
-function GetTime(ctx: VmStateContainer) {
+function GetTime(ctx: ExecutionContext) {
     const isMsecNew = ctx.popLong();
     const msecId = ctx.popLong();
     const isSecNew = ctx.popLong();
@@ -118,46 +118,46 @@ function GetTime(ctx: VmStateContainer) {
 }
 
 // VM_GETSCREENWIDTH, name "GetScreenWidth" ret "FLOAT" out 772
-function GetScreenWidth(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.graphics.screenWidth);
+function GetScreenWidth(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.windows.screenWidth);
 }
 // VM_GETSCREENHEIGHT, name "GetScreenHeight" ret "FLOAT" out 773
-function GetScreenHeight(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.graphics.screenHeight);
+function GetScreenHeight(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.windows.screenHeight);
 }
 
 // VM_GETWORKAREAX, name "GetWorkAreaX" ret "FLOAT" out 774
-function GetWorkAreaX(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.graphics.areaOriginX);
+function GetWorkAreaX(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.windows.areaOriginX);
 }
 // VM_GETWORKAREAY, name "GetWorkAreaY" ret "FLOAT" out 775
-function GetWorkAreaY(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.graphics.areaOriginY);
+function GetWorkAreaY(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.windows.areaOriginY);
 }
 // VM_GETWORKAREAWIDTH, name "GetWorkAreaWidth" ret "FLOAT" out 776
-function GetWorkAreaWidth(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.graphics.areaWidth);
+function GetWorkAreaWidth(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.windows.areaWidth);
 }
 // VM_GETWORKAREAHEIGHT, name "GetWorkAreaHeight" ret "FLOAT" out 777
-function GetWorkAreaHeight(ctx: VmStateContainer) {
-    ctx.pushDouble(ctx.graphics.areaHeight);
+function GetWorkAreaHeight(ctx: ExecutionContext) {
+    ctx.pushDouble(ctx.windows.areaHeight);
 }
 
-const start = new Date().getMilliseconds();
+const start = new Date().getTime();
 // FLOAT GetTickCount()
-function GetTickCount(ctx: VmStateContainer) {
+function GetTickCount(ctx: ExecutionContext) {
     ctx.pushDouble(new Date().getTime() - start);
 }
 
 // StdHyperJump(HANDLE hSpace, FLOAT x, y, HANDLE hObject, FLOAT flags)
-function StdHyperJump(ctx: VmStateContainer) {
+function StdHyperJump(ctx: ExecutionContext) {
     const flags = ctx.popDouble();
     const handle = ctx.popLong();
     const y = ctx.popDouble();
     const x = ctx.popDouble();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) return;
     const obj = space.getObject(handle);
     if (!obj) return;
@@ -165,21 +165,21 @@ function StdHyperJump(ctx: VmStateContainer) {
 }
 
 export function initSystem(addOperation: (opcode: number, operation: Operation) => void) {
-    addOperation(Opcode.GETAKEYSTATE, GetAsyncKeyState);
-    addOperation(Opcode.V_CLOSEALL, CloseAll);
-    addOperation(Opcode.V_SYSTEM, system as Operation);
+    addOperation(OpCode.GETAKEYSTATE, GetAsyncKeyState);
+    addOperation(OpCode.V_CLOSEALL, CloseAll);
+    addOperation(OpCode.V_SYSTEM, System as Operation);
 
-    addOperation(Opcode.VM_GETSCREENWIDTH, GetScreenWidth);
-    addOperation(Opcode.VM_GETSCREENHEIGHT, GetScreenHeight);
-    addOperation(Opcode.VM_GETWORKAREAX, GetWorkAreaX);
-    addOperation(Opcode.VM_GETWORKAREAY, GetWorkAreaY);
-    addOperation(Opcode.VM_GETWORKAREAWIDTH, GetWorkAreaWidth);
-    addOperation(Opcode.VM_GETWORKAREAHEIGHT, GetWorkAreaHeight);
-    addOperation(Opcode.GETCLASSDIR, GetClassDirectory);
-    addOperation(Opcode.VM_FILEEXIST, FileExist);
-    addOperation(Opcode.ADDSLASH, AddSlash);
-    addOperation(Opcode.VM_GETDATE, GetDate);
-    addOperation(Opcode.VM_GETTIME, GetTime);
-    addOperation(Opcode.GETTICKCOUNT, GetTickCount);
-    addOperation(Opcode.STDHYPERJUMP, StdHyperJump);
+    addOperation(OpCode.VM_GETSCREENWIDTH, GetScreenWidth);
+    addOperation(OpCode.VM_GETSCREENHEIGHT, GetScreenHeight);
+    addOperation(OpCode.VM_GETWORKAREAX, GetWorkAreaX);
+    addOperation(OpCode.VM_GETWORKAREAY, GetWorkAreaY);
+    addOperation(OpCode.VM_GETWORKAREAWIDTH, GetWorkAreaWidth);
+    addOperation(OpCode.VM_GETWORKAREAHEIGHT, GetWorkAreaHeight);
+    addOperation(OpCode.GETCLASSDIR, GetClassDirectory);
+    addOperation(OpCode.VM_FILEEXIST, FileExist);
+    addOperation(OpCode.ADDSLASH, AddSlash);
+    addOperation(OpCode.VM_GETDATE, GetDate);
+    addOperation(OpCode.VM_GETTIME, GetTime);
+    addOperation(OpCode.GETTICKCOUNT, GetTickCount);
+    addOperation(OpCode.STDHYPERJUMP, StdHyperJump);
 }

@@ -1,13 +1,14 @@
-import { Operation, VmStateContainer } from "vm-types";
-import { Opcode } from "~/helpers/vmConstants";
+import { OpCode } from "../consts";
+import { ExecutionContext } from "../executionContext";
+import { Operation } from "../types";
 
 // FLOAT MCISendString(STRING String)
-function MCISendString_int(ctx: VmStateContainer) {
+function MCISendString_int(ctx: ExecutionContext) {
     const data = ctx.popString();
     // console.warn(`Вызвана MCISendString(${data})`);
     ctx.pushDouble(-1);
 }
 
 export function initMultimedia(addOperation: (opcode: number, operation: Operation) => void) {
-    addOperation(Opcode.MCISENDSTRING_INT, MCISendString_int);
+    addOperation(OpCode.MCISENDSTRING_INT, MCISendString_int);
 }

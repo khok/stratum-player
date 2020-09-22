@@ -1,90 +1,25 @@
 /*
  * Все функции экспортируется в неймспейс 'StratumPlayer' (см package.json -> yarn build)
  */
+import { VirtualFileSystem } from "./common/virtualFileSystem";
+import { SingleCanvasWindowSystem } from "./graphics/windowSystems";
+import { Player } from "./player";
+import { Project, ProjectOptions } from "./project/project";
+import { parseBytecode } from "./vm/parseBytecode";
+import { findMissingCommands, findMissingCommands2, formatMissingCommands } from "./vm/showMissingCommands";
+import { ParsedCode } from "./vm/types";
 
-import { ClassData } from "cls-types";
-import { JSZipObject } from "jszip";
-import {
-    openZipFromFileList,
-    openZipFromUrl,
-    ProjectContent,
-    ReadOptions,
-    readProjectData,
-} from "~/fileReader/fileReaderHelpers";
-import { formatMissingCommands, showMissingCommands } from "~/helpers/showMissingCommands";
-import { Player, PlayerOptions } from "~/player";
-import { VmOperations } from "~/vm/operations";
+// export function handlePossibleErrors(rootName: string, classes: Map<string, ClassPrototype<ParsedCode>>) {
+//     const miss = findMissingCommands2(rootName, classes);
+//     if (miss.errors.length > 0) console.warn("Ошибки:", miss.errors);
+//     if (miss.missingOperations.length > 0) console.warn(formatMissingCommands(miss.missingOperations));
+//     return miss.errors.length > 0 || miss.missingOperations.length > 0;
+// }
 
-export class ExtendedPlayer extends Player {
-    private reqFrameHandle?: number;
-    constructor(data: ProjectContent, options?: PlayerOptions) {
-        super(data, options);
-    }
+export type OpenProjectOptions = Omit<ProjectOptions<ParsedCode>, "bytecodeParser">;
 
-    get playing() {
-        return this.reqFrameHandle !== undefined;
-    }
-
-    play() {
-        if (this.playing) return;
-        const callback = () => {
-            const res = this.step();
-            this.render();
-            if (res) this.reqFrameHandle = requestAnimationFrame(callback);
-        };
-        this.reqFrameHandle = requestAnimationFrame(callback);
-        return this;
-    }
-
-    oneStep() {
-        this.stopPlay();
-        this.step();
-        this.render();
-        return this;
-    }
-
-    stopPlay() {
-        if (this.reqFrameHandle !== undefined) cancelAnimationFrame(this.reqFrameHandle);
-        this.reqFrameHandle = undefined;
-        return this;
-    }
+export async function openProject(fs: VirtualFileSystem, opts: OpenProjectOptions = {}) {
+    return Project.open(fs, { bytecodeParser: parseBytecode, ...opts });
 }
 
-export interface ExtendedPlayerOptions extends PlayerOptions, ReadOptions {
-    preloadedLibs?: JSZipObject[];
-    checkErrors?: (msg: string) => boolean;
-    zipEncoding?: string;
-}
-
-function handlePossibleErrors(collection: Map<string, ClassData>) {
-    const { errors, missingOperations } = showMissingCommands(collection, VmOperations);
-    if (errors.length === 0 && missingOperations.length === 0) return "";
-
-    let res = "";
-    if (errors.length > 0) res += errors.concat(";\n");
-    if (missingOperations.length > 0) res += formatMissingCommands(missingOperations);
-    return res;
-}
-
-export async function fromZip(zip: JSZipObject[], options?: ExtendedPlayerOptions) {
-    const data = await readProjectData(zip, options);
-    if (options && options.checkErrors) {
-        const res = handlePossibleErrors(data.classesData);
-        if (res && !options.checkErrors(res)) return undefined;
-    }
-    return new ExtendedPlayer(data, options);
-}
-
-export async function fromUrl(url: string | string[], options?: ExtendedPlayerOptions) {
-    const zip = await openZipFromUrl(url, options && options.zipEncoding);
-    const addLibs = options && options.preloadedLibs;
-    return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
-}
-
-export async function fromFileList(files: FileList, options?: ExtendedPlayerOptions) {
-    const zip = await openZipFromFileList(files, options && options.zipEncoding);
-    const addLibs = options && options.preloadedLibs;
-    return await fromZip(addLibs ? zip.concat(...addLibs) : zip, options);
-}
-
-export { openZipFromUrl as loadLibraryFromUrl, openZipFromFileList as loadLibraryFromFileList };
+export { VirtualFileSystem, SingleCanvasWindowSystem, Player, findMissingCommands, findMissingCommands2, formatMissingCommands };

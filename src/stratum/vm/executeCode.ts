@@ -1,45 +1,42 @@
-import { ParsedCode } from "vm-types";
-import { VmOperations } from "./operations";
-import { VmContext } from "./vmContext";
-import { Opcode } from "~/helpers/vmConstants";
-import realCommandNames from "~/helpers/showMissingCommands/realCommandNames.json";
-import { rapidBytecodePrint } from "~/helpers/rapidBytecodePrint";
+import { OpCode } from "./consts";
+import { DOUBLE_OPERAND_FLAG_MASK, OPCODE_MASK, OTHER_OPERAND_FLAG_MASK, STRING_OPERAND_FLAG_MASK } from "./consts/operandFlagMasks";
+import { ExecutionContext } from "./executionContext";
+import { operations } from "./operations";
+import { ParsedCode } from "./types";
+import realCommandNames from "./showMissingCommands/realCommandNames.json";
+// import { rapidBytecodePrint } from "./showMissingCommands/rapidBytecodePrint";
 
-const OPCODE_MASK = 2047;
-const DOUBLE_OPERAND_FLAG_MASK = 2048;
-// const LONG_OPERAND_FLAG_MASK = 4096;
-const STRING_OPERAND_FLAG_MASK = 8192;
-const OTHER_OPERAND_FLAG_MASK = 16384;
-
-export function executeCode(ctx: VmContext, { code, numberOperands, stringOperands, otherOperands }: ParsedCode) {
-    let cmd: number,
-        cmdIndex: number,
+export function executeCode(ctx: ExecutionContext, { code, numberOperands, stringOperands, otherOperands }: ParsedCode) {
+    let opAndArg: number,
+        opPoitner: number,
         iterCount: number = 0;
-    ctx.jumpTo(0);
-    ctx.setCodeLength(code.length);
+
+    ctx.nextOpPointer = 0; //TODO: использовать префиксный инкремент, нач. с -1
+    ctx.lastOpPointer = code.length - 1;
     try {
-        while (((cmd = code[(cmdIndex = ctx.nextCmdIndex++)]) & OPCODE_MASK) !== 0) {
+        // пытался сделать это место максимально быстрым, так что получилось такое вот:
+        while (((opAndArg = code[(opPoitner = ctx.nextOpPointer++)]) & OPCODE_MASK) !== 0) {
             if (++iterCount > 10000) {
-                ctx.setError("Число итераций перевалило за 10000");
+                ctx.setError("Сработала защита от бесконечного цикла.");
                 return;
             }
 
-            const op = VmOperations[cmd & OPCODE_MASK];
-            if (cmd < DOUBLE_OPERAND_FLAG_MASK) {
+            const op = operations[opAndArg & OPCODE_MASK];
+            if (opAndArg < DOUBLE_OPERAND_FLAG_MASK) {
                 op(ctx);
-            } else if (cmd < STRING_OPERAND_FLAG_MASK) {
-                op(ctx, numberOperands[cmdIndex]);
-            } else if (cmd < OTHER_OPERAND_FLAG_MASK) {
-                op(ctx, stringOperands[cmdIndex]);
+            } else if (opAndArg < STRING_OPERAND_FLAG_MASK) {
+                op(ctx, numberOperands[opPoitner]);
+            } else if (opAndArg < OTHER_OPERAND_FLAG_MASK) {
+                op(ctx, stringOperands[opPoitner]);
             } else {
-                op(ctx, otherOperands[cmdIndex]);
+                op(ctx, otherOperands[opPoitner]);
             }
         }
     } catch (e) {
         console.error(e);
-        const message = `Функция не реализована: ${realCommandNames[cmd! & OPCODE_MASK]} (${
-            Opcode[cmd! & OPCODE_MASK]
-        }) (индекс опкода: ${ctx.nextCmdIndex - 1})`;
+        const message = `Функция не реализована: ${realCommandNames[opAndArg! & OPCODE_MASK]} (${
+            OpCode[opAndArg! & OPCODE_MASK]
+        }) (индекс опкода: ${ctx.nextOpPointer - 1})`;
         // rapidBytecodePrint(ctx.currentClass.protoName, ctx.project.classesData);
         ctx.setError(message);
     }

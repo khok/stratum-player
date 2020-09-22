@@ -1,16 +1,17 @@
-import { Operation, VmStateContainer } from "vm-types";
-import { Opcode } from "~/helpers/vmConstants";
+import { OpCode } from "../consts";
+import { ExecutionContext } from "../executionContext";
+import { Operation } from "../types";
 
-function _getText(ctx: VmStateContainer, spaceHandle: number, textHandle: number) {
-    const space = ctx.graphics.getSpace(spaceHandle);
+function _getText(ctx: ExecutionContext, spaceHandle: number, textHandle: number) {
+    const space = ctx.windows.getSpace(spaceHandle);
     return space && space.tools.texts.get(textHandle);
 }
 
-function GetTextObject2d(ctx: VmStateContainer) {
+function GetTextObject2d(ctx: ExecutionContext) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushLong(0);
         return;
@@ -19,7 +20,7 @@ function GetTextObject2d(ctx: VmStateContainer) {
     ctx.pushLong(obj && obj.type === "otTEXT2D" ? obj.textTool.handle : 0);
 }
 
-function GetTextCount2d(ctx: VmStateContainer) {
+function GetTextCount2d(ctx: ExecutionContext) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
@@ -27,7 +28,7 @@ function GetTextCount2d(ctx: VmStateContainer) {
     ctx.pushDouble(text ? text.textCount : 0);
 }
 
-function GetTextString2d(ctx: VmStateContainer) {
+function GetTextString2d(ctx: ExecutionContext) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
@@ -35,11 +36,11 @@ function GetTextString2d(ctx: VmStateContainer) {
     ctx.pushLong(text ? text.getFragment(0).stringFragment.handle : 0);
 }
 
-function GetString2d(ctx: VmStateContainer) {
+function GetString2d(ctx: ExecutionContext) {
     const stringHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushString("");
         return;
@@ -48,7 +49,7 @@ function GetString2d(ctx: VmStateContainer) {
     ctx.pushString(tool ? tool.text : "");
 }
 
-function GetTextFont2d(ctx: VmStateContainer) {
+function GetTextFont2d(ctx: ExecutionContext) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
@@ -56,7 +57,7 @@ function GetTextFont2d(ctx: VmStateContainer) {
     ctx.pushLong(text ? text.getFragment(0).font.handle : 0);
 }
 
-function GetTextFgColor2d(ctx: VmStateContainer) {
+function GetTextFgColor2d(ctx: ExecutionContext) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
@@ -64,7 +65,7 @@ function GetTextFgColor2d(ctx: VmStateContainer) {
     ctx.pushLong(text ? text.getFragment(0).foregroundColor : 0);
 }
 
-function GetTextBkColor2d(ctx: VmStateContainer) {
+function GetTextBkColor2d(ctx: ExecutionContext) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
@@ -72,13 +73,13 @@ function GetTextBkColor2d(ctx: VmStateContainer) {
     ctx.pushLong(text ? text.getFragment(0).backgroundColor : 0);
 }
 
-function CreateFont2d(ctx: VmStateContainer) {
+function CreateFont2d(ctx: ExecutionContext) {
     const flags = ctx.popDouble();
     const height = ctx.popDouble();
     const fontName = ctx.popString();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
 
     const italic = !!(flags & 1);
     const underlined = !!(flags & 2);
@@ -87,26 +88,33 @@ function CreateFont2d(ctx: VmStateContainer) {
     ctx.pushLong(space ? space.tools.createFont(fontName, height, bold).handle : 0);
 }
 
-function CreateString2d(ctx: VmStateContainer) {
+function CreateString2d(ctx: ExecutionContext) {
     const value = ctx.popString();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     ctx.pushLong(space ? space.tools.createString(value).handle : 0);
 }
 
-function CreateText2d(ctx: VmStateContainer) {
+function CreateText2d(ctx: ExecutionContext) {
     const bgColor = ctx.popLong();
     const fgColor = ctx.popLong();
     const stringHandle = ctx.popLong();
     const fontHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.graphics.getSpace(spaceHandle);
-    ctx.pushLong(space ? space.tools.createText(fontHandle, stringHandle, fgColor, bgColor).handle : 0);
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (space) {
+        const tool = space.tools.createText(fontHandle, stringHandle, fgColor, bgColor);
+        if (tool) {
+            ctx.pushLong(tool.handle);
+            return;
+        }
+    }
+    ctx.pushLong(0);
 }
 
-function SetText2d(ctx: VmStateContainer) {
-    //HSpace,HText,HFont,HString,~FgColor,~BgColor
+//HSpace,HText,HFont,HString,~FgColor,~BgColor
+function SetText2d(ctx: ExecutionContext) {
     const bgColor = ctx.popLong();
     const fgColor = ctx.popLong();
     const stringHandle = ctx.popLong();
@@ -114,7 +122,7 @@ function SetText2d(ctx: VmStateContainer) {
     const textHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -133,12 +141,12 @@ function SetText2d(ctx: VmStateContainer) {
     ctx.pushDouble(1);
 }
 
-function SetString2d(ctx: VmStateContainer) {
-    //~HSpace,~HString,~text
+//~HSpace,~HString,~text
+function SetString2d(ctx: ExecutionContext) {
     const text = ctx.popString();
     const stringHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -147,24 +155,24 @@ function SetString2d(ctx: VmStateContainer) {
     ctx.pushDouble(stringTool ? stringTool.setText(text) : 0);
 }
 
-function CreatePen2d(ctx: VmStateContainer) {
+function CreatePen2d(ctx: ExecutionContext) {
     const rop2 = ctx.popDouble();
     const color = ctx.popLong();
     const width = ctx.popDouble();
     const style = ctx.popDouble();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     ctx.pushLong(space ? space.tools.createPen(width, color, style).handle : 0);
 }
 
 // FLOAT SetPenROP2d(HANDLE HSpace, HANDLE HPen, FLOAT rop)
-function SetPenROP2d(ctx: VmStateContainer) {
+function SetPenROP2d(ctx: ExecutionContext) {
     const rop = ctx.popDouble();
     const penHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -174,7 +182,7 @@ function SetPenROP2d(ctx: VmStateContainer) {
 }
 
 // HANDLE CreateBrush2d(HANDLE HSpace, FLOAT Style, FLOAT Hatch, COLORREF Color, HANDLE HDib, FLOAT Type)
-function CreateBrush2d(ctx: VmStateContainer) {
+function CreateBrush2d(ctx: ExecutionContext) {
     const type = ctx.popDouble();
     const dibHandle = ctx.popLong();
     const color = ctx.popLong();
@@ -182,17 +190,17 @@ function CreateBrush2d(ctx: VmStateContainer) {
     const style = ctx.popDouble();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     ctx.pushLong(space ? space.tools.createBrush(color, style, dibHandle).handle : 0);
 }
 
 // FLOAT SetBrushColor2d(HANDLE HSpace, HANDLE HBrush, COLORREF Color)
-function SetBrushColor2d(ctx: VmStateContainer) {
+function SetBrushColor2d(ctx: ExecutionContext) {
     const color = ctx.popLong();
     const brushHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -202,12 +210,12 @@ function SetBrushColor2d(ctx: VmStateContainer) {
 }
 
 // FLOAT SetBrushROP2d(HANDLE HSpace, HANDLE HBrush, FLOAT rop)
-function SetBrushROP2d(ctx: VmStateContainer) {
+function SetBrushROP2d(ctx: ExecutionContext) {
     const rop = ctx.popDouble();
     const brushHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    const space = ctx.graphics.getSpace(spaceHandle);
+    const space = ctx.windows.getSpace(spaceHandle);
     if (!space) {
         ctx.pushDouble(0);
         return;
@@ -217,30 +225,40 @@ function SetBrushROP2d(ctx: VmStateContainer) {
 }
 
 // HANDLE CreateDIB2d(HANDLE HSpace, STRING FileName)
-function CreateDIB2d(ctx: VmStateContainer) {
+function CreateDIB2d(ctx: ExecutionContext) {
     const bmpFilename = ctx.popString();
     const spaceHandle = ctx.popLong();
-    const space = ctx.graphics.getSpace(spaceHandle);
-    ctx.pushLong(space ? space.tools.createBitmap(bmpFilename).handle : 0);
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (!space) {
+        ctx.pushLong(0);
+        return;
+    }
+    const stream = ctx.project.openFileStream(bmpFilename);
+    if (!stream) {
+        ctx.pushLong(0);
+        return;
+    }
+    const tool = space.tools.createBitmap(stream);
+    ctx.pushLong(tool ? tool.handle : 0);
 }
 
 export function initGraphicTools(addOperation: (opcode: number, operation: Operation) => void) {
-    addOperation(Opcode.GETTEXTOBJECT2D, GetTextObject2d);
-    addOperation(Opcode.VM_GETTEXTCOUNT2D, GetTextCount2d);
-    addOperation(Opcode.GETTEXTSTRING2D, GetTextString2d);
-    addOperation(Opcode.GETLOGSTRING2D, GetString2d);
-    addOperation(Opcode.GETTEXTFONT2D, GetTextFont2d);
-    addOperation(Opcode.GETTEXTFG2D, GetTextFgColor2d);
-    addOperation(Opcode.GETTEXTBK2D, GetTextBkColor2d);
-    addOperation(Opcode.CREATEFONT2D, CreateFont2d);
-    addOperation(Opcode.CREATESTRING2D, CreateString2d);
-    addOperation(Opcode.CREATETEXT2D, CreateText2d);
-    addOperation(Opcode.VM_SETLOGTEXT2D, SetText2d);
-    addOperation(Opcode.SETLOGSTRING2D, SetString2d);
-    addOperation(Opcode.CREATEPEN2D, CreatePen2d);
-    addOperation(Opcode.SETPENROP2D, SetPenROP2d);
-    addOperation(Opcode.CREATEBRUSH2D, CreateBrush2d);
-    addOperation(Opcode.SETBRUSHCOLOR2D, SetBrushColor2d);
-    addOperation(Opcode.SETBRUSHROP2D, SetBrushROP2d);
-    addOperation(Opcode.CREATEDID2D, CreateDIB2d);
+    addOperation(OpCode.GETTEXTOBJECT2D, GetTextObject2d);
+    addOperation(OpCode.VM_GETTEXTCOUNT2D, GetTextCount2d);
+    addOperation(OpCode.GETTEXTSTRING2D, GetTextString2d);
+    addOperation(OpCode.GETLOGSTRING2D, GetString2d);
+    addOperation(OpCode.GETTEXTFONT2D, GetTextFont2d);
+    addOperation(OpCode.GETTEXTFG2D, GetTextFgColor2d);
+    addOperation(OpCode.GETTEXTBK2D, GetTextBkColor2d);
+    addOperation(OpCode.CREATEFONT2D, CreateFont2d);
+    addOperation(OpCode.CREATESTRING2D, CreateString2d);
+    addOperation(OpCode.CREATETEXT2D, CreateText2d);
+    addOperation(OpCode.VM_SETLOGTEXT2D, SetText2d);
+    addOperation(OpCode.SETLOGSTRING2D, SetString2d);
+    addOperation(OpCode.CREATEPEN2D, CreatePen2d);
+    addOperation(OpCode.SETPENROP2D, SetPenROP2d);
+    addOperation(OpCode.CREATEBRUSH2D, CreateBrush2d);
+    addOperation(OpCode.SETBRUSHCOLOR2D, SetBrushColor2d);
+    addOperation(OpCode.SETBRUSHROP2D, SetBrushROP2d);
+    addOperation(OpCode.CREATEDID2D, CreateDIB2d);
 }

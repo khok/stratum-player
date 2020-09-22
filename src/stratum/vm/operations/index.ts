@@ -1,5 +1,5 @@
-import { Operation } from "vm-types";
-import { Opcode } from "~/helpers/vmConstants";
+import { OpCode } from "../consts";
+import { Operation } from "../types";
 import { initAdvanced } from "./advanced";
 import { initBase } from "./base";
 import { initGraphics } from "./gspace";
@@ -10,12 +10,12 @@ import { initMultimedia } from "./multimedia";
 import { initSystem } from "./system";
 import { initWindows } from "./windows";
 
-export const VmOperations = new Array<Operation>(Opcode.VM_MAXIMUM_code + 1);
+export const operations = new Array<Operation>(OpCode.VM_MAXIMUM_code);
 
 (function () {
     function addOperation(opcode: number, operation: Operation) {
-        if (VmOperations[opcode]) throw "Operation already set: " + opcode;
-        VmOperations[opcode] = operation;
+        if (operations[opcode]) throw "Operation already set: " + opcode;
+        operations[opcode] = operation;
     }
 
     initAdvanced(addOperation);

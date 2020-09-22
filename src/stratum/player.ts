@@ -1,74 +1,134 @@
-import { ClassTreeNode } from "~/core/classTreeNode";
-import { createClassTree } from "~/core/createClassTree";
-import { MemoryManager } from "~/core/memoryManager";
-import { Project, ProjectOptions } from "~/core/project";
-import { BitmapToolFactory, BitmapToolFactoryOptions } from "~/graphics/graphicSpace/bitmapToolFactory";
-import { GraphicSystem, GraphicSystemOptions } from "~/graphics/graphicSystem";
-import { EventDispatcher, EventType } from "~/helpers/eventDispatcher";
-import { VmContext } from "~/vm/vmContext";
-import { ProjectContent } from "./fileReader/fileReaderHelpers";
+import { buildTree } from "./classTree/buildTree";
+import { NodeCode } from "./classTree/nodeCode";
+import { TreeManager } from "./classTree/treeManager";
+import { TreeMemoryManager } from "./classTree/treeMemoryManager";
+import { TreeNode } from "./classTree/treeNode";
+import { EventDispatcher, EventType } from "./common/eventDispatcher";
+import { VirtualFileSystem } from "./common/virtualFileSystem";
+import { GraphicsManager, GraphicsManagerOptions } from "./graphics/manager/graphicsManager";
+import { WindowSystem } from "./graphics/manager/interfaces";
+import { BmpToolFactory, BmpToolFactoryArgs } from "./graphics/scene/bmpToolFactory";
+import { HandleMap } from "./helpers/handleMap";
+import { Project } from "./project/project";
+import { ExecutionContext } from "./vm/executionContext";
 
-export interface PlayerOptions extends ProjectOptions, GraphicSystemOptions, BitmapToolFactoryOptions {
-    iconsPath?: string;
+export interface PlayerArgs extends GraphicsManagerOptions, BmpToolFactoryArgs {
+    fs: VirtualFileSystem;
+    windowSystem: WindowSystem;
+}
+
+interface LoadedProject {
+    tree: TreeNode;
+    ctx: ExecutionContext;
+    mmanager: TreeMemoryManager;
 }
 
 export class Player {
-    private vm: VmContext;
-    private classTree: ClassTreeNode;
-    private mmanager: MemoryManager;
-    private graphics: GraphicSystem;
-    private dispatcher: EventDispatcher;
+    private readonly dispatcher = new EventDispatcher();
+    private readonly ws: WindowSystem;
+    private readonly graphics: GraphicsManager;
 
-    constructor(data: ProjectContent, options?: PlayerOptions) {
-        const { classesData } = data;
-        const { classTree, mmanager } = createClassTree(data.rootName, classesData);
-        const allClasses = classTree.collectNodes();
-        if (data.varSet) classTree.applyVarSetRecursive(data.varSet);
+    private projects = HandleMap.create<LoadedProject>();
+    private currentProject?: LoadedProject;
 
-        if (!options) options = {};
-        const iconsPath = options.iconsPath || "data/icons";
-        const { projectFiles, filenames } = data;
-        const bmpFactory = new BitmapToolFactory({ iconsPath, projectImages: projectFiles }, options);
-        const dispatcher = (options.dispatcher = options.dispatcher || new EventDispatcher());
-        const graphics = new GraphicSystem(bmpFactory, options);
-        const project = new Project({ allClasses, classesData, projectFiles, filenames }, options);
+    private reqId = 0;
 
-        this.vm = new VmContext({ graphics, project, memoryState: mmanager });
-        this.classTree = classTree;
-        this.mmanager = mmanager;
-        this.graphics = graphics;
-        this.dispatcher = dispatcher;
-
-        mmanager.initValues();
-    }
-
-    setGraphicOptions(options: GraphicSystemOptions) {
-        this.graphics.set(options);
-        return this;
-    }
-
-    init() {
-        throw new Error("Не реализовано");
-    }
-
-    step() {
-        this.classTree.computeSchemeRecursive(this.vm);
-        if (this.vm.shouldStop) {
-            if (this.vm.error) this.dispatcher.dispatch("VM_ERROR", this.vm.error);
-            else this.dispatcher.dispatch("PROJECT_STOPPED");
-            return false;
-        }
-        this.mmanager.syncValues();
-        this.mmanager.assertZeroIndexEmpty();
-        return true;
-    }
-
-    render() {
-        return this.graphics.renderAll();
+    constructor(args: PlayerArgs) {
+        this.ws = args.windowSystem;
+        this.graphics = new GraphicsManager(this.ws, args);
+        BmpToolFactory.setParams(args);
     }
 
     on<T extends keyof EventType>(event: T, fn: EventType[T]) {
         this.dispatcher.on(event, fn);
         return this;
+    }
+
+    setGraphicOptions(options: GraphicsManagerOptions) {
+        this.graphics.set(options);
+        return this;
+    }
+
+    loadProject(prj: Project<NodeCode>) {
+        const tree = buildTree(prj.rootClassName, prj.classes);
+        const memoryManager = tree.createMemoryManager();
+
+        if (prj.preloadStt) tree.applyVarSet(prj.preloadStt);
+        else console.warn(`Файл ${prj.baseDirectory + "\\_preload.stt"} не существует.`);
+
+        const ctx = new ExecutionContext({
+            classManager: new TreeManager({ tree }),
+            memoryManager,
+            windows: this.graphics,
+            projectManager: prj,
+        });
+
+        const handle = HandleMap.getFreeHandle(this.projects);
+        this.projects.set(handle, { tree, ctx, mmanager: memoryManager });
+        return handle;
+    }
+
+    removeProject(handle: number) {
+        this.projects.delete(handle);
+    }
+
+    removeAllProjects() {
+        this.projects = new Map();
+    }
+
+    switchProject(handle: number) {
+        this.currentProject = this.projects.get(handle);
+    }
+
+    get isPaused() {
+        return this.reqId === 0;
+    }
+
+    pause() {
+        if (!this.isPaused) cancelAnimationFrame(this.reqId);
+        this.reqId = 0;
+    }
+
+    continue() {
+        if (this.isPaused) this.play();
+    }
+
+    switchPause() {
+        if (this.reqId) this.pause();
+        else this.continue();
+    }
+
+    stop() {
+        this.pause();
+        this.graphics.closeAllWindows();
+    }
+
+    init() {
+        if (!this.currentProject) return;
+        this.stop();
+        const { mmanager } = this.currentProject;
+        mmanager.initValues();
+    }
+
+    step() {
+        if (!this.currentProject) return false;
+        const { ctx, mmanager, tree } = this.currentProject;
+        tree.compute(ctx);
+        this.ws.redrawWindows();
+        if (ctx.executionStopped) {
+            if (ctx.error) this.dispatcher.dispatch("VM_ERROR", ctx.error);
+            else this.dispatcher.dispatch("PROJECT_STOPPED");
+            return false;
+        }
+        mmanager.syncValues();
+        mmanager.assertZeroIndexEmpty();
+        return true;
+    }
+
+    play(func: (callback: () => void) => number = requestAnimationFrame) {
+        const req = () => {
+            if (this.step()) this.reqId = func(req);
+        };
+        this.reqId = func(req);
     }
 }

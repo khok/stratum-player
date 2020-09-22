@@ -1,11 +1,11 @@
-import { Operation, VmStateContainer, FunctionOperand } from "vm-types";
-import { Opcode } from "~/helpers/vmConstants";
+import { OpCode } from "../consts";
+import { ExecutionContext } from "../executionContext";
+import { FunctionSignature, Operation } from "../types";
 
-function SendMessage(ctx: VmStateContainer, count: number) {
-    const vars = new Array<string>(count);
-    const ids = new Uint16Array(count);
+function SendMessage(ctx: ExecutionContext, count: number) {
+    const varNames = new Array<string>(count);
     let realCount = 0;
-    for (let i = count - 1; i >= 0; i--) vars[i] = ctx.popString().toLowerCase();
+    for (let i = count - 1; i >= 0; i--) varNames[i] = ctx.popString().toLowerCase();
     const className = ctx.popString();
     const path = ctx.popString();
     if (path !== "") {
@@ -14,68 +14,86 @@ function SendMessage(ctx: VmStateContainer, count: number) {
     }
 
     if (!ctx.canExecuteClass) return;
-    const nodes = ctx.project.getClassesByProtoName(className);
-    if (nodes.length === 0) return;
+    const receivers = ctx.classManager.getClassesByProtoName(className);
+    if (receivers.length === 0) return;
 
-    const current = ctx.currentClass;
-    const mem = ctx.memoryState;
+    const fistNodeVars = receivers[0].vars;
+    if (!fistNodeVars) return;
+    const senderVars = ctx.classVars;
+
+    const ids = new Uint16Array(count);
+    const targetValues = new Array<Float64Array | Int32Array | string[]>(count);
+    const mem = ctx.memoryManager;
 
     for (let i = 0; i < count; i += 2) {
-        const idCur = current.varnameToIdMap!.get(vars[i]);
+        const idCur = senderVars.nameToIdMap.get(varNames[i]);
         if (idCur === undefined) continue;
-        ids[realCount] = idCur;
-        const idOther = nodes[0].varnameToIdMap!.get(vars[i + 1]);
+        const idOther = fistNodeVars.nameToIdMap.get(varNames[i + 1]);
         if (idOther === undefined) continue;
+
+        const curType = senderVars.typeCodes[idCur];
+        const otherType = fistNodeVars.typeCodes[idOther];
+
+        if (curType !== otherType) throw new Error("Инконсистентные типы");
+
+        ids[realCount] = senderVars.globalIds[idCur];
         ids[realCount + 1] = idOther;
+
+        targetValues[realCount] = mem.getOldValues(curType);
+        targetValues[realCount + 1] = mem.getNewValues(curType);
         realCount += 2;
     }
 
-    for (let i = 0; i < nodes.length; i++) {
-        const other = nodes[i];
-        if (other === current) continue;
+    for (let i = 0; i < receivers.length; i++) {
+        const other = receivers[i];
+        const otherVars = other.vars!;
+        if (otherVars === senderVars) continue;
 
-        for (let i = 0; i < realCount; i += 2) {
-            const idCur = ids[i];
-            const idOther = ids[i + 1];
+        for (let j = 0; j < realCount; j += 2) {
+            const currentId = ids[j];
+            const otherId = otherVars.globalIds[ids[j + 1]];
 
-            const currentId1 = current.doubleIdToGlobal![idCur];
-            const otherId1 = other.doubleIdToGlobal![idOther];
-            mem.newDoubleValues[otherId1] = mem.oldDoubleValues[otherId1] = mem.newDoubleValues[currentId1];
+            const targetNewValues = targetValues[j + 1];
+            const targetOldValues = targetValues[j]; // <----------- нужно ли использовать старые значения??
+            targetOldValues[otherId] = targetNewValues[otherId] = targetNewValues[currentId];
 
-            const currentId2 = current.longIdToGlobal![idCur];
-            const otherId2 = other.longIdToGlobal![idOther];
-            mem.newLongValues[otherId2] = mem.oldLongValues[otherId2] = mem.newLongValues[currentId2];
+            // mem.newDoubleValues[otherId] = mem.oldDoubleValues[otherId] = mem.newDoubleValues[currentId];
 
-            const currentId3 = current.stringIdToGlobal![idCur];
-            const otherId3 = other.stringIdToGlobal![idOther];
-            mem.newStringValues[otherId3] = mem.oldStringValues[otherId3] = mem.newStringValues[currentId3];
+            // const otherId2 = otherVars.longIdMappingTable[idOther];
+            // mem.newLongValues[otherId2] = mem.oldLongValues[otherId2] = mem.newLongValues[currentId2];
+
+            // const otherId3 = otherVars.stringIdMappingTable[idOther];
+            // mem.newStringValues[otherId3] = mem.oldStringValues[otherId3] = mem.newStringValues[currentId3];
         }
 
-        other.computeSchemeRecursive(ctx, true);
+        other.compute(ctx, true);
 
-        for (let i = 0; i < count; i += 2) {
-            const idCur = ids[i];
-            const idOther = ids[i + 1];
+        for (let j = 0; j < count; j += 2) {
+            const currentId = ids[j];
+            const otherId = otherVars.globalIds[ids[j + 1]];
 
-            const currentId1 = current.doubleIdToGlobal![idCur];
-            const otherId1 = other.doubleIdToGlobal![idOther];
-            mem.newDoubleValues[currentId1] = mem.newDoubleValues[otherId1];
+            const targetNewValues = targetValues[j + 1];
+            targetNewValues[currentId] = targetNewValues[otherId];
 
-            const currentId2 = current.longIdToGlobal![idCur];
-            const otherId2 = other.longIdToGlobal![idOther];
-            mem.newLongValues[currentId2] = mem.newLongValues[otherId2];
+            // const currentId1 = curVars.doubleIdMappingTable[idCur];
+            // const otherId1 = otherVars.doubleIdMappingTable[idOther];
+            // mem.newDoubleValues[currentId1] = mem.newDoubleValues[otherId1];
 
-            const currentId3 = current.stringIdToGlobal![idCur];
-            const otherId3 = other.stringIdToGlobal![idOther];
-            mem.newStringValues[currentId3] = mem.newStringValues[otherId3];
+            // const currentId2 = curVars.longIdMappingTable[idCur];
+            // const otherId2 = otherVars.longIdMappingTable[idOther];
+            // mem.newLongValues[currentId2] = mem.newLongValues[otherId2];
+
+            // const currentId3 = curVars.stringIdMappingTable[idCur];
+            // const otherId3 = otherVars.stringIdMappingTable[idOther];
+            // mem.newStringValues[currentId3] = mem.newStringValues[otherId3];
         }
     }
 }
 
 // V_REGISTEROBJECT, name "RegisterObject" arg "HANDLE","HANDLE","STRING","FLOAT","FLOAT" out 153
-function RegisterObjectByGraphicSpace(ctx: VmStateContainer) {
+function RegisterObjectByGraphicSpace(ctx: ExecutionContext) {
     const flags = ctx.popDouble();
-    const msg = ctx.popDouble();
+    const eventCode = ctx.popDouble();
     const path = ctx.popString();
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
@@ -85,34 +103,31 @@ function RegisterObjectByGraphicSpace(ctx: VmStateContainer) {
         return;
     }
 
-    const space = ctx.graphics.getSpace(spaceHandle);
-    if (space) space.subscribe(ctx, ctx.currentClass, msg, objectHandle, flags);
-
-    //TODO: WTF???
-    // console.log(`RegisterObjectBySpace(${spaceHandle}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
+    const space = ctx.windows.getSpace(spaceHandle);
+    if (space) space.subscribeToEvent(eventCode, objectHandle, flags, ctx);
 }
 
 //args: "STRING,HANDLE,STRING,FLOAT,FLOAT"
-function RegisterObjectByWindowName(ctx: VmStateContainer) {
+function RegisterObjectByWindowName(ctx: ExecutionContext) {
     const flags = ctx.popDouble();
     const msg = ctx.popDouble();
     const path = ctx.popString();
     const objectHandle = ctx.popLong();
     const windowName = ctx.popString();
-    console.log(`RegisterObjectByWinname(${windowName}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
+    console.warn(`Не реализовано: RegisterObjectByWinname(${windowName}, ${objectHandle}, "${path}", ${msg}, ${flags})`);
 }
 
 //V_GETCLASS, name "GetClassName" arg "STRING" ret "STRING" out 398
-function GetClassName(ctx: VmStateContainer) {
-    const res = ctx.currentClass.getClassByLowCasePath(ctx.popString().toLowerCase());
+function GetClassName(ctx: ExecutionContext) {
+    const res = ctx.currentClass.getClassByPath(ctx.popString().toLowerCase());
     ctx.pushString(res ? res.protoName : "");
 }
 
 //NOTREL
-function VFUNCTION(ctx: VmStateContainer, data: FunctionOperand) {
-    // const { funcName, argCount, returnType } = data;
+function VFUNCTION(ctx: ExecutionContext, data: FunctionSignature) {
+    // const { funcName, argCount, returnType, argTypes } = data;
     if (data) console.log(data);
-    throw new Error("Вызов функций не реализован");
+    ctx.setError("Вызов пользовательских функций не реализован");
 }
 
 //NOTREL
@@ -132,59 +147,59 @@ function VFUNCTION(ctx: VmStateContainer, data: FunctionOperand) {
 //     throw "VM_ADDPRIMITIVE3D: NIMP";
 // }
 
-function SetCapture(ctx: VmStateContainer) {
+function SetCapture(ctx: ExecutionContext) {
     const flags = ctx.popDouble();
     const path = ctx.popString();
     const spaceHandle = ctx.popLong();
 
-    const obj = ctx.currentClass.getClassByLowCasePath(path.toLowerCase());
+    const obj = ctx.currentClass.getClassByPath(path.toLowerCase());
     if (!obj) return;
     obj.startCaptureEvents(spaceHandle);
 }
 
-function ReleaseCapture(ctx: VmStateContainer) {
+function ReleaseCapture(ctx: ExecutionContext) {
     ctx.currentClass.stopCaptureEvents();
 }
 
-function SetVarFloat(ctx: VmStateContainer) {
+function SetVarFloat(ctx: ExecutionContext) {
     const value = ctx.popDouble();
     const name = ctx.popString();
     const objectPath = ctx.popString();
 
-    const obj = ctx.currentClass.getClassByLowCasePath(objectPath.toLowerCase());
-    if (!obj) return;
-    const varId = obj.varnameToIdMap!.get(name.toLowerCase());
+    const obj = ctx.currentClass.getClassByPath(objectPath.toLowerCase());
+    if (obj === undefined || obj.vars === undefined) return;
+    const varId = obj.vars.nameToIdMap.get(name.toLowerCase());
     if (varId === undefined) return;
 
-    const realId = obj.doubleIdToGlobal![varId];
-    ctx.memoryState.oldDoubleValues[realId] = value;
-    ctx.memoryState.newDoubleValues[realId] = value;
+    const realId = obj.vars.globalIds[varId];
+    ctx.memoryManager.oldDoubleValues[realId] = value;
+    ctx.memoryManager.newDoubleValues[realId] = value;
 }
 
-function GetVarColorref(ctx: VmStateContainer) {
+function GetVarColorref(ctx: ExecutionContext) {
     const name = ctx.popString();
     const objectPath = ctx.popString();
 
-    const obj = ctx.currentClass.getClassByLowCasePath(objectPath.toLowerCase());
-    if (!obj) return;
-    const varId = obj.varnameToIdMap!.get(name.toLowerCase());
+    const obj = ctx.currentClass.getClassByPath(objectPath.toLowerCase());
+    if (obj === undefined || obj.vars === undefined) return;
+    const varId = obj.vars.nameToIdMap.get(name.toLowerCase());
     if (varId === undefined) return;
 
-    const realId = obj.longIdToGlobal![varId];
-    ctx.pushLong(ctx.memoryState.newDoubleValues[realId]);
+    const realId = obj.vars.globalIds[varId];
+    ctx.pushLong(ctx.memoryManager.newLongValues[realId]);
 }
 
 export function initAdvanced(addOperation: (opcode: number, operation: Operation) => void) {
-    addOperation(Opcode.VM_SENDMESSAGE, SendMessage as Operation);
-    addOperation(Opcode.V_REGISTEROBJECT, RegisterObjectByGraphicSpace);
-    addOperation(Opcode.REGISTEROBJECTS, RegisterObjectByWindowName);
-    addOperation(Opcode.V_GETCLASS, GetClassName);
-    addOperation(Opcode.V_SETCAPTURE, SetCapture);
-    addOperation(Opcode.V_RELEASECAPTURE, ReleaseCapture);
-    addOperation(Opcode.V_SETVARF, SetVarFloat);
-    addOperation(Opcode.V_GETVARH, GetVarColorref);
+    addOperation(OpCode.VM_SENDMESSAGE, SendMessage as Operation);
+    addOperation(OpCode.V_REGISTEROBJECT, RegisterObjectByGraphicSpace);
+    addOperation(OpCode.REGISTEROBJECTS, RegisterObjectByWindowName);
+    addOperation(OpCode.V_GETCLASS, GetClassName);
+    addOperation(OpCode.V_SETCAPTURE, SetCapture);
+    addOperation(OpCode.V_RELEASECAPTURE, ReleaseCapture);
+    addOperation(OpCode.V_SETVARF, SetVarFloat);
+    addOperation(OpCode.V_GETVARH, GetVarColorref);
 
-    addOperation(Opcode.VFUNCTION, VFUNCTION as Operation);
+    addOperation(OpCode.VFUNCTION, VFUNCTION as Operation);
     // addCommand(Opcode.DLLFUNCTION, DLLFUNCTION);
     // addCommand(Opcode.SETGROUPITEMS2D, SETGROUPITEMS2D);
     // addCommand(Opcode.VM_ADDPRIMITIVE3D, VM_ADDPRIMITIVE3D);
