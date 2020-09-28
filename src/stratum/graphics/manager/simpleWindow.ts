@@ -1,6 +1,6 @@
-import { VectorDrawing } from "~/common/fileFormats/vdr/types/vectorDrawing";
-import { WindowWithSpace } from "~/vm/interfaces/windowWithSpace";
-import { NumBool } from "~/vm/types";
+import { VectorDrawing } from "/common/fileFormats/vdr/types/vectorDrawing";
+import { WindowWithSpace } from "/vm/interfaces/windowWithSpace";
+import { NumBool } from "/vm/types";
 import { RendererWindow } from "./interfaces";
 
 export interface SimpleWindowArgs {

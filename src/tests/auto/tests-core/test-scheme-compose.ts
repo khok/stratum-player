@@ -1,8 +1,8 @@
 import { strictEqual } from "assert";
-import { VirtualFileSystem } from "~/common/virtualFileSystem";
-import { createComposedScheme } from "~/common/createComposedScheme";
-import { VectorDrawingElement } from "~/common/fileFormats/vdr/types/vectorDrawingElements";
-import { Project } from "~/project/project";
+import { VirtualFileSystem } from "/common/virtualFileSystem";
+import { createComposedScheme } from "/common/createComposedScheme";
+import { VectorDrawingElement } from "/common/fileFormats/vdr/types/vectorDrawingElements";
+import { Project } from "/project/project";
 
 function isElementInGroup(elements: VectorDrawingElement[], handle: number) {
     return elements.some((el) => el.type === "otGROUP2D" && el.childHandles.includes(handle));

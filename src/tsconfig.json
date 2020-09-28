@@ -6,7 +6,6 @@
         "target": "es5",
         "sourceMap": true,
         "declaration": true,
-        "lib": ["es2017", "dom"],
         "resolveJsonModule": true,
         "allowSyntheticDefaultImports": true,
         "strict": true,
@@ -18,7 +17,7 @@
         "downlevelIteration": true,
         "baseUrl": ".",
         "paths": {
-            "~/*": ["./stratum/*"]
+            "/*": ["./stratum/*"]
         }
     }
 }

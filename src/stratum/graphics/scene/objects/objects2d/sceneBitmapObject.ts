@@ -1,8 +1,8 @@
-import { Optional } from "~/helpers/utilityTypes";
-import { BadDataError } from "~/common/errors";
-import { BitmapElement, DoubleBitmapElement } from "~/common/fileFormats/vdr/types/vectorDrawingElements";
-import { BitmapObject } from "~/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "~/vm/types";
+import { Optional } from "/helpers/utilityTypes";
+import { BadDataError } from "/common/errors";
+import { BitmapElement, DoubleBitmapElement } from "/common/fileFormats/vdr/types/vectorDrawingElements";
+import { BitmapObject } from "/vm/interfaces/graphicSpaceObjects";
+import { NumBool } from "/vm/types";
 import { RenderableFactory, RenderableBitmap } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneBmpTool } from "../../tools";

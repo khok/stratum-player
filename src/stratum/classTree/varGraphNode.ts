@@ -1,5 +1,5 @@
-import { UsageError } from "~/common/errors";
-import { VarCode } from "~/common/varCode";
+import { UsageError } from "/common/errors";
+import { VarCode } from "/common/varCode";
 import { TreeMemoryManagerArgs } from "./treeMemoryManager";
 
 export class VarGraphNode {

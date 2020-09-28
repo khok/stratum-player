@@ -1,6 +1,6 @@
-import { Optional } from "~/helpers/utilityTypes";
-import { ElementBase } from "~/common/fileFormats/vdr/types/vectorDrawingElements";
-import { NumBool } from "~/vm/types";
+import { Optional } from "/helpers/utilityTypes";
+import { ElementBase } from "/common/fileFormats/vdr/types/vectorDrawingElements";
+import { NumBool } from "/vm/types";
 import { SceneGroupObject } from ".";
 
 export type ObjectArgs = Optional<ElementBase, "name" | "options">;

@@ -14,8 +14,8 @@
  *
  */
 
-import { Point2D } from "~/helpers/types";
-import { Require } from "~/helpers/utilityTypes";
+import { Point2D } from "/helpers/types";
+import { Require } from "/helpers/utilityTypes";
 import { VectorDrawing, VectorDrawingTools } from "./fileFormats/vdr/types/vectorDrawing";
 import {
     BitmapElement,

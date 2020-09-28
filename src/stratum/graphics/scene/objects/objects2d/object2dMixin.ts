@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
-import { Optional } from "~/helpers/utilityTypes";
-import { Element2dBase, VectorDrawingElement2d } from "~/common/fileFormats/vdr/types/vectorDrawingElements";
-import { Object2dBase } from "~/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "~/vm/types";
+import { Optional } from "/helpers/utilityTypes";
+import { Element2dBase, VectorDrawingElement2d } from "/common/fileFormats/vdr/types/vectorDrawingElements";
+import { Object2dBase } from "/vm/interfaces/graphicSpaceObjects";
+import { NumBool } from "/vm/types";
 import { RenderableElement } from "../../interfaces";
 import { BaseObjectMixin } from "../baseObjectMixin";
 

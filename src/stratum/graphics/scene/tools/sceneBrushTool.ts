@@ -1,8 +1,8 @@
-import { HandleMap } from "~/helpers/handleMap";
-import { Optional, Remove } from "~/helpers/utilityTypes";
-import { BrushToolParams } from "~/common/fileFormats/vdr/types/vectorDrawingTools";
-import { BrushTool } from "~/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "~/vm/types";
+import { HandleMap } from "/helpers/handleMap";
+import { Optional, Remove } from "/helpers/utilityTypes";
+import { BrushToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
+import { BrushTool } from "/vm/interfaces/graphicSpaceTools";
+import { NumBool } from "/vm/types";
 import { SceneBmpTool } from ".";
 import { SceneToolMixin } from "./sceneToolMixin";
 

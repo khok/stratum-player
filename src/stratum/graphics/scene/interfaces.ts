@@ -1,5 +1,5 @@
-import { Point2D } from "~/helpers/types";
-import { ControlElement } from "~/common/fileFormats/vdr/types/vectorDrawingElements";
+import { Point2D } from "/helpers/types";
+import { ControlElement } from "/common/fileFormats/vdr/types/vectorDrawingElements";
 import { SceneBmpTool, SceneBrushTool, ScenePenTool, SceneTextTool } from "./tools";
 
 interface _RenderableBase {

@@ -1,6 +1,6 @@
-import { BinaryStream } from "~/helpers/binaryStream";
-import { unixToDosPath } from "~/helpers/pathOperations";
-import { AsyncOpenError } from "~/common/errors";
+import { BinaryStream } from "/helpers/binaryStream";
+import { unixToDosPath } from "/helpers/pathOperations";
+import { AsyncOpenError } from "/common/errors";
 import { JSZipObject } from "jszip";
 
 interface DataSource {

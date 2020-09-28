@@ -1,4 +1,4 @@
-import { VectorDrawing } from "~/common/fileFormats/vdr/types/vectorDrawing";
+import { VectorDrawing } from "/common/fileFormats/vdr/types/vectorDrawing";
 import { NumBool } from "../types";
 import { GraphicSpace } from "./graphicSpace";
 import { WindowWithSpace } from "./windowWithSpace";

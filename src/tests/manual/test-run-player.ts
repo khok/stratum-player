@@ -1,4 +1,4 @@
-import { VirtualFileSystem, SingleCanvasWindowSystem, Player, openProject } from "~/api";
+import { VirtualFileSystem, SingleCanvasWindowSystem, Player, openProject } from "/api";
 
 export async function _run_test_player(name: string) {
     const fs = await VirtualFileSystem.new([

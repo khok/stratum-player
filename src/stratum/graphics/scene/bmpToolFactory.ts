@@ -1,6 +1,6 @@
-import { BinaryStream } from "~/helpers/binaryStream";
-import { readBitmap, readDoubleBitmap } from "~/helpers/bitmapReaders";
-import { ImageToolParams } from "~/common/fileFormats/vdr/types/vectorDrawingTools";
+import { BinaryStream } from "/helpers/binaryStream";
+import { readBitmap, readDoubleBitmap } from "/helpers/bitmapReaders";
+import { ImageToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
 import { SceneBmpTool } from "./tools/sceneBmpTool";
 
 export interface BmpToolFactoryArgs {

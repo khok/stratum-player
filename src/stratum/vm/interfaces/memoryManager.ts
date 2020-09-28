@@ -1,4 +1,4 @@
-import { VarCode } from "~/common/varCode";
+import { VarCode } from "/common/varCode";
 
 export interface MemoryManager {
     oldDoubleValues: Float64Array; //<- заменить на 32, мб быстрее будет бегать. в контексте тоже.

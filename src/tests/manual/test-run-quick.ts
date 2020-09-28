@@ -1,16 +1,16 @@
-import { buildTree } from "~/classTree/buildTree";
-import { TreeManager } from "~/classTree/treeManager";
-import { createComposedScheme } from "~/common/createComposedScheme";
-import { EventDispatcher } from "~/common/eventDispatcher";
-import { VirtualFileSystem } from "~/common/virtualFileSystem";
-import { GraphicsManager } from "~/graphics/manager/graphicsManager";
-import { SimpleWindow } from "~/graphics/manager/simpleWindow";
-import { BmpToolFactory, Scene } from "~/graphics/scene";
-import { SingleCanvasWindowSystem } from "~/graphics/windowSystems";
-import { Project } from "~/project/project";
-import { ExecutionContext } from "~/vm/executionContext";
-import { parseBytecode } from "~/vm/parseBytecode";
-import { findMissingCommands2, formatMissingCommands } from "~/vm/showMissingCommands";
+import { buildTree } from "/classTree/buildTree";
+import { TreeManager } from "/classTree/treeManager";
+import { createComposedScheme } from "/common/createComposedScheme";
+import { EventDispatcher } from "/common/eventDispatcher";
+import { VirtualFileSystem } from "/common/virtualFileSystem";
+import { GraphicsManager } from "/graphics/manager/graphicsManager";
+import { SimpleWindow } from "/graphics/manager/simpleWindow";
+import { BmpToolFactory, Scene } from "/graphics/scene";
+import { SingleCanvasWindowSystem } from "/graphics/windowSystems";
+import { Project } from "/project/project";
+import { ExecutionContext } from "/vm/executionContext";
+import { parseBytecode } from "/vm/parseBytecode";
+import { findMissingCommands2, formatMissingCommands } from "/vm/showMissingCommands";
 
 export async function _run_test_quick(name: string, options: any, timeout?: number) {
     const fs = await VirtualFileSystem.new([

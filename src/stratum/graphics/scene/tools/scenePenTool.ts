@@ -1,7 +1,7 @@
-import { Optional, Remove } from "~/helpers/utilityTypes";
-import { PenToolParams } from "~/common/fileFormats/vdr/types/vectorDrawingTools";
-import { PenTool } from "~/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "~/vm/types";
+import { Optional, Remove } from "/helpers/utilityTypes";
+import { PenToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
+import { PenTool } from "/vm/interfaces/graphicSpaceTools";
+import { NumBool } from "/vm/types";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type ScenePenToolArgs = Optional<Remove<PenToolParams, "type">, "rop2">;

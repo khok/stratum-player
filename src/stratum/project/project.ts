@@ -1,14 +1,14 @@
-import { ClassPrototype } from "~/common/classPrototype";
-import { createComposedScheme } from "~/common/createComposedScheme";
-import { ProjectInfo } from "~/common/fileFormats/prj";
-import { readSttFile, VariableSet } from "~/common/fileFormats/stt";
-import { readVdrFile } from "~/common/fileFormats/vdr";
-import { VectorDrawing } from "~/common/fileFormats/vdr/types/vectorDrawing";
-import { VirtualFileSystem } from "~/common/virtualFileSystem";
-import { BinaryStream } from "~/helpers/binaryStream";
-import { resolvePath2 } from "~/helpers/pathOperations";
-import { ProjectManager } from "~/vm/interfaces/projectManager";
-import { NumBool } from "~/vm/types";
+import { ClassPrototype } from "/common/classPrototype";
+import { createComposedScheme } from "/common/createComposedScheme";
+import { ProjectInfo } from "/common/fileFormats/prj";
+import { readSttFile, VariableSet } from "/common/fileFormats/stt";
+import { readVdrFile } from "/common/fileFormats/vdr";
+import { VectorDrawing } from "/common/fileFormats/vdr/types/vectorDrawing";
+import { VirtualFileSystem } from "/common/virtualFileSystem";
+import { BinaryStream } from "/helpers/binaryStream";
+import { resolvePath2 } from "/helpers/pathOperations";
+import { ProjectManager } from "/vm/interfaces/projectManager";
+import { NumBool } from "/vm/types";
 import { readClasses, ReadClassesOpts, readPreloadStt, readProjectInfo } from "./projectHelpers";
 
 export interface ProjectOptions<TVmCode> extends ReadClassesOpts<TVmCode> {

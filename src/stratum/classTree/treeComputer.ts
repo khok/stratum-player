@@ -1,5 +1,5 @@
-import { EventDispatcher } from "~/common/eventDispatcher";
-import { ExecutionContext } from "~/vm/executionContext";
+import { EventDispatcher } from "/common/eventDispatcher";
+import { ExecutionContext } from "/vm/executionContext";
 import { TreeMemoryManager } from "./treeMemoryManager";
 import { TreeNode } from "./treeNode";
 

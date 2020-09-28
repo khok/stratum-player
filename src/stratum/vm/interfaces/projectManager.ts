@@ -1,6 +1,6 @@
-import { VectorDrawing } from "~/common/fileFormats/vdr/types/vectorDrawing";
+import { VectorDrawing } from "/common/fileFormats/vdr/types/vectorDrawing";
 import { NumBool } from "../types";
-import { BinaryStream } from "~/helpers/binaryStream";
+import { BinaryStream } from "/helpers/binaryStream";
 
 export interface ProjectManager {
     readonly baseDirectory: string;

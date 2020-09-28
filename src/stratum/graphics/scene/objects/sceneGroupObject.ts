@@ -1,6 +1,6 @@
-import { NotImplementedError } from "~/common/errors";
-import { GroupObject } from "~/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "~/vm/types";
+import { NotImplementedError } from "/common/errors";
+import { GroupObject } from "/vm/interfaces/graphicSpaceObjects";
+import { NumBool } from "/vm/types";
 import { SceneObject, SceneObject2d } from ".";
 import { BaseObjectMixin, ObjectArgs } from "./baseObjectMixin";
 

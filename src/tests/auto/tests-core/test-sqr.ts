@@ -1,9 +1,9 @@
 import { strictEqual } from "assert";
-import { TreeNode } from "~/classTree/treeNode";
-import { VirtualFile } from "~/common/virtualFileSystem";
-import { ClassPrototype } from "~/common/classPrototype";
-import { ExecutionContext } from "~/vm/executionContext";
-import { parseBytecode } from "~/vm/parseBytecode";
+import { TreeNode } from "/classTree/treeNode";
+import { VirtualFile } from "/common/virtualFileSystem";
+import { ClassPrototype } from "/common/classPrototype";
+import { ExecutionContext } from "/vm/executionContext";
+import { parseBytecode } from "/vm/parseBytecode";
 
 (async function () {
     const stream = await VirtualFile.fromUrl("/test_projects/other/square_eq.cls").openStream();

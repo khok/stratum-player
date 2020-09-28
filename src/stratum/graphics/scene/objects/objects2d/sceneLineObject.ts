@@ -1,8 +1,8 @@
-import { Point2D } from "~/helpers/types";
-import { Optional, Require } from "~/helpers/utilityTypes";
-import { LineElement } from "~/common/fileFormats/vdr/types/vectorDrawingElements";
-import { LineObject } from "~/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "~/vm/types";
+import { Point2D } from "/helpers/types";
+import { Optional, Require } from "/helpers/utilityTypes";
+import { LineElement } from "/common/fileFormats/vdr/types/vectorDrawingElements";
+import { LineObject } from "/vm/interfaces/graphicSpaceObjects";
+import { NumBool } from "/vm/types";
 import { RenderableFactory, RenderableLine } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneBrushTool, ScenePenTool } from "../../tools";

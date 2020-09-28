@@ -1,4 +1,4 @@
-import { VarCode } from "~/common/varCode";
+import { VarCode } from "/common/varCode";
 import { ExecutionContext } from "../executionContext";
 
 /**

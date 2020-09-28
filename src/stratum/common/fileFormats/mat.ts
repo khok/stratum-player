@@ -1,5 +1,5 @@
-// import { BinaryStream } from "~/helpers/binaryStream";
-// import { FileSignatureError } from "~/helpers/errors";
+// import { BinaryStream } from "/helpers/binaryStream";
+// import { FileSignatureError } from "/helpers/errors";
 
 // export function readMatrix(stream: BinaryStream) {
 //     // const sizeofDouble = 8;

@@ -1,5 +1,5 @@
-import { BinaryStream } from "~/helpers/binaryStream";
-import { extractDirectory } from "~/helpers/pathOperations";
+import { BinaryStream } from "/helpers/binaryStream";
+import { extractDirectory } from "/helpers/pathOperations";
 import {
     BytecodeParser,
     ClassChild,

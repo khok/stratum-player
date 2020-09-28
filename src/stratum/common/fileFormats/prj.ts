@@ -1,7 +1,7 @@
 //project.cpp:592
-import { BinaryStream } from "~/helpers/binaryStream";
+import { BinaryStream } from "/helpers/binaryStream";
 import { FileReadingError, FileSignatureError } from "../errors";
-import { extractDirectory } from "~/helpers/pathOperations";
+import { extractDirectory } from "/helpers/pathOperations";
 import { EntryCode } from "./entryCode";
 
 export interface ProjectSettings {

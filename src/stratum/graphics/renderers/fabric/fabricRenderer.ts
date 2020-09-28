@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
 import { StaticCanvas } from "fabric/fabric-impl";
-import { colorRefToColor } from "~/common/colorrefParsers";
-import { BadDataError, OptionsError } from "~/common/errors";
-import { HtmlElementsFactory } from "~/graphics/renderers/fabric/html/htmlFactory";
+import { colorRefToColor } from "/common/colorrefParsers";
+import { BadDataError, OptionsError } from "/common/errors";
+import { HtmlElementsFactory } from "/graphics/renderers/fabric/html/htmlFactory";
 import {
     RenderableBitmap,
     RenderableBmpParams,
@@ -13,13 +13,13 @@ import {
     RenderableText,
     RenderableTextParams,
     Renderer,
-} from "~/graphics/scene/interfaces";
-import { SceneBrushTool } from "~/graphics/scene/tools";
-import { InputEventReceiver } from "~/graphics/windowSystems/single/inputEventReceiver";
-import { HandleMap } from "~/helpers/handleMap";
-import { Point2D } from "~/helpers/types";
-import { EventCode } from "~/vm/consts";
-import { systemKeysTemp } from "~/vm/operations/system";
+} from "/graphics/scene/interfaces";
+import { SceneBrushTool } from "/graphics/scene/tools";
+import { InputEventReceiver } from "/graphics/windowSystems/single/inputEventReceiver";
+import { HandleMap } from "/helpers/handleMap";
+import { Point2D } from "/helpers/types";
+import { EventCode } from "/vm/consts";
+import { systemKeysTemp } from "/vm/operations/system";
 import { FabricImage, FabricLine, FabricText } from "./components";
 import { canvasOptions } from "./fabricConfig";
 import { HtmlControl } from "./html/htmlControl";

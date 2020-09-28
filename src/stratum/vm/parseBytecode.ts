@@ -1,4 +1,4 @@
-import { BinaryStream } from "~/helpers/binaryStream";
+import { BinaryStream } from "/helpers/binaryStream";
 import { operandTypes } from "./consts";
 import { DOUBLE_OPERAND_FLAG_MASK, OTHER_OPERAND_FLAG_MASK, STRING_OPERAND_FLAG_MASK } from "./consts/operandFlagMasks";
 import { FunctionSignature, OperationArgType, ParsedCode } from "./types";

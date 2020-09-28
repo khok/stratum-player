@@ -1,9 +1,9 @@
 import { strictEqual } from "assert";
-import { VirtualFileSystem } from "~/common/virtualFileSystem";
-import { createTools } from "~/graphics/scene/createToolsAndObjects";
-import { HandleMap } from "~/helpers/handleMap";
-import { Project } from "~/project/project";
-import { TextTool } from "~/vm/interfaces/graphicSpaceTools";
+import { VirtualFileSystem } from "/common/virtualFileSystem";
+import { createTools } from "/graphics/scene/createToolsAndObjects";
+import { HandleMap } from "/helpers/handleMap";
+import { Project } from "/project/project";
+import { TextTool } from "/vm/interfaces/graphicSpaceTools";
 
 (async function () {
     const fs = await VirtualFileSystem.new({ source: "/test_projects/texts_test.zip" });

@@ -1,9 +1,9 @@
-import { Point2D } from "~/helpers/types";
-import { Optional, Remove } from "~/helpers/utilityTypes";
-import { BadDataError } from "~/common/errors";
-import { BmpToolParams } from "~/common/fileFormats/vdr/types/vectorDrawingTools";
-import { BmpTool } from "~/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "~/vm/types";
+import { Point2D } from "/helpers/types";
+import { Optional, Remove } from "/helpers/utilityTypes";
+import { BadDataError } from "/common/errors";
+import { BmpToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
+import { BmpTool } from "/vm/interfaces/graphicSpaceTools";
+import { NumBool } from "/vm/types";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type SceneBmpToolArgs = Optional<Remove<BmpToolParams, "type" | "base64Image">, "width" | "height"> & { image?: HTMLImageElement };

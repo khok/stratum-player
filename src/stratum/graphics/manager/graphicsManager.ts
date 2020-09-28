@@ -1,9 +1,9 @@
-import { UsageError } from "~/common/errors";
-import { VectorDrawing } from "~/common/fileFormats/vdr/types/vectorDrawing";
-import { HandleMap } from "~/helpers/handleMap";
-import { GraphicSpace } from "~/vm/interfaces/graphicSpace";
-import { WindowsManager } from "~/vm/interfaces/windowsManager";
-import { NumBool } from "~/vm/types";
+import { UsageError } from "/common/errors";
+import { VectorDrawing } from "/common/fileFormats/vdr/types/vectorDrawing";
+import { HandleMap } from "/helpers/handleMap";
+import { GraphicSpace } from "/vm/interfaces/graphicSpace";
+import { WindowsManager } from "/vm/interfaces/windowsManager";
+import { NumBool } from "/vm/types";
 import { SimpleWindow } from "./simpleWindow";
 import { WindowSystem } from "./interfaces";
 import { Scene } from "../scene";

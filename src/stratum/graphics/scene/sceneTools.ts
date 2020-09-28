@@ -1,7 +1,7 @@
-import { BinaryStream } from "~/helpers/binaryStream";
-import { HandleMap } from "~/helpers/handleMap";
-import { GraphicSpaceTools, GraphicSpaceToolType } from "~/vm/interfaces/graphicSpace";
-import { NumBool } from "~/vm/types";
+import { BinaryStream } from "/helpers/binaryStream";
+import { HandleMap } from "/helpers/handleMap";
+import { GraphicSpaceTools, GraphicSpaceToolType } from "/vm/interfaces/graphicSpace";
+import { NumBool } from "/vm/types";
 import { BmpToolFactory } from ".";
 import { SceneBmpTool, SceneBrushTool, SceneFontTool, ScenePenTool, SceneStringTool, SceneTextTool } from "./tools";
 

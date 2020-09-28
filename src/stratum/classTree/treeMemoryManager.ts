@@ -1,6 +1,6 @@
-import { UsageError } from "~/common/errors";
-import { VarCode } from "~/common/varCode";
-import { MemoryManager } from "~/vm/interfaces/memoryManager";
+import { UsageError } from "/common/errors";
+import { VarCode } from "/common/varCode";
+import { MemoryManager } from "/vm/interfaces/memoryManager";
 
 export interface TreeMemoryManagerArgs {
     floatsCount: number;
