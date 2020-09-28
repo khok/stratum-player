@@ -9,16 +9,15 @@
         "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global stratum --out-file stratum.js"
     },
     "devDependencies": {
-        "parcel-plugin-static-files-copy": "^2.2.0",
-        "typescript": "^3.9.3"
+        "parcel-plugin-static-files-copy": "^2.5.0",
+        "typescript": "^4.0.3"
     },
     "dependencies": {
-        "@types/fabric": "^3.6.2",
-        "@types/jszip": "^3.1.7",
+        "@types/fabric": "^3.6.8",
         "@types/pngjs": "^3.4.2",
-        "fabric": "^3.6.3",
-        "jszip": "^3.3.0",
-        "pngjs": "^3.4.0"
+        "fabric": "^4.2.0",
+        "jszip": "git+https://github.com/khokm/jszip.git",
+        "pngjs": "^5.0.0"
     },
     "prettier": {
         "endOfLine": "lf",
