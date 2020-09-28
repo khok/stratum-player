@@ -1,7 +1,7 @@
-import { BinaryStream } from "/helpers/binaryStream";
-import { HandleMap } from "/helpers/handleMap";
-import { GraphicSpaceTools, GraphicSpaceToolType } from "/vm/interfaces/graphicSpace";
-import { NumBool } from "/vm/types";
+import { BinaryStream } from "stratum/helpers/binaryStream";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { GraphicSpaceTools, GraphicSpaceToolType } from "stratum/vm/interfaces/graphicSpace";
+import { NumBool } from "stratum/vm/types";
 import { BmpToolFactory } from ".";
 import { SceneBmpTool, SceneBrushTool, SceneFontTool, ScenePenTool, SceneStringTool, SceneTextTool } from "./tools";
 

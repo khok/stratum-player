@@ -1,6 +1,6 @@
-import { BinaryStream } from "/helpers/binaryStream";
-import { readBitmap, readDoubleBitmap } from "/helpers/bitmapReaders";
-import { ImageToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
+import { BinaryStream } from "stratum/helpers/binaryStream";
+import { readBitmap, readDoubleBitmap } from "stratum/helpers/bitmapReaders";
+import { ImageToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
 import { SceneBmpTool } from "./tools/sceneBmpTool";
 
 export interface BmpToolFactoryArgs {

@@ -1,4 +1,4 @@
-import { Point2D } from "/helpers/types";
+import { Point2D } from "stratum/helpers/types";
 
 export interface ElementBase {
     handle: number;

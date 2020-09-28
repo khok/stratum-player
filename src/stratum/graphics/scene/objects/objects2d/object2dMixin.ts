@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
-import { Optional } from "/helpers/utilityTypes";
-import { Element2dBase, VectorDrawingElement2d } from "/common/fileFormats/vdr/types/vectorDrawingElements";
-import { Object2dBase } from "/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "/vm/types";
+import { Optional } from "stratum/helpers/utilityTypes";
+import { Element2dBase, VectorDrawingElement2d } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
+import { Object2dBase } from "stratum/vm/interfaces/graphicSpaceObjects";
+import { NumBool } from "stratum/vm/types";
 import { RenderableElement } from "../../interfaces";
 import { BaseObjectMixin } from "../baseObjectMixin";
 

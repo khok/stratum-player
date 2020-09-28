@@ -1,8 +1,8 @@
-import { HandleMap } from "/helpers/handleMap";
-import { Optional, Remove } from "/helpers/utilityTypes";
-import { BrushToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
-import { BrushTool } from "/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "/vm/types";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Optional, Remove } from "stratum/helpers/utilityTypes";
+import { BrushToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
+import { BrushTool } from "stratum/vm/interfaces/graphicSpaceTools";
+import { NumBool } from "stratum/vm/types";
 import { SceneBmpTool } from ".";
 import { SceneToolMixin } from "./sceneToolMixin";
 

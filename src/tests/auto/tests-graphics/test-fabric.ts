@@ -1,10 +1,10 @@
 import { strictEqual } from "assert";
-import { createComposedScheme } from "/common/createComposedScheme";
-import { VirtualFileSystem } from "/common/virtualFileSystem";
-import { GraphicsManager } from "/graphics/manager/graphicsManager";
-import { BmpToolFactory } from "/graphics/scene";
-import { SingleCanvasWindowSystem } from "/graphics/windowSystems";
-import { Project } from "/project/project";
+import { createComposedScheme } from "stratum/common/createComposedScheme";
+import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
+import { GraphicsManager } from "stratum/graphics/manager/graphicsManager";
+import { BmpToolFactory } from "stratum/graphics/scene";
+import { SingleCanvasWindowSystem } from "stratum/graphics/windowSystems";
+import { Project } from "stratum/project/project";
 
 (async function () {
     const fs = await VirtualFileSystem.new([{ source: "/test_projects/balls.zip" }, { source: "/data/library.zip" }]);

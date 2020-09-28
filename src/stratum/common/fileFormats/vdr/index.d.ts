@@ -1,4 +1,4 @@
-import { BinaryStream } from "/helpers/binaryStream";
+import { BinaryStream } from "stratum/helpers/binaryStream";
 import { VectorDrawing } from "./types/vectorDrawing";
 
 /**

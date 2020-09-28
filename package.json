@@ -4,8 +4,8 @@
     "name": "stratum-player",
     "version": "0.1.0",
     "scripts": {
-        "test": "parcel src/stratum/test.html",
-        "autotest": "parcel src/stratum/autotest.html",
+        "test": "parcel serve src/tests/manual/index.html",
+        "autotest": "parcel serve src/tests/auto/index.html",
         "build": "cross-env NODE_ENV=production parcel build src/stratum/api.ts --detailed-report --global stratum --out-file stratum.js"
     },
     "devDependencies": {
@@ -26,5 +26,8 @@
     },
     "staticFiles": {
         "watcherGlob": "**/*.zip"
+    },
+    "alias": {
+        "stratum": "./src/stratum"
     }
 }

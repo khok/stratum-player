@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
-import { RenderableBitmap, RenderableBmpParams } from "/graphics/scene/interfaces";
-import { SceneBmpTool } from "/graphics/scene/tools";
-import { Point2D } from "/helpers/types";
+import { RenderableBitmap, RenderableBmpParams } from "stratum/graphics/scene/interfaces";
+import { SceneBmpTool } from "stratum/graphics/scene/tools";
+import { Point2D } from "stratum/helpers/types";
 import { objectOptions } from "../fabricConfig";
 
 export class FabricImage implements RenderableBitmap {

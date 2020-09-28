@@ -1,11 +1,11 @@
 import { ok } from "assert";
-import { buildTree } from "/classTree/buildTree";
-import { TreeManager } from "/classTree/treeManager";
-import { VirtualFileSystem } from "/common/virtualFileSystem";
-import { Project } from "/project/project";
-import { ExecutionContext } from "/vm/executionContext";
-import { parseBytecode } from "/vm/parseBytecode";
-import { ParsedCode } from "/vm/types";
+import { buildTree } from "stratum/classTree/buildTree";
+import { TreeManager } from "stratum/classTree/treeManager";
+import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
+import { Project } from "stratum/project/project";
+import { ExecutionContext } from "stratum/vm/executionContext";
+import { parseBytecode } from "stratum/vm/parseBytecode";
+import { ParsedCode } from "stratum/vm/types";
 
 (async function () {
     const fs = await VirtualFileSystem.new({ source: "test_projects/test_messages.zip" });

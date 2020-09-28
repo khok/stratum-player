@@ -1,7 +1,7 @@
-import { HandleMap } from "/helpers/handleMap";
-import { Remove } from "/helpers/utilityTypes";
-import { TextToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
-import { TextFragment, TextTool } from "/vm/interfaces/graphicSpaceTools";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Remove } from "stratum/helpers/utilityTypes";
+import { TextToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
+import { TextFragment, TextTool } from "stratum/vm/interfaces/graphicSpaceTools";
 import { SceneFontTool, SceneStringTool } from ".";
 import { SceneToolMixin } from "./sceneToolMixin";
 

@@ -1,6 +1,6 @@
-import { NotImplementedError } from "/common/errors";
-import { RenderableControl, RenderableControlParams } from "/graphics/scene/interfaces";
-import { Point2D } from "/helpers/types";
+import { NotImplementedError } from "stratum/common/errors";
+import { RenderableControl, RenderableControlParams } from "stratum/graphics/scene/interfaces";
+import { Point2D } from "stratum/helpers/types";
 import { HtmlElementsFactory, HtmlInputWrapper } from "./htmlFactory";
 
 export class HtmlControl implements RenderableControl {

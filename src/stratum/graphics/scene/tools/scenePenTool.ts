@@ -1,7 +1,7 @@
-import { Optional, Remove } from "/helpers/utilityTypes";
-import { PenToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
-import { PenTool } from "/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "/vm/types";
+import { Optional, Remove } from "stratum/helpers/utilityTypes";
+import { PenToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
+import { PenTool } from "stratum/vm/interfaces/graphicSpaceTools";
+import { NumBool } from "stratum/vm/types";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type ScenePenToolArgs = Optional<Remove<PenToolParams, "type">, "rop2">;

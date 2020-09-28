@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
-import { RenderableText, RenderableTextParams } from "/graphics/scene/interfaces";
-import { SceneTextTool } from "/graphics/scene/tools";
-import { Point2D } from "/helpers/types";
-import { colorRefToColor } from "/common/colorrefParsers";
+import { RenderableText, RenderableTextParams } from "stratum/graphics/scene/interfaces";
+import { SceneTextTool } from "stratum/graphics/scene/tools";
+import { Point2D } from "stratum/helpers/types";
+import { colorRefToColor } from "stratum/common/colorrefParsers";
 import { objectOptions } from "../fabricConfig";
 
 // const textScaleCoof = 0.65;

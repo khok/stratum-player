@@ -1,6 +1,6 @@
 import { readNext } from "../Collection";
 import { VdrEntry } from "../vdrEntry";
-import { readBitmap, readDoubleBitmap } from "/helpers/bitmapReaders";
+import { readBitmap, readDoubleBitmap } from "stratum/helpers/bitmapReaders";
 
 function readTools(stream) {
     return {

@@ -1,6 +1,6 @@
 import { fabric } from "fabric";
-import { OptionsError } from "/common/errors";
-import { FabricRendererArgs } from "/graphics/renderers/fabric/fabricRenderer";
+import { OptionsError } from "stratum/common/errors";
+import { FabricRendererArgs } from "stratum/graphics/renderers/fabric/fabricRenderer";
 import { RendererWindow, WindowSystem } from "../../manager/interfaces";
 import { FabricRenderer } from "../../renderers";
 import { HtmlElementsFactory } from "../../renderers/fabric/html/htmlFactory";

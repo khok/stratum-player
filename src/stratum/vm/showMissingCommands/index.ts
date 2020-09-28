@@ -1,4 +1,4 @@
-import { ClassPrototype } from "/common/classPrototype";
+import { ClassPrototype } from "stratum/common/classPrototype";
 import { OpCode } from "../consts";
 import { OPCODE_MASK } from "../consts/operandFlagMasks";
 import { operations } from "../operations";

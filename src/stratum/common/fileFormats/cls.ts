@@ -1,5 +1,5 @@
 // class.cpp:6100
-import { BinaryStream } from "/helpers/binaryStream";
+import { BinaryStream } from "stratum/helpers/binaryStream";
 import { FileReadingError, FileSignatureError } from "../errors";
 import { VectorDrawing } from "./vdr/types/vectorDrawing";
 import { EntryCode } from "./entryCode";

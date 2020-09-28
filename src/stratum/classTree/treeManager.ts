@@ -1,4 +1,4 @@
-import { ClassManager } from "/vm/interfaces/classManager";
+import { ClassManager } from "stratum/vm/interfaces/classManager";
 import { TreeNode } from "./treeNode";
 
 export interface TreeManagerArgs {

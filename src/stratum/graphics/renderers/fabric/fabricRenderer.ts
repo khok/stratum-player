@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
 import { StaticCanvas } from "fabric/fabric-impl";
-import { colorRefToColor } from "/common/colorrefParsers";
-import { BadDataError, OptionsError } from "/common/errors";
-import { HtmlElementsFactory } from "/graphics/renderers/fabric/html/htmlFactory";
+import { colorRefToColor } from "stratum/common/colorrefParsers";
+import { BadDataError, OptionsError } from "stratum/common/errors";
+import { HtmlElementsFactory } from "stratum/graphics/renderers/fabric/html/htmlFactory";
 import {
     RenderableBitmap,
     RenderableBmpParams,
@@ -13,13 +13,13 @@ import {
     RenderableText,
     RenderableTextParams,
     Renderer,
-} from "/graphics/scene/interfaces";
-import { SceneBrushTool } from "/graphics/scene/tools";
-import { InputEventReceiver } from "/graphics/windowSystems/single/inputEventReceiver";
-import { HandleMap } from "/helpers/handleMap";
-import { Point2D } from "/helpers/types";
-import { EventCode } from "/vm/consts";
-import { systemKeysTemp } from "/vm/operations/system";
+} from "stratum/graphics/scene/interfaces";
+import { SceneBrushTool } from "stratum/graphics/scene/tools";
+import { InputEventReceiver } from "stratum/graphics/windowSystems/single/inputEventReceiver";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Point2D } from "stratum/helpers/types";
+import { EventCode } from "stratum/vm/consts";
+import { systemKeysTemp } from "stratum/vm/operations/system";
 import { FabricImage, FabricLine, FabricText } from "./components";
 import { canvasOptions } from "./fabricConfig";
 import { HtmlControl } from "./html/htmlControl";

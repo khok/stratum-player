@@ -1,5 +1,5 @@
-// import { BinaryStream } from "/helpers/binaryStream";
-// import { FileSignatureError } from "/helpers/errors";
+// import { BinaryStream } from "stratum/helpers/binaryStream";
+// import { FileSignatureError } from "stratum/helpers/errors";
 
 // export function readMatrix(stream: BinaryStream) {
 //     // const sizeofDouble = 8;

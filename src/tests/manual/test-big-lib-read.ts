@@ -1,7 +1,7 @@
-// import { readAllClassFiles } from "/fileReader/zipReader";
-// import { openZipFromUrl } from "/fileReader/fileReaderHelpers";
-// import { showMissingCommands, formatMissingCommands } from "/helpers/showMissingCommands";
-// import { operations } from "/vm/operations";
+// import { readAllClassFiles } from "stratum/fileReader/zipReader";
+// import { openZipFromUrl } from "stratum/fileReader/fileReaderHelpers";
+// import { showMissingCommands, formatMissingCommands } from "stratum/helpers/showMissingCommands";
+// import { operations } from "stratum/vm/operations";
 
 // //тестирует считывание cls/cls->vdr файлов;
 // (async function () {

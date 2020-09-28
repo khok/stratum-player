@@ -15,9 +15,6 @@
         "noFallthroughCasesInSwitch": true,
         "noEmitOnError": true,
         "downlevelIteration": true,
-        "baseUrl": ".",
-        "paths": {
-            "/*": ["./stratum/*"]
-        }
+        "baseUrl": "."
     }
 }

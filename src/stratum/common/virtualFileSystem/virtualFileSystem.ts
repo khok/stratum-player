@@ -1,4 +1,4 @@
-import { BadDataError } from "/common/errors";
+import { BadDataError } from "stratum/common/errors";
 import { VirtualFile } from "./virtualFile";
 import { loadFromFile, loadFromUrl } from "./zipHelpers";
 

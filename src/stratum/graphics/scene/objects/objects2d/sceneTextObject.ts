@@ -1,7 +1,7 @@
-import { Optional } from "/helpers/utilityTypes";
-import { TextElement } from "/common/fileFormats/vdr/types/vectorDrawingElements";
-import { TextObject } from "/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "/vm/types";
+import { Optional } from "stratum/helpers/utilityTypes";
+import { TextElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
+import { TextObject } from "stratum/vm/interfaces/graphicSpaceObjects";
+import { NumBool } from "stratum/vm/types";
 import { RenderableFactory, RenderableText } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneTextTool } from "../../tools";

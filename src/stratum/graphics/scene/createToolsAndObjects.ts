@@ -1,7 +1,7 @@
-import { BadDataError } from "/common/errors";
-import { VectorDrawingTools } from "/common/fileFormats/vdr/types/vectorDrawing";
-import { GroupElement, VectorDrawingElement, VectorDrawingElement2d } from "/common/fileFormats/vdr/types/vectorDrawingElements";
-import { HandleMap } from "/helpers/handleMap";
+import { BadDataError } from "stratum/common/errors";
+import { VectorDrawingTools } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
+import { GroupElement, VectorDrawingElement, VectorDrawingElement2d } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { BmpToolFactory } from ".";
 import { RenderableFactory } from "./interfaces";
 import { SceneBitmapObject, SceneControlObject, SceneGroupObject, SceneLineObject, SceneObject, SceneTextObject } from "./objects";

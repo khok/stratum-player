@@ -19,7 +19,7 @@
 
 А vm/parseBytecode ссылается на находящийся в другом корневом каталоге helpers/BinaryStream вот так:
 
-`import { BinaryStream } from "/helpers/binaryStream"`;
+`import { BinaryStream } from "stratum/helpers/binaryStream"`;
 
 ------ Описание каталогов. ------
 

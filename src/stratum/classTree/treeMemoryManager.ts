@@ -1,6 +1,6 @@
-import { UsageError } from "/common/errors";
-import { VarCode } from "/common/varCode";
-import { MemoryManager } from "/vm/interfaces/memoryManager";
+import { UsageError } from "stratum/common/errors";
+import { VarCode } from "stratum/common/varCode";
+import { MemoryManager } from "stratum/vm/interfaces/memoryManager";
 
 export interface TreeMemoryManagerArgs {
     floatsCount: number;

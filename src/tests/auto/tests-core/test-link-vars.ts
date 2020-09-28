@@ -1,9 +1,9 @@
 import { strictEqual } from "assert";
-import { buildTree } from "/classTree/buildTree";
-import { VirtualFileSystem } from "/common/virtualFileSystem";
-import { Project } from "/project/project";
-import { parseBytecode } from "/vm/parseBytecode";
-import { ParsedCode } from "/vm/types";
+import { buildTree } from "stratum/classTree/buildTree";
+import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
+import { Project } from "stratum/project/project";
+import { parseBytecode } from "stratum/vm/parseBytecode";
+import { ParsedCode } from "stratum/vm/types";
 
 async function load(name: string) {
     const fs = await VirtualFileSystem.new([

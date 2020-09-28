@@ -1,5 +1,5 @@
 //class.cpp:3623
-import { BinaryStream } from "/helpers/binaryStream";
+import { BinaryStream } from "stratum/helpers/binaryStream";
 import { FileReadingError, FileSignatureError } from "../errors";
 import { EntryCode } from "./entryCode";
 

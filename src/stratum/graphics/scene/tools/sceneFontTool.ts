@@ -1,6 +1,6 @@
-import { Remove, Require } from "/helpers/utilityTypes";
-import { FontToolParams } from "/common/fileFormats/vdr/types/vectorDrawingTools";
-import { FontTool } from "/vm/interfaces/graphicSpaceTools";
+import { Remove, Require } from "stratum/helpers/utilityTypes";
+import { FontToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
+import { FontTool } from "stratum/vm/interfaces/graphicSpaceTools";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type SceneFontToolArgs = Require<Partial<Remove<FontToolParams, "type">>, "handle" | "fontName" | "size">;

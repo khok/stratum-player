@@ -1,7 +1,7 @@
-import { ClassPrototype } from "/common/classPrototype";
-import { BadDataError } from "/common/errors";
-import { ClassLink } from "/common/fileFormats/cls";
-import { VarCode } from "/common/varCode";
+import { ClassPrototype } from "stratum/common/classPrototype";
+import { BadDataError } from "stratum/common/errors";
+import { ClassLink } from "stratum/common/fileFormats/cls";
+import { VarCode } from "stratum/common/varCode";
 import { PlacementDescription, TreeNode } from "./treeNode";
 import { NodeCode } from "./nodeCode";
 

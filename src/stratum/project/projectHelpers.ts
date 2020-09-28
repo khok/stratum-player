@@ -1,9 +1,9 @@
-import { ClassPrototype } from "/common/classPrototype";
-import { BytecodeParser } from "/common/fileFormats/cls";
-import { ProjectInfo, readPrjFile } from "/common/fileFormats/prj";
-import { readSttFile } from "/common/fileFormats/stt";
-import { VirtualFileSystem } from "/common/virtualFileSystem";
-import { resolvePath2, unixToDosPath } from "/helpers/pathOperations";
+import { ClassPrototype } from "stratum/common/classPrototype";
+import { BytecodeParser } from "stratum/common/fileFormats/cls";
+import { ProjectInfo, readPrjFile } from "stratum/common/fileFormats/prj";
+import { readSttFile } from "stratum/common/fileFormats/stt";
+import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
+import { resolvePath2, unixToDosPath } from "stratum/helpers/pathOperations";
 
 export const DefaultSttFileName = "_preload.stt";
 
