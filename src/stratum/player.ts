@@ -106,8 +106,10 @@ export class Player {
     init() {
         if (!this.currentProject) return;
         this.stop();
-        const { mmanager } = this.currentProject;
+        const { mmanager, ctx } = this.currentProject;
         mmanager.initValues();
+        ctx.hasError = false;
+        ctx.executionStopped = false;
     }
 
     step() {
@@ -116,7 +118,7 @@ export class Player {
         tree.compute(ctx);
         this.ws.redrawWindows();
         if (ctx.executionStopped) {
-            if (ctx.error) this.dispatcher.dispatch("VM_ERROR", ctx.error);
+            if (ctx.hasError) this.dispatcher.dispatch("VM_ERROR", ctx.error);
             else this.dispatcher.dispatch("PROJECT_STOPPED");
             return false;
         }
@@ -126,6 +128,7 @@ export class Player {
     }
 
     play(func: (callback: () => void) => number = requestAnimationFrame) {
+        if (!this.currentProject || this.currentProject.ctx.executionStopped) return;
         const req = () => {
             if (this.step()) this.reqId = func(req);
         };

@@ -259,10 +259,10 @@ export class TreeNode implements ComputableClass {
     }
 
     compute(ctx: ExecutionContext, force: boolean = false): void {
-        if (ctx.hasError || (force === false && this.isDisabled())) return;
+        if (ctx.hasError === true || (force === false && this.isDisabled() === true)) return;
 
         const children = this.children;
-        if (children) for (let i = 0; i < children.length; i++) children[i].compute(ctx);
+        if (children !== undefined) for (let i = 0; i < children.length; i++) children[i].compute(ctx);
 
         const code = this.proto.code;
         if (code === undefined) return;
