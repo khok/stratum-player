@@ -100,12 +100,14 @@ export class Player {
 
     stop() {
         this.pause();
+        this.currentProject = undefined;
         this.graphics.closeAllWindows();
     }
 
     init() {
         if (!this.currentProject) return;
-        this.stop();
+        this.pause();
+        this.graphics.closeAllWindows();
         const { mmanager, ctx } = this.currentProject;
         mmanager.initValues();
         ctx.hasError = false;

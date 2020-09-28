@@ -1,11 +1,8 @@
 import { VirtualFileSystem, SingleCanvasWindowSystem, Player, openProject } from "stratum/api";
 
-export async function _run_test_player(name: string) {
-    const fs = await VirtualFileSystem.new([
-        { source: `/test_projects/${name}.zip`, prefix: "C:/Projects" },
-        { source: "/data/library.zip", prefix: "C:/Library" },
-    ]);
-    const prj = await openProject(fs, { addSearchDirs: ["C:/Library"] });
+export async function _run_test_player(name: string, prjFileName?: string) {
+    const fs = await VirtualFileSystem.new([{ source: `/test_projects/${name}.zip` }, { source: "/data/library.zip" }]);
+    const prj = await openProject(fs, { addSearchDirs: ["/library"], prjFileName });
     await Promise.all(fs.findFiles(".bmp").map((f) => f.makeSync()));
     await Promise.all(fs.findFiles(".vdr").map((f) => f.makeSync()));
 
@@ -21,12 +18,17 @@ export async function _run_test_player(name: string) {
     player.switchProject(handle);
     player.init();
     player.play();
-    (document.getElementById("stop")! as HTMLButtonElement).onclick = () => player.stop();
+
+    (document.getElementById("stop")! as HTMLButtonElement).onclick = () => {
+        (document.getElementById("pause")! as HTMLButtonElement).innerHTML = "Продолжить";
+        player.stop();
+    };
     (document.getElementById("pause")! as HTMLButtonElement).onclick = () => {
         player.switchPause();
         (document.getElementById("pause")! as HTMLButtonElement).innerHTML = player.isPaused ? "Продолжить" : "Пауза";
     };
-    (document.getElementById("again")! as HTMLButtonElement).onclick = async () => {
+    (document.getElementById("again")! as HTMLButtonElement).onclick = () => {
+        player.switchProject(handle);
         player.init();
         player.play();
         (document.getElementById("pause")! as HTMLButtonElement).innerHTML = "Пауза";
