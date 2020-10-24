@@ -3,17 +3,13 @@ import { readBitmap, readDoubleBitmap } from "stratum/helpers/bitmapReaders";
 import { ImageToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
 import { SceneBmpTool } from "./tools/sceneBmpTool";
 
-export interface BmpToolFactoryArgs {
-    iconsPath?: string;
-}
-
 export class BmpToolFactory {
     private static cachedIcons = new Map<string, Promise<HTMLImageElement>>();
     private static promises = new Set<Promise<unknown>>();
-    private static iconsPath: string = "data/icons";
+    private static iconsPath: string = "/data/icons";
 
-    static setParams({ iconsPath }: BmpToolFactoryArgs) {
-        if (iconsPath !== undefined) this.iconsPath = iconsPath;
+    static setIconsPath(iconsPath: string) {
+        this.iconsPath = iconsPath;
     }
 
     private static loadImage(src: string) {

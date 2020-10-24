@@ -1,0 +1,24 @@
+{
+    "extends": "./tsconfig.json",
+    "include": [
+        "demo",
+        "stratum",
+        "tests",
+        "stubs.d.ts",
+        "../node_modules/jszip/index.d.ts",
+        "../node_modules/@types/fabric/fabric-impl.d.ts",
+        "./**/*.json"
+    ],
+    "compilerOptions": {
+        "noResolve": true,
+        "paths": {
+            "stream": ["stubs.d.ts"],
+            "zlib": ["stubs.d.ts"],
+            "jszip": ["../node_modules/jszip/index.d.ts"]
+        },
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "allowUnusedLabels": true,
+        "allowUnreachableCode": true
+    }
+}

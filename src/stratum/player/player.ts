@@ -1,18 +1,17 @@
-import { buildTree } from "./classTree/buildTree";
-import { NodeCode } from "./classTree/nodeCode";
-import { TreeManager } from "./classTree/treeManager";
-import { TreeMemoryManager } from "./classTree/treeMemoryManager";
-import { TreeNode } from "./classTree/treeNode";
-import { EventDispatcher, EventType } from "./common/eventDispatcher";
-import { VirtualFileSystem } from "./common/virtualFileSystem";
-import { GraphicsManager, GraphicsManagerOptions } from "./graphics/manager/graphicsManager";
-import { WindowSystem } from "./graphics/manager/interfaces";
-import { BmpToolFactory, BmpToolFactoryArgs } from "./graphics/scene/bmpToolFactory";
-import { HandleMap } from "./helpers/handleMap";
-import { Project } from "./project/project";
-import { ExecutionContext } from "./vm/executionContext";
+import { buildTree } from "stratum/classTree/buildTree";
+import { NodeCode } from "stratum/classTree/nodeCode";
+import { TreeManager } from "stratum/classTree/treeManager";
+import { TreeMemoryManager } from "stratum/classTree/treeMemoryManager";
+import { TreeNode } from "stratum/classTree/treeNode";
+import { EventDispatcher, EventType } from "stratum/common/eventDispatcher";
+import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
+import { GraphicsManager, GraphicsManagerOptions } from "stratum/graphics/manager/graphicsManager";
+import { WindowSystem } from "stratum/graphics/manager/interfaces";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Project } from "stratum/project/project";
+import { ExecutionContext } from "stratum/vm/executionContext";
 
-export interface PlayerArgs extends GraphicsManagerOptions, BmpToolFactoryArgs {
+export interface PlayerArgs extends GraphicsManagerOptions {
     fs: VirtualFileSystem;
     windowSystem: WindowSystem;
 }
@@ -36,7 +35,6 @@ export class Player {
     constructor(args: PlayerArgs) {
         this.ws = args.windowSystem;
         this.graphics = new GraphicsManager(this.ws, args);
-        BmpToolFactory.setParams(args);
     }
 
     on<T extends keyof EventType>(event: T, fn: EventType[T]) {

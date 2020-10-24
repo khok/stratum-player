@@ -1,12 +1,12 @@
-import { strictEqual } from "assert";
 import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
 import { createTools } from "stratum/graphics/scene/createToolsAndObjects";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Project } from "stratum/project/project";
 import { TextTool } from "stratum/vm/interfaces/graphicSpaceTools";
+const { strictEqual } = chai.assert;
 
-(async function () {
-    const fs = await VirtualFileSystem.new({ source: "/test_projects/texts_test.zip" });
+it("Правильно собирается текст", async () => {
+    const fs = await VirtualFileSystem.new({ source: "/projects/texts_test.zip" });
     const prj = await Project.open(fs, { addSearchDirs: ["library/"] });
     const classes = prj.classes;
 
@@ -17,5 +17,4 @@ import { TextTool } from "stratum/vm/interfaces/graphicSpaceTools";
         if (idx === 1) strictEqual(t.assembledText.text, "Привет, мир!!");
         if (idx === 2) strictEqual(t.assembledText.text, "Привет,\r\nкак,\r\nдела?");
     });
-    console.log("Text assembly test comlpeted.");
-})();
+});

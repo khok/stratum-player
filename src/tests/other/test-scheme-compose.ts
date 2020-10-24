@@ -1,8 +1,8 @@
-import { strictEqual } from "assert";
 import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
 import { VectorDrawingElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { Project } from "stratum/project/project";
+const { strictEqual } = chai.assert;
 
 function isElementInGroup(elements: VectorDrawingElement[], handle: number) {
     return elements.some((el) => el.type === "otGROUP2D" && el.childHandles.includes(handle));
@@ -49,14 +49,12 @@ const test_result = [
     "otLINE2D #35",
 ];
 
-//тестирует правильность считывания и композиции VDR
-(async function () {
-    const fs = await VirtualFileSystem.new([{ source: "/test_projects/test_scheme_compose.zip" }, { source: "/data/library.zip" }]);
+it("Тестирует правильность считывания и композиции VDR", async () => {
+    const fs = await VirtualFileSystem.new([{ source: "/projects/test_scheme_compose.zip" }, { source: "/data/library.zip" }]);
     const prj = await Project.open(fs, { addSearchDirs: ["library/"] });
     const classes = prj.classes;
     const root = classes.get(prj.rootClassName.toLowerCase())!;
     const scheme = createComposedScheme(root.scheme!, root.children!, classes);
     const elements = toJson(scheme.elements);
     strictEqual(JSON.stringify(elements), JSON.stringify(test_result));
-    console.log("Scheme compose test completed.");
-})();
+});

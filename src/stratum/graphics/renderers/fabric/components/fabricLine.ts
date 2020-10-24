@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
+import { colorRefToColor } from "stratum/common/colorrefParsers";
 import { RenderableLine, RenderableLineParams } from "stratum/graphics/scene/interfaces";
 import { SceneBrushTool, ScenePenTool } from "stratum/graphics/scene/tools";
 import { Point2D } from "stratum/helpers/types";
-import { colorRefToColor } from "stratum/common/colorrefParsers";
 import { objectOptions } from "../fabricConfig";
 
 function getFillValue(brush?: SceneBrushTool) {

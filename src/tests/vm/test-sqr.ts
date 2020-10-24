@@ -1,12 +1,12 @@
-import { strictEqual } from "assert";
 import { TreeNode } from "stratum/classTree/treeNode";
 import { VirtualFile } from "stratum/common/virtualFileSystem";
 import { ClassPrototype } from "stratum/common/classPrototype";
 import { ExecutionContext } from "stratum/vm/executionContext";
 import { parseBytecode } from "stratum/vm/parseBytecode";
+const { strictEqual } = chai.assert;
 
-(async function () {
-    const stream = await VirtualFile.fromUrl("/test_projects/other/square_eq.cls").openStream();
+it("Тест квадратного уравнения", async () => {
+    const stream = await VirtualFile.fromUrl("/projects/other/square_eq.cls").openStream();
 
     const node = new TreeNode({ proto: new ClassPrototype(stream, parseBytecode) });
     const mmanager = node.createMemoryManager();
@@ -44,5 +44,4 @@ import { parseBytecode } from "stratum/vm/parseBytecode";
     strictEqual(mmanager.newDoubleValues[node.vars!.globalIds[1]], 10);
     strictEqual(mmanager.newStringValues[node.vars!.globalIds[2]], "60");
     strictEqual(mmanager.newStringValues[node.vars!.globalIds[3]], "10");
-    console.log("Sqr test completed.");
-})();
+});

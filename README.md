@@ -5,50 +5,46 @@
 ### Требования
 
 Для сборки и запуска необходимо установить NodeJS.
+Запускаемый проект Stratum должен быть упакован в zip. Примеры проектов можно найти в `static/projects`.
 
-Запускаемый проект Stratum должен быть упакован в zip. Примеры проектов можно найти в `static/test_projects`.
-
-### Установка и запуск
-
-Установка необходимых глобальных зависимостей:
+### Устанвка зависимостей
 
 ```
-npm -g install parcel typescript cross-env
-```
-
-Установка локальных зависимостей:
-
-```
+npm -g install esbuild typescript browserify
 npm install
+```
+
+### Демо
+
+```
+npm run demo
 ```
 
 ### Сборка
 
-Сборка файла `dist/stratum.js`:
-
 ```
-npm run-script build
+npm run build
 ```
 
-### Использование
-
-см. `src/stratum/api.ts`
+Бандл будет сохранен в _dist/index.min.js_
 
 ### Тесты
 
-Для запуска специального теста выполнить команды:
-
 ```
-git clone https://github.com/khok/stratum-player
-cd stratum-player
-npm install
-npm test
+npm run test
 ```
 
-Приложение будет доступно на `localhost:1234`
+### API
 
-Запуск всех юнит-тестов:
+API описано в `src/stratum/api.ts`
+
+Простой пример использования:
+
+_dist/index.html_ :
 
 ```
-npm test-all
+<script src="index.min.js"></script>
+<script>
+    alert(stratum.version)
+</script>
 ```

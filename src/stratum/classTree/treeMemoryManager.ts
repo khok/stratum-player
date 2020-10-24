@@ -9,13 +9,13 @@ export interface TreeMemoryManagerArgs {
 }
 
 export class TreeMemoryManager implements MemoryManager {
-    defaultDoubleValues = new Float64Array();
-    oldDoubleValues = new Float64Array();
-    newDoubleValues = new Float64Array();
+    defaultDoubleValues = new Float64Array(0);
+    oldDoubleValues = new Float64Array(0);
+    newDoubleValues = new Float64Array(0);
 
-    defaultLongValues = new Int32Array();
-    oldLongValues = new Int32Array();
-    newLongValues = new Int32Array();
+    defaultLongValues = new Int32Array(0);
+    oldLongValues = new Int32Array(0);
+    newLongValues = new Int32Array(0);
 
     defaultStringValues = new Array<string>();
     oldStringValues = new Array<string>();

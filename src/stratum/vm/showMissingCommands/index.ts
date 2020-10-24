@@ -69,7 +69,7 @@ export function findMissingCommands(classes: Map<string, ClassPrototype<ParsedCo
 // Рекурсивно ищет используемые в проекте классы и возвращает их ошибки.
 // В большинстве проектов эта функция - лучший вариант их поиска.
 // В проектах, где классы подгружаются динамически - нет.
-export function findMissingCommands2(rootName: string, classes: Map<string, ClassPrototype<ParsedCode>>) {
+export function findMissingCommandsRecursive(rootName: string, classes: Map<string, ClassPrototype<ParsedCode>>) {
     const targetClasses = new Map<string, ClassPrototype<ParsedCode>>();
     (function collect(clName: string) {
         const key = clName.toLowerCase();

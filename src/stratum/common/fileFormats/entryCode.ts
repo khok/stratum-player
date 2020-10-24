@@ -1,4 +1,4 @@
-export const enum EntryCode {
+export enum EntryCode {
     // CLASS records
     CR_MATH = 1,
     //

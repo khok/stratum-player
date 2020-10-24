@@ -1,20 +1,21 @@
 {
+    "include": ["demo", "stratum", "tests"],
     "compilerOptions": {
-        "module": "ES6",
-        "moduleResolution": "node",
+        "noEmit": true,
         "newLine": "LF",
-        "target": "es5",
-        "sourceMap": true,
-        "declaration": true,
+        "strict": true,
+        "lib": ["ES6", "ES2016.Array.Include", "DOM"],
+        "target": "ES6",
+        "moduleResolution": "node",
         "resolveJsonModule": true,
         "allowSyntheticDefaultImports": true,
-        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": ".",
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "noEmitOnError": true,
-        "downlevelIteration": true,
-        "baseUrl": "."
+        "allowUnusedLabels": false,
+        "allowUnreachableCode": false
     }
 }

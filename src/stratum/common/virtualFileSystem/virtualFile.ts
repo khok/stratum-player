@@ -1,7 +1,7 @@
+import { JSZipObject } from "jszip";
+import { AsyncOpenError } from "stratum/common/errors";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { unixToDosPath } from "stratum/helpers/pathOperations";
-import { AsyncOpenError } from "stratum/common/errors";
-import { JSZipObject } from "jszip";
 
 interface DataSource {
     async(type: "arraybuffer"): Promise<ArrayBuffer>;

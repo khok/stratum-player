@@ -53,8 +53,12 @@ export async function readPreloadStt(fs: VirtualFileSystem, prjBaseDir: string) 
     const file = fs.getFile(prjBaseDir + "\\" + DefaultSttFileName);
     if (!file) return undefined;
     const stream = await file.openStream();
-    const varSet = readSttFile(stream);
-    return varSet;
+    try {
+        return readSttFile(stream);
+    } catch (e) {
+        console.error(`Ошибка чтения ${stream.filename}:\n${e}`);
+        return undefined;
+    }
 }
 
 export async function readClasses<TVmCode>(

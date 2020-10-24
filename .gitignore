@@ -170,3 +170,7 @@ crashlytics-build.properties
 /lib
 /.cache/
 /dist/
+/static/scripts/*
+!/static/scripts/autorefresh.js
+!/static/scripts/chai.min.js
+!/static/scripts/mocha.min.js

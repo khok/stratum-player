@@ -1,5 +1,4 @@
 import { fabric } from "fabric";
-import { StaticCanvas } from "fabric/fabric-impl";
 import { colorRefToColor } from "stratum/common/colorrefParsers";
 import { BadDataError, OptionsError } from "stratum/common/errors";
 import { HtmlElementsFactory } from "stratum/graphics/renderers/fabric/html/htmlFactory";
@@ -30,7 +29,7 @@ const downCodes = [EventCode.WM_LBUTTONDOWN, EventCode.WM_MBUTTONDOWN, EventCode
 const upCodes = [EventCode.WM_LBUTTONUP, EventCode.WM_MBUTTONUP, EventCode.WM_RBUTTONUP];
 
 export interface FabricRendererArgs {
-    canvas: StaticCanvas;
+    canvas: fabric.StaticCanvas;
     htmlFactory?: HtmlElementsFactory;
 }
 

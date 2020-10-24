@@ -1,4 +1,3 @@
-import { ok } from "assert";
 import { buildTree } from "stratum/classTree/buildTree";
 import { TreeManager } from "stratum/classTree/treeManager";
 import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
@@ -6,9 +5,10 @@ import { Project } from "stratum/project/project";
 import { ExecutionContext } from "stratum/vm/executionContext";
 import { parseBytecode } from "stratum/vm/parseBytecode";
 import { ParsedCode } from "stratum/vm/types";
+const { ok } = chai.assert;
 
-(async function () {
-    const fs = await VirtualFileSystem.new({ source: "test_projects/test_messages.zip" });
+it("Тест SendMessage()", async () => {
+    const fs = await VirtualFileSystem.new({ source: "/projects/test_messages.zip" });
     const prj = await Project.open<ParsedCode>(fs, { bytecodeParser: parseBytecode });
     const tree = buildTree(prj.rootClassName, prj.classes);
     const mmanager = tree.createMemoryManager();
@@ -36,6 +36,4 @@ import { ParsedCode } from "stratum/vm/types";
     mmanager.syncValues();
     ok(mmanager.oldDoubleValues[ch1.vars!.globalIds![0]] === 120 && mmanager.newDoubleValues[ch1.vars!.globalIds![0]] === 120);
     ok(mmanager.oldDoubleValues[ch1.vars!.globalIds![1]] === 29 && mmanager.newDoubleValues[ch1.vars!.globalIds![1]] === 29);
-
-    console.log("Message test completed.");
-})();
+});
