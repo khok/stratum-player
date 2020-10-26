@@ -7,6 +7,7 @@ const WebSocketServer = require("websocket").server;
 
 const target = process.argv[2];
 if (target !== "tests" && target !== "demo") process.exit(0);
+const port = process.argv[3] || 3000;
 
 const entryPoint = `src/${target}/index.ts`;
 
@@ -26,31 +27,27 @@ if (!fs.existsSync(outDeps)) {
 
 const watchDirs = ["src/stratum", `src/${target}`];
 
-let wsConn;
 // fileserver
-{
-    const server = http.createServer((req, res) => handler(req, res, { public: serveDir }));
-    server.listen(3000, () => {
-        console.log(`Running at http://localhost:3000/${target}`);
-    });
-
-    new WebSocketServer({
-        httpServer: server,
-        autoAcceptConnections: true,
+const server = http.createServer((req, res) => handler(req, res, { public: serveDir }));
+server.listen(port, () => {
+    console.log(`Running at http://localhost:${port}/${target}`);
+});
+// ws server
+const wserver = new WebSocketServer({
+    httpServer: server,
+    autoAcceptConnections: true,
+});
+wserver.on("connect", (c) =>
+    c.on("message", (d) => {
+        if (d.utf8Data === "rebuild") build();
     })
-        .on("connect", (c) => {
-            wsConn = c;
-        })
-        .on("close", (c) => {
-            wsConn = undefined;
-        });
-}
+);
 
-const refreshPage = () => {
-    if (wsConn) wsConn.send("42");
-};
-
-const build = (refresh) => {
+//watch & rebuild
+let hasChanges = true;
+const build = () => {
+    if (!hasChanges) return;
+    hasChanges = false;
     var hrstart = process.hrtime();
     exec(buildBundle, (e, stdout, stderr) => {
         if (stderr) {
@@ -59,7 +56,7 @@ const build = (refresh) => {
         }
         const btime = process.hrtime(hrstart)[1] / 1000000;
         console.log("\x1b[42m", `Build time: ${btime} ms`, "\x1b[0m");
-        if (refresh) refreshPage();
+        wserver.broadcast("refresh");
     });
 };
 
@@ -71,13 +68,14 @@ const opts = {
 const watchFiles = (f, cur) => {
     if (!cur || cur.isDirectory()) return;
     console.info(f + " has changed");
-    build(true);
+    hasChanges = true;
+    wserver.broadcast("changed");
 };
 watchDirs.forEach((d) => {
     console.log(`watch for changes in ${d}`);
     watch.watchTree(d, opts, watchFiles);
 });
-build(false);
+build();
 
 process.on("SIGINT", () => {
     console.log("bye");
