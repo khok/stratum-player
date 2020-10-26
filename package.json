@@ -12,8 +12,8 @@
     "license": "ISC",
     "devDependencies": {
         "@types/chai": "^4.2.14",
+        "@types/fabric": "^3.6.9",
         "@types/mocha": "^8.0.3",
-        "@types/fabric": "^3.6.8",
         "@types/pngjs": "^3.4.2",
         "fabric": "^4.2.0",
         "jszip": "git+https://github.com/khokm/jszip.git",
