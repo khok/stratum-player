@@ -1,9 +1,9 @@
+import { BitmapElement, DoubleBitmapElement } from "stratum/fileFormats/vdr";
+import { BadDataError } from "stratum/helpers/errors";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { BadDataError } from "stratum/common/errors";
-import { BitmapElement, DoubleBitmapElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { BitmapObject } from "stratum/vm/interfaces/graphicSpaceObjects";
 import { NumBool } from "stratum/vm/types";
-import { RenderableFactory, RenderableBitmap } from "../../interfaces";
+import { RenderableBitmap, RenderableFactory } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneBmpTool } from "../../tools";
 import { Object2dMixin } from "./object2dMixin";

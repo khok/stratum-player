@@ -1,6 +1,6 @@
-import { VectorDrawing } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
-import { NumBool } from "../types";
+import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { BinaryStream } from "stratum/helpers/binaryStream";
+import { NumBool } from "../types";
 
 export interface ProjectManager {
     readonly baseDirectory: string;

@@ -1,128 +1,137 @@
 import { Point2D } from "./types";
 
-const decoder = new TextDecoder("windows-1251");
+export interface BinaryStreamMetadata {
+    filepath?: string;
+    filepathDos?: string;
+    fileversion?: number;
+}
 
 export class BinaryStream {
-    private pos: number = 0;
-    private view: DataView;
+    private static d = new TextDecoder("windows-1251");
+    private v: DataView;
+    private p: number = 0;
 
-    readonly filename: string;
-    fileversion: number = 0;
-    constructor(data: ArrayBuffer, filename?: string, from?: number, length?: number) {
-        this.view = new DataView(data, from, length);
-        this.filename = filename || "";
+    meta: BinaryStreamMetadata;
+    constructor(data: ArrayBuffer | Uint8Array | DataView, meta?: BinaryStreamMetadata) {
+        this.meta = { ...meta };
+        this.v = data instanceof ArrayBuffer ? new DataView(data) : new DataView(data.buffer, data.byteOffset, data.byteLength);
     }
 
     get position(): number {
-        return this.pos;
-    }
-
-    get size(): number {
-        return this.view.byteLength;
-    }
-
-    EOF(): boolean {
-        return this.pos >= this.size;
+        return this.p;
     }
 
     seek(pos: number): void {
-        this.pos = pos;
+        this.p = pos;
     }
 
-    readBytes(size: number): Uint8Array {
-        const bytes = new Uint8Array(this.view.buffer, this.view.byteOffset + this.pos, size);
-        this.pos += size;
+    skip(length: number): this {
+        this.p += length;
+        return this;
+    }
+
+    get size(): number {
+        return this.v.byteLength;
+    }
+
+    fork(length?: number): BinaryStream {
+        return new BinaryStream(new DataView(this.v.buffer, this.v.byteOffset + this.p, length));
+    }
+
+    eof(): boolean {
+        return this.p >= this.size;
+    }
+
+    bytes(size: number): Uint8Array {
+        const bytes = new Uint8Array(this.v.buffer, this.v.byteOffset + this.p, size);
+        this.p += size;
         return bytes;
     }
 
-    substream(length: number, filename?: string): BinaryStream {
-        return new BinaryStream(this.view.buffer, filename || this.filename, this.pos, length);
-    }
-
-    readByte(): number {
-        const byte = this.view.getUint8(this.pos);
-        this.pos += 1;
+    byte(): number {
+        const byte = this.v.getUint8(this.p);
+        this.p += 1;
         return byte;
     }
 
-    readInt16(): number {
-        const word = this.view.getInt16(this.pos, true);
-        this.pos += 2;
+    int16(): number {
+        const word = this.v.getInt16(this.p, true);
+        this.p += 2;
         return word;
     }
 
-    readWord(): number {
-        const word = this.view.getUint16(this.pos, true);
-        this.pos += 2;
+    uint16(): number {
+        const word = this.v.getUint16(this.p, true);
+        this.p += 2;
         return word;
     }
 
-    readLong(): number {
-        const long = this.view.getInt32(this.pos, true);
-        this.pos += 4;
+    int32(): number {
+        const long = this.v.getInt32(this.p, true);
+        this.p += 4;
         return long;
     }
 
-    readULong(): number {
-        const long = this.view.getUint32(this.pos, true);
-        this.pos += 4;
+    uint32(): number {
+        const long = this.v.getUint32(this.p, true);
+        this.p += 4;
         return long;
     }
 
-    readDouble(): number {
-        const double = this.view.getFloat64(this.pos, true);
-        this.pos += 8;
+    float64(): number {
+        const double = this.v.getFloat64(this.p, true);
+        this.p += 8;
         return double;
     }
 
-    readFixedString(size: number): string {
-        return size > 0 ? decoder.decode(this.readBytes(size)) : "";
+    fixedString(size: number): string {
+        return size > 0 ? BinaryStream.d.decode(this.bytes(size)) : "";
+    }
+
+    // Обычная строка вида:
+    // 2 байта - размер (N);
+    // N байтов - содержимое.
+    string(): string {
+        return this.fixedString(this.uint16());
     }
 
     /**
      * Нуль-терминированная строка.
      * Максимальный размер строки будет составлять `limit - 1` байт.
      */
-    readCharSeq(limit: number): string {
-        const strStart = this.pos;
+    nulltString(limit: number): string {
+        const strStart = this.p;
         let size = 0;
-        while (size < limit - 1 && this.view.getUint8(strStart + ++size) !== 0);
+        while (size < limit - 1 && this.v.getUint8(strStart + ++size) !== 0);
 
-        const value = this.readFixedString(size);
-        this.pos += 1; //нуль-терминатор
+        const value = this.fixedString(size);
+        this.p += 1; //нуль-терминатор
         return value;
     }
 
     //Используется в коде ВМ, где количество байт всегда кратно 2
-    readStringTrimmed(): string {
-        const size = this.readWord() * 2;
+    vmString(): string {
+        const size = this.uint16() * 2;
 
         //после строки может идти 1 или 2 нуль-терминатора.
-        const nullt = this.view.getUint8(this.pos + size - 2) === 0 ? 2 : 1;
+        const nullt = this.v.getUint8(this.p + size - 2) === 0 ? 2 : 1;
 
-        const value = this.readFixedString(size - nullt);
-        this.pos += nullt;
+        const value = this.fixedString(size - nullt);
+        this.p += nullt;
         return value;
     }
 
-    // Обычная строка вида:
-    // 2 байта - размер (N);
-    // N байтов - содержимое.
-    readString(): string {
-        return this.readFixedString(this.readWord());
-    }
-
-    readPoint2D(): Point2D {
+    point2d(): Point2D {
         return {
-            x: this.readDouble(),
-            y: this.readDouble(),
+            x: this.float64(),
+            y: this.float64(),
         };
     }
 
-    readIntegerPoint2D(): Point2D {
+    point2dInt(): Point2D {
         return {
-            x: this.readInt16(),
-            y: this.readInt16(),
+            x: this.int16(),
+            y: this.int16(),
         };
     }
 }

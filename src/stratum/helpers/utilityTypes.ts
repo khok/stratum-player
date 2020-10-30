@@ -25,3 +25,7 @@ export type Optional<T, K extends keyof T> = Partial<T> & Omit<T, K>;
  * `Remove<{ size : number, type: "Image" }, "type">` -> `{ size : number }`
  */
 export type Remove<T, K extends keyof T> = Omit<T, K>;
+
+export type Mutable<T extends object> = {
+    -readonly [K in keyof T]: T[K];
+};

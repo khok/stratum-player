@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "noEmit": true,
+        "newLine": "lf",
+        "target": "ES6",
+        "moduleResolution": "Node",
+        "resolveJsonModule": true,
+        "lib": ["ES6", "ES2016.Array.Include", "DOM"],
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "forceConsistentCasingInFileNames": true
+    }
+}

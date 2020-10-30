@@ -1,5 +1,4 @@
-import { VectorDrawing } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
-import { VectorDrawingElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
+import { VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
 import { EventCode } from "stratum/vm/consts";

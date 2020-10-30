@@ -1,15 +1,17 @@
-import { VectorDrawing } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
+import { WindowSystemWindow } from "stratum/api";
+import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { WindowWithSpace } from "stratum/vm/interfaces/windowWithSpace";
 import { NumBool } from "stratum/vm/types";
-import { RendererWindow } from "./interfaces";
+import { Renderer } from "../scene/interfaces";
+import { InputEventReceiver } from "../windowSystems/single/inputEventReceiver";
 
 export interface SimpleWindowArgs {
-    window: RendererWindow;
+    window: WindowSystemWindow & { renderer: Renderer & InputEventReceiver };
     source?: VectorDrawing["source"];
 }
 
 export class SimpleWindow implements WindowWithSpace {
-    private window: RendererWindow;
+    private window: WindowSystemWindow & { renderer: Renderer & InputEventReceiver };
 
     readonly classname: string = "";
     readonly filename: string = "";
@@ -27,7 +29,7 @@ export class SimpleWindow implements WindowWithSpace {
         return this.window.name;
     }
 
-    get renderer() {
+    get renderer(): Renderer & InputEventReceiver {
         return this.window.renderer;
     }
 

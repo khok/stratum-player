@@ -1,4 +1,4 @@
-import { NotImplementedError } from "stratum/common/errors";
+import { NotImplementedError } from "stratum/helpers/errors";
 import { GroupObject } from "stratum/vm/interfaces/graphicSpaceObjects";
 import { NumBool } from "stratum/vm/types";
 import { SceneObject, SceneObject2d } from ".";

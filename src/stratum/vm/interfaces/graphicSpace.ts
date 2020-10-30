@@ -1,16 +1,11 @@
+import { ExternalBmpToolParams, ExternalDoubleBmpToolParams, VectorDrawing, VectorDrawingToolParams } from "stratum/fileFormats/vdr";
+import { BinaryStream } from "stratum/helpers/binaryStream";
 import { Point2D } from "stratum/helpers/types";
-import { VectorDrawing } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
-import {
-    ExternalBmpToolParams,
-    ExternalDoubleBmpToolParams,
-    VectorDrawingToolParams,
-} from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
+import { EventCode } from "../consts";
 import { ExecutionContext } from "../executionContext";
 import { NumBool } from "../types";
 import { BitmapObject, GraphicSpaceObject, GroupObject, LineObject, TextObject } from "./graphicSpaceObjects";
 import { BmpTool, BrushTool, FontTool, PenTool, StringTool, TextTool } from "./graphicSpaceTools";
-import { EventCode } from "../consts";
-import { BinaryStream } from "stratum/helpers/binaryStream";
 import { WindowWithSpace } from "./windowWithSpace";
 
 /**

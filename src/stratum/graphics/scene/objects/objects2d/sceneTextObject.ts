@@ -1,5 +1,5 @@
+import { TextElement } from "stratum/fileFormats/vdr";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { TextElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { TextObject } from "stratum/vm/interfaces/graphicSpaceObjects";
 import { NumBool } from "stratum/vm/types";
 import { RenderableFactory, RenderableText } from "../../interfaces";

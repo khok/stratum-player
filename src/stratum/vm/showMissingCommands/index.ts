@@ -1,9 +1,9 @@
-import { ClassPrototype } from "stratum/common/classPrototype";
+import { ClassProto } from "stratum/common/classProto";
 import { OpCode } from "../consts";
 import { OPCODE_MASK } from "../consts/operandFlagMasks";
 import { operations } from "../operations";
 import { Operation, ParsedCode } from "../types";
-import realCommandNames from "./realCommandNames.json";
+import * as realCommandNames from "./realCommandNames.json";
 
 function cmdHasError(cmd: Function) {
     try {
@@ -40,7 +40,7 @@ export function formatMissingCommands(missingOperations: { name: string; classNa
     );
 }
 
-export function findMissingCommands(classes: Map<string, ClassPrototype<ParsedCode>>) {
+export function findMissingCommands(classes: Map<string, ClassProto<ParsedCode>>) {
     const theOps = new Map<number, Set<string>>();
     const errors: string[] = [];
     for (const [name, c] of classes) {
@@ -66,11 +66,11 @@ export function findMissingCommands(classes: Map<string, ClassPrototype<ParsedCo
     return { missingOperations, errors };
 }
 
-// Рекурсивно ищет используемые в проекте классы и возвращает их ошибки.
+// Рекурсивно ищет используемые в проекте имиджи и возвращает их ошибки.
 // В большинстве проектов эта функция - лучший вариант их поиска.
-// В проектах, где классы подгружаются динамически - нет.
-export function findMissingCommandsRecursive(rootName: string, classes: Map<string, ClassPrototype<ParsedCode>>) {
-    const targetClasses = new Map<string, ClassPrototype<ParsedCode>>();
+// В проектах, где имиджи подгружаются динамически - нет.
+export function findMissingCommandsRecursive(rootName: string, classes: Map<string, ClassProto<ParsedCode>>) {
+    const targetClasses = new Map<string, ClassProto<ParsedCode>>();
     (function collect(clName: string) {
         const key = clName.toLowerCase();
         const root = classes.get(key);

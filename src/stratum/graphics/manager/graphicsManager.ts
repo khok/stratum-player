@@ -1,14 +1,12 @@
-import { UsageError } from "stratum/common/errors";
-import { VectorDrawing } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
+import { WindowSystem } from "stratum/api";
+import { VectorDrawing } from "stratum/fileFormats/vdr";
+import { UsageError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { GraphicSpace } from "stratum/vm/interfaces/graphicSpace";
 import { WindowsManager } from "stratum/vm/interfaces/windowsManager";
 import { NumBool } from "stratum/vm/types";
-import { SimpleWindow } from "./simpleWindow";
-import { WindowSystem } from "./interfaces";
 import { Scene } from "../scene";
-
-export interface GraphicsManagerOptions {}
+import { SimpleWindow } from "./simpleWindow";
 
 export class GraphicsManager implements WindowsManager {
     private ws: WindowSystem;
@@ -17,9 +15,8 @@ export class GraphicsManager implements WindowsManager {
     private scenesByWinName = new Map<string, Scene>();
     private windows = new Map<string, SimpleWindow>();
 
-    constructor(windowSystem: WindowSystem, options?: GraphicsManagerOptions) {
+    constructor(windowSystem: WindowSystem) {
         this.ws = windowSystem;
-        this.set(options || {});
     }
 
     get screenWidth(): number {
@@ -39,11 +36,6 @@ export class GraphicsManager implements WindowsManager {
     }
     get areaHeight(): number {
         return this.ws.areaHeight;
-    }
-
-    set(options: GraphicsManagerOptions) {
-        Object.assign(this, options);
-        return this;
     }
 
     openSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawing): number {

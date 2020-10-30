@@ -1,21 +1,10 @@
 {
-    "include": ["demo", "stratum", "tests"],
+    "extends": "../tsconfig.base.stubs.json",
+    "include": ["stratum", "stratum/**/*.json"],
     "compilerOptions": {
-        "noEmit": true,
-        "newLine": "LF",
-        "strict": true,
-        "lib": ["ES6", "ES2016.Array.Include", "DOM"],
-        "target": "ES6",
-        "moduleResolution": "node",
-        "resolveJsonModule": true,
-        "allowSyntheticDefaultImports": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitReturns": true,
-        "forceConsistentCasingInFileNames": true,
         "baseUrl": ".",
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "allowUnusedLabels": false,
         "allowUnreachableCode": false
     }
 }

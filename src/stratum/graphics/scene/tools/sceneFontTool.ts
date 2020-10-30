@@ -1,5 +1,5 @@
+import { FontToolParams } from "stratum/fileFormats/vdr";
 import { Remove, Require } from "stratum/helpers/utilityTypes";
-import { FontToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
 import { FontTool } from "stratum/vm/interfaces/graphicSpaceTools";
 import { SceneToolMixin } from "./sceneToolMixin";
 

@@ -1,0 +1,4 @@
+*
+!dist/index.min.js
+!dist/index.d.ts
+!README.md

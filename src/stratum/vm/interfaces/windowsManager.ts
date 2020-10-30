@@ -1,4 +1,4 @@
-import { VectorDrawing } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
+import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { NumBool } from "../types";
 import { GraphicSpace } from "./graphicSpace";
 import { WindowWithSpace } from "./windowWithSpace";

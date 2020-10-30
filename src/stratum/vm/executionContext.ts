@@ -1,8 +1,8 @@
+import { ClassManager } from "./interfaces/classManager";
 import { ComputableClass, ComputableClassVars } from "./interfaces/computableClass";
+import { MemoryManager } from "./interfaces/memoryManager";
 import { ProjectManager } from "./interfaces/projectManager";
 import { WindowsManager } from "./interfaces/windowsManager";
-import { MemoryManager } from "./interfaces/memoryManager";
-import { ClassManager } from "./interfaces/classManager";
 
 export interface ExecutionContextArgs {
     windows: WindowsManager;

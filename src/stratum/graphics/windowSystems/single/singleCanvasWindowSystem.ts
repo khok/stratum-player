@@ -1,26 +1,12 @@
 import { fabric } from "fabric";
-import { OptionsError } from "stratum/common/errors";
+import { WindowSystem, WindowSystemOptions, WindowSystemWindow } from "stratum/api";
 import { FabricRendererArgs } from "stratum/graphics/renderers/fabric/fabricRenderer";
-import { RendererWindow, WindowSystem } from "../../manager/interfaces";
+import { OptionsError } from "stratum/helpers/errors";
 import { FabricRenderer } from "../../renderers";
 import { HtmlElementsFactory } from "../../renderers/fabric/html/htmlFactory";
 import { CanvasEventHandler } from "./canvasEventHandler";
 
-export interface SingleCanvasWindowSystemOptions {
-    screenWidth?: number;
-    screenHeight?: number;
-    areaOriginX?: number;
-    areaOriginY?: number;
-    areaWidth?: number;
-    areaHeight?: number;
-
-    globalCanvas?: HTMLCanvasElement;
-    htmlRoot?: HTMLElement;
-
-    disableSceneResize?: boolean;
-}
-
-export class FabricWindow implements RendererWindow {
+export class FabricWindow implements WindowSystemWindow {
     name: string;
     renderer: FabricRenderer;
 
@@ -72,7 +58,7 @@ export class FabricWindow implements RendererWindow {
     }
 }
 
-export class SingleCanvasWindowSystem implements WindowSystem, SingleCanvasWindowSystemOptions {
+export class SingleCanvasWindowSystem implements WindowSystem, WindowSystemOptions {
     private htmlFactory?: HtmlElementsFactory;
     private fabricCanvas?: fabric.StaticCanvas;
 
@@ -86,11 +72,11 @@ export class SingleCanvasWindowSystem implements WindowSystem, SingleCanvasWindo
 
     private window?: FabricWindow;
 
-    constructor(options?: SingleCanvasWindowSystemOptions) {
+    constructor(options?: WindowSystemOptions) {
         this.set(options || {});
     }
 
-    set(options: SingleCanvasWindowSystemOptions) {
+    set(options: WindowSystemOptions) {
         if (options.htmlRoot) this.htmlFactory = new HtmlElementsFactory(options.htmlRoot);
         if (options.globalCanvas && (!this.fabricCanvas || this.fabricCanvas.getElement() !== options.globalCanvas))
             this.fabricCanvas = FabricRenderer.createCanvas(options.globalCanvas);
@@ -108,8 +94,12 @@ export class SingleCanvasWindowSystem implements WindowSystem, SingleCanvasWindo
         return this.window;
     }
 
-    redrawWindows() {
+    redraw() {
         return this.window ? this.window.redraw() : false;
+    }
+
+    closeAll() {
+        this.window ? this.window.close() : false;
     }
 
     releaseWindow() {

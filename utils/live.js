@@ -6,10 +6,10 @@ const { exec, execSync } = require("child_process");
 const WebSocketServer = require("websocket").server;
 
 const target = process.argv[2];
-if (target !== "tests" && target !== "demo") process.exit(0);
+if (target !== "live" && target !== "unit") process.exit(0);
 const port = process.argv[3] || 3000;
 
-const entryPoint = `src/${target}/index.ts`;
+const entryPoint = `test/${target}/index.ts`;
 
 const deps = ["jszip", "pngjs", "fabric"];
 
@@ -25,7 +25,7 @@ if (!fs.existsSync(outDeps)) {
     execSync(buildDeps);
 }
 
-const watchDirs = ["src/stratum", `src/${target}`];
+const watchDirs = ["src/stratum", `test/${target}`];
 
 // fileserver
 const server = http.createServer((req, res) => handler(req, res, { public: serveDir }));

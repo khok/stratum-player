@@ -1,6 +1,5 @@
-import { BadDataError } from "stratum/common/errors";
-import { VectorDrawingTools } from "stratum/common/fileFormats/vdr/types/vectorDrawing";
-import { GroupElement, VectorDrawingElement, VectorDrawingElement2d } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
+import { GroupElement, VectorDrawingElement, VectorDrawingElement2d, VectorDrawingTools } from "stratum/fileFormats/vdr";
+import { BadDataError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { BmpToolFactory } from ".";
 import { RenderableFactory } from "./interfaces";

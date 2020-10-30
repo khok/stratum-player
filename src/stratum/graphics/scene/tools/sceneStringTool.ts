@@ -1,8 +1,8 @@
+import { StringToolParams } from "stratum/fileFormats/vdr";
 import { Remove } from "stratum/helpers/utilityTypes";
-import { StringToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
 import { StringTool } from "stratum/vm/interfaces/graphicSpaceTools";
-import { SceneToolMixin } from "./sceneToolMixin";
 import { NumBool } from "stratum/vm/types";
+import { SceneToolMixin } from "./sceneToolMixin";
 
 export type SceneStringToolArgs = Remove<StringToolParams, "type">;
 

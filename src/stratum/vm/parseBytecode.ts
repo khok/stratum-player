@@ -6,30 +6,30 @@ import { FunctionSignature, OperationArgType, ParsedCode } from "./types";
 type OperandType = ReturnType<typeof readOperand> | undefined;
 
 function readFunctionData(stream: BinaryStream): FunctionSignature {
-    const offset = stream.readWord() * 2;
+    const offset = stream.uint16() * 2;
 
     const pos = stream.position;
-    const funcName = stream.readCharSeq(offset);
+    const funcName = stream.nulltString(offset);
     stream.seek(pos + offset);
 
-    const argCount = stream.readWord();
+    const argCount = stream.uint16();
     const argTypes = new Array<number>(argCount);
     for (let i = argCount - 1; i >= 0; i--) {
-        const argType = stream.readInt16();
+        const argType = stream.int16();
         if (argType > 0) throw new Error(`Функция ${funcName}: неизвестный тип аргумента ${i}.`);
         argTypes[i] = argType;
     }
 
-    const returnType = stream.readInt16();
+    const returnType = stream.int16();
     if (returnType > 0) throw new Error(`Функция ${funcName}: неизвестный возвращаемый тип.`);
 
     return { funcName, argCount, argTypes, returnType };
 }
 
 function readDllFunctionData(stream: BinaryStream) {
-    const offset = stream.readWord() * 2;
+    const offset = stream.uint16() * 2;
     const pos = stream.position;
-    const funcName = stream.readCharSeq(offset);
+    const funcName = stream.nulltString(offset);
     stream.seek(pos + offset);
     return funcName;
 }
@@ -37,15 +37,15 @@ function readDllFunctionData(stream: BinaryStream) {
 function readOperand(stream: BinaryStream, type: OperationArgType) {
     switch (type) {
         case "double":
-            return { type, value: stream.readDouble() };
+            return { type, value: stream.float64() };
         case "varId":
         case "codepoint":
         case "argCount":
-            return { type, value: stream.readWord() };
+            return { type, value: stream.uint16() };
         case "long":
-            return { type, value: stream.readLong() };
+            return { type, value: stream.int32() };
         case "string":
-            return { type, value: stream.readStringTrimmed() };
+            return { type, value: stream.vmString() };
         case "funcSignature":
             return { type, value: readFunctionData(stream) };
         case "dllFuncSignature":
@@ -65,7 +65,7 @@ function readRawValues(stream: BinaryStream, codesize: number) {
 
     while (stream.position < end) {
         const codepoint = stream.position - start;
-        const opcode = stream.readWord();
+        const opcode = stream.uint16();
         const opType = operandTypes[opcode];
         const operand = opType && readOperand(stream, opType);
         codepoints.push(codepoint);
@@ -127,8 +127,9 @@ function splitReadedValues(opcodes: number[], operands: OperandType[]) {
     return { code, numberOperands, stringOperands, otherOperands };
 }
 
-export function parseBytecode(stream: BinaryStream, codesize: number): ParsedCode {
-    const { codepoints, opcodes, operands } = readRawValues(stream, codesize);
+export function parseBytecode(bytes: Uint8Array): ParsedCode {
+    const stream = new BinaryStream(bytes);
+    const { codepoints, opcodes, operands } = readRawValues(stream, bytes.byteLength);
 
     if (!transformCodepoints(codepoints, operands)) throw new Error("Ошибка в преобразовании точек перехода.");
 

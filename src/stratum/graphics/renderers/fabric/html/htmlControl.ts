@@ -1,5 +1,5 @@
-import { NotImplementedError } from "stratum/common/errors";
 import { RenderableControl, RenderableControlParams } from "stratum/graphics/scene/interfaces";
+import { NotImplementedError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
 import { HtmlElementsFactory, HtmlInputWrapper } from "./htmlFactory";
 

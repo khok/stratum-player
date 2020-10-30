@@ -1,6 +1,5 @@
 import { fabric } from "fabric";
 import { colorRefToColor } from "stratum/common/colorrefParsers";
-import { BadDataError, OptionsError } from "stratum/common/errors";
 import { HtmlElementsFactory } from "stratum/graphics/renderers/fabric/html/htmlFactory";
 import {
     RenderableBitmap,
@@ -11,10 +10,11 @@ import {
     RenderableLineParams,
     RenderableText,
     RenderableTextParams,
-    Renderer,
+    Renderer
 } from "stratum/graphics/scene/interfaces";
 import { SceneBrushTool } from "stratum/graphics/scene/tools";
 import { InputEventReceiver } from "stratum/graphics/windowSystems/single/inputEventReceiver";
+import { BadDataError, OptionsError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
 import { EventCode } from "stratum/vm/consts";

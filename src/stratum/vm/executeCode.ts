@@ -2,9 +2,9 @@ import { OpCode } from "./consts";
 import { DOUBLE_OPERAND_FLAG_MASK, OPCODE_MASK, OTHER_OPERAND_FLAG_MASK, STRING_OPERAND_FLAG_MASK } from "./consts/operandFlagMasks";
 import { ExecutionContext } from "./executionContext";
 import { operations } from "./operations";
+import { rapidBytecodePrint } from "./showMissingCommands/rapidBytecodePrint";
+import * as realCommandNames from "./showMissingCommands/realCommandNames.json";
 import { ParsedCode } from "./types";
-import realCommandNames from "./showMissingCommands/realCommandNames.json";
-// import { rapidBytecodePrint } from "./showMissingCommands/rapidBytecodePrint";
 
 export function executeCode(ctx: ExecutionContext, { code, numberOperands, stringOperands, otherOperands }: ParsedCode) {
     let opAndArg: number,
@@ -34,10 +34,12 @@ export function executeCode(ctx: ExecutionContext, { code, numberOperands, strin
         }
     } catch (e) {
         console.error(e);
-        const message = `Функция не реализована: ${realCommandNames[opAndArg! & OPCODE_MASK]} (${
-            OpCode[opAndArg! & OPCODE_MASK]
-        }) (индекс опкода: ${ctx.nextOpPointer - 1})`;
-        // rapidBytecodePrint(ctx.currentClass.protoName, ctx.project.classesData);
-        ctx.setError(message);
+        if (!operations[opAndArg! & OPCODE_MASK]) console.warn("Функция не существует.");
+        const message = `Ошибка в функции: ${realCommandNames[opAndArg! & OPCODE_MASK]} (${OpCode[opAndArg! & OPCODE_MASK]}).\nИмидж: ${
+            ctx.currentClass.protoName
+        }. Индекс опкода: ${ctx.nextOpPointer - 1}.\n`;
+        console.warn(message);
+        rapidBytecodePrint((<any>ctx.currentClass).proto.code, (<any>ctx.currentClass).proto.vars.names);
+        ctx.setError("Ошибка виртуальной машины");
     }
 }

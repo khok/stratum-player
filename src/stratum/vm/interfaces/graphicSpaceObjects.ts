@@ -1,12 +1,5 @@
+import { BitmapElement, ControlElement, DoubleBitmapElement, GroupElement, LineElement, TextElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
-import {
-    BitmapElement,
-    ControlElement,
-    DoubleBitmapElement,
-    GroupElement,
-    LineElement,
-    TextElement,
-} from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { NumBool } from "../types";
 import { BmpTool, BrushTool, PenTool, TextTool } from "./graphicSpaceTools";
 

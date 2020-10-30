@@ -1,7 +1,7 @@
+import { BmpToolParams } from "stratum/fileFormats/vdr";
+import { BadDataError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
 import { Optional, Remove } from "stratum/helpers/utilityTypes";
-import { BadDataError } from "stratum/common/errors";
-import { BmpToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
 import { BmpTool } from "stratum/vm/interfaces/graphicSpaceTools";
 import { NumBool } from "stratum/vm/types";
 import { SceneToolMixin } from "./sceneToolMixin";

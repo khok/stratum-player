@@ -2,11 +2,15 @@
     "name": "stratum-player",
     "version": "1.0.0",
     "description": "",
+    "types": "dist/index.d.ts",
     "scripts": {
-        "test": "node utils/live tests",
-        "demo": "node utils/live demo",
-        "check": "tsc -p src/tsconfig.check.json",
-        "build": "node utils/build"
+        "live": "node utils/live live",
+        "unit": "node utils/live unit",
+        "warns": "tsc -p src/tsconfig.json",
+        "check-build": "tsc -p src/tsconfig.check-build.json",
+        "build-types": "rm -rf dist/types && tsc -p src/tsconfig.build-types.json && mv dist/types/api.d.ts dist/index.d.ts && (echo export as namespace stratum;>> dist/index.d.ts)",
+        "build-bundle": "node utils/build",
+        "build": "npm run check-build && npm run build-bundle && npm run build-types"
     },
     "author": "",
     "license": "ISC",

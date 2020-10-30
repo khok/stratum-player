@@ -1,6 +1,6 @@
+import { LineElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
 import { Optional, Require } from "stratum/helpers/utilityTypes";
-import { LineElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { LineObject } from "stratum/vm/interfaces/graphicSpaceObjects";
 import { NumBool } from "stratum/vm/types";
 import { RenderableFactory, RenderableLine } from "../../interfaces";

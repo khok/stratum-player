@@ -1,23 +1,18 @@
+import { options } from "stratum/api";
+import { ImageToolParams } from "stratum/fileFormats/vdr";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { readBitmap, readDoubleBitmap } from "stratum/helpers/bitmapReaders";
-import { ImageToolParams } from "stratum/common/fileFormats/vdr/types/vectorDrawingTools";
+import { readBitmap, readDoubleBitmap } from "stratum/helpers/bmpReaders";
 import { SceneBmpTool } from "./tools/sceneBmpTool";
 
 export class BmpToolFactory {
     private static cachedIcons = new Map<string, Promise<HTMLImageElement>>();
     private static promises = new Set<Promise<unknown>>();
-    private static iconsPath: string = "/data/icons";
-
-    static setIconsPath(iconsPath: string) {
-        this.iconsPath = iconsPath;
-    }
 
     private static loadImage(src: string) {
         return new Promise<HTMLImageElement>(async (res, rej) => {
             const img = new Image();
-            // img.onload = () => setTimeout(() => res(img), Math.random() * 3000);
+            // img.onload = () => setTimeout(() => res(img), Math.random() * 3000); //Имитация медленной загрузки.
             img.onload = () => res(img);
-
             img.onerror = () => rej("Ошибка загрузки изображения " + src);
             img.src = src;
         });
@@ -37,7 +32,7 @@ export class BmpToolFactory {
         const fname = params.filename.toUpperCase();
         let imagePr = this.cachedIcons.get(fname);
         if (!imagePr) {
-            const url = `${this.iconsPath}/${fname}`;
+            const url = `${options.iconsLocation}/${fname}`;
             if (params.type === "ttREFTODIB2D") {
                 imagePr = this.loadImage(url);
             } else {
@@ -58,7 +53,7 @@ export class BmpToolFactory {
         const tool = new SceneBmpTool({ handle, width, height });
         const imagePr = this.loadImage(base64Image);
         imagePr.then((imageElement) => tool.setImage(imageElement));
-        imagePr.catch(() => console.error(`Ошибка загрузки изображения ${stream.filename} #${handle}`));
+        imagePr.catch(() => console.error(`Ошибка загрузки изображения ${stream.meta.filepath} #${handle}`));
         return tool;
     }
 

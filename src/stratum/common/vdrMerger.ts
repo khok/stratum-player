@@ -14,19 +14,21 @@
  *
  */
 
-import { Point2D } from "stratum/helpers/types";
-import { Require } from "stratum/helpers/utilityTypes";
-import { VectorDrawing, VectorDrawingTools } from "./fileFormats/vdr/types/vectorDrawing";
 import {
     BitmapElement,
     DoubleBitmapElement,
+    ExternalDoubleBmpToolParams,
     GroupElement,
     LineElement,
     TextElement,
+    VectorDrawing,
     VectorDrawingElement,
-} from "./fileFormats/vdr/types/vectorDrawingElements";
-import { ExternalDoubleBmpToolParams, VectorDrawingToolParams } from "./fileFormats/vdr/types/vectorDrawingTools";
-import { BadDataError } from "./errors";
+    VectorDrawingToolParams,
+    VectorDrawingTools
+} from "stratum/fileFormats/vdr";
+import { BadDataError } from "stratum/helpers/errors";
+import { Point2D } from "stratum/helpers/types";
+import { Require } from "stratum/helpers/utilityTypes";
 
 const toolKeys: (keyof VectorDrawingTools)[] = [
     "brushTools",

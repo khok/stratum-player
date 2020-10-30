@@ -1,5 +1,5 @@
+import { ClassVarType } from "stratum/fileFormats/cls";
 import { parseColorRef } from "./colorrefParsers";
-import { ClassVarType } from "./fileFormats/cls";
 import { VarCode } from "./varCode";
 
 export function parseVarType(type: ClassVarType): VarCode {

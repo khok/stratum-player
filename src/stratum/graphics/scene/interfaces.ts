@@ -1,5 +1,5 @@
+import { ControlElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
-import { ControlElement } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { SceneBmpTool, SceneBrushTool, ScenePenTool, SceneTextTool } from "./tools";
 
 interface _RenderableBase {

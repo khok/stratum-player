@@ -1,137 +1,197 @@
-import { buildTree } from "stratum/classTree/buildTree";
-import { NodeCode } from "stratum/classTree/nodeCode";
-import { TreeManager } from "stratum/classTree/treeManager";
-import { TreeMemoryManager } from "stratum/classTree/treeMemoryManager";
-import { TreeNode } from "stratum/classTree/treeNode";
-import { EventDispatcher, EventType } from "stratum/common/eventDispatcher";
-import { VirtualFileSystem } from "stratum/common/virtualFileSystem";
-import { GraphicsManager, GraphicsManagerOptions } from "stratum/graphics/manager/graphicsManager";
-import { WindowSystem } from "stratum/graphics/manager/interfaces";
-import { HandleMap } from "stratum/helpers/handleMap";
-import { Project } from "stratum/project/project";
+import { Project, ProjectDiag, WindowSystem } from "stratum/api";
+import { ClassProto } from "stratum/common/classProto";
+import { createComposedScheme } from "stratum/common/createComposedScheme";
+import { ProjectInfo } from "stratum/fileFormats/prj";
+import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
+import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
+import { GraphicsManager } from "stratum/graphics/manager/graphicsManager";
+import { BinaryStream } from "stratum/helpers/binaryStream";
+import { resolvePath2Dos } from "stratum/helpers/pathOperations";
+import { Mutable } from "stratum/helpers/utilityTypes";
+import { build } from "stratum/schema/build";
+import { TreeManager } from "stratum/schema/treeManager";
+import { ZipFileSystem } from "stratum/vfs/zipFileSystem";
 import { ExecutionContext } from "stratum/vm/executionContext";
+import { ProjectManager } from "stratum/vm/interfaces/projectManager";
+import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/showMissingCommands";
+import { NumBool, ParsedCode } from "stratum/vm/types";
+import { SimpleComputer } from "./simpleComputer";
 
-export interface PlayerArgs extends GraphicsManagerOptions {
-    fs: VirtualFileSystem;
-    windowSystem: WindowSystem;
+export interface PlayerResources<TVmCode> {
+    fs: ZipFileSystem;
+    prj: ProjectInfo;
+    classes: Map<string, ClassProto<TVmCode>>;
+    stt?: VariableSet;
 }
 
-interface LoadedProject {
-    tree: TreeNode;
-    ctx: ExecutionContext;
-    mmanager: TreeMemoryManager;
-}
+export class Player implements Project, ProjectManager {
+    private _diag: Mutable<ProjectDiag>;
+    private _computer = new SimpleComputer();
+    private _state: "closed" | "playing" | "paused" = "closed";
+    private loop: (() => void) | undefined;
+    private handlers = {
+        closed: new Set<any>(),
+        error: new Set<any>(),
+    };
 
-export class Player {
-    private readonly dispatcher = new EventDispatcher();
-    private readonly ws: WindowSystem;
-    private readonly graphics: GraphicsManager;
-
-    private projects = HandleMap.create<LoadedProject>();
-    private currentProject?: LoadedProject;
-
-    private reqId = 0;
-
-    constructor(args: PlayerArgs) {
-        this.ws = args.windowSystem;
-        this.graphics = new GraphicsManager(this.ws, args);
+    private baseDirParts: string[];
+    private prevWs?: WindowSystem;
+    constructor(private res: PlayerResources<ParsedCode>) {
+        this.baseDirParts = res.prj.baseDirectoryDos.split("\\");
+        const miss = findMissingCommandsRecursive(res.prj.rootClassName, res.classes);
+        if (miss.errors.length > 0) console.warn("Ошибки:", miss.errors);
+        if (miss.missingOperations.length > 0) console.warn(formatMissingCommands(miss.missingOperations));
+        this._diag = {
+            iterations: 0,
+            missingCommands: miss.missingOperations,
+        };
     }
 
-    on<T extends keyof EventType>(event: T, fn: EventType[T]) {
-        this.dispatcher.on(event, fn);
-        return this;
+    get state() {
+        return this._state;
     }
 
-    setGraphicOptions(options: GraphicsManagerOptions) {
-        this.graphics.set(options);
-        return this;
+    get computer() {
+        return this._computer;
     }
 
-    loadProject(prj: Project<NodeCode>) {
-        const tree = buildTree(prj.rootClassName, prj.classes);
+    get diag() {
+        return this._diag;
+    }
+
+    set computer(value) {
+        if (value == this._computer) return;
+        if (this._computer.running) {
+            this._computer.stop();
+            if (this.loop) value.run(this.loop);
+        }
+        this._computer = value;
+    }
+
+    play(ws?: WindowSystem): this {
+        if (this.loop) return this;
+        this.prevWs = ws || this.prevWs;
+        // TODO: по идее то что здесь создается надо подкешировать
+        const { classes, prj, stt } = this.res;
+        const tree = build(prj.rootClassName, classes);
         const memoryManager = tree.createMemoryManager();
 
-        if (prj.preloadStt) tree.applyVarSet(prj.preloadStt);
-        else console.warn(`Файл ${prj.baseDirectory + "\\_preload.stt"} не существует.`);
+        if (stt) tree.applyVarSet(stt);
 
         const ctx = new ExecutionContext({
             classManager: new TreeManager({ tree }),
             memoryManager,
-            windows: this.graphics,
-            projectManager: prj,
+            projectManager: this,
+            windows: new GraphicsManager(this.prevWs!), // FIXME:
         });
 
-        const handle = HandleMap.getFreeHandle(this.projects);
-        this.projects.set(handle, { tree, ctx, mmanager: memoryManager });
-        return handle;
-    }
+        this._diag.iterations = 0;
 
-    removeProject(handle: number) {
-        this.projects.delete(handle);
-    }
-
-    removeAllProjects() {
-        this.projects = new Map();
-    }
-
-    switchProject(handle: number) {
-        this.currentProject = this.projects.get(handle);
-    }
-
-    get isPaused() {
-        return this.reqId === 0;
-    }
-
-    pause() {
-        if (!this.isPaused) cancelAnimationFrame(this.reqId);
-        this.reqId = 0;
-    }
-
-    continue() {
-        if (this.isPaused) this.play();
-    }
-
-    switchPause() {
-        if (this.reqId) this.pause();
-        else this.continue();
-    }
-
-    stop() {
-        this.pause();
-        this.currentProject = undefined;
-        this.graphics.closeAllWindows();
-    }
-
-    init() {
-        if (!this.currentProject) return;
-        this.pause();
-        this.graphics.closeAllWindows();
-        const { mmanager, ctx } = this.currentProject;
-        mmanager.initValues();
-        ctx.hasError = false;
-        ctx.executionStopped = false;
-    }
-
-    step() {
-        if (!this.currentProject) return false;
-        const { ctx, mmanager, tree } = this.currentProject;
-        tree.compute(ctx);
-        this.ws.redrawWindows();
-        if (ctx.executionStopped) {
-            if (ctx.hasError) this.dispatcher.dispatch("VM_ERROR", ctx.error);
-            else this.dispatcher.dispatch("PROJECT_STOPPED");
-            return false;
-        }
-        mmanager.syncValues();
-        mmanager.assertZeroIndexEmpty();
-        return true;
-    }
-
-    play(func: (callback: () => void) => number = requestAnimationFrame) {
-        if (!this.currentProject || this.currentProject.ctx.executionStopped) return;
-        const req = () => {
-            if (this.step()) this.reqId = func(req);
+        // Main Loop
+        this.loop = () => {
+            ++this._diag.iterations;
+            tree.compute(ctx);
+            if (ctx.executionStopped) {
+                if (ctx.hasError) this.handlers.error.forEach((h) => h(ctx.error));
+                else this.handlers.closed.forEach((h) => h());
+                this.close(!ctx.hasError);
+            }
+            memoryManager.sync().assertZeroIndexEmpty();
         };
-        this.reqId = func(req);
+
+        memoryManager.init();
+        this.computer.run(this.loop);
+        this._state = "playing";
+        return this;
+    }
+    close(closeWs: boolean = true): this {
+        this.computer.stop();
+        this.loop = undefined;
+        if (closeWs && this.prevWs) this.prevWs.closeAll(); //FIXME ??? А нужно ли закрывать?
+        this._state = "closed";
+        return this;
+    }
+    pause(): this {
+        if (this.computer.running) {
+            this.computer.stop();
+            this._state = "paused";
+        }
+        return this;
+    }
+    continue(): this {
+        if (!this.computer.running && this.loop) {
+            this.computer.run(this.loop);
+            this._state = "playing";
+        }
+        return this;
+    }
+    step(): this {
+        if (!this.computer.running && this.loop) {
+            this.loop();
+        }
+        return this;
+    }
+
+    on(event: "closed" | "error", handler: any): this {
+        this.handlers[event].add(handler);
+        return this;
+    }
+    off(event: "closed" | "error", handler?: any): this {
+        if (handler) this.handlers[event].delete(handler);
+        else this.handlers[event].clear();
+        return this;
+    }
+
+    //FIXME: отсюда и то что ниже надо куда-то вытаскивать / переименовывать.
+    get baseDirectory(): string {
+        return this.res.prj.baseDirectoryDos;
+    }
+
+    get rootClassName() {
+        return this.res.prj.rootClassName;
+    }
+
+    getClassScheme(className: string): VectorDrawing | undefined {
+        const data = this.res.classes.get(className.toLowerCase());
+        if (!data || !data.scheme) return undefined;
+        //TODO: закешировать скомпозированную схему.
+        const { children, scheme } = data;
+        return children ? createComposedScheme(scheme, children, this.res.classes) : scheme;
+    }
+
+    hasClass(className: string): NumBool {
+        return this.res.classes.has(className.toLowerCase()) ? 1 : 0;
+    }
+
+    getClassDirectory(className: string): string {
+        const cl = this.res.classes.get(className.toLowerCase());
+        return (cl && cl.directoryDos) || "";
+    }
+
+    openFileStream(path: string): BinaryStream | undefined {
+        const filename = resolvePath2Dos(path, this.baseDirParts);
+        if (filename === undefined) return undefined;
+        const file = this.res.fs.getFileDos(filename);
+        return (
+            file &&
+            new BinaryStream(file.arrayBufferSync(), {
+                filepathDos: filename,
+            })
+        );
+    }
+
+    openVdrFile(path: string): VectorDrawing | undefined {
+        const stream = this.openFileStream(path);
+        return stream && readVdrFile(stream, { origin: "file", name: stream.meta.filepathDos || "" });
+    }
+
+    openSttFile(path: string): VariableSet | undefined {
+        const stream = this.openFileStream(path);
+        return stream && readSttFile(stream);
+    }
+
+    isFileExist(path: string): NumBool {
+        const filename = resolvePath2Dos(path, this.baseDirParts);
+        return filename && this.res.fs.getFileDos(filename) ? 1 : 0;
     }
 }

@@ -2,7 +2,7 @@
  * Функции для парсинга и преобразования типа данных `ColorRef`.
  */
 
-import { BadDataError } from "./errors";
+import { BadDataError } from "stratum/helpers/errors";
 
 const systemColorTable = [
     "gray",

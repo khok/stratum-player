@@ -1,5 +1,5 @@
+import { ElementBase } from "stratum/fileFormats/vdr";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { ElementBase } from "stratum/common/fileFormats/vdr/types/vectorDrawingElements";
 import { NumBool } from "stratum/vm/types";
 import { SceneGroupObject } from ".";
 
