@@ -10,7 +10,7 @@ describe("Сцена fabric рисуется корректно", () => {
     let windows: WindowSystem;
     it("Шаг 1", async () => {
         const [a1, a2] = await Promise.all(
-            ["/projects/balls.zip", "/data/library.zip"].map((s) =>
+            ["/projects/test_balls.zip", "/data/library.zip"].map((s) =>
                 fetch(s)
                     .then((r) => r.blob())
                     .then(unzip)

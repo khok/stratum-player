@@ -5,7 +5,7 @@ const { strictEqual } = chai.assert;
 
 async function load(name: string) {
     const [a1, a2] = await Promise.all(
-        [`/projects/${name}.zip`, "/data/library.zip"].map((s) =>
+        [`/projects/test_${name}.zip`, "/data/library.zip"].map((s) =>
             fetch(s)
                 .then((r) => r.blob())
                 .then(unzip)
@@ -16,7 +16,7 @@ async function load(name: string) {
 }
 
 it("Корректно проводятся связи", async () => {
-    const [balls, balls2] = await Promise.all([load("balls"), load("balls_stress_test")]);
+    const [balls, balls2] = await Promise.all([load("balls"), load("many_balls")]);
     //минус 3 под зарезервированные поля в начале.
     strictEqual(balls.defaultDoubleValues.length + balls.defaultLongValues.length + balls.defaultStringValues.length - 3, 1235);
     strictEqual(balls2.defaultDoubleValues.length + balls2.defaultLongValues.length + balls2.defaultStringValues.length - 3, 2328);

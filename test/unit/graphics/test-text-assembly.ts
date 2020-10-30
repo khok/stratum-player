@@ -6,7 +6,7 @@ import { TextTool } from "stratum/vm/interfaces/graphicSpaceTools";
 const { strictEqual } = chai.assert;
 
 it("Правильно собирается текст", async () => {
-    const fs = await fetch("/projects/texts_test.zip")
+    const fs = await fetch("/projects/test_text_assembly.zip")
         .then((r) => r.blob())
         .then(unzip);
     const prj = (await fs.project({ additionalClassPaths: ["library"] })) as Player;
