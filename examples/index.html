@@ -1,0 +1,18 @@
+<script src="index.min.js"></script>
+<canvas id="cnv" width="1200" height="900" style="border:1px solid #000000;"></canvas>
+<script>
+    if (!window.stratum) alert("Библиотека stratum не подключена!");
+    stratum.options.iconsLocation = ""; // Путь к ресурсам иконок.
+    ws = stratum.ws({ globalCanvas: document.getElementById("cnv") })
+    fetch("balls.zip") // Запрашиваем ресурс
+        .then(r => r.blob()) //Получаем как ZIP-архив
+        .then(stratum.unzip) //Открываем его
+        .then(fs => fs.project()) //Открываем проект project.spj
+        .then(p => p.play(ws)); // Запускаем его выполнение
+
+    cb = function () { // Цикл перерисовки окна
+        requestAnimationFrame(cb)
+        ws.redraw()
+    }
+    cb()
+</script>
