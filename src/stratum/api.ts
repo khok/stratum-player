@@ -353,4 +353,4 @@ export const options: {
 /**
  * Версия API.
  */
-export const version: string = "1.0.0";
+export const version: string = "0.2.0";

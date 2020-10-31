@@ -3,7 +3,15 @@ export interface FileSystemConstructor {
 }
 export interface ZipFsOptions {
     /**
-     * Кодировка имен файлов в архиве (по умолчанию: cp866).
+     * Директория, в которую монтируется содержимое архива.
+     * Может начинаться с префикса диска, например, `C:/Projects`
+     * Если префикс не указан, то он автоматически устанавливается как `Z:`
+     * @default "Z:"
+     */
+    directory?: string;
+    /**
+     * Кодировка файловых путей.
+     * @default "cp866"
      */
     encoding?: string;
 }
@@ -13,42 +21,29 @@ export interface ZipFsConstructor {
      * @param source Источник ZIP-архива.
      * @param options Опции ZIP-архива.
      */
-    (source: Blob | ArrayBuffer, options?: ZipFsOptions): Promise<FileSystem>;
+    (source: File | Blob | ArrayBuffer, options?: ZipFsOptions): Promise<FileSystem>;
 }
 /**
  * Файловая система.
  */
 export interface FileSystem {
     /**
-     * Встраивает содержимое другой файловой системы в заданый каталог.
+     * Объединяет содержимое двух файловых систем.
      */
-    mount(fs: this, path?: string): this;
+    merge(fs: this): this;
     /**
      * Возвращает список файлов, попадающих под условия поиска.
      */
-    search(regexp: RegExp): FileSystemFile[];
-    /**
-     * Возвращает список файлов в указанной директории.
-     * Если директория не указана, возвращает все файлы в системе.
-     */
-    files(directory?: string): FileSystemFile[];
-    /**
-     * Возвращает файл с указанным именем.
-     */
-    file(filename: string): FileSystemFile | undefined;
+    search(regexp: RegExp): IterableIterator<FileSystemFile>;
     /**
      * Открывает проект.
      */
-    project(options?: ProjectOptions): Promise<Project>;
+    project(options?: ProjectOpenOptions): Promise<Project>;
 }
 /**
  * Представляет файл в файловой системе.
  */
 export interface FileSystemFile {
-    /**
-     * Имя файла.
-     */
-    readonly path: string;
     /**
      * Явно предзагружает содержимое файла.
      * Только явно предзагруженные файлы могут быть прочитаны в процессе исполнения проекта.
@@ -62,11 +57,11 @@ export interface FileSystemFile {
      */
     arraybuffer(): Promise<ArrayBuffer>;
 }
-export interface ProjectOptions {
+export interface ProjectOpenOptions {
     /**
      * Завершающая часть пути к файлу проекта.
      */
-    path?: string;
+    tailPath?: string;
     /**
      * Дополнительные пути поиска файлов имиджей.
      */
