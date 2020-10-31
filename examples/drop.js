@@ -27,6 +27,7 @@
         globalCanvas.height = window.innerHeight - 100;
         htmlRoot = document.getElementById("root");
         zipdropElem = document.getElementById("zipdrop");
+        zipdropStatusElem = document.getElementById("zipdrop-status");
 
         // Создаем обработчик закидывания архивов.
         zipdropElem.addEventListener("change", async (evt) => {
@@ -35,6 +36,8 @@
             // Открываем проект...
             var project, ws;
             try {
+                evt.target.disabled = true;
+                zipdropStatusElem.innerHTML = "Загружаем проект...";
                 // Распаковываем все закинутые архивы.
                 fsArray = await Promise.all(Array.from(evt.target.files).map(stratum.unzip));
                 // Собираем распакованные архивы в одно целое.
@@ -51,8 +54,8 @@
                     } else {
                         tailPath = prompt("Не найдено файлов проектов. Введите путь к нему:");
                     }
-                    if (!tailPath) return;
                 }
+                zipdropStatusElem.innerHTML = `Загружаем проект ${tailPath || ""}`;
 
                 // Подзагружаем bmp и vdr
                 await preloadRes(fs);
@@ -66,12 +69,14 @@
                 project.play(ws);
             } catch (e) {
                 alert(`При открытии проекта произошла ошибка:\n${e.message}`);
+                evt.target.disabled = false;
+                zipdropStatusElem.innerHTML = "Неудача :( попробуем еще?";
                 return;
             }
 
             // Уберем дропзону, т.к. мне пока лень делать релоад проекта при
             // накидывании новых архивов.
-            zipdropElem.remove();
+            document.getElementById("zipdrop-container").remove();
 
             // Навешиваем обработчики на кнопки
             againElem = document.getElementById("again");
