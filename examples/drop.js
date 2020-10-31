@@ -3,17 +3,18 @@
         alert("Библиотека stratum не подключена!");
         return;
     }
+    stratum.options.iconsLocation = "./data/icons";
 
     function preloadRes(fs) {
         // Подзагружает все динамически открываемые файлы bmp и vdr.
-        return Promise.all(fs.search(/.+\.(bmp)|(vdr)$/i).map((f) => f.makeSync()));
+        return Promise.all([[...fs.search(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync())]);
     }
 
     var stdlibfs;
     // Начинаем загружать стандартную библиотеку.
-    fetch("/data/library.zip")
+    fetch("./data/library.zip")
         .then((r) => r.blob())
-        .then(stratum.unzip)
+        .then((b) => stratum.unzip(b, { directory: "L:" }))
         .then((fs) => {
             stdlibfs = fs;
             preloadRes(fs);
@@ -37,27 +38,27 @@
                 // Распаковываем все закинутые архивы.
                 fsArray = await Promise.all(Array.from(evt.target.files).map(stratum.unzip));
                 // Собираем распакованные архивы в одно целое.
-                fs = fsArray.reduce((a, b) => a.mount(b));
+                fs = fsArray.reduce((a, b) => a.merge(b));
 
-                prjfilepath = undefined;
-                const res = fs.search(/.+\.(prj)|(spj)$/i).map((r) => r.path);
+                tailPath = undefined;
+                const res = [...fs.search(/.+\.(prj)|(spj)$/i)].map((r) => r.pathDos);
                 if (res.length !== 1) {
                     if (res.length > 0) {
-                        prjfilepath = prompt(
+                        tailPath = prompt(
                             `Обнаружено несколько файлов проектов:\n${res.join("\n")}\nВведите хвостовую часть пути к файлу.`,
                             res[0]
                         );
                     } else {
-                        prjfilepath = prompt("Не найдено файлов проектов. Введите путь к нему:");
+                        tailPath = prompt("Не найдено файлов проектов. Введите путь к нему:");
                     }
-                    if (!prjfilepath) return;
+                    if (!tailPath) return;
                 }
 
                 // Подзагружаем bmp и vdr
                 await preloadRes(fs);
                 // Приделываем стандартную библиотеку.
-                fs.mount(stdlibfs);
-                project = await fs.project({ additionalClassPaths: ["library"], path: prjfilepath });
+                fs.merge(stdlibfs);
+                project = await fs.project({ additionalClassPaths: ["L:"], tailPath });
                 // Создаем оконный хост.
                 ws = stratum.ws({ globalCanvas, htmlRoot, disableSceneResize: false });
                 // Запускаем (пытаемся) выполнение проекта прямо здесь. Таким
