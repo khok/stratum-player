@@ -4,6 +4,7 @@
         "newLine": "lf",
         "target": "ES6",
         "moduleResolution": "Node",
+        "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
         "lib": ["ES6", "ES2016.Array.Include", "DOM"],
         "strict": true,

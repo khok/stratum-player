@@ -3,7 +3,7 @@ import { OpCode } from "../consts";
 import { OPCODE_MASK } from "../consts/operandFlagMasks";
 import { operations } from "../operations";
 import { Operation, ParsedCode } from "../types";
-import * as realCommandNames from "./realCommandNames.json";
+import realCommandNames from "./realCommandNames.json";
 
 function cmdHasError(cmd: Function) {
     try {

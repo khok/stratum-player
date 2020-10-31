@@ -3,7 +3,7 @@ import { DOUBLE_OPERAND_FLAG_MASK, OPCODE_MASK, OTHER_OPERAND_FLAG_MASK, STRING_
 import { ExecutionContext } from "./executionContext";
 import { operations } from "./operations";
 import { rapidBytecodePrint } from "./showMissingCommands/rapidBytecodePrint";
-import * as realCommandNames from "./showMissingCommands/realCommandNames.json";
+import realCommandNames from "./showMissingCommands/realCommandNames.json";
 import { ParsedCode } from "./types";
 
 export function executeCode(ctx: ExecutionContext, { code, numberOperands, stringOperands, otherOperands }: ParsedCode) {
