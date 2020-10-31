@@ -4,34 +4,10 @@ import { BytecodeParser } from "stratum/fileFormats/cls";
 import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { INode, VirtualDir } from "./zipFileSystem";
+import { VirtualDir, VirtualNode } from ".";
+import { VirtualFileContent } from "./virtualFileContent";
 
-export type LazyBuffer =
-    | {
-          async(type: "arraybuffer"): Promise<ArrayBuffer>;
-      }
-    | ArrayBuffer;
-
-export class VirtualFileContent {
-    constructor(private src: LazyBuffer) {}
-
-    async open(): Promise<ArrayBuffer> {
-        if (!(this.src instanceof ArrayBuffer)) this.src = await this.src.async("arraybuffer");
-        return this.src;
-    }
-
-    openSync(): ArrayBuffer | undefined {
-        return this.src instanceof ArrayBuffer ? this.src : undefined;
-    }
-}
-
-export interface ProjectResource {
-    readAs(type: "prj"): Promise<ProjectInfo>;
-    readAs<TVmCode>(type: "cls", byteCodeParser?: BytecodeParser<TVmCode>): Promise<ClassProto<TVmCode>>;
-    readAs(type: "stt"): Promise<VariableSet>;
-}
-
-export class VirtualFile implements FileSystemFile, INode, ProjectResource {
+export class VirtualFile implements FileSystemFile, VirtualNode {
     private src: VirtualFileContent;
 
     readonly dir = false;
@@ -72,7 +48,7 @@ export class VirtualFile implements FileSystemFile, INode, ProjectResource {
     }
 
     readAs(type: "prj"): Promise<ProjectInfo>;
-    readAs<TVmCode>(type: "cls", bytecodeParser?: BytecodeParser<TVmCode>): Promise<ClassProto<TVmCode>>;
+    readAs<TVmCode>(type: "cls", byteCodeParser?: BytecodeParser<TVmCode>): Promise<ClassProto<TVmCode>>;
     readAs(type: "stt"): Promise<VariableSet>;
     async readAs<TVmCode>(type: "prj" | "cls" | "stt", bytecodeParser?: BytecodeParser<TVmCode>) {
         const stream = await this.stream();

@@ -7,111 +7,11 @@ import { extractPrefixAndDirParts, getPathParts, SLASHES } from "stratum/helpers
 import { Player } from "stratum/player";
 import { parseBytecode } from "stratum/vm/parseBytecode";
 import { ParsedCode } from "stratum/vm/types";
-import { VirtualFile, VirtualFileContent } from "./virtualFile";
+import { VirtualDir, VirtualFile } from ".";
+import { VirtualFileContent } from "./virtualFileContent";
 
-export interface INode {
-    readonly dir: boolean;
-    readonly parent: INode;
-    readonly pathDos: string;
-}
-
-export class VirtualDir implements INode {
-    private readonly nodes = new Map<string, VirtualDir | VirtualFile>();
-
-    readonly dir = true;
-    readonly parent: VirtualDir;
-    readonly pathDos: string;
-
-    constructor(private name: string, parent?: VirtualDir) {
-        this.pathDos = parent ? parent.pathDos + "\\" + name : name;
-        this.parent = parent || this;
-    }
-
-    private insert(name: string, fileOrDir: VirtualDir | VirtualFile) {
-        const { nodes } = this;
-
-        const prv = nodes.size;
-        nodes.set(name.toUpperCase(), fileOrDir);
-        if (nodes.size === prv) throw Error(`Конфликт имен: ${fileOrDir.pathDos}`);
-    }
-
-    get(name: string): VirtualFile | VirtualDir | undefined {
-        return this.nodes.get(name.toUpperCase());
-    }
-
-    fileGet(name: string): VirtualFile | undefined {
-        const res = this.get(name);
-        return res && !res.dir ? res : undefined;
-    }
-
-    fileNew(name: string, source: VirtualFileContent): VirtualFile {
-        const f = new VirtualFile(name, source, this);
-        this.insert(name, f);
-        return f;
-    }
-
-    folderNew(name: string): VirtualDir {
-        const fd = new VirtualDir(name, this);
-        this.insert(name, fd);
-        return fd;
-    }
-
-    folderGet(name: string): VirtualDir | undefined {
-        const res = this.get(name);
-        return res && res.dir ? res : undefined;
-    }
-
-    folder(name: string): VirtualDir {
-        const { nodes } = this;
-        const keyUC = name.toUpperCase();
-
-        const node = nodes.get(keyUC);
-        if (node) {
-            if (!node.dir) throw Error(`Файл ${node.pathDos} уже существует.`);
-            return node;
-        }
-        const fd = new VirtualDir(name, this);
-        nodes.set(keyUC, fd);
-        return fd;
-    }
-
-    merge({ nodes: otherNodes }: VirtualDir) {
-        const { nodes: myNodes } = this;
-        for (const [otherNameUC, otherNode] of otherNodes) {
-            let thisNode = myNodes.get(otherNameUC);
-            if (thisNode && !thisNode.dir) throw Error(`Конфликт имен: ${thisNode.pathDos}`);
-            if (otherNode.dir) {
-                if (!thisNode) {
-                    thisNode = new VirtualDir(otherNode.name, this);
-                    myNodes.set(otherNameUC, thisNode);
-                }
-                thisNode.merge(otherNode);
-                continue;
-            }
-            if (thisNode) throw Error(`Конфликт имен: ${thisNode.pathDos}`);
-            myNodes.set(otherNameUC, otherNode.makeCopyAt(this));
-        }
-    }
-
-    *files(): IterableIterator<VirtualFile> {
-        for (const subnode of this.nodes.values()) {
-            if (!subnode.dir) {
-                yield subnode;
-                continue;
-            }
-            for (const subfile of subnode.files()) {
-                yield subfile;
-            }
-        }
-    }
-
-    *search(regexp: RegExp): IterableIterator<VirtualFile> {
-        for (const f of this.files()) if (regexp.test(f.pathDos)) yield f;
-    }
-}
-
-export class ZipFileSystem implements FileSystem {
-    static async fromData(source: File | Blob | ArrayBuffer, options: ZipFsOptions = {}): Promise<ZipFileSystem> {
+export class VirtualFileSystem implements FileSystem {
+    static async fromZip(source: File | Blob | ArrayBuffer, options: ZipFsOptions = {}): Promise<VirtualFileSystem> {
         const decoder = new TextDecoder(options.encoding || "cp866");
 
         let zip: ReturnType<typeof loadAsync> extends Promise<infer U> ? U : never;
@@ -133,7 +33,7 @@ export class ZipFileSystem implements FileSystem {
         const [diskPrefixUC, p1] = extractPrefixAndDirParts(options.directory || "", "Z");
 
         let root = new VirtualDir(diskPrefixUC + ":");
-        const fs = new ZipFileSystem();
+        const fs = new VirtualFileSystem();
         fs.diskNew(diskPrefixUC, root);
 
         for (const p of p1) root = root.folderNew(p);
@@ -164,7 +64,7 @@ export class ZipFileSystem implements FileSystem {
         if (disks.size === prv) throw Error(`Конфликт имен дисков: ${prefixUC}`);
     }
 
-    merge({ disks: otherDisks }: ZipFileSystem): this {
+    merge({ disks: otherDisks }: VirtualFileSystem): this {
         const { disks: myDisks } = this;
         for (const [prefixUC, otherRoot] of otherDisks) {
             const myRoot = myDisks.get(prefixUC);

@@ -9,7 +9,7 @@ import { BinaryStream } from "stratum/helpers/binaryStream";
 import { Mutable } from "stratum/helpers/utilityTypes";
 import { build } from "stratum/schema/build";
 import { TreeManager } from "stratum/schema/treeManager";
-import { VirtualDir, ZipFileSystem } from "stratum/vfs/zipFileSystem";
+import { VirtualDir, VirtualFileSystem } from "stratum/vfs";
 import { ExecutionContext } from "stratum/vm/executionContext";
 import { ProjectManager } from "stratum/vm/interfaces/projectManager";
 import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/showMissingCommands";
@@ -17,7 +17,7 @@ import { NumBool, ParsedCode } from "stratum/vm/types";
 import { SimpleComputer } from "./simpleComputer";
 
 export interface PlayerResources {
-    fs: ZipFileSystem;
+    fs: VirtualFileSystem;
     workDir: VirtualDir;
     prjInfo: ProjectInfo;
     classes: Map<string, ClassProto<ParsedCode>>;
@@ -35,7 +35,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
     };
     private prevWs?: WindowSystem;
 
-    fs: ZipFileSystem;
+    fs: VirtualFileSystem;
     workDir: VirtualDir;
     prjInfo: ProjectInfo;
     classes: Map<string, ClassProto<ParsedCode>>;
