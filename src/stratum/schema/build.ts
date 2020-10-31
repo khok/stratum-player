@@ -51,8 +51,8 @@ function applyLinks(node: Schema, links: ClassLink[]) {
  * @param placement - описание размещения имиджа на схеме родительского имиджа.
  */
 function buildSchemaRecursive(protoName: string, classes: Map<string, ClassProto<NodeCode>>, placement?: PlacementDescription): Schema {
-    const proto = classes.get(protoName.toLowerCase());
-    if (!proto) throw new BadDataError(`Имидж ${protoName} не найден`);
+    const proto = classes.get(protoName.toUpperCase());
+    if (!proto) throw Error(`Имидж "${protoName}" не найден.`);
 
     //Создаем текущий узел дерева.
     const node = new Schema({ proto, placement });

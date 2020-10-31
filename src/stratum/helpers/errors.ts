@@ -56,7 +56,7 @@ export class BadDataError extends Error {
 
 export class FileReadingError extends BadDataError {
     constructor(stream: BinaryStream, message: string) {
-        super(`Ошибка чтения ${stream.meta.filepath || ""}:\n${message}`);
+        super(`Ошибка чтения ${stream.meta.filepathDos || ""}:\n${message}`);
     }
 }
 

@@ -11,8 +11,8 @@ async function load(name: string) {
                 .then(unzip)
         )
     );
-    const prj = (await a1.mount(a2).project({ additionalClassPaths: ["library"] })) as Player;
-    return build(prj.rootClassName, prj["res"].classes).createMemoryManager();
+    const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
+    return build(prj.rootClassName, prj.classes).createMemoryManager();
 }
 
 it("Корректно проводятся связи", async () => {

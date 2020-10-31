@@ -1,7 +1,6 @@
 //project.cpp:592
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { FileReadingError, FileSignatureError } from "stratum/helpers/errors";
-import { extractDirDos } from "stratum/helpers/pathOperations";
 import { EntryCode } from "./entryCode";
 
 const settingEntryNameMap: { [index: string]: keyof ProjectSettings } = {
@@ -37,8 +36,6 @@ export interface WatchedVariable {
 }
 
 export interface ProjectInfo {
-    filenameDos: string;
-    baseDirectoryDos: string;
     rootClassName: string;
     settings?: ProjectSettings;
     watchedVariables?: WatchedVariable[];
@@ -94,10 +91,7 @@ export function readPrjFile(stream: BinaryStream): ProjectInfo {
     const sign = stream.uint16();
     if (sign !== 0x6849) throw new FileSignatureError(stream, sign, 0x6849);
 
-    const filenameDos = stream.meta.filepathDos || "";
-    const baseDirectoryDos = extractDirDos(filenameDos);
-
-    const res: ProjectInfo = { rootClassName: "", filenameDos, baseDirectoryDos };
+    const res: ProjectInfo = { rootClassName: "" };
     let code = 0;
     while ((code = stream.uint16()) !== 0) {
         switch (code) {

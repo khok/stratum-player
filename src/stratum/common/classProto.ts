@@ -83,16 +83,16 @@ export class ClassProto<TVmCode> {
         return body;
     }
 
-    constructor(data: ArrayBuffer | Uint8Array, options: ClassProtoOptions<TVmCode> = {}) {
-        this.filepathDos = options.filepathDos;
-        this.directoryDos = extractDirDos(options.filepathDos || "");
+    constructor(data: ArrayBuffer | Uint8Array | BinaryStream, options: ClassProtoOptions<TVmCode> = {}) {
+        this.filepathDos = data instanceof BinaryStream ? data.meta.filepathDos : options.filepathDos;
+        this.directoryDos = extractDirDos(this.filepathDos || "");
         this.blocks = {
             readScheme: true,
             readImage: true,
             parseBytecode: options.bytecodeParser,
         };
 
-        const stream = new BinaryStream(data, { filepathDos: options.filepathDos });
+        const stream = data instanceof BinaryStream ? data : new BinaryStream(data, { filepathDos: options.filepathDos });
         this.header = readClsFileHeader(stream);
         stream.meta.fileversion = this.header.version;
         this.__body = {

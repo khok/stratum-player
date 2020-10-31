@@ -14,7 +14,7 @@ import { VdrMerger } from "./vdrMerger";
 export function createComposedScheme(scheme: VectorDrawing, children: ClassChild[], classes: Map<string, ClassProto<unknown>>) {
     const merger = new VdrMerger(scheme);
     for (const child of children) {
-        const childClassData = classes.get(child.classname.toLowerCase());
+        const childClassData = classes.get(child.classname.toUpperCase());
         if (!childClassData) throw new BadDataError(`Подимидж ${child.classname} #${child.schemeInfo.handle} не найден.`);
         const { handle: rootGroupHandle, position } = child.schemeInfo;
         if (childClassData.iconFile) merger.replaceIcon(rootGroupHandle, childClassData.iconFile);

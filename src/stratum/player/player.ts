@@ -6,25 +6,25 @@ import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
 import { GraphicsManager } from "stratum/graphics/manager/graphicsManager";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { resolvePath2Dos } from "stratum/helpers/pathOperations";
 import { Mutable } from "stratum/helpers/utilityTypes";
 import { build } from "stratum/schema/build";
 import { TreeManager } from "stratum/schema/treeManager";
-import { ZipFileSystem } from "stratum/vfs/zipFileSystem";
+import { VirtualDir, ZipFileSystem } from "stratum/vfs/zipFileSystem";
 import { ExecutionContext } from "stratum/vm/executionContext";
 import { ProjectManager } from "stratum/vm/interfaces/projectManager";
 import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/showMissingCommands";
 import { NumBool, ParsedCode } from "stratum/vm/types";
 import { SimpleComputer } from "./simpleComputer";
 
-export interface PlayerResources<TVmCode> {
+export interface PlayerResources {
     fs: ZipFileSystem;
-    prj: ProjectInfo;
-    classes: Map<string, ClassProto<TVmCode>>;
+    workDir: VirtualDir;
+    prjInfo: ProjectInfo;
+    classes: Map<string, ClassProto<ParsedCode>>;
     stt?: VariableSet;
 }
 
-export class Player implements Project, ProjectManager {
+export class Player implements Project, ProjectManager, PlayerResources {
     private _diag: Mutable<ProjectDiag>;
     private _computer = new SimpleComputer();
     private _state: "closed" | "playing" | "paused" = "closed";
@@ -33,12 +33,21 @@ export class Player implements Project, ProjectManager {
         closed: new Set<any>(),
         error: new Set<any>(),
     };
-
-    private baseDirParts: string[];
     private prevWs?: WindowSystem;
-    constructor(private res: PlayerResources<ParsedCode>) {
-        this.baseDirParts = res.prj.baseDirectoryDos.split("\\");
-        const miss = findMissingCommandsRecursive(res.prj.rootClassName, res.classes);
+
+    fs: ZipFileSystem;
+    workDir: VirtualDir;
+    prjInfo: ProjectInfo;
+    classes: Map<string, ClassProto<ParsedCode>>;
+    stt?: VariableSet | undefined;
+
+    constructor(res: PlayerResources) {
+        this.fs = res.fs;
+        this.workDir = res.workDir;
+        this.prjInfo = res.prjInfo;
+        this.classes = res.classes;
+        this.stt = res.stt;
+        const miss = findMissingCommandsRecursive(res.prjInfo.rootClassName, res.classes);
         if (miss.errors.length > 0) console.warn("Ошибки:", miss.errors);
         if (miss.missingOperations.length > 0) console.warn(formatMissingCommands(miss.missingOperations));
         this._diag = {
@@ -72,7 +81,7 @@ export class Player implements Project, ProjectManager {
         if (this.loop) return this;
         this.prevWs = ws || this.prevWs;
         // TODO: по идее то что здесь создается надо подкешировать
-        const { classes, prj, stt } = this.res;
+        const { classes, prjInfo: prj, stt } = this;
         const tree = build(prj.rootClassName, classes);
         const memoryManager = tree.createMemoryManager();
 
@@ -142,42 +151,30 @@ export class Player implements Project, ProjectManager {
         return this;
     }
 
-    //FIXME: отсюда и то что ниже надо куда-то вытаскивать / переименовывать.
-    get baseDirectory(): string {
-        return this.res.prj.baseDirectoryDos;
-    }
-
     get rootClassName() {
-        return this.res.prj.rootClassName;
+        return this.prjInfo.rootClassName;
     }
 
     getClassScheme(className: string): VectorDrawing | undefined {
-        const data = this.res.classes.get(className.toLowerCase());
+        const data = this.classes.get(className.toUpperCase());
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const { children, scheme } = data;
-        return children ? createComposedScheme(scheme, children, this.res.classes) : scheme;
+        return children ? createComposedScheme(scheme, children, this.classes) : scheme;
     }
 
     hasClass(className: string): NumBool {
-        return this.res.classes.has(className.toLowerCase()) ? 1 : 0;
+        return this.classes.has(className.toUpperCase()) ? 1 : 0;
     }
 
     getClassDirectory(className: string): string {
-        const cl = this.res.classes.get(className.toLowerCase());
+        const cl = this.classes.get(className.toUpperCase());
         return (cl && cl.directoryDos) || "";
     }
 
     openFileStream(path: string): BinaryStream | undefined {
-        const filename = resolvePath2Dos(path, this.baseDirParts);
-        if (filename === undefined) return undefined;
-        const file = this.res.fs.getFileDos(filename);
-        return (
-            file &&
-            new BinaryStream(file.arrayBufferSync(), {
-                filepathDos: filename,
-            })
-        );
+        const f = this.fs.resolveFile(path, this.workDir);
+        return f && !f.dir ? f.streamSync() : undefined;
     }
 
     openVdrFile(path: string): VectorDrawing | undefined {
@@ -191,7 +188,6 @@ export class Player implements Project, ProjectManager {
     }
 
     isFileExist(path: string): NumBool {
-        const filename = resolvePath2Dos(path, this.baseDirParts);
-        return filename && this.res.fs.getFileDos(filename) ? 1 : 0;
+        return this.fs.resolveFile(path) ? 1 : 0;
     }
 }

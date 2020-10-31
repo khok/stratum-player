@@ -3,7 +3,6 @@ import { BinaryStream } from "stratum/helpers/binaryStream";
 import { NumBool } from "../types";
 
 export interface ProjectManager {
-    readonly baseDirectory: string;
     readonly rootClassName: string;
 
     getClassDirectory(className: string): string;

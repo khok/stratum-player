@@ -16,11 +16,11 @@ describe("Сцена fabric рисуется корректно", () => {
                     .then(unzip)
             )
         );
-        const prj = (await a1.mount(a2).project({ additionalClassPaths: ["library"] })) as Player;
+        const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
 
-        const classes = prj["res"].classes;
+        const classes = prj.classes;
         const classname = "WorkSpace";
-        const cl = classes.get(classname.toLowerCase())!;
+        const cl = classes.get(classname.toUpperCase())!;
         const vdr = createComposedScheme(cl.scheme!, cl.children!, classes);
         strictEqual(vdr.source!.origin, "class");
         strictEqual(vdr.source!.name, classname);

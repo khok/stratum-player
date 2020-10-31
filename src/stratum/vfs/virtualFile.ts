@@ -1,5 +1,10 @@
 import { FileSystemFile } from "stratum/api";
-import { dosPath } from "stratum/helpers/pathOperations";
+import { ClassProto } from "stratum/common/classProto";
+import { BytecodeParser } from "stratum/fileFormats/cls";
+import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
+import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
+import { BinaryStream } from "stratum/helpers/binaryStream";
+import { INode, VirtualDir } from "./zipFileSystem";
 
 export type LazyBuffer =
     | {
@@ -7,47 +12,44 @@ export type LazyBuffer =
       }
     | ArrayBuffer;
 
-function bufferLoaded(src: LazyBuffer): src is ArrayBuffer {
-    return src instanceof ArrayBuffer;
-}
-
-export class DataSource {
+export class VirtualFileContent {
     constructor(private src: LazyBuffer) {}
 
     async open(): Promise<ArrayBuffer> {
-        if (!bufferLoaded(this.src)) {
-            this.src = await this.src.async("arraybuffer");
-        }
+        if (!(this.src instanceof ArrayBuffer)) this.src = await this.src.async("arraybuffer");
         return this.src;
     }
 
     openSync(): ArrayBuffer | undefined {
-        if (!bufferLoaded(this.src)) return undefined;
-        return this.src;
+        return this.src instanceof ArrayBuffer ? this.src : undefined;
     }
 }
 
-export class VirtualFile implements FileSystemFile {
-    static fromUrl(req: RequestInfo, path?: string) {
-        const src = new DataSource({ async: () => fetch(req).then((res) => res.arrayBuffer()) });
-        return new VirtualFile(path || req.toString(), src);
-    }
+export interface ProjectResource {
+    readAs(type: "prj"): Promise<ProjectInfo>;
+    readAs<TVmCode>(type: "cls", byteCodeParser?: BytecodeParser<TVmCode>): Promise<ClassProto<TVmCode>>;
+    readAs(type: "stt"): Promise<VariableSet>;
+}
 
-    private src: DataSource;
+export class VirtualFile implements FileSystemFile, INode, ProjectResource {
+    private src: VirtualFileContent;
 
-    readonly path: string;
+    readonly dir = false;
+    readonly parent: VirtualDir;
     readonly pathDos: string;
-    readonly pathDosUC: string;
 
-    constructor(unixPath: string, dataSource: DataSource) {
-        this.path = unixPath;
-        this.pathDos = dosPath(unixPath);
-        this.pathDosUC = this.pathDos.toUpperCase();
+    constructor(private name: string, dataSource: VirtualFileContent, parent: VirtualDir) {
         this.src = dataSource;
+        this.parent = parent;
+        this.pathDos = parent.pathDos + "\\" + name;
     }
 
-    as(path: string): VirtualFile {
-        return new VirtualFile(path, this.src);
+    get directoryDos() {
+        return this.parent.pathDos;
+    }
+
+    makeCopyAt(parent: VirtualDir) {
+        return new VirtualFile(this.name, this.src, parent);
     }
 
     arraybuffer(): Promise<ArrayBuffer> {
@@ -58,9 +60,29 @@ export class VirtualFile implements FileSystemFile {
         await this.src.open();
     }
 
-    arrayBufferSync(): ArrayBuffer {
-        const src = this.src.openSync();
-        if (!src) throw Error(`Содержимое файла ${this.path} не было предзагружено.`);
-        return src;
+    private async stream() {
+        const data = await this.arraybuffer();
+        return new BinaryStream(data, { filepathDos: this.pathDos });
+    }
+
+    streamSync(): BinaryStream {
+        const data = this.src.openSync();
+        if (!data) throw Error(`Содержимое файла ${this.pathDos} не было предзагружено.`);
+        return new BinaryStream(data, { filepathDos: this.pathDos });
+    }
+
+    readAs(type: "prj"): Promise<ProjectInfo>;
+    readAs<TVmCode>(type: "cls", bytecodeParser?: BytecodeParser<TVmCode>): Promise<ClassProto<TVmCode>>;
+    readAs(type: "stt"): Promise<VariableSet>;
+    async readAs<TVmCode>(type: "prj" | "cls" | "stt", bytecodeParser?: BytecodeParser<TVmCode>) {
+        const stream = await this.stream();
+        switch (type) {
+            case "prj":
+                return readPrjFile(stream);
+            case "cls":
+                return new ClassProto(stream, { bytecodeParser });
+            case "stt":
+                return readSttFile(stream);
+        }
     }
 }

@@ -1,7 +1,6 @@
 import { Point2D } from "./types";
 
 export interface BinaryStreamMetadata {
-    filepath?: string;
     filepathDos?: string;
     fileversion?: number;
 }

@@ -72,9 +72,9 @@ export function findMissingCommands(classes: Map<string, ClassProto<ParsedCode>>
 export function findMissingCommandsRecursive(rootName: string, classes: Map<string, ClassProto<ParsedCode>>) {
     const targetClasses = new Map<string, ClassProto<ParsedCode>>();
     (function collect(clName: string) {
-        const key = clName.toLowerCase();
+        const key = clName.toUpperCase();
         const root = classes.get(key);
-        if (!root) throw new Error(`Имимдж ${clName} не существует.`);
+        if (!root) throw Error(`Имидж "${clName}" не найден.`);
         targetClasses.set(key, root);
         if (root.children) root.children.forEach((c) => collect(c.classname));
     })(rootName);

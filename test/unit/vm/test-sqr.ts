@@ -1,12 +1,11 @@
 import { ClassProto } from "stratum/common/classProto";
 import { Schema } from "stratum/schema/schema";
-import { VirtualFile } from "stratum/vfs/virtualFile";
 import { ExecutionContext } from "stratum/vm/executionContext";
 import { parseBytecode } from "stratum/vm/parseBytecode";
 const { strictEqual } = chai.assert;
 
 it("Тест квадратного уравнения", async () => {
-    const f = await VirtualFile.fromUrl("/projects/other/square_eq.cls").arraybuffer();
+    const f = await fetch("/projects/other/square_eq.cls").then((b) => b.arrayBuffer());
 
     const node = new Schema({ proto: new ClassProto(f, { bytecodeParser: parseBytecode }) });
     const mmanager = node.createMemoryManager();

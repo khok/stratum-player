@@ -53,7 +53,7 @@ export class BmpToolFactory {
         const tool = new SceneBmpTool({ handle, width, height });
         const imagePr = this.loadImage(base64Image);
         imagePr.then((imageElement) => tool.setImage(imageElement));
-        imagePr.catch(() => console.error(`Ошибка загрузки изображения ${stream.meta.filepath} #${handle}`));
+        imagePr.catch(() => console.error(`Ошибка загрузки изображения ${stream.meta.filepathDos} #${handle}`));
         return tool;
     }
 

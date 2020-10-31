@@ -1,204 +1,290 @@
 import { loadAsync } from "jszip";
-import { FileSystem, ProjectOptions, ZipFsOptions } from "stratum/api";
+import { FileSystem, ProjectOpenOptions, ZipFsOptions } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
-import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
-import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
-import { BinaryStream } from "stratum/helpers/binaryStream";
-import { extractDir, parseClassSearchPaths, unixPath } from "stratum/helpers/pathOperations";
+import { ProjectInfo } from "stratum/fileFormats/prj";
+import { VariableSet } from "stratum/fileFormats/stt";
+import { extractPrefixAndDirParts, getPathParts, SLASHES } from "stratum/helpers/pathOperations";
 import { Player } from "stratum/player";
 import { parseBytecode } from "stratum/vm/parseBytecode";
 import { ParsedCode } from "stratum/vm/types";
-import { DataSource, VirtualFile } from "./virtualFile";
+import { VirtualFile, VirtualFileContent } from "./virtualFile";
 
-export class ZipFileSystem implements FileSystem {
-    static async new(source: Blob | ArrayBuffer, options: ZipFsOptions = {}): Promise<ZipFileSystem> {
-        const decoder = new TextDecoder(options.encoding || "cp866");
+export interface INode {
+    readonly dir: boolean;
+    readonly parent: INode;
+    readonly pathDos: string;
+}
 
-        const arch = await loadAsync(source, {
-            decodeFileName: (b) => decoder.decode(b),
-            createFolders: false,
-        });
+export class VirtualDir implements INode {
+    private readonly nodes = new Map<string, VirtualDir | VirtualFile>();
 
-        const files = new Map<string, VirtualFile>();
-        arch.forEach((_, f) => {
-            if (f.dir) return;
-            const file = new VirtualFile(f.name, new DataSource(f));
-            files.set(file.path.toUpperCase(), file);
-        });
+    readonly dir = true;
+    readonly parent: VirtualDir;
+    readonly pathDos: string;
 
-        return new ZipFileSystem(files);
+    constructor(private name: string, parent?: VirtualDir) {
+        this.pathDos = parent ? parent.pathDos + "\\" + name : name;
+        this.parent = parent || this;
     }
 
-    private constructor(private fileMap: Map<string, VirtualFile>) {}
+    private insert(name: string, fileOrDir: VirtualDir | VirtualFile) {
+        const { nodes } = this;
 
-    mount(fs: this, path?: string): this {
-        let dir = path ? unixPath(path) : "";
-        if (dir) dir += "/";
-        fs.fileMap.forEach((f) => {
-            const prevSize = this.fileMap.size;
-            const mountPath = dir + f.path;
-            this.fileMap.set(mountPath.toUpperCase(), f.as(mountPath));
-            if (this.fileMap.size === prevSize) {
-                throw Error(`Конфликт имен файлов: ${mountPath}`);
+        const prv = nodes.size;
+        nodes.set(name.toUpperCase(), fileOrDir);
+        if (nodes.size === prv) throw Error(`Конфликт имен: ${fileOrDir.pathDos}`);
+    }
+
+    get(name: string): VirtualFile | VirtualDir | undefined {
+        return this.nodes.get(name.toUpperCase());
+    }
+
+    fileGet(name: string): VirtualFile | undefined {
+        const res = this.get(name);
+        return res && !res.dir ? res : undefined;
+    }
+
+    fileNew(name: string, source: VirtualFileContent): VirtualFile {
+        const f = new VirtualFile(name, source, this);
+        this.insert(name, f);
+        return f;
+    }
+
+    folderNew(name: string): VirtualDir {
+        const fd = new VirtualDir(name, this);
+        this.insert(name, fd);
+        return fd;
+    }
+
+    folderGet(name: string): VirtualDir | undefined {
+        const res = this.get(name);
+        return res && res.dir ? res : undefined;
+    }
+
+    folder(name: string): VirtualDir {
+        const { nodes } = this;
+        const keyUC = name.toUpperCase();
+
+        const node = nodes.get(keyUC);
+        if (node) {
+            if (!node.dir) throw Error(`Файл ${node.pathDos} уже существует.`);
+            return node;
+        }
+        const fd = new VirtualDir(name, this);
+        nodes.set(keyUC, fd);
+        return fd;
+    }
+
+    merge({ nodes: otherNodes }: VirtualDir) {
+        const { nodes: myNodes } = this;
+        for (const [otherNameUC, otherNode] of otherNodes) {
+            let thisNode = myNodes.get(otherNameUC);
+            if (thisNode && !thisNode.dir) throw Error(`Конфликт имен: ${thisNode.pathDos}`);
+            if (otherNode.dir) {
+                if (!thisNode) {
+                    thisNode = new VirtualDir(otherNode.name, this);
+                    myNodes.set(otherNameUC, thisNode);
+                }
+                thisNode.merge(otherNode);
+                continue;
             }
+            if (thisNode) throw Error(`Конфликт имен: ${thisNode.pathDos}`);
+            myNodes.set(otherNameUC, otherNode.makeCopyAt(this));
+        }
+    }
+
+    *files(): IterableIterator<VirtualFile> {
+        for (const subnode of this.nodes.values()) {
+            if (!subnode.dir) {
+                yield subnode;
+                continue;
+            }
+            for (const subfile of subnode.files()) {
+                yield subfile;
+            }
+        }
+    }
+
+    *search(regexp: RegExp): IterableIterator<VirtualFile> {
+        for (const f of this.files()) if (regexp.test(f.pathDos)) yield f;
+    }
+}
+
+export class ZipFileSystem implements FileSystem {
+    static async fromData(source: File | Blob | ArrayBuffer, options: ZipFsOptions = {}): Promise<ZipFileSystem> {
+        const decoder = new TextDecoder(options.encoding || "cp866");
+
+        let zip: ReturnType<typeof loadAsync> extends Promise<infer U> ? U : never;
+        try {
+            zip = await loadAsync(source, {
+                decodeFileName: (b) => decoder.decode(b),
+                createFolders: false,
+            });
+        } catch (e) {
+            const str =
+                source instanceof File
+                    ? `Файл ${source.name}`
+                    : source instanceof Blob
+                    ? `Blob { size: ${source.size}, type: ${source.type} }`
+                    : `ArrayBuffer(${source.byteLength})`;
+            throw Error(`${str} не является ZIP-архивом`);
+        }
+
+        const [diskPrefixUC, p1] = extractPrefixAndDirParts(options.directory || "", "Z");
+
+        let root = new VirtualDir(diskPrefixUC + ":");
+        const fs = new ZipFileSystem();
+        fs.diskNew(diskPrefixUC, root);
+
+        for (const p of p1) root = root.folderNew(p);
+
+        zip.forEach((path, zipObj) => {
+            const p2 = path.split(SLASHES);
+            let fd = root;
+            for (let i = 0; i < p2.length - 1; i++) fd = fd.folder(p2[i]);
+            // Лучше это
+            if (!zipObj.dir) fd.fileNew(p2[p2.length - 1], new VirtualFileContent(zipObj));
+            // А такой вариант создал бы пустую директорию.
+            // {
+            //     const last = p2[p2.length - 1];
+            //     if (zipObj.dir) fd.folderNew(last);
+            //     else fd.fileNew(last, new VirtualFileContent(zipObj));
+            // }
         });
+        return fs;
+    }
+
+    private readonly disks = new Map<string, VirtualDir>();
+
+    private diskNew(prefixUC: string, dir: VirtualDir) {
+        const { disks } = this;
+
+        const prv = disks.size;
+        this.disks.set(prefixUC, dir);
+        if (disks.size === prv) throw Error(`Конфликт имен дисков: ${prefixUC}`);
+    }
+
+    merge({ disks: otherDisks }: ZipFileSystem): this {
+        const { disks: myDisks } = this;
+        for (const [prefixUC, otherRoot] of otherDisks) {
+            const myRoot = myDisks.get(prefixUC);
+            if (myRoot) myRoot.merge(otherRoot);
+            else myDisks.set(prefixUC, otherRoot);
+        }
         return this;
     }
 
-    search(regexp: RegExp): VirtualFile[] {
-        const res = new Array<VirtualFile>();
-        for (const v of this.fileMap.values()) if (regexp.test(v.path)) res.push(v);
-        return res;
+    *search(regexp: RegExp): IterableIterator<VirtualFile> {
+        for (const disk of this.disks.values()) for (const f of disk.search(regexp)) yield f;
     }
 
-    files(directory?: string): VirtualFile[] {
-        if (!directory) return [...this.fileMap.values()];
-        const ucDir = directory.toUpperCase();
-        const res = new Array<VirtualFile>();
-        for (const [k, v] of this.fileMap.entries()) if (k.startsWith(ucDir)) res.push(v);
-        return res;
+    resolveFile(path: string, currentDir?: VirtualDir) {
+        const pp = getPathParts(path);
+        const isAbsolute = pp[0].length === 2 && pp[0][1] === ":";
+
+        let target = isAbsolute ? this.disks.get(pp[0][0].toUpperCase()) : currentDir;
+        if (!target) return undefined;
+
+        for (let i = isAbsolute ? 1 : 0; i < pp.length - 1; i++) {
+            if (pp[i] === "..") {
+                target = target.parent;
+            } else {
+                const next = target.folderGet(pp[i]);
+                if (!next) return undefined;
+                target = next;
+            }
+        }
+
+        const last = pp[pp.length - 1];
+        return last === ".." ? target.parent : target.get(last);
     }
 
-    file(filename: string): VirtualFile | undefined {
-        return this.fileMap.get(filename.toUpperCase());
-    }
-
-    async project(options: ProjectOptions = {}) {
-        let prj: ProjectInfo, projectDir: string;
+    async project(openOptions: ProjectOpenOptions = {}) {
+        // 1) Находим директорию проекта, считываем .prj файл,
+        let workDir: VirtualDir, prjInfo: ProjectInfo;
         {
             let prjFile: VirtualFile | undefined;
             const matches = new Array<string>();
 
-            const searchKey = options.path && unixPath(options.path).toUpperCase();
-            for (const [k, v] of this.fileMap.entries()) {
-                const match = searchKey ? k.endsWith(searchKey) : k.endsWith(".PRJ") || k.endsWith(".SPJ");
-                if (!match) continue;
-
+            const regexp = openOptions.tailPath
+                ? new RegExp(getPathParts(openOptions.tailPath).join("\\\\") + "$", "i")
+                : /.+\.(prj)|(spj)$/i;
+            for (const v of this.search(regexp)) {
                 prjFile = v;
-                matches.push(v.path);
-                if (options.firstMatch) break;
+                matches.push(v.pathDos);
+                if (openOptions.firstMatch) break;
             }
-            if (!prjFile) throw Error(`Не найдено файлов проектов.`);
-            if (matches.length > 1) throw Error(`Найдено несколько файлов проектов:\n${matches.join("\n")}`);
+            if (!prjFile) throw Error("Не найдено файлов проектов");
+            if (matches.length > 1) throw Error(`Найдено несколько подходящих файлов:\n${matches.join("\n")}`);
 
-            const prjBuf = await prjFile.arraybuffer();
-            const stream = new BinaryStream(prjBuf, {
-                filepath: prjFile.path,
-                filepathDos: prjFile.pathDos,
-            });
-            prj = readPrjFile(stream);
-            projectDir = extractDir(prjFile.path);
+            workDir = prjFile.parent;
+            prjInfo = await prjFile.readAs("prj");
         }
 
+        // 2) Определяем пути поиска файлов имиджей.
+        const classDirs = new Set([workDir]);
+        {
+            // 2.1) Разбираем пути поиска имиджей, которые через запятую прописаны в настройках проекта.
+            const addPaths = prjInfo.settings && prjInfo.settings.classSearchPaths;
+            if (addPaths) {
+                addPaths
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter((s) => s)
+                    .forEach((path) => {
+                        const resolved = this.resolveFile(path, workDir);
+                        if (resolved && resolved.dir) classDirs.add(resolved);
+                    });
+            }
+
+            // 2.2) Которые ищутся дополнительно (например, если у нас стандартная библиотека отдельным архивом)
+            if (openOptions.additionalClassPaths) {
+                for (const p of openOptions.additionalClassPaths) {
+                    const [prefixUC, parts] = extractPrefixAndDirParts(p, "Z");
+                    let target = this.disks.get(prefixUC);
+                    for (let i = 0; i < parts.length && target; i++) target = target.folderGet(parts[i]);
+                    if (target) classDirs.add(target);
+                }
+            }
+        }
+
+        // 3) Загружаем имиджи из выбранных директорий.
         const classes = new Map<string, ClassProto<ParsedCode>>();
         {
-            let classDirs = [projectDir];
-            if (prj.settings && prj.settings.classSearchPaths) {
-                const parsed = parseClassSearchPaths(prj.settings.classSearchPaths, projectDir);
-                classDirs = classDirs.concat(parsed);
-            }
-            if (options.additionalClassPaths) {
-                const add = options.additionalClassPaths.map((p) => unixPath(p));
-                classDirs = classDirs.concat(add);
-            }
-
-            // make better (исп. регехи вместо досовсих поисковиков и т.д.)
-            const classFiles = this.findFiles(".cls", classDirs);
-
-            //prettier-ignore
-            const mp = classFiles.map((f) => f.arraybuffer().then((a) => new ClassProto(a, {
-                bytecodeParser: parseBytecode,
-                filepathDos: f.pathDos,
-            })));
-
-            const protos = await Promise.all(mp);
-
-            protos.forEach((c) => {
-                const key = c.name.toLowerCase();
-                const prevSize = classes.size;
-
-                classes.set(key, c);
-
-                if (classes.size === prevSize) {
-                    const files = protos.filter((c) => c.name.toLowerCase() === key).map((c) => c.filepathDos);
-                    throw new Error(`Конфликт имен имиджей: "${c.name}" найден в ${files.length} файлах:\n${files.join(";\n")}.`);
+            const searchRes = [...classDirs.values()].map((c) => [...c.search(/.+\.cls$/i)]);
+            const classFiles = new Array<VirtualFile>().concat(...searchRes);
+            const protos = await Promise.all(classFiles.map((f) => f.readAs("cls", parseBytecode)));
+            for (const p of protos) {
+                const keyUC = p.name.toUpperCase();
+                const prev = classes.size;
+                classes.set(keyUC, p);
+                if (classes.size === prev) {
+                    const files = protos.filter((c) => c.name.toUpperCase() === keyUC).map((c) => c.filepathDos);
+                    throw Error(`Конфликт имен имиджей: "${p.name}" обнаружен в файлах:\n${files.join(";\n")}.`);
                 }
-            });
+            }
         }
 
+        // 4) Загружаем STT файл.
         let stt: VariableSet | undefined;
         {
-            const sttPath = projectDir + "/_preload.stt";
-            const sttFile = this.file(sttPath);
+            const sttFile = workDir.fileGet("_preload.stt");
             if (sttFile) {
-                const sttBuf = await sttFile.arraybuffer();
-                const stream = new BinaryStream(sttBuf, { filepath: sttFile.path, filepathDos: sttFile.pathDos });
                 try {
-                    stt = readSttFile(stream);
+                    stt = await sttFile.readAs("stt");
                 } catch (e) {
-                    console.warn(`Ошибка чтения ${sttPath}`, e.message);
+                    console.warn(e.message);
                 }
-            } else {
-                console.warn(`Файл ${sttPath} не существует.`);
             }
         }
 
-        return new Player({ fs: this, classes, prj, stt });
+        // 5) Из всего этого создаем новый проигрыватель проекта.
+        return new Player({
+            fs: this,
+            workDir,
+            prjInfo,
+            classes,
+            stt,
+        });
     }
-
-    findFiles(endsWith: string, directory?: string | string[]): VirtualFile[] {
-        const ucEnds = endsWith.toUpperCase();
-        const res = new Array<VirtualFile>();
-
-        //каталог поиска не указан
-        if (!directory) {
-            for (const [k, v] of this.fileMap.entries()) if (k.endsWith(ucEnds)) res.push(v);
-            return res;
-        }
-
-        //указан один каталог поиска
-        if (!Array.isArray(directory)) {
-            const ucDir = directory.toUpperCase() + "/";
-            for (const [k, v] of this.fileMap.entries()) if (k.endsWith(ucEnds) && k.startsWith(ucDir)) res.push(v);
-            return res;
-        }
-
-        //указано несколько каталогов поиска
-        const dirs = directory.map((d) => d.toUpperCase() + "/");
-        for (const [k, v] of this.fileMap.entries()) if (k.endsWith(ucEnds) && dirs.some((d) => k.startsWith(d))) res.push(v);
-        return res;
-    }
-
-    /**
-     * Возвращает файл с именем `name`.
-     */
-    getFileDos(path: string): VirtualFile | undefined {
-        const ucPath = path.toUpperCase();
-        for (const f of this.fileMap.values()) if (f.pathDosUC === ucPath) return f;
-        return undefined;
-    }
-
-    // //dos functions
-    // findFilesDos(endsWith: string, directory?: string | string[]): VirtualFile[] {
-    //     const ucEnds = endsWith.toUpperCase();
-    //     const res = new Array<VirtualFile>();
-
-    //     //каталог поиска не указан
-    //     if (!directory) {
-    //         for (const f of this.fileMap.values()) if (f.pathDos.endsWith(ucEnds)) res.push(f);
-    //         return res;
-    //     }
-
-    //     //указан один каталог поиска
-    //     if (!Array.isArray(directory)) {
-    //         const ucDir = directory.toUpperCase() + "\\";
-    //         for (const f of this.fileMap.values()) if (f.pathDos.endsWith(ucEnds) && f.pathDos.startsWith(ucDir)) res.push(f);
-    //         return res;
-    //     }
-
-    //     //указано несколько каталогов поиска
-    //     const dirs = directory.map((d) => d.toUpperCase() + "\\");
-    //     for (const f of this.fileMap.values()) if (f.pathDos.endsWith(ucEnds) && dirs.some((d) => f.pathDos.startsWith(d))) res.push(f);
-    //     return res;
-    // }
 }

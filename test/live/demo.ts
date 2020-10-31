@@ -2,15 +2,15 @@ import { unzip, ws } from "stratum/api";
 
 // Запуск одной строкой:
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
-export async function runDemo(name: string, path?: string) {
+export async function runDemo(name: string, tailPath?: string) {
     //prettier-ignore
     //Подгруаем архивчики
-    const [a1, a2] = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(unzip)));
-
-    // Открываем проект
-    const project = await a1.mount(a2).project({ additionalClassPaths: ["library"], path });
+    const pr = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(unzip)));
+    const fs = pr.reduce((a, b) => a.merge(b));
     // Предзагружаем файлы vdr и bmp.
-    await Promise.all(a1.search(/.+\.(bmp)|(vdr)$/i).map((f) => f.makeSync()));
+    // Открываем проект
+    await Promise.all([...fs.search(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()));
+    const project = await fs.project({ additionalClassPaths: ["library"], tailPath });
 
     // Создаем оконный хост.
     const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;

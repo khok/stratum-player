@@ -57,10 +57,10 @@ it("Тестирует правильность считывания и комп
                 .then(unzip)
         )
     );
-    const prj = (await a1.mount(a2).project({ additionalClassPaths: ["library"] })) as Player;
+    const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
 
-    const classes = prj["res"].classes;
-    const root = classes.get(prj.rootClassName.toLowerCase())!;
+    const classes = prj.classes;
+    const root = classes.get(prj.rootClassName.toUpperCase())!;
     const scheme = createComposedScheme(root.scheme!, root.children!, classes);
     const elements = toJson(scheme.elements);
     strictEqual(JSON.stringify(elements), JSON.stringify(test_result));

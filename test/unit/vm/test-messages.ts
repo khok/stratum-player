@@ -10,9 +10,9 @@ it("Тест SendMessage()", async () => {
         .then((r) => r.blob())
         .then(unzip);
     const prj = (await fs.project({ additionalClassPaths: ["library"] })) as Player;
-    const tree = build(prj.rootClassName, prj["res"].classes);
+    const tree = build(prj.rootClassName, prj.classes);
     const mmanager = tree.createMemoryManager();
-    tree.applyVarSet(prj["res"].stt!);
+    tree.applyVarSet(prj.stt!);
 
     const ch1 = tree.getChild(2)!;
 
