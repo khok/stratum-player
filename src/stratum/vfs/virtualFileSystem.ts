@@ -64,7 +64,9 @@ export class VirtualFileSystem implements FileSystem {
         if (disks.size === prv) throw Error(`Конфликт имен дисков: ${prefixUC}`);
     }
 
-    merge({ disks: otherDisks }: VirtualFileSystem): this {
+    merge(fs: FileSystem): this {
+        if (!(fs instanceof VirtualFileSystem)) throw Error("fs is not instanceof VirtualFileSystem");
+        const { disks: otherDisks } = fs;
         const { disks: myDisks } = this;
         for (const [prefixUC, otherRoot] of otherDisks) {
             const myRoot = myDisks.get(prefixUC);
@@ -147,6 +149,10 @@ export class VirtualFileSystem implements FileSystem {
                 }
             }
         }
+
+        classDirs.forEach((c) => {
+            for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
+        });
 
         // 3) Загружаем имиджи из выбранных директорий.
         const classes = new Map<string, ClassProto<ParsedCode>>();

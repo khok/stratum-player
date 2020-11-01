@@ -36,7 +36,7 @@ export interface FileSystem {
     /**
      * Объединяет содержимое двух файловых систем.
      */
-    merge(fs: this): this;
+    merge(fs: FileSystem): this;
     /**
      * Возвращает список файлов, попадающих под условия поиска.
      */
