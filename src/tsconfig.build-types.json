@@ -1,8 +1,6 @@
 {
-    "extends": "../tsconfig.base.json",
-    "include": ["stratum/api.ts"],
+    "extends": "./tsconfig.check-build.json",
     "compilerOptions": {
-        "baseUrl": ".",
         "noEmit": false,
         "declaration": true,
         "emitDeclarationOnly": true,

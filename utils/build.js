@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { execSync } = require("child_process");
+const { exec } = require("child_process");
 
 var dir = "dist";
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
@@ -11,9 +11,13 @@ const cmds = [
     `esbuild ${entryPoint} --bundle --global-name=stratum --minify --target=es6 --external:jszip --external:pngjs`,
 ];
 
-const outfile = `${dir}/index.min.js`;
+const outfile = `${dir}/stratum.min.js`;
 
-const cmd = `(${cmds.join(" && ")}) > ${outfile}`;
+const cmd = `(${cmds.join(" && ")})`;
 
 console.log(cmd);
-execSync(cmd);
+exec(cmd, (_, result, stderr) => {
+    console.log(stderr);
+    if (stderr) process.exit(stderr ? 1 : 0);
+    fs.writeFileSync(outfile, result);
+});

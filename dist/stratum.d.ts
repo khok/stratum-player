@@ -44,6 +44,7 @@ export interface FileSystem {
  * Представляет файл в файловой системе.
  */
 export interface FileSystemFile {
+    readonly pathDos: string;
     /**
      * Явно предзагружает содержимое файла.
      * Только явно предзагруженные файлы могут быть прочитаны в процессе исполнения проекта.

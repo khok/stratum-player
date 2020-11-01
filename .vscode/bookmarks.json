@@ -1,0 +1,57 @@
+[
+	{
+		"path": "$ROOTPATH$\\src\\stratum\\graphics\\manager\\graphicsManager.ts",
+		"bookmarks": [
+			{
+				"line": 36,
+				"column": 33,
+				"label": "Вот здесь нужно не выдавать ошибку а возвращать уже открытый хандл"
+			}
+		]
+	},
+	{
+		"path": "$ROOTPATH$\\src\\stratum\\vm\\operations\\windows.ts",
+		"bookmarks": [
+			{
+				"line": 43,
+				"column": 33,
+				"label": "Реализовать эту функцию"
+			}
+		]
+	},
+	{
+		"path": "$ROOTPATH$\\src\\stratum\\player\\player.ts",
+		"bookmarks": [
+			{
+				"line": 30,
+				"column": 63,
+				"label": "Добавить стейт \"error\""
+			},
+			{
+				"line": 116,
+				"column": 67,
+				"label": "Нужно ли закрывать окно при остановке проекта?"
+			}
+		]
+	},
+	{
+		"path": "$ROOTPATH$\\examples\\player.js",
+		"bookmarks": [
+			{
+				"line": 120,
+				"column": 24,
+				"label": "Вот здесь запретить пользователю рестартить ошибочный проект"
+			}
+		]
+	},
+	{
+		"path": "$ROOTPATH$\\src\\stratum\\graphics\\simpleWindowManager.ts",
+		"bookmarks": [
+			{
+				"line": 76,
+				"column": 4,
+				"label": "Не забудь закрыть сцену"
+			}
+		]
+	}
+]
