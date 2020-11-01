@@ -101,9 +101,9 @@ export class Player implements Project, ProjectManager, PlayerResources {
             ++this._diag.iterations;
             tree.compute(ctx);
             if (ctx.executionStopped) {
+                this.close(!ctx.hasError);
                 if (ctx.hasError) this.handlers.error.forEach((h) => h(ctx.error));
                 else this.handlers.closed.forEach((h) => h());
-                this.close(!ctx.hasError);
             }
             memoryManager.sync().assertZeroIndexEmpty();
         };
