@@ -1,4 +1,4 @@
-import { ZipFsOptions } from "stratum/api";
+import { OpenZipOptions } from "stratum/api";
 import { VirtualFileSystem } from "./virtualFileSystem";
 
 export { VirtualDir } from "./virtualDir";
@@ -11,6 +11,6 @@ export interface VirtualNode {
     readonly pathDos: string;
 }
 
-export function createZipFS(source: File | Blob | ArrayBuffer, options?: ZipFsOptions): Promise<VirtualFileSystem> {
+export function createZipFS(source: File | Blob | ArrayBuffer, options?: OpenZipOptions): Promise<VirtualFileSystem> {
     return VirtualFileSystem.fromZip(source, options);
 }
