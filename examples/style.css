@@ -1,0 +1,8 @@
+body {
+    overflow: auto
+}
+
+.stratum-textbox {
+  outline: none;
+  border: inset 2px;
+}
