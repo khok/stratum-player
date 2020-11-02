@@ -22,6 +22,7 @@
         const dropzoneStatusElem = document.getElementById("dropzone_status");
         const dropzoneStatusOrigText = dropzoneStatusElem.innerHTML;
         const optionsNolib = document.getElementById("options_nolib");
+        const optionsNoResize = document.getElementById("options_noresize");
         const mainWindowContainerElem = document.getElementById("main_window_container");
 
         let projectLoaded = false;
@@ -68,7 +69,10 @@
                 project = await fs.project({ additionalClassPaths: ["L:"], tailPath });
                 // Попытаемся запустить выполнение проекта прямо здесь.
                 // Таким образом перехватываем ошибку на старте.
-                project.play(mainWindowContainerElem);
+                project.play({
+                    mainWindowContainer: mainWindowContainerElem,
+                    disableWindowResize: optionsNoResize.checked,
+                });
             } catch (e) {
                 projectLoaded = false;
                 alert(`При загрузке проекта произошла ошибка:\n${e.message}`);
