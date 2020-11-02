@@ -38,18 +38,19 @@
 
                 let tailPath;
                 {
-                    const projectFiles = [...fs.search(/.+\.(prj)|(spj)$/i)].map((r) => r.pathDos);
+                    const projectFiles = [...fs.search(/.+\.(prj)|(spj)$/i)];
                     if (projectFiles.length !== 1) {
                         if (projectFiles.length > 0) {
-                            const msg = `Обнаружено несколько файлов проектов:\n${projectFiles.join(
-                                "\n"
-                            )}\nВведите хвостовую часть пути к файлу.`;
-                            tailPath = prompt(msg, projectFiles[0]);
+                            const matches = projectFiles.map((f) => f.pathDos).join("\n");
+                            const msg = `Найдено несколько файлов проектов:\n${matches}\nВведите путь/часть пути к файлу проекта:`;
+                            tailPath = prompt(msg, projectFiles[0].pathDos);
                         } else {
-                            tailPath = prompt("Не найдено файлов проектов. Введите путь к нему:");
+                            tailPath = prompt("Не найдено файлов проектов. Введите путь/часть пути к файлу проекта:");
                         }
+                        dropzoneStatusElem.innerHTML = `Ищем что-нибудь похожее на ${tailPath} ...`;
                     } else {
-                        tailPath = projectFiles[0];
+                        tailPath = projectFiles[0].pathDos;
+                        dropzoneStatusElem.innerHTML = `Загружаем проект ${tailPath} ...`;
                     }
                 }
                 if (!tailPath) {
@@ -57,7 +58,6 @@
                     projectLoaded = false;
                     return;
                 }
-                dropzoneStatusElem.innerHTML = `Загружаем проект ${tailPath} ...`;
 
                 // Подзагружаем bmp и vdr
                 await preloadDynamicResources(fs);

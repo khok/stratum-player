@@ -13,13 +13,24 @@
 
 <body>
     <div id="dropzone_container">
-        <p id="dropzone_status">Перенесите один или несколько
-            <a href="javascript:selectFile()">ZIP-архивов</a>
-            с вашими Stratum-проектами на эту страницу, или <a href="./examples">попробуйте что-нибудь отсюла</a>
-        </p>
+        <details>
+            <summary>Информация</summary>
+            <p>Это - активный проект по портированию
+                <a target="_blank" href="http://www.stratum.ac.ru/education/stratum/">среды
+                    исполнения проектов Stratum
+                    2000</a>, позволяющий запускать созданные в нем проекты прямо в браузере.</p>
+            <p>На данный момент реализована достаточно малая часть возможностей, присутствующих в Windows-версии
+                Stratum-а, но некоторые <a target="_blank" href="./examples">проекты</a> уже удается
+                запустить.</p>
+            <p></p>
+        </details>
+        <p id="dropzone_status">
+            <a>Вы можете перетащить или <a href="javascript:selectFile()">загрузить ZIP-архивы</a>
+                со Stratum-проектами на эту страницу, или <a href="./examples">попробовать онлайн-примеры</a>.
+            </a></p>
         </p>
         <details>
-            <summary>Дополнительно</summary>
+            <summary>Дополнительные опции запуска</summary>
             <input type="checkbox" id="options_nolib" />
             <label for="options_nolib">Не использовать стандартную библиотеку имиджей</label>
         </details>

@@ -60,13 +60,16 @@ export interface FileSystemFile {
 }
 export interface OpenProjectOptions {
     /**
+     * Дополнительные пути поиска файлов имиджей.
+     */
+    additionalClassPaths?: string[];
+    /**
      * Завершающая часть пути к файлу проекта.
      */
     tailPath?: string;
     /**
-     * Дополнительные пути поиска файлов имиджей.
+     * Открывать первый найденный файл проекта.
      */
-    additionalClassPaths?: string[];
     firstMatch?: boolean;
 }
 export interface ProjectPlayOptions {
