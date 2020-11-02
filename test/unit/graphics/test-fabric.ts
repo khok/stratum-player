@@ -1,13 +1,14 @@
-import { unzip, WindowSystem, ws } from "stratum/api";
+import { unzip } from "stratum/api";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
-import { GraphicsManager } from "stratum/graphics/manager/graphicsManager";
-import { BmpToolFactory, Scene } from "stratum/graphics/scene";
+import { HTMLWindowWrapper } from "stratum/graphics/html";
+import { Scene } from "stratum/graphics/scene";
+import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
 import { Player } from "stratum/player";
 const { strictEqual } = chai.assert;
 
 describe("Сцена fabric рисуется корректно", () => {
     let space: Scene;
-    let windows: WindowSystem;
+    let windows: HTMLWindowWrapper;
     it("Шаг 1", async () => {
         const [a1, a2] = await Promise.all(
             ["/projects/test_balls.zip", "/data/library.zip"].map((s) =>
@@ -24,18 +25,15 @@ describe("Сцена fabric рисуется корректно", () => {
         const vdr = createComposedScheme(cl.scheme!, cl.children!, classes);
         strictEqual(vdr.source!.origin, "class");
         strictEqual(vdr.source!.name, classname);
-        const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
-        windows = ws({ globalCanvas });
-        const graphics = new GraphicsManager(windows);
+        windows = new HTMLWindowWrapper(document.body!, "");
+        const graphics = new SimpleWindowManager(windows);
 
         const wname = "Test Window";
         const spaceHandle = graphics.openSchemeWindow(wname, "", vdr);
         strictEqual(document.title, wname);
 
         space = graphics.getSpace(spaceHandle)!;
-        BmpToolFactory.allImagesLoaded.then(() => windows.redraw());
 
-        windows.redraw();
         const elements = vdr.elements!;
         for (const elem of elements) {
             const obj = space.getObject(elem.handle)!;
@@ -56,6 +54,5 @@ describe("Сцена fabric рисуется корректно", () => {
         strictEqual(space.getObjectFromPoint(40, 40), undefined);
         space.getObject(33)!.setPosition(32, 32);
         strictEqual(space.getObjectFromPoint(40, 40)!.handle, 34);
-        windows.redraw();
     }).timeout(10000);
 });

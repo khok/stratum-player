@@ -1,16 +1,17 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
+    <title>Stratum Player</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="Проигрыватель проектов Stratum 2000 в браузере">
+    <meta name="keywords" content="Stratum 2000">
     <script src="scripts/autorefresh.js"></script>
     <script src="scripts/modules.js"></script>
+    <script src="scripts/live.js"></script>
+    <link rel="stylesheet" href="css/player.css">
 </head>
 
 <body>
-    <button id="again">Заново</button>
-    <button style="width:100px;" id="pause">Пауза</button>
-    <button id="step">Шаг</button>
-    <button id="stop">Стоп</button>
     <input id="rate" value="100" min="16" max="10000" style="width: 50px;" type="number" />
     <label id="diag" style="-webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -18,10 +19,12 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;"></label>
-    <div id="root" style="position:relative;">
-        <canvas id="canvas" width="1200" height="900" style="border:1px solid #000000;"></canvas>
+    <div>
+        <input type="button" id="player_play" class="player-control" value="Играть" disabled />
+        <input type="button" id="player_pause" class="player-control" value="Пауза" disabled />
+        <input type="button" id="player_step" class="player-control" value="Шаг" disabled />
     </div>
-    <script src="scripts/live.js"></script>
+    <div id="main_window_container"></div>
 </body>
 
 </html>

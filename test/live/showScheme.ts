@@ -2,7 +2,7 @@ import { unzip, ws } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
 import { readPrjFile } from "stratum/fileFormats/prj";
-import { SimpleWindow } from "stratum/graphics/manager/simpleWindow";
+import { SimpleWindow } from "stratum/graphics/simpleWindow";
 import { BmpToolFactory, Scene } from "stratum/graphics/scene";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { parseBytecode } from "stratum/vm/parseBytecode";
@@ -40,7 +40,7 @@ export async function showScheme(name: string, { className, image }: { className
     const htmlRoot = document.getElementById("root")!;
     const wnd = ws({ globalCanvas, htmlRoot });
 
-    const window = new SimpleWindow({ window: wnd.createWindow("") });
+    const window = new SimpleWindow({ factory: wnd.createWindow("") });
     new Scene({ handle: 0, vdr: scheme, window });
     BmpToolFactory.allImagesLoaded.then(() => wnd.redraw());
 }
