@@ -1,10 +1,11 @@
-import { Project, ProjectDiag, WindowSystem } from "stratum/api";
+import { Project, ProjectDiag, ProjectPlayOptions } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
-import { GraphicsManager } from "stratum/graphics/manager/graphicsManager";
+import { HTMLWindowWrapper } from "stratum/graphics/html";
+import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { Mutable } from "stratum/helpers/utilityTypes";
 import { build } from "stratum/schema/build";
@@ -14,7 +15,7 @@ import { ExecutionContext } from "stratum/vm/executionContext";
 import { ProjectManager } from "stratum/vm/interfaces/projectManager";
 import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/showMissingCommands";
 import { NumBool, ParsedCode } from "stratum/vm/types";
-import { SimpleComputer } from "./simpleComputer";
+import { SimpleComputer } from "../common/simpleComputer";
 
 export interface PlayerResources {
     fs: VirtualFileSystem;
@@ -27,13 +28,14 @@ export interface PlayerResources {
 export class Player implements Project, ProjectManager, PlayerResources {
     private _diag: Mutable<ProjectDiag>;
     private _computer = new SimpleComputer();
-    private _state: "closed" | "playing" | "paused" = "closed";
-    private loop: (() => void) | undefined;
+    private _state: "closed" | "playing" | "paused" | "error" = "closed";
+    private loop: (() => boolean) | undefined;
     private handlers = {
         closed: new Set<any>(),
         error: new Set<any>(),
     };
-    private prevWs?: WindowSystem;
+    private wnd?: HTMLWindowWrapper;
+    private savedElement?: HTMLElement;
 
     fs: VirtualFileSystem;
     workDir: VirtualDir;
@@ -77,9 +79,14 @@ export class Player implements Project, ProjectManager, PlayerResources {
         this._computer = value;
     }
 
-    play(ws?: WindowSystem): this {
+    play(options?: HTMLElement | ProjectPlayOptions): this {
         if (this.loop) return this;
-        this.prevWs = ws || this.prevWs;
+        const mainWindowContainer = options instanceof HTMLElement ? options : options && options.mainWindowContainer;
+        if (mainWindowContainer && mainWindowContainer !== this.savedElement) {
+            if (this.wnd) this.wnd.close(true); //закрываем под старым рутом
+            this.wnd = new HTMLWindowWrapper(mainWindowContainer, "window_1", options instanceof HTMLElement ? undefined : options); //открываем под новым
+            this.savedElement = mainWindowContainer;
+        }
         // TODO: по идее то что здесь создается надо подкешировать
         const { classes, prjInfo: prj, stt } = this;
         const tree = build(prj.rootClassName, classes);
@@ -91,7 +98,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
             classManager: new TreeManager({ tree }),
             memoryManager,
             projectManager: this,
-            windows: new GraphicsManager(this.prevWs!), // FIXME:
+            windows: new SimpleWindowManager(this.wnd), // FIXME:
         });
 
         this._diag.iterations = 0;
@@ -101,11 +108,19 @@ export class Player implements Project, ProjectManager, PlayerResources {
             ++this._diag.iterations;
             tree.compute(ctx);
             if (ctx.executionStopped) {
-                this.close(!ctx.hasError);
-                if (ctx.hasError) this.handlers.error.forEach((h) => h(ctx.error));
-                else this.handlers.closed.forEach((h) => h());
+                if (ctx.hasError) {
+                    this._state = "error";
+                    this.handlers.error.forEach((h) => h(ctx.error));
+                } else {
+                    this._state = "closed";
+                    this.loop = undefined;
+                    if (this.wnd) this.wnd.close(false); //FIXME: А нужно ли закрывать окно?
+                    this.handlers.closed.forEach((h) => h());
+                }
+                return false;
             }
             memoryManager.sync().assertZeroIndexEmpty();
+            return true;
         };
 
         memoryManager.init();
@@ -113,10 +128,11 @@ export class Player implements Project, ProjectManager, PlayerResources {
         this._state = "playing";
         return this;
     }
-    close(closeWs: boolean = true): this {
+
+    close(): this {
         this.computer.stop();
         this.loop = undefined;
-        if (closeWs && this.prevWs) this.prevWs.closeAll(); //FIXME ??? А нужно ли закрывать?
+        if (this.wnd) this.wnd.close(false);
         this._state = "closed";
         return this;
     }

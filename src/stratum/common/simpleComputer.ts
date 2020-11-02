@@ -4,10 +4,10 @@ export class SimpleComputer implements Executor {
     private frameId = 0;
     private _running = false;
 
-    private _loop(cb: () => void) {
-        this.frameId = requestAnimationFrame(() => {
-            this._loop(cb);
-            cb();
+    private _loop(cb: () => boolean): number {
+        return requestAnimationFrame(() => {
+            if (cb()) this.frameId = this._loop(cb);
+            else this._running = false;
         });
     }
     private _unloop() {
@@ -18,15 +18,15 @@ export class SimpleComputer implements Executor {
         return this._running;
     }
 
-    run(callback: () => void): void {
+    run(callback: () => boolean): void {
         if (this._running) return;
-        this._loop(callback);
         this._running = true;
+        this.frameId = this._loop(callback);
     }
 
     stop(): void {
         if (!this._running) return;
-        this._unloop();
         this._running = false;
+        this._unloop();
     }
 }
