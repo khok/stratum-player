@@ -2,22 +2,36 @@
 
 <head>
     <title>Stratum Player</title>
-    <script src="index.min.js"></script>
-    <script src="drop.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="Проигрыватель проектов Stratum 2000 в браузере">
+    <meta name="keywords" content="Stratum 2000">
+    <script src="stratum.min.js"></script>
+    <script src="player.js"></script>
+    <link rel="stylesheet" href="player.css">
+    <link rel="icon" type="image/png" href="favicon.ico" />
 </head>
 
 <body>
-    <p id="zipdrop-container">
-        <label id="zipdrop-status">Переташите сюда ZIP архив с проектом Stratum:</label>
-        <input id="zipdrop" type="file" accept=".zip" multiple />
-    </p>
-    <button id="again" disabled style="width:80px;">Играть</button>
-    <button id="pause" disabled style="width:100px;">Пауза</button>
-    <button id="step" disabled>Шаг</button>
-    <button id="stop" disabled>Стоп</button>
-    <div id="root" style="position:relative;">
-        <canvas id="canvas" width="1200" height="900" style="border:1px solid #000000;"></canvas>
+    <div id="dropzone_container">
+        <p id="dropzone_status">Перетащите один или несколько
+            <a href="javascript:selectFile()">ZIP-архивов</a>
+            с вашими Stratum-проектами на эту страницу.
+        </p>
+        </p>
+        <details>
+            <summary>Дополнительно</summary>
+            <input type="checkbox" id="options_nolib" />
+            <label for="options_nolib">Не использовать стандартную библиотеку имиджей</label>
+        </details>
+        </p>
+        <input type="file" id="zipdrop" accept=".zip" multiple hidden />
     </div>
+    <div>
+        <input type="button" id="player_play" class="player-control" value="Играть" disabled />
+        <input type="button" id="player_pause" class="player-control" value="Пауза" disabled />
+        <input type="button" id="player_step" class="player-control" value="Шаг" disabled />
+    </div>
+    <div id="main_window_container"></div>
 </body>
 
 </html>
