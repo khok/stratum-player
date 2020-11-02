@@ -1,11 +1,10 @@
-import { createWS } from "stratum/graphics/windowSystems";
 import { createZipFS } from "stratum/vfs";
 
 export interface FileSystemConstructor {
     (): FileSystem;
 }
 
-export interface ZipFsOptions {
+export interface OpenZipOptions {
     /**
      * Директория, в которую монтируется содержимое архива.
      * Может начинаться с префикса диска, например, `C:/Projects`
@@ -20,13 +19,13 @@ export interface ZipFsOptions {
     encoding?: string;
 }
 
-export interface ZipFsConstructor {
+export interface ZipFSConstructor {
     /**
      * Создает новую файловую систему из указанных источников ZIP-архивов.
      * @param source Источник ZIP-архива.
-     * @param options Опции ZIP-архива.
+     * @param options Опции распаковки ZIP-архива.
      */
-    (source: File | Blob | ArrayBuffer, options?: ZipFsOptions): Promise<FileSystem>;
+    (source: File | Blob | ArrayBuffer, options?: OpenZipOptions): Promise<FileSystem>;
 }
 
 /**
@@ -44,7 +43,7 @@ export interface FileSystem {
     /**
      * Открывает проект.
      */
-    project(options?: ProjectOpenOptions): Promise<Project>;
+    project(options?: OpenProjectOptions): Promise<Project>;
 }
 
 /**
@@ -66,7 +65,7 @@ export interface FileSystemFile {
     arraybuffer(): Promise<ArrayBuffer>;
 }
 
-export interface ProjectOpenOptions {
+export interface OpenProjectOptions {
     /**
      * Завершающая часть пути к файлу проекта.
      */
@@ -79,6 +78,13 @@ export interface ProjectOpenOptions {
     firstMatch?: boolean;
 }
 
+export interface ProjectPlayOptions {
+    mainWindowContainer?: HTMLElement;
+    disableWindowResize?: boolean;
+    width?: number;
+    height?: number;
+}
+
 /**
  * Проект
  */
@@ -89,9 +95,10 @@ export interface Project {
     readonly diag: ProjectDiag;
 
     /**
-     * Проект запущен? / Проект приостановлен? / Проект закрыт?
+     * Проект запущен? / Проект приостановлен? / Проект закрыт? / Проект
+     * свалился с ошибкой виртуальной машины?
      */
-    readonly state: "playing" | "paused" | "closed";
+    readonly state: "playing" | "paused" | "closed" | "error";
 
     /**
      * Планировщик цикла выполнения вычислений виртуальной машины.
@@ -100,9 +107,11 @@ export interface Project {
 
     /**
      * Запускает выполнение проекта.
-     * @param ws Используемая оконная система.
+     * @param mainWindowContainer - HTML элемент, к которому будет привязано
+     * открываемое окно с проектом.
      */
-    play(ws?: WindowSystem): this;
+    play(mainWindowContainer?: HTMLElement): this;
+    play(options?: ProjectPlayOptions): this;
     /**
      * Закрывает проект.
      */
@@ -147,16 +156,17 @@ export interface Project {
  */
 export interface Executor {
     /**
-     * Цикл запущен?
+     * Цикл выполнения запущен?
      */
     readonly running: boolean;
     /**
      * Планирует цикличный вызов функции.
      * @param callback Функция, которая должна вызываться циклично.
+     * Если она возвращает false, цикл выполнения прерывается.
      */
-    run(callback: () => void): void;
+    run(callback: () => boolean): void;
     /**
-     * Останавливает цикл выполнения.
+     * Прерывает цикл выполнения.
      */
     stop(): void;
 }
@@ -272,74 +282,9 @@ export interface ProjectDiag {
 //      */
 //     close(): void;
 // }
+// export const fs: FileSystemConstructor;
 
-// export interface WindowHostGraphicsWindow extends WindowHostWindow {
-//     renderer: unknown;
-// }
-
-export interface WindowSystemOptions {
-    screenWidth?: number;
-    screenHeight?: number;
-    areaOriginX?: number;
-    areaOriginY?: number;
-    areaWidth?: number;
-    areaHeight?: number;
-    globalCanvas?: HTMLCanvasElement;
-    htmlRoot?: HTMLElement;
-    disableSceneResize?: boolean;
-}
-
-export interface WindowSystemConstructor {
-    /**
-     * Создает простой оконный хост.
-     * @param options Опции хоста.
-     */
-    (options?: WindowSystemOptions): WindowSystem;
-}
-
-/**
- * Старый вариант оконной системы.
- */
-export interface WindowSystem {
-    readonly screenWidth: number;
-    readonly screenHeight: number;
-    readonly areaOriginX: number;
-    readonly areaOriginY: number;
-    readonly areaWidth: number;
-    readonly areaHeight: number;
-
-    createWindow(name: string): WindowSystemWindow;
-    redraw(): void;
-    closeAll(): void;
-}
-
-/**
- * Старый вариант окна оконной системы.
- */
-export interface WindowSystemWindow {
-    /**
-     * Пока незадокументировал.
-     */
-    readonly renderer: any; //FIXME
-    readonly name: string;
-
-    readonly originX: number;
-    readonly originY: number;
-    setOrigin(x: number, y: number): void;
-    originChanged?: (x: number, y: number) => void;
-
-    readonly width: number;
-    readonly height: number;
-    setSize(width: number, height: number): void;
-    sizeChanged?: (x: number, y: number) => void;
-
-    close(): void;
-}
-
-// export declare const fs: FileSystemConstructor;
-
-export const unzip: ZipFsConstructor = createZipFS;
-export const ws: WindowSystemConstructor = createWS;
+export const unzip: ZipFSConstructor = createZipFS;
 
 export const options: {
     /**
@@ -353,4 +298,4 @@ export const options: {
 /**
  * Версия API.
  */
-export const version: string = "0.2.0";
+export const version: string = "0.3.0";

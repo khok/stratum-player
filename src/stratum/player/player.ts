@@ -189,7 +189,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
     }
 
     openFileStream(path: string): BinaryStream | undefined {
-        const f = this.fs.resolveFile(path, this.workDir);
+        const f = this.fs.resolvePath(path, this.workDir);
         return f && !f.dir ? f.streamSync() : undefined;
     }
 
@@ -204,6 +204,6 @@ export class Player implements Project, ProjectManager, PlayerResources {
     }
 
     isFileExist(path: string): NumBool {
-        return this.fs.resolveFile(path) ? 1 : 0;
+        return this.fs.resolvePath(path) ? 1 : 0;
     }
 }

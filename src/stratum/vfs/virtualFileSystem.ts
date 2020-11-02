@@ -1,5 +1,5 @@
 import { loadAsync } from "jszip";
-import { FileSystem, ProjectOpenOptions, OpenZipOptions } from "stratum/api";
+import { FileSystem, OpenProjectOptions, OpenZipOptions } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
@@ -80,7 +80,7 @@ export class VirtualFileSystem implements FileSystem {
         for (const disk of this.disks.values()) for (const f of disk.search(regexp)) yield f;
     }
 
-    resolveFile(path: string, currentDir?: VirtualDir) {
+    resolvePath(path: string, currentDir?: VirtualDir) {
         const pp = getPathParts(path);
         const isAbsolute = pp[0].length === 2 && pp[0][1] === ":";
 
@@ -101,7 +101,7 @@ export class VirtualFileSystem implements FileSystem {
         return last === ".." ? target.parent : target.get(last);
     }
 
-    async project(openOptions: ProjectOpenOptions = {}) {
+    async project(openOptions: OpenProjectOptions = {}) {
         // 1) Находим директорию проекта, считываем .prj файл,
         let workDir: VirtualDir, prjInfo: ProjectInfo;
         {
@@ -134,7 +134,7 @@ export class VirtualFileSystem implements FileSystem {
                     .map((s) => s.trim())
                     .filter((s) => s)
                     .forEach((path) => {
-                        const resolved = this.resolveFile(path, workDir);
+                        const resolved = this.resolvePath(path, workDir);
                         if (resolved && resolved.dir) classDirs.add(resolved);
                     });
             }
