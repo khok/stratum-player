@@ -80,7 +80,7 @@ export class VirtualFileSystem implements FileSystem {
         for (const disk of this.disks.values()) for (const f of disk.search(regexp)) yield f;
     }
 
-    resolvePath(path: string, currentDir?: VirtualDir) {
+    resolvePath(path: string, currentDir?: VirtualDir): VirtualDir | VirtualFile | undefined {
         const pp = getPathParts(path);
         const isAbsolute = pp[0].length === 2 && pp[0][1] === ":";
 
@@ -101,23 +101,22 @@ export class VirtualFileSystem implements FileSystem {
         return last === ".." ? target.parent : target.get(last);
     }
 
-    async project(openOptions: OpenProjectOptions = {}) {
-        // 1) Находим директорию проекта, считываем .prj файл,
+    async project(opts: OpenProjectOptions = {}) {
+        // 1) Находим директорию проекта, считываем .prj/.spj файл,
         let workDir: VirtualDir, prjInfo: ProjectInfo;
         {
             let prjFile: VirtualFile | undefined;
             const matches = new Array<string>();
 
-            const regexp = openOptions.tailPath
-                ? new RegExp(getPathParts(openOptions.tailPath).join("\\\\") + "$", "i")
-                : /.+\.(prj)|(spj)$/i;
-            for (const v of this.search(regexp)) {
+            const normPathDosUC = opts.tailPath && getPathParts(opts.tailPath).join("\\").toUpperCase();
+            for (const v of this.search(/.+\.(prj)|(spj)$/i)) {
+                if (normPathDosUC && !v.pathDos.toUpperCase().includes(normPathDosUC)) continue;
                 prjFile = v;
                 matches.push(v.pathDos);
-                if (openOptions.firstMatch) break;
+                if (opts.firstMatch) break;
             }
             if (!prjFile) throw Error("Не найдено файлов проектов");
-            if (matches.length > 1) throw Error(`Найдено несколько подходящих файлов:\n${matches.join("\n")}`);
+            if (matches.length > 1) throw Error(`Найдено несколько файлов проектов:\n${matches.join("\n")}`);
 
             workDir = prjFile.parent;
             prjInfo = await prjFile.readAs("prj");
@@ -140,8 +139,8 @@ export class VirtualFileSystem implements FileSystem {
             }
 
             // 2.2) Которые ищутся дополнительно (например, если у нас стандартная библиотека отдельным архивом)
-            if (openOptions.additionalClassPaths) {
-                for (const p of openOptions.additionalClassPaths) {
+            if (opts.additionalClassPaths) {
+                for (const p of opts.additionalClassPaths) {
                     const [prefixUC, parts] = extractPrefixAndDirParts(p, "Z");
                     let target = this.disks.get(prefixUC);
                     for (let i = 0; i < parts.length && target; i++) target = target.folderGet(parts[i]);
@@ -150,9 +149,9 @@ export class VirtualFileSystem implements FileSystem {
             }
         }
 
-        classDirs.forEach((c) => {
-            for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
-        });
+        // Исключаем ошибки рекурсивного сканирования имиджей
+        // (оригинальный Stratum так, кстати, не умеет)
+        for (let c of classDirs.values()) for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
 
         // 3) Загружаем имиджи из выбранных директорий.
         const classes = new Map<string, ClassProto<ParsedCode>>();
@@ -160,6 +159,8 @@ export class VirtualFileSystem implements FileSystem {
             const searchRes = [...classDirs.values()].map((c) => [...c.search(/.+\.cls$/i)]);
             const classFiles = new Array<VirtualFile>().concat(...searchRes);
             const protos = await Promise.all(classFiles.map((f) => f.readAs("cls", parseBytecode)));
+
+            // Превращаем Array в Map
             for (const p of protos) {
                 const keyUC = p.name.toUpperCase();
                 const prev = classes.size;

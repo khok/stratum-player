@@ -67,14 +67,18 @@ export interface FileSystemFile {
 
 export interface OpenProjectOptions {
     /**
-     * Завершающая часть пути к файлу проекта.
-     */
-    tailPath?: string;
-    /**
      * Дополнительные пути поиска файлов имиджей.
      */
     additionalClassPaths?: string[];
 
+    /**
+     * Завершающая часть пути к файлу проекта.
+     */
+    tailPath?: string;
+
+    /**
+     * Открывать первый найденный файл проекта.
+     */
     firstMatch?: boolean;
 }
 
