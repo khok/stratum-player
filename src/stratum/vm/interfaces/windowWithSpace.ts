@@ -1,7 +1,6 @@
 import { NumBool } from "../types";
 
 export interface WindowWithSpace {
-    readonly name: string;
     readonly classname: string;
     readonly filename: string;
 

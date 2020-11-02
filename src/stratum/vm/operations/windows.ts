@@ -121,9 +121,7 @@ function SetWindowOwner(ctx: ExecutionContext) {
 }
 
 function GetWindowName(ctx: ExecutionContext) {
-    const spaceHandle = ctx.popLong();
-    const space = ctx.windows.getSpace(spaceHandle);
-    ctx.pushString(space ? space.window.name : "");
+    ctx.pushString(ctx.windows.getWinNameBySpaceHandle(ctx.popLong()));
 }
 function GetWindowProp(ctx: ExecutionContext) {
     const prop = ctx.popString().toLowerCase();

@@ -17,5 +17,6 @@ export interface WindowsManager {
     getWindow(windowName: string): WindowWithSpace | undefined;
 
     getSpaceByWinName(windowName: string): GraphicSpace | undefined;
+    getWinNameBySpaceHandle(spaceHandle: number): string;
     getSpace(spaceHandle: number): GraphicSpace | undefined;
 }

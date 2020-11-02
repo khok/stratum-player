@@ -6,7 +6,6 @@ import { ExecutionContext } from "../executionContext";
 import { NumBool } from "../types";
 import { BitmapObject, GraphicSpaceObject, GroupObject, LineObject, TextObject } from "./graphicSpaceObjects";
 import { BmpTool, BrushTool, FontTool, PenTool, StringTool, TextTool } from "./graphicSpaceTools";
-import { WindowWithSpace } from "./windowWithSpace";
 
 /**
  * Можно создавать любые типы инструментов кроме ссылок на внешние изображения.
@@ -43,7 +42,6 @@ export interface GraphicSpaceTools {
  * Графическое пространство.
  */
 export interface GraphicSpace {
-    readonly window: WindowWithSpace;
     readonly tools: GraphicSpaceTools;
     readonly handle: number;
 
