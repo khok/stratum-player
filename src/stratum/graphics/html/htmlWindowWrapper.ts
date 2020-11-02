@@ -67,6 +67,7 @@ export class HTMLWindowWrapper {
     textInput(options: HTMLInputWrapperOptions): HTMLInputWrapper {
         const elem = document.createElement("input");
         elem.setAttribute("type", "text");
+        elem.setAttribute("class", "stratum-textbox");
         elem.style.setProperty("position", "absolute");
         const wrapper = new HTMLInputWrapper(elem, options);
         this.container.appendChild(elem);
