@@ -302,4 +302,4 @@ export const options: {
 /**
  * Версия API.
  */
-export const version: string = "0.3.1";
+export const version: string = "0.3.2";

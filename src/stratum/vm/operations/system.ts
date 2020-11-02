@@ -93,8 +93,8 @@ function GetDate(ctx: ExecutionContext) {
 
 // GetTime(FLOAT hour, FLOAT min, FLOAT sec, FLOAT hund)
 function GetTime(ctx: ExecutionContext) {
-    const isMsecNew = ctx.popLong();
-    const msecId = ctx.popLong();
+    const isSantiNew = ctx.popLong();
+    const santiId = ctx.popLong();
     const isSecNew = ctx.popLong();
     const secId = ctx.popLong();
     const isMinNew = ctx.popLong();
@@ -104,8 +104,8 @@ function GetTime(ctx: ExecutionContext) {
 
     const time = new Date();
 
-    if (isMsecNew) setNewDoubleValue(ctx, msecId, time.getMilliseconds());
-    else setOldDoubleValue(ctx, msecId, time.getMilliseconds());
+    if (isSantiNew) setNewDoubleValue(ctx, santiId, time.getMilliseconds() * 0.1);
+    else setOldDoubleValue(ctx, santiId, time.getMilliseconds());
 
     if (isSecNew) setNewDoubleValue(ctx, secId, time.getSeconds());
     else setOldDoubleValue(ctx, secId, time.getSeconds());

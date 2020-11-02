@@ -243,7 +243,7 @@ function SetBitmapSrcRect2d(ctx: ExecutionContext) {
     const spaceHandle = ctx.popLong();
 
     const obj = _getObject(ctx, spaceHandle, objectHandle);
-    ctx.pushDouble(obj && obj.type === "otBITMAP2D" ? obj.setRect(x, y, width, height) : 0);
+    ctx.pushDouble(obj && (obj.type === "otBITMAP2D" || obj.type == "otDOUBLEBITMAP2D") ? obj.setRect(x, y, width, height) : 0);
 }
 
 function GetVectorPoint2dx(ctx: ExecutionContext) {
