@@ -7,21 +7,14 @@
     <script src="scripts/chai.min.js"></script>
     <script src="scripts/autorefresh.js"></script>
     <script src="scripts/modules.js"></script>
-    <script>
-        mocha.setup('bdd');
-    </script>
 </head>
 
 <body>
     <div id="mocha"></div>
-    <canvas id="canvas" width="900" height="900" , style="border: 1px solid #000000"></canvas>
-    <div style="width: 0; height: 0; overflow: hidden">
-        <input id="input" type="text" style="opacity: 0; filter: alpha(opacity=0)" />
-    </div>
-    <script src="scripts/unit.js"></script>
-    <script>
-        mocha.run();
-    </script>
 </body>
+
+<script>mocha.setup('bdd');</script>
+<script src="scripts/unit.js"></script>
+<script>mocha.run();</script>
 
 </html>
