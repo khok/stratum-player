@@ -1,0 +1,24 @@
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0px;
+  padding: 10px;
+}
+
+.player-control {
+  width: 100px;
+}
+
+.stratum-textbox {
+  outline: none;
+  border: inset 2px;
+}
+
+#main_window_container {
+  flex: 1 1 auto;
+  border: 1px solid #000000;
+  overflow: auto;
+}

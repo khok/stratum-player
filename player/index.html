@@ -1,0 +1,48 @@
+<html>
+
+<head>
+    <title>Stratum Player</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="Проигрыватель проектов Stratum 2000 в браузере">
+    <meta name="keywords" content="Stratum 2000">
+    <script src="stratum.min.js"></script>
+    <script src="player.js"></script>
+    <link rel="stylesheet" href="player.css">
+    <link rel="icon" type="image/png" href="favicon.ico" />
+</head>
+
+<body>
+    <div id="dropzone_container">
+        <details>
+            <summary>Информация</summary>
+            <p>Это - активный проект по портированию
+                <a target="_blank" href="http://www.stratum.ac.ru/education/stratum/">среды
+                    исполнения проектов Stratum
+                    2000</a>, позволяющий запускать созданные в нем проекты прямо в браузере.</p>
+            <p>На данный момент реализована достаточно малая часть возможностей, присутствующих в Windows-версии
+                Stratum-а, но некоторые <a target="_blank" href="./examples">проекты</a> уже удается
+                запустить.</p>
+            <p></p>
+        </details>
+        <p id="dropzone_status">
+            <a>Вы можете перетащить или <a href="javascript:selectFile()">загрузить ZIP-архивы</a>
+                со Stratum-проектами на эту страницу, или <a href="./examples">попробовать онлайн-примеры</a>.
+            </a></p>
+        </p>
+        <details>
+            <summary>Дополнительные опции запуска</summary>
+            <input type="checkbox" id="options_nolib" />
+            <label for="options_nolib">Не использовать стандартную библиотеку имиджей</label>
+        </details>
+        </p>
+        <input type="file" id="zipdrop" accept=".zip" multiple hidden />
+    </div>
+    <div>
+        <input type="button" id="player_play" class="player-control" value="Играть" disabled />
+        <input type="button" id="player_pause" class="player-control" value="Пауза" disabled />
+        <input type="button" id="player_step" class="player-control" value="Шаг" disabled />
+    </div>
+    <div id="main_window_container"></div>
+</body>
+
+</html>
