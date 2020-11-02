@@ -6,9 +6,8 @@ import { ExecutionContext } from "stratum/vm/executionContext";
 import { ComputableClass } from "stratum/vm/interfaces/computableClass";
 import { GraphicSpace } from "stratum/vm/interfaces/graphicSpace";
 import { NumBool } from "stratum/vm/types";
-import { SimpleWindow } from "../manager/simpleWindow";
 import { createObjects, createTools } from "./createToolsAndObjects";
-import { Renderer } from "./interfaces";
+import { InputEventReceiver, Renderer } from "./interfaces";
 import { SceneBitmapObject, SceneGroupObject, SceneLineObject, SceneObject, SceneTextObject } from "./objects";
 import { SceneTools } from "./sceneTools";
 
@@ -20,13 +19,12 @@ export interface SceneEventSubscriber {
 }
 
 export interface SceneArgs {
-    window: SimpleWindow;
+    renderer: Renderer & InputEventReceiver;
     handle: number;
     vdr?: VectorDrawing;
 }
 
 export class Scene implements GraphicSpace {
-    window: SimpleWindow;
     tools: SceneTools;
 
     private objects: HandleMap<SceneObject>;
@@ -38,10 +36,8 @@ export class Scene implements GraphicSpace {
     readonly handle: number;
     readonly renderer: Renderer;
 
-    constructor({ handle, vdr, window }: SceneArgs) {
+    constructor({ handle, vdr, renderer }: SceneArgs) {
         this.handle = handle;
-        this.window = window;
-        const { renderer } = window;
         this.renderer = renderer;
 
         if (vdr) {
@@ -55,7 +51,7 @@ export class Scene implements GraphicSpace {
                 const brush = this.tools.brushes.get(brushHandle);
                 if (brush) {
                     brush.subscribe(this, () => this.renderer.updateBrush(brush));
-                    window.renderer.updateBrush(brush);
+                    renderer.updateBrush(brush);
                 }
             }
 

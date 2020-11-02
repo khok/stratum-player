@@ -1,7 +1,7 @@
+import { HTMLInputWrapper, HTMLWindowWrapper } from "stratum/graphics/html";
 import { RenderableControl, RenderableControlParams } from "stratum/graphics/scene/interfaces";
 import { NotImplementedError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
-import { HtmlElementsFactory, HtmlInputWrapper } from "./htmlFactory";
 
 export class HtmlControl implements RenderableControl {
     readonly type = "control";
@@ -10,12 +10,12 @@ export class HtmlControl implements RenderableControl {
     readonly handle: number;
     private visibleArea: Point2D;
     readonly selectable: boolean;
-    private inp: HtmlInputWrapper;
+    private inp: HTMLInputWrapper;
 
     constructor(
         { handle, isVisible, position, classname, controlSize, text }: RenderableControlParams,
         private viewRef: Point2D,
-        factory: HtmlElementsFactory
+        wnd: HTMLWindowWrapper
     ) {
         if (classname !== "Edit") throw new NotImplementedError(`Элементы ввода типа ${classname} пока не поддерживаются`);
         this.handle = handle;
@@ -23,7 +23,7 @@ export class HtmlControl implements RenderableControl {
         this.posY = position.y;
         this.selectable = false;
         this.visibleArea = { ...controlSize };
-        this.inp = factory.createTextInput({
+        this.inp = wnd.textInput({
             x: position.x - viewRef.x,
             y: position.y - viewRef.y,
             width: controlSize.x,
@@ -70,7 +70,7 @@ export class HtmlControl implements RenderableControl {
     }
 
     onChange(fn: () => void) {
-        this.inp.onChange(fn);
+        this.inp.onEdit(fn);
     }
 
     setText(text: string): void {

@@ -1,7 +1,8 @@
 import { fabric } from "fabric";
 import { colorRefToColor } from "stratum/common/colorrefParsers";
-import { HtmlElementsFactory } from "stratum/graphics/renderers/fabric/html/htmlFactory";
+import { HTMLWindowWrapper } from "stratum/graphics/html";
 import {
+    InputEventReceiver,
     RenderableBitmap,
     RenderableBmpParams,
     RenderableControl,
@@ -10,18 +11,17 @@ import {
     RenderableLineParams,
     RenderableText,
     RenderableTextParams,
-    Renderer
+    Renderer,
 } from "stratum/graphics/scene/interfaces";
 import { SceneBrushTool } from "stratum/graphics/scene/tools";
-import { InputEventReceiver } from "stratum/graphics/windowSystems/single/inputEventReceiver";
-import { BadDataError, OptionsError } from "stratum/helpers/errors";
+import { BadDataError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
 import { EventCode } from "stratum/vm/consts";
 import { systemKeysTemp } from "stratum/vm/operations/system";
 import { FabricImage, FabricLine, FabricText } from "./components";
+import { HtmlControl } from "./components/htmlControl";
 import { canvasOptions } from "./fabricConfig";
-import { HtmlControl } from "./html/htmlControl";
 
 type FabricObject = FabricLine | FabricImage | FabricText | HtmlControl;
 
@@ -30,14 +30,10 @@ const upCodes = [EventCode.WM_LBUTTONUP, EventCode.WM_MBUTTONUP, EventCode.WM_RB
 
 export interface FabricRendererArgs {
     canvas: fabric.StaticCanvas;
-    htmlFactory?: HtmlElementsFactory;
+    htmlFactory?: HTMLWindowWrapper;
 }
 
 export class FabricRenderer implements Renderer, InputEventReceiver {
-    static createCanvas(canvas: HTMLCanvasElement) {
-        return new fabric.StaticCanvas(canvas, canvasOptions);
-    }
-
     private canvas: fabric.StaticCanvas;
     private objects: HandleMap<FabricObject> = HandleMap.create();
     private objectsByZReversed: FabricObject[] = [];
@@ -49,19 +45,12 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
     private mouseSubs = new Set<(code: EventCode, buttons: number, x: number, y: number) => void>();
     private controlsubs = new Set<(code: EventCode, controlHandle: number) => void>();
 
-    private htmlFactory?: HtmlElementsFactory;
-
-    constructor({ canvas, htmlFactory }: FabricRendererArgs) {
-        this.htmlFactory = htmlFactory;
-        this.canvas = canvas;
-    }
-
-    setSize(width: number, height: number): void {
-        this.canvas.setWidth(width).setHeight(height).calcOffset();
-    }
-
-    getSize(): Point2D {
-        return { x: this.canvas.getWidth(), y: this.canvas.getHeight() };
+    private prevWidth = 0;
+    private prevHeight = 0;
+    constructor(canvas: HTMLCanvasElement, private wnd: HTMLWindowWrapper) {
+        this.prevWidth = wnd.width;
+        this.prevWidth = wnd.height;
+        this.canvas = new fabric.StaticCanvas(canvas, { ...canvasOptions, width: this.prevWidth, height: this.prevHeight });
     }
 
     private requestRedraw() {
@@ -96,9 +85,8 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
     }
 
     createControl(params: RenderableControlParams): RenderableControl {
-        if (!this.htmlFactory) throw new OptionsError("inputFactory");
         this.assertNoObject(params.handle);
-        const obj = new HtmlControl(params, this.view, this.htmlFactory);
+        const obj = new HtmlControl(params, this.view, this.wnd);
         obj.onChange(() => {
             this.controlsubs.forEach((c) => c(EventCode.WM_CONTROLNOTIFY, params.handle));
             this.requestRedraw();
@@ -162,11 +150,6 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
         this.requestRedraw();
     }
 
-    clear() {
-        this.canvas.clear();
-        for (const obj of this.objects.values()) if (obj.type === "control") obj.destroyHtml();
-    }
-
     //Изменение точки обзора, размеров сцены.
     //
     setView(x: number, y: number): void {
@@ -193,10 +176,24 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
         return 0;
     }
 
-    //Запуск отрисовки.
-    //
-    render(): boolean {
-        if (!this.shouldRedraw) return false;
+    redraw(): boolean {
+        const { canvas } = this;
+        const nw = this.wnd.width;
+        const nh = this.wnd.height;
+        let recal = false;
+        if (nw !== this.prevWidth) {
+            this.prevWidth = nw;
+            canvas.setWidth(nw);
+            recal = true;
+        }
+        if (nh !== this.prevHeight) {
+            this.prevHeight = nh;
+            canvas.setHeight(nh);
+            recal = true;
+        }
+        if (recal) canvas.calcOffset();
+        else if (!this.shouldRedraw) return false;
+
         this.shouldRedraw = false;
         this.canvas.renderAll();
         return true;
