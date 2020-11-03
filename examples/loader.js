@@ -14,7 +14,7 @@ const runProject = (name) => {
         if(!document.body) window.onload = () => prj.play(document.body);
         else {
             document.body.innerHTML = "";
-            prj.play(document.body);
+            prj.on("closed", () => history.back()).play(document.body)
         }
     })
     .catch((err) => {
