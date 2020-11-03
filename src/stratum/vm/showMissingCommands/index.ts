@@ -35,7 +35,7 @@ function searchErrors({ code }: ParsedCode, operations: Operation[]) {
 
 export function formatMissingCommands(missingOperations: { name: string; classNames: string[] }[]) {
     return (
-        `Нереализованные операции (всего ${missingOperations.length})\n` +
+        `Нереализованные функции (всего ${missingOperations.length})\n` +
         missingOperations.map(({ name, classNames }) => `${name} в ${classNames}`).join(";\n")
     );
 }

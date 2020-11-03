@@ -33,12 +33,12 @@ export function executeCode(ctx: ExecutionContext, { code, numberOperands, strin
             }
         }
     } catch (e) {
-        console.error(e);
-        if (!operations[opAndArg! & OPCODE_MASK]) console.warn("Функция не существует.");
-        const message = `Ошибка в функции: ${realCommandNames[opAndArg! & OPCODE_MASK]} (${OpCode[opAndArg! & OPCODE_MASK]}).\nИмидж: ${
-            ctx.currentClass.protoName
-        }. Индекс опкода: ${ctx.nextOpPointer - 1}.\n`;
-        console.warn(message);
+        const realName = realCommandNames[opAndArg! & OPCODE_MASK];
+        console.error(operations[opAndArg! & OPCODE_MASK] ? e : `Функция ${realName} не реализована`);
+        const opcodeName = OpCode[opAndArg! & OPCODE_MASK];
+        const classname = ctx.currentClass.protoName;
+        const pointer = ctx.nextOpPointer - 1;
+        console.warn(`Ошибка в функции: ${realName} (${opcodeName}).\nИмидж: ${classname}. Индекс опкода: ${pointer}.\n`);
         rapidBytecodePrint((<any>ctx.currentClass).proto.code, (<any>ctx.currentClass).proto.vars.names);
         ctx.setError("Ошибка виртуальной машины");
     }
