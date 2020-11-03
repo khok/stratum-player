@@ -1,2 +1,2 @@
-export * from "./htmlWindowWrapper";
-export * from "./htmlInputWrapper";
+export * from "./windowWrapper";
+export * from "./inputWrapper";

@@ -4,7 +4,7 @@ import { createComposedScheme } from "stratum/common/createComposedScheme";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
-import { HTMLWindowWrapper } from "stratum/graphics/html";
+import { WindowWrapper } from "stratum/graphics/html";
 import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { Mutable } from "stratum/helpers/utilityTypes";
@@ -34,8 +34,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
         closed: new Set<any>(),
         error: new Set<any>(),
     };
-    private wnd?: HTMLWindowWrapper;
-    private savedElement?: HTMLElement;
+    private wnd?: WindowWrapper;
 
     fs: VirtualFileSystem;
     workDir: VirtualDir;
@@ -81,11 +80,10 @@ export class Player implements Project, ProjectManager, PlayerResources {
 
     play(options?: HTMLElement | ProjectPlayOptions): this {
         if (this.loop) return this;
-        const mainWindowContainer = options instanceof HTMLElement ? options : options && options.mainWindowContainer;
-        if (mainWindowContainer && mainWindowContainer !== this.savedElement) {
-            if (this.wnd) this.wnd.close(true); //закрываем под старым рутом
-            this.wnd = new HTMLWindowWrapper(mainWindowContainer, "window_1", options instanceof HTMLElement ? undefined : options); //открываем под новым
-            this.savedElement = mainWindowContainer;
+        if (options instanceof HTMLElement) {
+            this.wnd = new WindowWrapper(options);
+        } else if (options && options.mainWindowContainer) {
+            this.wnd = new WindowWrapper(options.mainWindowContainer, options);
         }
         // TODO: по идее то что здесь создается надо подкешировать
         const { classes, prjInfo: prj, stt } = this;
@@ -114,7 +112,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
                 } else {
                     this._state = "closed";
                     this.loop = undefined;
-                    if (this.wnd) this.wnd.close(false); //FIXME: А нужно ли закрывать окно?
+                    if (this.wnd) this.wnd.destroy(); //FIXME: А нужно ли закрывать окно?
                     this.handlers.closed.forEach((h) => h());
                 }
                 return false;
@@ -132,7 +130,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
     close(): this {
         this.computer.stop();
         this.loop = undefined;
-        if (this.wnd) this.wnd.close(false);
+        if (this.wnd) this.wnd.destroy();
         this._state = "closed";
         return this;
     }

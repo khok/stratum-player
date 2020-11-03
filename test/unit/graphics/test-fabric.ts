@@ -1,6 +1,6 @@
 import { unzip } from "stratum/api";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
-import { HTMLWindowWrapper } from "stratum/graphics/html";
+import { WindowWrapper } from "stratum/graphics/html";
 import { Scene } from "stratum/graphics/scene";
 import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
 import { Player } from "stratum/player";
@@ -8,7 +8,7 @@ const { strictEqual } = chai.assert;
 
 describe("Сцена fabric рисуется корректно", () => {
     let space: Scene;
-    let windows: HTMLWindowWrapper;
+    let windows: WindowWrapper;
     it("Шаг 1", async () => {
         const [a1, a2] = await Promise.all(
             ["/projects/test_balls.zip", "/data/library.zip"].map((s) =>
@@ -25,7 +25,7 @@ describe("Сцена fabric рисуется корректно", () => {
         const vdr = createComposedScheme(cl.scheme!, cl.children!, classes);
         strictEqual(vdr.source!.origin, "class");
         strictEqual(vdr.source!.name, classname);
-        windows = new HTMLWindowWrapper(document.body!, "");
+        windows = new WindowWrapper(document.body);
         const graphics = new SimpleWindowManager(windows);
 
         const wname = "Test Window";

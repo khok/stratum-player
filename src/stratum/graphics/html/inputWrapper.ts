@@ -1,4 +1,4 @@
-export interface HTMLInputWrapperOptions {
+export interface InputWrapperOptions {
     x?: number;
     y?: number;
     width?: number;
@@ -7,14 +7,14 @@ export interface HTMLInputWrapperOptions {
     hidden?: boolean;
 }
 
-export class HTMLInputWrapper {
+export class InputWrapper {
     x: number = 0;
     y: number = 0;
     width: number = 0;
     height: number = 0;
     hidden: boolean = false;
 
-    constructor(private elem: HTMLInputElement, opts: HTMLInputWrapperOptions) {
+    constructor(private elem: HTMLInputElement, opts: InputWrapperOptions) {
         this.set(opts);
     }
 
@@ -28,7 +28,7 @@ export class HTMLInputWrapper {
         elem.value = text;
     }
 
-    set(options: HTMLInputWrapperOptions) {
+    set(options: InputWrapperOptions) {
         Object.assign(this, options);
         this.updateValues();
         return this;

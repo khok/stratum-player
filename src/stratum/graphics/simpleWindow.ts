@@ -1,7 +1,7 @@
 import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { WindowWithSpace } from "stratum/vm/interfaces/windowWithSpace";
 import { NumBool } from "stratum/vm/types";
-import { HTMLWindowWrapper } from "./html";
+import { WindowWrapper } from "./html";
 
 export class SimpleWindow implements WindowWithSpace {
     readonly classname: string = "";
@@ -10,7 +10,7 @@ export class SimpleWindow implements WindowWithSpace {
     originX = 0;
     originY = 0;
 
-    constructor(private wnd: HTMLWindowWrapper, source?: VectorDrawing["source"]) {
+    constructor(private wnd: WindowWrapper, source?: VectorDrawing["source"]) {
         if (source) {
             const { name, origin } = source;
             if (origin === "class") this.classname = name;

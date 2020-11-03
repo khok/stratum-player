@@ -3,7 +3,7 @@ import { HandleMap } from "stratum/helpers/handleMap";
 import { GraphicSpace } from "stratum/vm/interfaces/graphicSpace";
 import { WindowsManager } from "stratum/vm/interfaces/windowsManager";
 import { NumBool } from "stratum/vm/types";
-import { HTMLWindowWrapper } from "./html";
+import { WindowWrapper } from "./html";
 import { Scene } from "./scene";
 import { SimpleWindow } from "./simpleWindow";
 
@@ -20,7 +20,7 @@ export class SimpleWindowManager implements WindowsManager {
     areaWidth: number;
     areaHeight: number;
 
-    constructor(private wnd?: HTMLWindowWrapper) {
+    constructor(private wnd?: WindowWrapper) {
         this.screenWidth = this.areaWidth = wnd ? wnd.width : 1920;
         this.screenHeight = this.areaHeight = wnd ? wnd.height : 1080;
     }
@@ -28,7 +28,21 @@ export class SimpleWindowManager implements WindowsManager {
     private attribWarned = false;
     private noWndShowed = false;
     private secondWndWarned = false;
+    private windowWasOpen = false;
     openSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawing): number {
+        const { wnd } = this;
+        if (!wnd) {
+            if (!this.noWndShowed) console.warn(`Проект попытался открыть окно "${windowName}" с атрибутами "${attrib}"`);
+            this.noWndShowed = true;
+            return 0;
+        }
+
+        if (this.windowWasOpen) {
+            if (!this.secondWndWarned) console.warn(`Проект попытался открыть второе окно "${windowName}" с атрибутами "${attrib}"`);
+            this.secondWndWarned = true;
+            return 0;
+        }
+
         if (attrib !== "" && !this.attribWarned) {
             console.warn(`Следующие атрибуты окна "${windowName}" не поддерживаются:\n"${attrib}"`);
             this.attribWarned = true;
@@ -36,33 +50,19 @@ export class SimpleWindowManager implements WindowsManager {
 
         if (this.hasWindow(windowName)) throw Error(`Окно "${windowName}" уже существует`);
 
-        const { wnd } = this;
-        if (!wnd) {
-            if (!this.noWndShowed) {
-                console.warn(`Проект попытался открыть окно "${windowName}" с атрибутами "${attrib}"`);
-            }
-            this.noWndShowed = true;
-            return 0;
-        }
-        const renderer = wnd.allocateRenderer();
-        if (!renderer) {
-            if (!this.secondWndWarned) console.warn(`Проект попытался открыть второе окно "${windowName}" с атрибутами "${attrib}"`);
-            this.secondWndWarned = true;
-            return 0;
-        }
-
-        wnd.setTitle(windowName);
+        document.title = windowName;
         // ширину нужно передавать в зависимости от attrib
         const window = new SimpleWindow(wnd, vdr && vdr.source);
         this.windows.set(windowName, window);
 
         const handle = HandleMap.getFreeHandle(this.scenes);
-        const scene = new Scene({ handle, vdr, renderer });
+        const scene = new Scene({ handle, vdr, renderer: wnd.renderer });
 
         this.scenes.set(handle, scene);
         this.scenesByWinName.set(windowName, scene);
         this.windowsHandleMap.set(handle, windowName);
 
+        this.windowWasOpen = true;
         return handle;
     }
 
@@ -78,6 +78,7 @@ export class SimpleWindowManager implements WindowsManager {
         const window = this.windows.get(windowName);
         if (!window) return 0;
         this.windows.delete(windowName);
+        this.windowWasOpen = false;
         return 1;
     }
 

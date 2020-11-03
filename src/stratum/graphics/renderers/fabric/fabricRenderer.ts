@@ -1,6 +1,6 @@
 import { fabric } from "fabric";
 import { colorRefToColor } from "stratum/common/colorrefParsers";
-import { HTMLWindowWrapper } from "stratum/graphics/html";
+import { WindowWrapper } from "stratum/graphics/html";
 import {
     InputEventReceiver,
     RenderableBitmap,
@@ -30,7 +30,7 @@ const upCodes = [EventCode.WM_LBUTTONUP, EventCode.WM_MBUTTONUP, EventCode.WM_RB
 
 export interface FabricRendererArgs {
     canvas: fabric.StaticCanvas;
-    htmlFactory?: HTMLWindowWrapper;
+    htmlFactory?: WindowWrapper;
 }
 
 export class FabricRenderer implements Renderer, InputEventReceiver {
@@ -47,7 +47,7 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
 
     private prevWidth = 0;
     private prevHeight = 0;
-    constructor(canvas: HTMLCanvasElement, private wnd: HTMLWindowWrapper) {
+    constructor(canvas: HTMLCanvasElement, private wnd: WindowWrapper) {
         this.prevWidth = wnd.width;
         this.prevWidth = wnd.height;
         this.canvas = new fabric.StaticCanvas(canvas, { ...canvasOptions, width: this.prevWidth, height: this.prevHeight });
