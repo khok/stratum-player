@@ -3,15 +3,14 @@ import { FileSystem, OpenProjectOptions, OpenZipOptions } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
-import { extractPrefixAndDirParts, getPathParts, SLASHES } from "stratum/helpers/pathOperations";
+import { getPrefixAndPathParts, getPathParts, SLASHES } from "stratum/helpers/pathOperations";
 import { Player } from "stratum/player";
 import { parseBytecode } from "stratum/vm/parseBytecode";
 import { ParsedCode } from "stratum/vm/types";
-import { VirtualDir, VirtualFile } from ".";
-import { VirtualFileContent } from "./virtualFileContent";
+import { VFSDir, VFSFile } from ".";
 
-export class VirtualFileSystem implements FileSystem {
-    static async fromZip(source: File | Blob | ArrayBuffer, options: OpenZipOptions = {}): Promise<VirtualFileSystem> {
+export class VFS implements FileSystem {
+    static async fromZip(source: File | Blob | ArrayBuffer, options: OpenZipOptions = {}): Promise<VFS> {
         const decoder = new TextDecoder(options.encoding || "cp866");
 
         let zip: ReturnType<typeof loadAsync> extends Promise<infer U> ? U : never;
@@ -30,20 +29,19 @@ export class VirtualFileSystem implements FileSystem {
             throw Error(`${str} не является ZIP-архивом`);
         }
 
-        const [diskPrefixUC, p1] = extractPrefixAndDirParts(options.directory || "", "Z");
+        const [diskPrefixUC, p1] = getPrefixAndPathParts(options.directory || "", "Z");
+        const fs = new VFS();
+        let root = new VFSDir(diskPrefixUC + ":", fs);
 
-        let root = new VirtualDir(diskPrefixUC + ":");
-        const fs = new VirtualFileSystem();
         fs.diskNew(diskPrefixUC, root);
-
-        for (const p of p1) root = root.folderNew(p);
+        for (const p of p1) root = root.folderLocal(p);
 
         zip.forEach((path, zipObj) => {
             const p2 = path.split(SLASHES);
             let fd = root;
-            for (let i = 0; i < p2.length - 1; i++) fd = fd.folder(p2[i]);
+            for (let i = 0; i < p2.length - 1; i++) fd = fd.folderLocal(p2[i]);
             // Лучше это
-            if (!zipObj.dir) fd.fileNew(p2[p2.length - 1], new VirtualFileContent(zipObj));
+            if (!zipObj.dir) fd.fileNewLocal(p2[p2.length - 1], zipObj);
             // А такой вариант создал бы пустую директорию.
             // {
             //     const last = p2[p2.length - 1];
@@ -54,9 +52,13 @@ export class VirtualFileSystem implements FileSystem {
         return fs;
     }
 
-    private readonly disks = new Map<string, VirtualDir>();
+    private readonly disks = new Map<string, VFSDir>();
 
-    private diskNew(prefixUC: string, dir: VirtualDir) {
+    disk(name: string) {
+        return this.disks.get(name.toUpperCase());
+    }
+
+    private diskNew(prefixUC: string, dir: VFSDir) {
         const { disks } = this;
 
         const prv = disks.size;
@@ -65,7 +67,7 @@ export class VirtualFileSystem implements FileSystem {
     }
 
     merge(fs: FileSystem): this {
-        if (!(fs instanceof VirtualFileSystem)) throw Error("fs is not instanceof VirtualFileSystem");
+        if (!(fs instanceof VFS)) throw Error("fs is not instanceof VirtualFileSystem");
         const { disks: otherDisks } = fs;
         const { disks: myDisks } = this;
         for (const [prefixUC, otherRoot] of otherDisks) {
@@ -76,36 +78,15 @@ export class VirtualFileSystem implements FileSystem {
         return this;
     }
 
-    *search(regexp: RegExp): IterableIterator<VirtualFile> {
-        for (const disk of this.disks.values()) for (const f of disk.search(regexp)) yield f;
-    }
-
-    resolvePath(path: string, currentDir?: VirtualDir): VirtualDir | VirtualFile | undefined {
-        const pp = getPathParts(path);
-        const isAbsolute = pp[0].length === 2 && pp[0][1] === ":";
-
-        let target = isAbsolute ? this.disks.get(pp[0][0].toUpperCase()) : currentDir;
-        if (!target) return undefined;
-
-        for (let i = isAbsolute ? 1 : 0; i < pp.length - 1; i++) {
-            if (pp[i] === "..") {
-                target = target.parent;
-            } else {
-                const next = target.folderGet(pp[i]);
-                if (!next) return undefined;
-                target = next;
-            }
-        }
-
-        const last = pp[pp.length - 1];
-        return last === ".." ? target.parent : target.get(last);
+    *search(regexp: RegExp): IterableIterator<VFSFile> {
+        for (const disk of this.disks.values()) for (const f of disk.files(regexp)) yield f;
     }
 
     async project(opts: OpenProjectOptions = {}) {
         // 1) Находим директорию проекта, считываем .prj/.spj файл,
-        let workDir: VirtualDir, prjInfo: ProjectInfo;
+        let workDir: VFSDir, prjInfo: ProjectInfo;
         {
-            let prjFile: VirtualFile | undefined;
+            let prjFile: VFSFile | undefined;
             const matches = new Array<string>();
 
             const normPathDosUC = opts.tailPath && getPathParts(opts.tailPath).join("\\").toUpperCase();
@@ -126,38 +107,34 @@ export class VirtualFileSystem implements FileSystem {
         const classDirs = new Set([workDir]);
         {
             // 2.1) Разбираем пути поиска имиджей, которые через запятую прописаны в настройках проекта.
-            const addPaths = prjInfo.settings && prjInfo.settings.classSearchPaths;
-            if (addPaths) {
-                addPaths
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter((s) => s)
-                    .forEach((path) => {
-                        const resolved = this.resolvePath(path, workDir);
-                        if (resolved && resolved.dir) classDirs.add(resolved);
-                    });
+            const settingsPaths = prjInfo.settings && prjInfo.settings.classSearchPaths;
+            if (settingsPaths) {
+                //prettier-ignore
+                const pathsSeparated = settingsPaths.split(",").map((s) => s.trim()).filter((s) => s);
+                for (const path of pathsSeparated) {
+                    const resolved = workDir.get(path);
+                    if (resolved && resolved.dir) classDirs.add(resolved);
+                }
             }
 
-            // 2.2) Которые ищутся дополнительно (например, если у нас стандартная библиотека отдельным архивом)
+            // 2.2) Которые мы еще сами хотим добавить (например, если у нас стандартная библиотека отдельным архивом)
             if (opts.additionalClassPaths) {
                 for (const p of opts.additionalClassPaths) {
-                    const [prefixUC, parts] = extractPrefixAndDirParts(p, "Z");
-                    let target = this.disks.get(prefixUC);
-                    for (let i = 0; i < parts.length && target; i++) target = target.folderGet(parts[i]);
-                    if (target) classDirs.add(target);
+                    const resolved = (this.disks.get("Z") || workDir).get(p);
+                    if (resolved && resolved.dir) classDirs.add(resolved);
                 }
             }
         }
 
         // Исключаем ошибки рекурсивного сканирования имиджей
         // (оригинальный Stratum так, кстати, не умеет)
-        for (let c of classDirs.values()) for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
+        for (let c of classDirs) for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
 
         // 3) Загружаем имиджи из выбранных директорий.
         const classes = new Map<string, ClassProto<ParsedCode>>();
         {
-            const searchRes = [...classDirs.values()].map((c) => [...c.search(/.+\.cls$/i)]);
-            const classFiles = new Array<VirtualFile>().concat(...searchRes);
+            const searchRes = [...classDirs].map((c) => [...c.files(/.+\.cls$/i)]);
+            const classFiles = new Array<VFSFile>().concat(...searchRes);
             const protos = await Promise.all(classFiles.map((f) => f.readAs("cls", parseBytecode)));
 
             // Превращаем Array в Map
@@ -175,8 +152,8 @@ export class VirtualFileSystem implements FileSystem {
         // 4) Загружаем STT файл.
         let stt: VariableSet | undefined;
         {
-            const sttFile = workDir.fileGet("_preload.stt");
-            if (sttFile) {
+            const sttFile = workDir.get("_preload.stt");
+            if (sttFile && !sttFile.dir) {
                 try {
                     stt = await sttFile.readAs("stt");
                 } catch (e) {
@@ -186,12 +163,6 @@ export class VirtualFileSystem implements FileSystem {
         }
 
         // 5) Из всего этого создаем новый проигрыватель проекта.
-        return new Player({
-            fs: this,
-            workDir,
-            prjInfo,
-            classes,
-            stt,
-        });
+        return new Player({ dir: workDir, prjInfo, classes, stt });
     }
 }

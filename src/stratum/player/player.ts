@@ -2,15 +2,15 @@ import { Project, ProjectDiag, ProjectPlayOptions } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
 import { ProjectInfo } from "stratum/fileFormats/prj";
-import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
-import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
+import { VariableSet } from "stratum/fileFormats/stt";
+import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { WindowWrapper } from "stratum/graphics/html";
 import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { Mutable } from "stratum/helpers/utilityTypes";
 import { build } from "stratum/schema/build";
 import { TreeManager } from "stratum/schema/treeManager";
-import { VirtualDir, VirtualFileSystem } from "stratum/vfs";
+import { VFSDir } from "stratum/vfs";
 import { ExecutionContext } from "stratum/vm/executionContext";
 import { ProjectManager } from "stratum/vm/interfaces/projectManager";
 import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/showMissingCommands";
@@ -18,8 +18,7 @@ import { NumBool, ParsedCode } from "stratum/vm/types";
 import { SimpleComputer } from "../common/simpleComputer";
 
 export interface PlayerResources {
-    fs: VirtualFileSystem;
-    workDir: VirtualDir;
+    dir: VFSDir;
     prjInfo: ProjectInfo;
     classes: Map<string, ClassProto<ParsedCode>>;
     stt?: VariableSet;
@@ -36,15 +35,13 @@ export class Player implements Project, ProjectManager, PlayerResources {
     };
     private wnd?: WindowWrapper;
 
-    fs: VirtualFileSystem;
-    workDir: VirtualDir;
+    dir: VFSDir;
     prjInfo: ProjectInfo;
     classes: Map<string, ClassProto<ParsedCode>>;
     stt?: VariableSet | undefined;
 
     constructor(res: PlayerResources) {
-        this.fs = res.fs;
-        this.workDir = res.workDir;
+        this.dir = res.dir;
         this.prjInfo = res.prjInfo;
         this.classes = res.classes;
         this.stt = res.stt;
@@ -186,22 +183,33 @@ export class Player implements Project, ProjectManager, PlayerResources {
         return (cl && cl.directoryDos) || "";
     }
 
+    private _fileWarnShowed = false;
     openFileStream(path: string): BinaryStream | undefined {
-        const f = this.fs.resolvePath(path, this.workDir);
-        return f && !f.dir ? f.streamSync() : undefined;
+        const f = this.dir.get(path);
+        if (!f || f.dir) return undefined;
+        const buf = f.arraybufferSync();
+        if (!buf) {
+            if (!this._fileWarnShowed) throw Error(`Не удалось прочесть содержимое ${f.pathDos}. Возможно, файл не был предзагружен.`);
+            this._vdrWarnShowed = true;
+            return undefined;
+        }
+        return new BinaryStream(buf, { filepathDos: f.pathDos });
     }
 
+    private _vdrWarnShowed = false;
     openVdrFile(path: string): VectorDrawing | undefined {
-        const stream = this.openFileStream(path);
-        return stream && readVdrFile(stream, { origin: "file", name: stream.meta.filepathDos || "" });
-    }
-
-    openSttFile(path: string): VariableSet | undefined {
-        const stream = this.openFileStream(path);
-        return stream && readSttFile(stream);
+        const f = this.dir.get(path);
+        if (!f || f.dir) return undefined;
+        const vdr = f.readSyncAs("vdr");
+        if (!vdr) {
+            if (!this._vdrWarnShowed)
+                throw Error(`Не удалось прочесть ${f.pathDos}. Возможно, файл не является VDR-файлом или не был предзагружен.`);
+            this._vdrWarnShowed = true;
+        }
+        return vdr;
     }
 
     isFileExist(path: string): NumBool {
-        return this.fs.resolvePath(path) ? 1 : 0;
+        return this.dir.get(path) ? 1 : 0;
     }
 }

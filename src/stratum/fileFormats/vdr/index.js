@@ -129,8 +129,6 @@ function mapNames(vdr) {
     return vdr;
 }
 
-export function readVdrFile(stream, source) {
-    const res = mapNames(_readVectorDrawing(stream));
-    res.source = source;
-    return res;
+export function readVdrFile(stream) {
+    return mapNames(_readVectorDrawing(stream));
 }

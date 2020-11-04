@@ -141,7 +141,8 @@ function readVdr(stream: BinaryStream, classname: string, type: string, readIt?:
 
     let vdr: VectorDrawing;
     try {
-        vdr = readVdrFile(substream, { origin: "class", name: classname });
+        vdr = readVdrFile(substream);
+        vdr.source = { origin: "class", name: classname };
     } catch (e) {
         console.error(`Ошибка чтения VDR ${classname} (${type})`, e);
         stream.seek(blockStart + blockSize);
