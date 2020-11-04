@@ -136,7 +136,7 @@
             bodyElem.addEventListener("dragover", (evt) => evt.preventDefault());
             let fileAboveWindow = false;
             bodyElem.addEventListener("dragenter", ({ dataTransfer }) => {
-                if (fileAboveWindow || dataTransfer.types[0] !== "Files") return;
+                if (fileAboveWindow || dataTransfer.types.indexOf("Files") < 0) return;
                 dropzoneStatusElem.innerHTML = "Отпустите кнопку мыши, чтобы запустить проект...";
                 fileAboveWindow = true;
             });
