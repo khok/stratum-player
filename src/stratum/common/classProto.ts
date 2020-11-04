@@ -43,16 +43,6 @@ interface ClassProtoVars {
     defaultValues: (string | number | undefined)[];
 }
 
-export interface ClassProtoOptions<TVmCode> {
-    /**
-     * Парсер байткода.
-     */
-    bytecodeParser?: BytecodeParser<TVmCode>;
-    /**
-     * Путь к файлу.
-     */
-    filepathDos?: string;
-}
 /*
  * Прототип имиджа, обертка над более низкоуровневыми функциями чтения содержимого имиджа.
  * Реализует ленивую подгрузку данных.
@@ -65,7 +55,7 @@ export class ClassProto<TVmCode> {
     readonly filepathDos?: string;
     readonly directoryDos?: string;
 
-    private blocks: {
+    private _blocks: {
         readScheme: boolean;
         readImage: boolean;
         parseBytecode?: BytecodeParser<TVmCode>;
@@ -75,7 +65,7 @@ export class ClassProto<TVmCode> {
         const { __body } = this;
         if (__body.loaded) return __body.body;
 
-        const body = readClsFileBody(__body.stream, this.name, this.blocks);
+        const body = readClsFileBody(__body.stream, this.name, this._blocks);
         this.__body = {
             loaded: true,
             body,
@@ -83,22 +73,18 @@ export class ClassProto<TVmCode> {
         return body;
     }
 
-    constructor(data: ArrayBuffer | Uint8Array | BinaryStream, options: ClassProtoOptions<TVmCode> = {}) {
-        this.filepathDos = data instanceof BinaryStream ? data.meta.filepathDos : options.filepathDos;
-        this.directoryDos = extractDirDos(this.filepathDos || "");
-        this.blocks = {
+    constructor(stream: BinaryStream, bytecodeParser?: BytecodeParser<TVmCode>) {
+        this.filepathDos = stream.meta.filepathDos;
+        this.directoryDos = this.filepathDos && extractDirDos(this.filepathDos);
+        this._blocks = {
             readScheme: true,
             readImage: true,
-            parseBytecode: options.bytecodeParser,
+            parseBytecode: bytecodeParser,
         };
 
-        const stream = data instanceof BinaryStream ? data : new BinaryStream(data, { filepathDos: options.filepathDos });
         this.header = readClsFileHeader(stream);
         stream.meta.fileversion = this.header.version;
-        this.__body = {
-            loaded: false,
-            stream,
-        };
+        this.__body = { loaded: false, stream };
     }
 
     get name(): string {

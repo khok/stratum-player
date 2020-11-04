@@ -1,11 +1,8 @@
-import { unzip, ws } from "stratum/api";
-import { ClassProto } from "stratum/common/classProto";
+import { unzip } from "stratum/api";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
-import { readPrjFile } from "stratum/fileFormats/prj";
-import { SimpleWindow } from "stratum/graphics/simpleWindow";
-import { BmpToolFactory, Scene } from "stratum/graphics/scene";
-import { BinaryStream } from "stratum/helpers/binaryStream";
-import { parseBytecode } from "stratum/vm/parseBytecode";
+import { WindowWrapper } from "stratum/graphics/html";
+import { Scene } from "stratum/graphics/scene";
+import { VirtualFile } from "stratum/vfs";
 
 // Просмотр схемы или изображения имиджа.
 export async function showScheme(name: string, { className, image }: { className?: string; image?: boolean } = {}) {
@@ -17,14 +14,13 @@ export async function showScheme(name: string, { className, image }: { className
         )
     );
 
-    const files = a1.mount(a2).search(/.+\.cls$/i);
-    const prjFile = a1.search(/.+\.(prj)|(spj)$/i)[0];
-    const mp = files.map((f) => f.arraybuffer().then((a) => new ClassProto(a, { bytecodeParser: parseBytecode, filepathDos: f.path })));
-    const prj = readPrjFile(new BinaryStream(await prjFile.arraybuffer()));
-    const cls = new Map((await Promise.all(mp)).map((c) => [c.name.toLowerCase(), c]));
+    const files = [...a1.merge(a2).search(/.+\.cls$/i)];
+    const prj = await (a1.search(/.+\.(prj)|(spj)$/i).next().value as VirtualFile).readAs("prj");
+    const mp = files.map((f) => (f as VirtualFile).readAs("cls"));
+    const cls = new Map((await Promise.all(mp)).map((c) => [c.name.toUpperCase(), c]));
 
     const target = className || prj.rootClassName;
-    const root = cls.get(target.toLowerCase());
+    const root = cls.get(target.toUpperCase());
     console.log(cls);
     if (!root) return console.log(`no ${target}`);
 
@@ -33,14 +29,6 @@ export async function showScheme(name: string, { className, image }: { className
         (root.scheme && root.children ? createComposedScheme(root.scheme, root.children, cls) : root.scheme) ||
         root.image;
     if (!scheme) return console.log(`no scheme or image for ${target}`);
+    new Scene({ handle: 0, vdr: scheme, renderer: new WindowWrapper(document.getElementById("main_window_container")!).renderer });
     console.dir(scheme);
-
-    // Создаем оконный хост.
-    const globalCanvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const htmlRoot = document.getElementById("root")!;
-    const wnd = ws({ globalCanvas, htmlRoot });
-
-    const window = new SimpleWindow({ factory: wnd.createWindow("") });
-    new Scene({ handle: 0, vdr: scheme, window });
-    BmpToolFactory.allImagesLoaded.then(() => wnd.redraw());
 }

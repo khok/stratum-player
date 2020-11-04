@@ -56,7 +56,7 @@ export class VirtualFile implements FileSystemFile, VirtualNode {
             case "prj":
                 return readPrjFile(stream);
             case "cls":
-                return new ClassProto(stream, { bytecodeParser });
+                return new ClassProto(stream, bytecodeParser);
             case "stt":
                 return readSttFile(stream);
         }
