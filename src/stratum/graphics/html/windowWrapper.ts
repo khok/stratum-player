@@ -6,8 +6,10 @@ import { InputWrapper, InputWrapperOptions } from "./inputWrapper";
 
 export interface WindowWrapperOptions {
     disableWindowResize?: boolean;
-    width?: number;
-    height?: number;
+    customRes?: {
+        width?: number;
+        height?: number;
+    };
 }
 
 export class WindowWrapper {
@@ -22,12 +24,14 @@ export class WindowWrapper {
         if (this._container) return this._container;
 
         //prettier-ignore
-        const { root, opts: { width, height, disableWindowResize } } = this;
+        const { root, opts: { customRes, disableWindowResize } } = this;
+        const width = customRes && customRes.width && customRes.width > 0 ? customRes.width + "px" : "100%";
+        const height = customRes && customRes.height && customRes.height > 0 ? customRes.height + "px" : "100%";
 
         const container = document.createElement("div");
         container.style.setProperty("position", "relative");
-        container.style.setProperty("width", width && width > 0 ? width + "px" : "100%");
-        container.style.setProperty("height", height && height > 0 ? height + "px" : "100%");
+        container.style.setProperty("width", width);
+        container.style.setProperty("height", height);
         container.style.setProperty("overflow", "hidden");
         this.disableResize = disableWindowResize || false;
         root.appendChild(container);
