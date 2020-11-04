@@ -3,7 +3,7 @@ export interface FileSystemConstructor {
 }
 export interface OpenZipOptions {
     /**
-     * Директория, в которую монтируется содержимое архива.
+     * Каталог, в которую монтируется содержимое архива.
      * Может начинаться с префикса диска, например, `C:/Projects`
      * Если префикс не указан, то он автоматически устанавливается как `Z:`
      * @default "Z:"
@@ -41,9 +41,58 @@ export interface FileSystem {
     project(options?: OpenProjectOptions): Promise<Project>;
 }
 /**
+ * Представляет каталог в файловой системе.
+ */
+export interface FileSystemDir {
+    readonly dir: true;
+    /**
+     * Родительский каталог.
+     * Корневой каталог (корень диска) является родительским самому себе.
+     */
+    readonly parent: FileSystemDir;
+    /**
+     * Абсолютный путь в DOS-формате, включая префикс диска.
+     */
+    readonly pathDos: string;
+    /**
+     * Возвращает файл или каталог относительно текущего каталога.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к искомому файлу или каталогу.
+     */
+    get(path: string): FileSystemDir | FileSystemFile | undefined;
+    /**
+     * Пытается создать файл.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к искомому файлу.
+     * Если файл или каталог с указанным именем не удалось создать, возвращает undefined.
+     */
+    fileNew(path: string, data: ArrayBuffer): FileSystemFile | undefined;
+    /**
+     * Пытается создать каталог.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к создаваемому каталогу.
+     * Если каталог с указанным именем не удалось создать, возвращает undefined.
+     */
+    folderNew(path: string): FileSystemDir | undefined;
+    /**
+     * Возвращает список файлов в каталоге и его подкаталогах.
+     * @param regexp - условия поиска файлов.
+     */
+    files(regexp?: RegExp): IterableIterator<FileSystemFile>;
+}
+/**
  * Представляет файл в файловой системе.
  */
 export interface FileSystemFile {
+    readonly dir: false;
+    /**
+     * Родительский каталог.
+     * Корневой каталог (корень диска) является родительским самому себе.
+     */
+    readonly parent: FileSystemDir;
+    /**
+     * Абсолютный путь в DOS-формате, включая префикс диска.
+     */
     readonly pathDos: string;
     /**
      * Явно предзагружает содержимое файла.
@@ -52,7 +101,7 @@ export interface FileSystemFile {
      */
     makeSync(): Promise<void>;
     /**
-     * Распаковывает файл.
+     * Возвращает содержимое файла.
      * Не делает файл явно предзагруженным.
      * Для этого явно используется @method makeSync.
      */
@@ -73,15 +122,31 @@ export interface OpenProjectOptions {
     firstMatch?: boolean;
 }
 export interface ProjectPlayOptions {
+    /**
+     * Контейнер главного окна проекта.
+     */
     mainWindowContainer?: HTMLElement;
+    /**
+     * Запрещает проекту изменять размеры главного окна.
+     */
     disableWindowResize?: boolean;
-    width?: number;
-    height?: number;
+    /**
+     * Произвольные размеры открываемого главного окна.
+     * По умолчанию открываемое окно занимает все доступную длину и ширину контейнера.
+     */
+    customRes?: {
+        width?: number;
+        height?: number;
+    };
 }
 /**
  * Проект
  */
 export interface Project {
+    /**
+     * Рабочая директория проекта.
+     */
+    readonly dir: FileSystemDir;
     /**
      * Диагностические данные.
      */
