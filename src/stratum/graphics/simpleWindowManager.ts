@@ -10,7 +10,7 @@ import { SimpleWindow } from "./simpleWindow";
 export class SimpleWindowManager implements WindowsManager {
     private scenes = HandleMap.create<Scene>();
     private scenesByWinName = new Map<string, Scene>();
-    private windowsHandleMap = HandleMap.create<string>();
+    private windowsBySpaceHandle = HandleMap.create<string>();
     private windows = new Map<string, SimpleWindow>();
 
     areaOriginX: number = 0;
@@ -53,33 +53,34 @@ export class SimpleWindowManager implements WindowsManager {
         document.title = windowName;
         // ширину нужно передавать в зависимости от attrib
         const window = new SimpleWindow(wnd, vdr && vdr.source);
-        this.windows.set(windowName, window);
 
         const handle = HandleMap.getFreeHandle(this.scenes);
         const scene = new Scene({ handle, vdr, renderer: wnd.renderer });
 
+        const wnameUC = windowName.toUpperCase();
+        this.scenesByWinName.set(wnameUC, scene);
+        this.windows.set(wnameUC, window);
         this.scenes.set(handle, scene);
-        this.scenesByWinName.set(windowName, scene);
-        this.windowsHandleMap.set(handle, windowName);
+        this.windowsBySpaceHandle.set(handle, windowName);
 
         this.windowWasOpen = true;
         return handle;
     }
 
     hasWindow(windowName: string): NumBool {
-        return this.windows.get(windowName) ? 1 : 0;
+        return this.windows.get(windowName.toUpperCase()) ? 1 : 0;
     }
 
     getWindow(windowName: string) {
-        return this.windows.get(windowName);
+        return this.windows.get(windowName.toUpperCase());
     }
 
     closeWindow(windowName: string): NumBool {
-        const window = this.windows.get(windowName);
-        if (!window) return 0;
-        this.windows.delete(windowName);
-        this.windowWasOpen = false;
-        return 1;
+        if (this.windows.delete(windowName.toUpperCase())) {
+            this.windowWasOpen = false;
+            return 1;
+        }
+        return 0;
     }
 
     getSpace(spaceHandle: number) {
@@ -87,10 +88,10 @@ export class SimpleWindowManager implements WindowsManager {
     }
 
     getWinNameBySpaceHandle(spaceHandle: number): string {
-        return this.windowsHandleMap.get(spaceHandle) || "";
+        return this.windowsBySpaceHandle.get(spaceHandle) || "";
     }
 
     getSpaceByWinName(windowName: string): GraphicSpace | undefined {
-        return this.scenesByWinName.get(windowName);
+        return this.scenesByWinName.get(windowName.toUpperCase());
     }
 }
