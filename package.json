@@ -1,10 +1,11 @@
 {
     "name": "stratum-player",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "description": "",
     "scripts": {
         "live": "node utils/live live",
         "unit": "node utils/live unit",
+        "player": "cp dist/stratum.min.js player && http-server player",
         "ts-warns": "tsc -p src/tsconfig.json",
         "ts-errors": "tsc -p src/tsconfig.check-build.json",
         "build-types": "tsc -p src/tsconfig.build-types.json && cp dist/types/api.d.ts dist/stratum.d.ts && (echo export as namespace stratum;>> dist/stratum.d.ts)",
