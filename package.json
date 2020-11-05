@@ -1,6 +1,6 @@
 {
     "name": "stratum-player",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "",
     "scripts": {
         "live": "node utils/live live",
@@ -8,7 +8,7 @@
         "ts-warns": "tsc -p src/tsconfig.json",
         "ts-errors": "tsc -p src/tsconfig.check-build.json",
         "build-types": "tsc -p src/tsconfig.build-types.json && cp dist/types/api.d.ts dist/stratum.d.ts && (echo export as namespace stratum;>> dist/stratum.d.ts)",
-        "build-bundle": "node utils/build",
+        "build-bundle": "esbuild src/stratum/api.ts --bundle --global-name=stratum --minify --target=es6 --outfile=dist/stratum.min.js",
         "build": "npm run build-types --silent && npm run build-bundle --silent"
     },
     "author": "",
@@ -17,11 +17,10 @@
         "@types/chai": "^4.2.14",
         "@types/fabric": "^3.6.9",
         "@types/mocha": "^8.0.3",
-        "@types/pngjs": "^3.4.2",
         "fabric": "^4.2.0",
         "jszip": "git+https://github.com/khokm/jszip.git",
-        "pngjs": "^6.0.0",
         "serve-handler": "^6.1.3",
+        "stream": "0.0.2",
         "watch": "^1.0.2",
         "websocket": "^1.0.32"
     }

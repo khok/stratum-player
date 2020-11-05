@@ -1,9 +1,9 @@
-// pngjs и jszip и референсят нодовские типы. Обходим это.
+// jszip референсит нодовские типы. Обходим это.
 {
     "extends": "./tsconfig.base.json",
     "files": ["src/typings/stubs.d.ts", "node_modules/@types/fabric/fabric-impl.d.ts"],
     "compilerOptions": {
         "noResolve": true,
-        "types": ["fabric", "jszip", "pngjs"]
+        "types": ["fabric", "jszip"]
     }
 }

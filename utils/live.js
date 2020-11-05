@@ -11,7 +11,7 @@ const port = process.argv[3] || 3000;
 
 const entryPoint = `test/${target}/index.ts`;
 
-const deps = ["jszip", "pngjs", "fabric"];
+const deps = ["jszip", "fabric"];
 
 const serveDir = "static";
 const outDeps = `${serveDir}/scripts/modules.js`;

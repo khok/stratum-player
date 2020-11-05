@@ -1,24 +1,15 @@
 /*
  * Код для чтения размерностей битовых карт, объединения двойных битовых карт в изображение с прозрачностью.
  */
-
-import { PNG } from "pngjs";
 import { BinaryStream } from "../binaryStream";
+import { FileSignatureError } from "../errors";
 import { bytesToBase64 } from "./base64";
-import { decode, readSize } from "./bmpDecoder";
-
-function applyAlphaMask(imageBytes: Uint8Array, maskBytes: Uint8Array, width: number, height: number) {
-    for (let i = 3; i < imageBytes.length && i < maskBytes.length; i += 4) {
-        imageBytes[i] = 255 - maskBytes[i - 1];
-    }
-    const png = new PNG({ width, height, inputHasAlpha: true }); //TODO: возможно убрать посл. опцию
-    png.data = imageBytes as any;
-    return PNG.sync.write(png);
-}
+import { readBMPFull, readBMPSize } from "./decoder";
 
 function readBitmapSize(stream: BinaryStream) {
     const _pos = stream.position;
-    if (stream.uint16() !== 0x4d42) throw new Error("BMP файл поврежден");
+    const sign = stream.uint16();
+    if (sign !== 0x4d42) throw new FileSignatureError(stream, sign, 0x4d42);
     const size = stream.int32();
     stream.seek(_pos);
     return size;
@@ -29,20 +20,27 @@ function u8toView(arr: Uint8Array) {
 }
 
 export function readBitmap(stream: BinaryStream) {
-    const size = readBitmapSize(stream);
-    const bmpBytes = stream.bytes(size);
+    const bmpRaw = stream.bytes(readBitmapSize(stream));
 
-    const { width, height } = readSize(u8toView(bmpBytes));
-    const base64Image = "data:image/bmp;base64," + bytesToBase64(bmpBytes);
+    const { width, height } = readBMPSize(u8toView(bmpRaw));
+    const base64Image = "data:image/bmp;base64," + bytesToBase64(bmpRaw);
     return { base64Image, width, height };
 }
 
+const cnv = document.createElement("canvas");
+const ctx = cnv.getContext("2d")!;
 export function readDoubleBitmap(stream: BinaryStream) {
-    const bmpBytes = stream.bytes(readBitmapSize(stream));
-    const { data: imageData, width, height } = decode(u8toView(bmpBytes));
-    const maskBytes = stream.bytes(readBitmapSize(stream));
-    const { data: maskData } = decode(u8toView(maskBytes));
+    const bmpRaw1 = stream.bytes(readBitmapSize(stream));
+    const bmpRaw2 = stream.bytes(readBitmapSize(stream));
 
-    const base64Image = "data:image/png;base64," + bytesToBase64(applyAlphaMask(imageData, maskData, width, height));
-    return { base64Image, width, height };
+    const { data: imageData, width, height } = readBMPFull(u8toView(bmpRaw1));
+    const { data: maskData } = readBMPFull(u8toView(bmpRaw2));
+
+    for (let i = 3; i < imageData.length && i < maskData.length; i += 4) {
+        imageData[i] = 255 ^ maskData[i - 1];
+    }
+    cnv.width = width;
+    cnv.height = height;
+    ctx.putImageData(new ImageData(imageData, width, height), 0, 0);
+    return { base64Image: cnv.toDataURL(), width, height };
 }

@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 class BmpDecoder {
-    data!: Uint8Array;
+    data!: Uint8ClampedArray;
     width: number = 0;
     height: number = 0;
 
@@ -63,7 +63,7 @@ class BmpDecoder {
         this.view = view;
         this.is_with_alpha = !!is_with_alpha;
         this.bottom_up = true;
-        // this.flag = new TextDecoder().decode(new Uint8Array(view.buffer, view.byteOffset, 2));
+        // this.flag = new TextDecoder().decode(new Uint8ClampedArray(view.buffer, view.byteOffset, 2));
         this.flag = "BM";
         this.pos += 2;
         // if (this.flag !== "BM") throw new Error("Invalid BMP File");
@@ -129,7 +129,7 @@ class BmpDecoder {
     parseRGBA() {
         const bitn = "bit" + this.bitPP;
         const len = this.width * this.height * 4;
-        this.data = new Uint8Array(len);
+        this.data = new Uint8ClampedArray(len);
         if (
             bitn !== "bit1" &&
             bitn !== "bit4" &&
@@ -527,11 +527,11 @@ class BmpDecoder {
     }
 }
 
-export function decode(view: DataView) {
+export function readBMPFull(view: DataView): { width: number; height: number; data: Uint8ClampedArray } {
     return new BmpDecoder(view);
 }
 
-export function readSize(view: DataView) {
+export function readBMPSize(view: DataView) {
     return {
         width: view.getUint32(18, true),
         height: view.getUint32(22, true),

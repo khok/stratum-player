@@ -1,3 +1,5 @@
+console.log("для истории, вдруг понадобится");
+process.exit(0);
 const fs = require("fs");
 const { exec } = require("child_process");
 
@@ -7,8 +9,8 @@ if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 const entryPoint = `src/stratum/api.ts`;
 
 const cmds = [
-    "browserify -r ./node_modules/jszip:jszip -r ./node_modules/pngjs:pngjs | esbuild --minify --target=es6",
-    `esbuild ${entryPoint} --bundle --global-name=stratum --minify --target=es6 --external:jszip --external:pngjs`,
+    "browserify -r ./node_modules/jszip:jszip | esbuild --minify --target=es6",
+    `esbuild ${entryPoint} --bundle --global-name=stratum --minify --target=es6 --external:jszip`,
 ];
 
 const outfile = `${dir}/stratum.min.js`;
