@@ -27,10 +27,7 @@ function LoadSpaceWindow(ctx: ExecutionContext) {
         return;
     }
 
-    if (filename !== "") {
-        ctx.setError(`Вызов LoadSpaceWindow с fileName=${filename} не реализован.`);
-        return;
-    }
+    if (filename !== "") throw Error(`Вызов LoadSpaceWindow с fileName=${filename} не реализован.`);
     ctx.pushLong(ctx.windows.openSchemeWindow(winName, attrib));
 }
 

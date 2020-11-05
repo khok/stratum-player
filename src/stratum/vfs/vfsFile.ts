@@ -52,15 +52,20 @@ export class VFSFile implements FileSystemFile {
             case "stt":
                 return readSttFile(st);
             case "vdr":
-                const vdr = readVdrFile(st);
-                vdr.source = { origin: "file", name: this.pathDos };
-                if (st.position !== st.size) {
-                    const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
-                        st.meta.fileversion && st.meta.fileversion.toString(16)
-                    }.`;
-                    console.warn(msg);
+                try {
+                    const vdr = readVdrFile(st);
+                    vdr.source = { origin: "file", name: this.pathDos };
+                    if (st.position !== st.size) {
+                        const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
+                            st.meta.fileversion && st.meta.fileversion.toString(16)
+                        }.`;
+                        console.warn(msg);
+                    }
+                    return vdr;
+                } catch (e) {
+                    console.warn(`${this.pathDos}: ошибка чтения.\nПричина: ${e.message}`);
+                    return undefined;
                 }
-                return vdr;
         }
     }
 

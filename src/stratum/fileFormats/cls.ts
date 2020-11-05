@@ -140,7 +140,7 @@ function readVdr(stream: BinaryStream, classname: string, type: "Схема" | "
         }
         return vdr;
     } catch (e) {
-        console.warn(`Ошибка чтения VDR ${classname} (${type})`, e);
+        console.warn(`${type} ${classname}: ошибка чтения.\nПричина: ${e.message}`);
         return undefined;
     }
 }

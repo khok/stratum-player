@@ -8,10 +8,7 @@ function SendMessage(ctx: ExecutionContext, count: number) {
     for (let i = count - 1; i >= 0; i--) varNames[i] = ctx.popString().toLowerCase();
     const className = ctx.popString();
     const path = ctx.popString();
-    if (path !== "") {
-        ctx.setError(`Вызов SendMessage с path=${path} не реализован.`);
-        return;
-    }
+    if (path !== "") throw Error(`Вызов SendMessage с path=${path} не реализован.`);
 
     if (!ctx.canExecuteClass) return;
     const receivers = ctx.classManager.getClassesByProtoName(className);
@@ -34,7 +31,7 @@ function SendMessage(ctx: ExecutionContext, count: number) {
         const curType = senderVars.typeCodes[idCur];
         const otherType = fistNodeVars.typeCodes[idOther];
 
-        if (curType !== otherType) throw new Error("Инконсистентные типы");
+        if (curType !== otherType) throw Error("Инконсистентные типы связываемых переменных");
 
         ids[realCount] = senderVars.globalIds[idCur];
         ids[realCount + 1] = idOther;
@@ -98,10 +95,7 @@ function RegisterObjectByGraphicSpace(ctx: ExecutionContext) {
     const objectHandle = ctx.popLong();
     const spaceHandle = ctx.popLong();
 
-    if (path !== "") {
-        ctx.setError(`Вызов RegisterObject с path=${path} не реализован.`);
-        return;
-    }
+    if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован.`);
 
     const space = ctx.windows.getSpace(spaceHandle);
     if (space) space.subscribeToEvent(eventCode, objectHandle, flags, ctx);
@@ -127,7 +121,7 @@ function GetClassName(ctx: ExecutionContext) {
 function VFUNCTION(ctx: ExecutionContext, data: FunctionSignature) {
     // const { funcName, argCount, returnType, argTypes } = data;
     if (data) console.log(data);
-    ctx.setError("Вызов пользовательских функций не реализован");
+    throw Error("Вызов пользовательских функций не реализован");
 }
 
 //NOTREL

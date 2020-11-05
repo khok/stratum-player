@@ -13,7 +13,7 @@
 		"path": "$ROOTPATH$\\src\\stratum\\vm\\operations\\windows.ts",
 		"bookmarks": [
 			{
-				"line": 43,
+				"line": 40,
 				"column": 33,
 				"label": "Реализовать эту функцию"
 			}

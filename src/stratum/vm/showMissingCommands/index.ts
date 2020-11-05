@@ -5,15 +5,6 @@ import { operations } from "../operations";
 import { Operation, ParsedCode } from "../types";
 import realCommandNames from "./realCommandNames.json";
 
-function cmdHasError(cmd: Function) {
-    try {
-        cmd();
-    } catch (e) {
-        if (typeof e === "string") return true;
-    }
-    return false;
-}
-
 function searchErrors({ code }: ParsedCode, operations: Operation[]) {
     const ops = new Set<number>();
     for (let i = 0; i < code.length; i++) {
@@ -22,7 +13,7 @@ function searchErrors({ code }: ParsedCode, operations: Operation[]) {
         if (!OpCode[opcode] && ((opcode >= 900 && opcode <= 1100) || (opcode >= 1200 && opcode <= 1500)))
             return { error: true, message: "функции 3D движка не реализованы" };
         if (!OpCode[opcode]) return { error: true, message: `Неизвестный опкод: ${opcode}` };
-        if (!operations[opcode] || cmdHasError(operations[opcode])) ops.add(opcode);
+        if (!operations[opcode]) ops.add(opcode);
     }
     return ops.size > 0 ? { error: true, ops } : { error: false };
 }
@@ -43,17 +34,17 @@ export function formatMissingCommands(missingOperations: { name: string; classNa
 export function findMissingCommands(classes: Map<string, ClassProto<ParsedCode>>) {
     const theOps = new Map<number, Set<string>>();
     const errors: string[] = [];
-    for (const [name, c] of classes) {
+    for (const c of classes.values()) {
         if (!c.code) continue;
         const res = searchErrors(c.code, operations);
         if (!res.error) continue;
         if (!res.ops) {
-            errors.push(`${name} : ${res.message}`);
+            errors.push(`${c.name} : ${res.message}`);
         } else {
             for (const opcode of res.ops) {
                 const set = theOps.get(opcode);
-                if (set) set.add(name);
-                else theOps.set(opcode, new Set([name]));
+                if (set) set.add(c.name);
+                else theOps.set(opcode, new Set([c.name]));
             }
         }
     }
