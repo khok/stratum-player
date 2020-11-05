@@ -102,4 +102,5 @@ export interface InputEventReceiver {
     //подписки на события от пользователя (клик мышью, изменение html текстбоксов)
     subscribeToMouseEvents(callback: (code: number, buttons: number, x: number, y: number) => void): void;
     subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
+    subscribeToWindowResize(callback: (width: number, height: number) => void): void;
 }

@@ -43,7 +43,8 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
     private shouldRedraw = false;
 
     private mouseSubs = new Set<(code: EventCode, buttons: number, x: number, y: number) => void>();
-    private controlsubs = new Set<(code: EventCode, controlHandle: number) => void>();
+    private controlSubs = new Set<(code: EventCode, controlHandle: number) => void>();
+    private windowSubs = new Set<(width: number, height: number) => void>();
 
     private prevWidth = 0;
     private prevHeight = 0;
@@ -88,7 +89,7 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
         this.assertNoObject(params.handle);
         const obj = new HtmlControl(params, this.view, this.wnd);
         obj.onChange(() => {
-            this.controlsubs.forEach((c) => c(EventCode.WM_CONTROLNOTIFY, params.handle));
+            this.controlSubs.forEach((c) => c(EventCode.WM_CONTROLNOTIFY, params.handle));
             this.requestRedraw();
         });
         this.objects.set(params.handle, obj);
@@ -191,8 +192,10 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
             canvas.setHeight(nh);
             recal = true;
         }
-        if (recal) canvas.calcOffset();
-        else if (!this.shouldRedraw) return false;
+        if (recal) {
+            canvas.calcOffset();
+            this.windowSubs.forEach((c) => c(nw, nh));
+        } else if (!this.shouldRedraw) return false;
 
         this.shouldRedraw = false;
         this.canvas.renderAll();
@@ -230,6 +233,9 @@ export class FabricRenderer implements Renderer, InputEventReceiver {
         this.mouseSubs.add(callback);
     }
     subscribeToControlEvents(callback: (code: EventCode, controlHandle: number) => void) {
-        this.controlsubs.add(callback);
+        this.controlSubs.add(callback);
+    }
+    subscribeToWindowResize(callback: (width: number, height: number) => void): void {
+        this.windowSubs.add(callback);
     }
 }

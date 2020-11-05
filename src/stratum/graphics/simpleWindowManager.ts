@@ -25,7 +25,6 @@ export class SimpleWindowManager implements WindowsManager {
         this.screenHeight = this.areaHeight = wnd ? wnd.height : 1080;
     }
 
-    private attribWarned = false;
     private noWndShowed = false;
     private secondWndWarned = false;
     private windowWasOpen = false;
@@ -43,9 +42,25 @@ export class SimpleWindowManager implements WindowsManager {
             return 0;
         }
 
-        if (attrib !== "" && !this.attribWarned) {
-            console.warn(`Следующие атрибуты окна "${windowName}" не поддерживаются:\n"${attrib}"`);
-            this.attribWarned = true;
+        const attribs = attrib.split("|").map((c) => c.trim().toUpperCase());
+        let notsup = [];
+        for (const attr of attribs) {
+            if (attr === "") continue;
+            switch (attr) {
+                case "WS_BYSPACE":
+                    // wnd.disableResize = true;
+                    break;
+                case "WS_DIALOG":
+                    // wnd.disableResize = false;
+                    break;
+                case "WS_NOCAPTION":
+                    break;
+                default:
+                    notsup.push(attr);
+            }
+        }
+        if (notsup.length > 0) {
+            console.warn(`Следующие атрибуты окна "${windowName}" не поддерживаются:\n"${notsup.join(",")}"`);
         }
 
         if (this.hasWindow(windowName)) throw Error(`Окно "${windowName}" уже существует`);

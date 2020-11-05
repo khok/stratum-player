@@ -64,6 +64,7 @@ export class Scene implements GraphicSpace {
 
         renderer.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
         renderer.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
+        renderer.subscribeToWindowResize((...args) => this.dispatchWindowResizeEvent(...args));
     }
 
     insertVectorDrawing(vdr: VectorDrawing, x: number, y: number) {
@@ -335,6 +336,16 @@ export class Scene implements GraphicSpace {
             Scene.setDoubleValue(sub, "xpos", x);
             Scene.setDoubleValue(sub, "ypos", y);
             Scene.setDoubleValue(sub, "fwkeys", buttons);
+            sub.receiver.compute(sub.ctx, true);
+        });
+    }
+
+    private dispatchWindowResizeEvent(width: number, height: number) {
+        this.subs.forEach((sub) => {
+            if (!sub.receiver.canReceiveEvents || sub.eventCode !== EventCode.WM_SIZE) return;
+            Scene.setDoubleValue(sub, "msg", EventCode.WM_SIZE);
+            Scene.setDoubleValue(sub, "nwidth", width);
+            Scene.setDoubleValue(sub, "nheight", height);
             sub.receiver.compute(sub.ctx, true);
         });
     }

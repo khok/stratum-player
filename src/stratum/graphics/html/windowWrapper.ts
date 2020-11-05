@@ -67,13 +67,16 @@ export class WindowWrapper {
         return this.container.clientWidth;
     }
 
-    private sizeWarned = false;
+    // private sizeWarned = false;
     fixedSize(x: number, y: number): boolean {
-        if (this.disableResize) {
-            if (!this.sizeWarned) console.warn(`Проект попытался установить размеры окна в (${x}, ${y})`);
-            this.sizeWarned = true;
-            return false;
-        }
+        const {
+            container: { clientWidth, clientHeight },
+        } = this;
+        if ((clientWidth === x && clientHeight === y) || this.disableResize) return true;
+        //     if (!this.sizeWarned) console.warn(`Проект попытался установить размеры окна в (${x}, ${y})`);
+        //     this.sizeWarned = true;
+        //     return false;
+        // }
         const cndStyle = this.container.style;
         cndStyle.setProperty("width", x + "px");
         cndStyle.setProperty("height", y + "px");

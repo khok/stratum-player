@@ -10,16 +10,6 @@
 		]
 	},
 	{
-		"path": "$ROOTPATH$\\src\\stratum\\vm\\operations\\windows.ts",
-		"bookmarks": [
-			{
-				"line": 40,
-				"column": 33,
-				"label": "Реализовать эту функцию"
-			}
-		]
-	},
-	{
 		"path": "$ROOTPATH$\\src\\stratum\\player\\player.ts",
 		"bookmarks": [
 			{
@@ -53,7 +43,7 @@
 		"path": "$ROOTPATH$\\src\\stratum\\graphics\\simpleWindowManager.ts",
 		"bookmarks": [
 			{
-				"line": 77,
+				"line": 87,
 				"column": 4,
 				"label": "Не забудь закрыть сцену"
 			}

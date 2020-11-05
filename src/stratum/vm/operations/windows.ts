@@ -149,7 +149,9 @@ export function initWindows(addOperation: (opcode: number, operation: Operation)
     addOperation(OpCode.SETWINDOWORG, SetWindowOrg);
     addOperation(OpCode.V_SETCLIENTSIZE, SetClientSize);
     addOperation(OpCode.GETCLIENTWIDTH, GetClientWidth);
+    addOperation(OpCode.WIN_SIZEX, GetClientWidth);
     addOperation(OpCode.GETCLIENTHEIGHT, GetClientHeight);
+    addOperation(OpCode.WIN_SIZEY, GetClientHeight);
     addOperation(OpCode.BRINGWINDOWTOTOP, BringWindowToTop);
     addOperation(OpCode.WIN_ORGX, GetWindowOrgX);
     addOperation(OpCode.WIN_ORGY, GetWindowOrgY);
