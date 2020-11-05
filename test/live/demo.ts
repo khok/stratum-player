@@ -1,8 +1,9 @@
-import { unzip } from "stratum/api";
+import { options, unzip } from "stratum/api";
 
 // Запуск одной строкой:
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
 export async function runDemo(name: string, tailPath?: string) {
+    options.iconsLocation = "./data/icons";
     //prettier-ignore
     //Подгруаем архивчики
     const pr = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(unzip)));

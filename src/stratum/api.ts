@@ -360,10 +360,8 @@ export const options: {
     /**
      * URL каталога иконок.
      */
-    iconsLocation: string;
-} = {
-    iconsLocation: "/data/icons",
-};
+    iconsLocation?: string;
+} = {};
 
 /**
  * Версия API.
