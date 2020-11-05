@@ -43,17 +43,23 @@ export class VFSFile implements FileSystemFile {
     }
 
     private read<TVmCode>(data: ArrayBuffer, type: "prj" | "cls" | "stt" | "vdr", bytecodeParser?: BytecodeParser<TVmCode>) {
-        const stream = new BinaryStream(data, { filepathDos: this.pathDos });
+        const st = new BinaryStream(data, { filepathDos: this.pathDos });
         switch (type) {
             case "prj":
-                return readPrjFile(stream);
+                return readPrjFile(st);
             case "cls":
-                return new ClassProto(stream, bytecodeParser);
+                return new ClassProto(st, bytecodeParser);
             case "stt":
-                return readSttFile(stream);
+                return readSttFile(st);
             case "vdr":
-                const vdr = readVdrFile(stream);
+                const vdr = readVdrFile(st);
                 vdr.source = { origin: "file", name: this.pathDos };
+                if (st.position !== st.size) {
+                    const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
+                        st.meta.fileversion && st.meta.fileversion.toString(16)
+                    }.`;
+                    console.warn(msg);
+                }
                 return vdr;
         }
     }

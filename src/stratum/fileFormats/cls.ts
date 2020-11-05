@@ -118,46 +118,31 @@ function readChildren(stream: BinaryStream): ClassChild[] {
     return children;
 }
 
-function readVdr(stream: BinaryStream, classname: string, type: string, readIt?: boolean) {
-    const blockStart = stream.position;
-    const blockSize = stream.int32();
-
-    //проскакиваем, чтобы не тратить время на парсинг схемы
-    if (!readIt) {
-        stream.seek(blockStart + blockSize);
-        return undefined;
-    }
-
+function readVdr(stream: BinaryStream, classname: string, type: "Схема" | "Изображение") {
     const flags = stream.int32();
-
     if (flags & EntryCode.SF_EXTERNAL) {
         const filename = stream.string();
-        throw new FileReadingError(stream, `Чтение внешних VDR не поддерживается;\nФайл VDR: ${filename}.`);
-    }
-
-    const vdrSize = stream.int32();
-    const substream = stream.fork(vdrSize);
-    stream.skip(vdrSize);
-
-    let vdr: VectorDrawing;
-    try {
-        vdr = readVdrFile(substream);
-        vdr.source = { origin: "class", name: classname };
-    } catch (e) {
-        console.error(`Ошибка чтения VDR ${classname} (${type})`, e);
-        stream.seek(blockStart + blockSize);
+        console.warn(`Ошибка чтения ${type} ${classname}: Чтение внешних VDR (${filename}) не реализовано.`);
         return undefined;
     }
-    if (substream.position !== vdrSize) {
-        const readed = substream.position;
-        const notReaded = vdrSize - readed;
 
-        const msg = `${type}: считано ${readed} байт, не считано ${notReaded}. v0x${
-            substream.meta.fileversion && substream.meta.fileversion.toString(16)
-        }.`;
-        console.warn(stream.meta.filepathDos + ":\n" + msg);
+    const bytes = stream.bytes(stream.int32());
+    try {
+        const st = new BinaryStream(bytes);
+        const vdr = readVdrFile(st);
+        vdr.source = { origin: "class", name: classname };
+
+        if (st.position !== st.size) {
+            const msg = `${type} ${classname}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
+                st.meta.fileversion && st.meta.fileversion.toString(16)
+            }.`;
+            console.warn(msg);
+        }
+        return vdr;
+    } catch (e) {
+        console.warn(`Ошибка чтения VDR ${classname} (${type})`, e);
+        return undefined;
     }
-    return vdr;
 }
 
 // const EC_VAR = 16384;
@@ -225,12 +210,16 @@ export function readClsFileBody<VmCode>(
     }
 
     if (next === EntryCode.CR_SCHEME) {
-        res.scheme = readVdr(stream, classname, "Схема", blocks.readScheme);
+        const blockSize = stream.int32();
+        if (!blocks.readScheme) stream.skip(blockSize - 4);
+        else res.scheme = readVdr(stream, classname, "Схема");
         next = stream.uint16();
     }
 
     if (next === EntryCode.CR_IMAGE) {
-        res.image = readVdr(stream, classname, "Изображение", blocks.readImage);
+        const blockSize = stream.int32();
+        if (!blocks.readImage) stream.skip(blockSize - 4);
+        else res.image = readVdr(stream, classname, "Изображение");
         next = stream.uint16();
     }
 

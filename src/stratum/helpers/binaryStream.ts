@@ -20,8 +20,9 @@ export class BinaryStream {
         return this.p;
     }
 
-    seek(pos: number): void {
+    seek(pos: number): this {
         this.p = pos;
+        return this;
     }
 
     skip(length: number): this {
@@ -31,10 +32,6 @@ export class BinaryStream {
 
     get size(): number {
         return this.v.byteLength;
-    }
-
-    fork(length?: number): BinaryStream {
-        return new BinaryStream(new DataView(this.v.buffer, this.v.byteOffset + this.p, length));
     }
 
     eof(): boolean {
