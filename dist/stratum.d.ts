@@ -235,7 +235,7 @@ export declare const options: {
     /**
      * URL каталога иконок.
      */
-    iconsLocation: string;
+    iconsLocation?: string;
 };
 /**
  * Версия API.
