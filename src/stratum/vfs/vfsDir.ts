@@ -1,7 +1,7 @@
 import { FileSystemDir } from "stratum/api";
 import { getPathParts } from "stratum/helpers/pathOperations";
 import { VFS, VFSFile } from ".";
-import { LazyBuffer } from "./VFSFile";
+import { LazyBuffer } from "./vfsFile";
 
 const pathErr = (path: string) => Error(`Невозможно создать каталог ${path} - по этому пути уже существует файл.`);
 export class VFSDir implements FileSystemDir {

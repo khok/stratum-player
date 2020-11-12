@@ -6,7 +6,11 @@
         "moduleResolution": "Node",
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
-        "lib": ["ES6", "ES2016.Array.Include", "DOM"],
+        "lib": [
+            "ES6",
+            "ES2016.Array.Include",
+            "DOM"
+        ],
         "strict": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,

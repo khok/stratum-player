@@ -67,7 +67,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
     }
 
     set computer(value) {
-        if (value == this._computer) return;
+        if (value === this._computer) return;
         if (this._computer.running) {
             this._computer.stop();
             if (this.loop) value.run(this.loop);

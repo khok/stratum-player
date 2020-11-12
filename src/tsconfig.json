@@ -1,6 +1,9 @@
 {
     "extends": "../tsconfig.base.stubs.json",
-    "include": ["stratum", "stratum/**/*.json"],
+    "include": [
+        "stratum",
+        "stratum/**/*.json"
+    ],
     "compilerOptions": {
         "baseUrl": ".",
         "noUnusedLocals": true,
