@@ -25,15 +25,56 @@
         const optionsNoResize = document.getElementById("options_noresize");
         const mainWindowContainerElem = document.getElementById("main_window_container");
 
-        let projectLoaded = false;
-        const loadProject = async (files) => {
-            if (projectLoaded || !files || files.length === 0) return;
-            projectLoaded = true;
+        const playerPlayElem = document.getElementById("player_play");
+        const playerPauseElem = document.getElementById("player_pause");
+        const playerStepElem = document.getElementById("player_step");
 
-            // Открываем проект.
-            let project;
+        let currentProject = undefined;
+
+        const removeCurrentProject = () => {
+            playerPlayElem.disabled = true;
+            playerStepElem.disabled = true;
+            currentProject = undefined;
+        };
+
+        const updateControls = () => {
+            playerPlayElem.value = currentProject.state === "closed" ? "Играть" : "Стоп";
+            playerPauseElem.value = currentProject.state === "paused" ? "Продолжить" : "Пауза";
+            playerPauseElem.disabled = currentProject.state === "closed";
+            dropzoneContainerElem.hidden = currentProject.state !== "closed";
+        };
+        {
+            const handleClick = ({ target }) => {
+                switch (target) {
+                    case playerPlayElem:
+                        currentProject.state === "closed"
+                            ? currentProject.play({
+                                  mainWindowContainer: mainWindowContainerElem,
+                                  disableWindowResize: optionsNoResize.checked,
+                              })
+                            : currentProject.close();
+                        break;
+                    case playerPauseElem:
+                        currentProject.state === "paused" ? currentProject.continue() : currentProject.pause();
+                        break;
+                    case playerStepElem:
+                        (currentProject.state === "playing" ? currentProject : currentProject.play()).pause().step();
+                        break;
+                }
+                updateControls();
+            };
+            playerPlayElem.addEventListener("click", handleClick);
+            playerPauseElem.addEventListener("click", handleClick);
+            playerStepElem.addEventListener("click", handleClick);
+        }
+
+        let projectLoading = false;
+        const loadProject = async (files) => {
+            if (projectLoading || (currentProject && currentProject.state !== "closed") || !files || files.length === 0) return;
+            projectLoading = true;
+            dropzoneStatusElem.innerHTML = `Открываем архив${files.length > 1 ? "ы" : ""} ...`;
+
             try {
-                dropzoneStatusElem.innerHTML = `Открываем архив${files.length > 1 ? "ы" : ""} ...`;
                 // Распаковываем все закинутые архивы и собираем из них одно целое.
                 const fs = (await Promise.all(Array.from(files).map(stratum.unzip))).reduce((a, b) => a.merge(b));
 
@@ -56,7 +97,6 @@
                 }
                 if (!tailPath) {
                     dropzoneStatusElem.innerHTML = dropzoneStatusOrigText;
-                    projectLoaded = false;
                     return;
                 }
 
@@ -66,68 +106,36 @@
                 // Приделываем стандартную библиотеку.
                 if (stdlib && !optionsNolib.checked) fs.merge(stdlib);
                 // Открываем проект
-                project = await fs.project({ additionalClassPaths: ["L:"], tailPath });
+                currentProject = await fs.project({ additionalClassPaths: ["L:"], tailPath });
                 // Попытаемся запустить выполнение проекта прямо здесь.
                 // Таким образом перехватываем ошибку на старте.
-                project.play({
+                currentProject.play({
                     mainWindowContainer: mainWindowContainerElem,
                     disableWindowResize: optionsNoResize.checked,
                 });
             } catch (e) {
-                projectLoaded = false;
+                removeCurrentProject();
                 alert(`При загрузке проекта произошла ошибка:\n${e.message}`);
                 dropzoneStatusElem.innerHTML = "Неудача 😿... Попробуем <a href='javascript:selectFile()'>что-нибудь другое</a>?";
                 return;
+            } finally {
+                projectLoading = false;
             }
-            // Убираем дропзону, т.к. мне пока лень делать релоад проекта при
-            // накидывании новых архивов.
-            dropzoneContainerElem.remove();
 
-            // Навешиваем калбеки на элементы управления выполнением проекта
-            {
-                const playerPlayElem = document.getElementById("player_play");
-                const playerPauseElem = document.getElementById("player_pause");
-                const playerStepElem = document.getElementById("player_step");
-
-                const updateControls = () => {
-                    playerPlayElem.value = project.state === "closed" ? "Играть" : "Стоп";
-                    playerPauseElem.value = project.state === "paused" ? "Продолжить" : "Пауза";
-                    playerPauseElem.disabled = project.state === "closed";
-                };
-
-                const handleClick = ({ target }) => {
-                    switch (target) {
-                        case playerPlayElem:
-                            project.state === "closed" ? project.play() : project.close();
-                            break;
-                        case playerPauseElem:
-                            project.state === "paused" ? project.continue() : project.pause();
-                            break;
-                        case playerStepElem:
-                            (project.state === "playing" ? project : project.play()).pause().step();
-                            break;
-                    }
+            currentProject
+                .on("error", (err) => {
+                    console.warn(err);
+                    alert("Возникли ошибки, см. в консоли (F12)");
                     updateControls();
-                };
-                playerPlayElem.addEventListener("click", handleClick);
-                playerPauseElem.addEventListener("click", handleClick);
-                playerStepElem.addEventListener("click", handleClick);
+                })
+                .on("closed", () => {
+                    updateControls();
+                });
 
-                project
-                    .on("error", (err) => {
-                        console.warn(err);
-                        alert("Возникли ошибки, см. в консоли (F12)");
-                        updateControls();
-                    })
-                    .on("closed", () => {
-                        alert("Проект остановлен");
-                        updateControls();
-                    });
-
-                updateControls();
-                playerPlayElem.disabled = false;
-                playerStepElem.disabled = false;
-            }
+            updateControls();
+            playerPlayElem.disabled = false;
+            playerStepElem.disabled = false;
+            dropzoneStatusElem.innerHTML = dropzoneStatusOrigText;
         };
 
         // Обработчики набрасывания файла на окно.
