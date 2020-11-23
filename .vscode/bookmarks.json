@@ -13,17 +13,7 @@
 		"path": "$ROOTPATH$\\src\\stratum\\player\\player.ts",
 		"bookmarks": [
 			{
-				"line": 29,
-				"column": 63,
-				"label": "Добавить стейт \"error\""
-			},
-			{
-				"line": 37,
-				"column": 15,
-				"label": "Перейдем на асинхронность - абстрагируем до FileSystemDir. Щас же зависит от синков в VFSDir"
-			},
-			{
-				"line": 111,
+				"line": 125,
 				"column": 67,
 				"label": "Нужно ли закрывать окно при остановке проекта?"
 			}
@@ -43,7 +33,7 @@
 		"path": "$ROOTPATH$\\src\\stratum\\graphics\\simpleWindowManager.ts",
 		"bookmarks": [
 			{
-				"line": 87,
+				"line": 76,
 				"column": 4,
 				"label": "Не забудь закрыть сцену"
 			}

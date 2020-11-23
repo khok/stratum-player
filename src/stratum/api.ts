@@ -70,7 +70,8 @@ export interface FileSystemDir {
      * Пытается создать файл.
      * @param path - нечувствительный к регистру относительный или абсолютный
      * путь к искомому файлу.
-     * Если файл или каталог с указанным именем не удалось создать, возвращает undefined.
+     * Если файл или каталог с указанным именем не удалось создать, возвращает
+     * undefined.
      */
     fileNew(path: string, data: ArrayBuffer): FileSystemFile | undefined;
     /**
@@ -103,7 +104,8 @@ export interface FileSystemFile {
     readonly pathDos: string;
     /**
      * Явно предзагружает содержимое файла.
-     * Только явно предзагруженные файлы могут быть прочитаны в процессе исполнения проекта.
+     * Только явно предзагруженные файлы могут быть прочитаны в процессе
+     * исполнения проекта.
      * В противном случае будет создано исключение.
      */
     makeSync(): Promise<void>;
@@ -115,46 +117,32 @@ export interface FileSystemFile {
     arraybuffer(): Promise<ArrayBuffer>;
 }
 
-export interface OpenProjectOptions {
-    /**
-     * Дополнительные пути поиска файлов имиджей.
-     */
-    additionalClassPaths?: string[];
-
-    /**
-     * Завершающая часть пути к файлу проекта.
-     */
-    tailPath?: string;
-
-    /**
-     * Открывать первый найденный файл проекта.
-     */
-    firstMatch?: boolean;
-}
-
-export interface ProjectPlayOptions {
-    /**
-     * Контейнер главного окна проекта.
-     */
-    mainWindowContainer?: HTMLElement;
+export interface ProjectOptions {
     /**
      * Запрещает проекту изменять размеры главного окна.
      */
     disableWindowResize?: boolean;
+}
+
+export interface OpenProjectOptions extends ProjectOptions {
     /**
-     * Произвольные размеры открываемого главного окна.
-     * По умолчанию открываемое окно занимает все доступную длину и ширину контейнера.
+     * Завершающая часть пути к файлу проекта.
      */
-    customRes?: {
-        width?: number;
-        height?: number;
-    };
+    tailPath?: string;
+    /**
+     * Дополнительные пути поиска файлов имиджей.
+     */
+    additionalClassPaths?: string[];
 }
 
 /**
- * Проект
+ * Проект.
  */
 export interface Project {
+    /**
+     * Опции проекта.
+     */
+    readonly options: ProjectOptions;
     /**
      * Рабочая директория проекта.
      */
@@ -177,11 +165,10 @@ export interface Project {
 
     /**
      * Запускает выполнение проекта.
-     * @param mainWindowContainer - HTML элемент, к которому будет привязано
-     * открываемое окно с проектом.
+     * @param container - HTML элемент, в котором будут размещаться
+     * открываемые в проекте окна.
      */
-    play(mainWindowContainer?: HTMLElement): this;
-    play(options?: ProjectPlayOptions): this;
+    play(container?: HTMLElement): this;
     /**
      * Закрывает проект.
      */
@@ -200,11 +187,13 @@ export interface Project {
     step(): this;
 
     /**
-     * Регистрирует обработчик события закрытия проекта (вызов функции CloseAll).
+     * Регистрирует обработчик события закрытия проекта
+     * (вызов функции CloseAll).
      */
     on(event: "closed", handler: () => void): this;
     /**
-     * Разегистрирует обработчик события закрытия проекта (вызов функции CloseAll).
+     * Разрегистрирует обработчик события закрытия проекта
+     * (вызов функции CloseAll).
      * @param handler Если обработчик не указан, разрегистрируются все
      * обработчики данного события.
      */
@@ -246,112 +235,83 @@ export interface ProjectDiag {
     readonly missingCommands: { name: string; classNames: string[] }[];
 }
 
-// export interface WindowOptions {
-//     /**
-//      * Имя открытого окна.
-//      */
-//     title?: string;
-// }
+export interface WindowOptions {
+    /**
+     * Имя открытого окна.
+     */
+    title?: string;
+}
 
-// /**
-//  * Хост оконной системы.
-//  */
-// export interface WindowHost {
-//     /**
-//      * Разрешение экрана.
-//      */
-//     readonly resolution: {
-//         readonly width: number;
-//         readonly height: number;
-//     };
-//     /**
-//      * Параметры рабочей области.
-//      */
-//     readonly area: {
-//         readonly x: number;
-//         readonly y: number;
-//         readonly width: number;
-//         readonly height: number;
-//     };
+/**
+ * Хост оконной системы.
+ */
+export interface WindowHost {
+    /**
+     * Параметры рабочей области.
+     */
+    readonly width: number;
+    readonly height: number;
+    window(options?: WindowOptions): WindowHostWindow;
+}
 
-//     /**
-//      * Создает или возвращает уже открытое графическое окно с заданным идентификатором.
-//      * @param key Идентификатор окна.
-//      */
-//     graphicsWindow(key: string, options?: WindowOptions): WindowHostGraphicsWindow;
-//     /**
-//      * Возвращает графическое окно по заданному идентификатору.
-//      * @param key Идентификатор окна
-//      */
-//     getGraphicsWindow(key: string): WindowHostGraphicsWindow | undefined;
-// }
+export interface WindowHostWindow {
+    readonly container: HTMLElement;
+    /**
+     * Имя окна.
+     */
+    title: string;
+    /**
+     * Область окна.
+     */
+    // width: number;
+    // height: number;
 
-// export interface WindowHostWindow {
-//     /**
-//      * Имя окна.
-//      */
-//     title: string;
-//     /**
-//      * Область окна.
-//      */
-//     area: {
-//         x: number;
-//         y: number;
-//         width: number;
-//         height: number;
-//     };
+    /**
+     * Регистрирует обработчик события загрузки ресурсов окна.
+     */
+    // on(event: "loaded", handler: () => void): void;
+    /**
+     * Разрегистрирует обработчик события загрузки ресурсов окна.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    // off(event: "loaded", handler?: () => void): void;
+    /**
+     * Регистрирует обработчик события перемещения окна пользователем.
+     */
+    // on(event: "moved", handler: (x: number, y: number) => void): void;
+    /**
+     * Разрегистрирует обработчик события перемещения окна пользователем.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    // off(event: "moved", handler?: (x: number, y: number) => void): void;
+    /**
+     * Регистрирует обработчик события изменения размера окна пользователем.
+     */
+    // on(event: "resized", handler: (width: number, height: number) => void): void;
+    /**
+     * Разрегистрирует обработчик события изменения размера окна пользователем.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    // off(event: "resized", handler?: (width: number, height: number) => void): void;
+    /**
+     * Регистрирует обработчик события изменения закрытия окна пользователем.
+     */
+    on(event: "closed", handler: () => void): void;
+    /**
+     * Разрегистрирует обработчик события изменения закрытия окна пользователем.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    off(event: "closed", handler?: () => void): void;
 
-//     /**
-//      * Загружены ли ресурсы окна?
-//      */
-//     readonly loaded: boolean;
-
-//     /**
-//      * Регистрирует обработчик события загрузки ресурсов окна.
-//      */
-//     on(event: "loaded", handler: () => void): void;
-//     /**
-//      * Разегистрирует обработчик события загрузки ресурсов окна.
-//      * @param handler Если обработчик не указан, разрегистрируются все
-//      * обработчики данного события.
-//      */
-//     off(event: "loaded", handler?: () => void): void;
-//     /**
-//      * Регистрирует обработчик события перемещения окна пользователем.
-//      */
-//     on(event: "moved", handler: (x: number, y: number) => void): void;
-//     /**
-//      * Разегистрирует обработчик события перемещения окна пользователем.
-//      * @param handler Если обработчик не указан, разрегистрируются все
-//      * обработчики данного события.
-//      */
-//     off(event: "moved", handler?: (x: number, y: number) => void): void;
-//     /**
-//      * Регистрирует обработчик события изменения размера окна пользователем.
-//      */
-//     on(event: "resized", handler: (width: number, height: number) => void): void;
-//     /**
-//      * Разегистрирует обработчик события изменения размера окна пользователем.
-//      * @param handler Если обработчик не указан, разрегистрируются все
-//      * обработчики данного события.
-//      */
-//     off(event: "resized", handler?: (width: number, height: number) => void): void;
-//     /**
-//      * Регистрирует обработчик события изменения закрытия окна пользователем.
-//      */
-//     on(event: "closed", handler: () => void): void;
-//     /**
-//      * Разегистрирует обработчик события изменения закрытия окна пользователем.
-//      * @param handler Если обработчик не указан, разрегистрируются все
-//      * обработчики данного события.
-//      */
-//     off(event: "closed", handler?: () => void): void;
-
-//     /**
-//      * Закрывает окно.
-//      */
-//     close(): void;
-// }
+    /**
+     * Закрывает окно.
+     */
+    close(): void;
+}
 // export const fs: FileSystemConstructor;
 
 export const unzip: ZipFSConstructor = createZipFS;
@@ -366,4 +326,4 @@ export const options: {
 /**
  * Версия API.
  */
-export const version: string = "0.4.2";
+export const version: string = "0.5.0";

@@ -1,11 +1,11 @@
-import { Project, ProjectDiag, ProjectPlayOptions } from "stratum/api";
+import { Project, ProjectDiag, ProjectOptions } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { createComposedScheme } from "stratum/common/createComposedScheme";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { WindowWrapper } from "stratum/graphics/html";
 import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
+import { SimpleWs } from "stratum/graphics/simpleWs";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { Mutable } from "stratum/helpers/utilityTypes";
 import { build } from "stratum/schema/build";
@@ -17,14 +17,15 @@ import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/
 import { NumBool, ParsedCode } from "stratum/vm/types";
 import { SimpleComputer } from "../common/simpleComputer";
 
-export interface PlayerResources {
+export interface ProjectResources {
     dir: VFSDir;
     prjInfo: ProjectInfo;
-    classes: Map<string, ClassProto<ParsedCode>>;
+    classes: ClassProto<ParsedCode>[];
     stt?: VariableSet;
+    options?: ProjectOptions;
 }
 
-export class Player implements Project, ProjectManager, PlayerResources {
+export class Player implements Project, ProjectManager {
     private _diag: Mutable<ProjectDiag>;
     private _computer = new SimpleComputer();
     private _state: "closed" | "playing" | "paused" | "error" = "closed";
@@ -33,19 +34,33 @@ export class Player implements Project, ProjectManager, PlayerResources {
         closed: new Set<any>(),
         error: new Set<any>(),
     };
-    private wnd?: WindowWrapper;
+    private classlib: Map<string, ClassProto<ParsedCode>>;
+    private ws?: SimpleWindowManager;
 
-    dir: VFSDir;
-    prjInfo: ProjectInfo;
-    classes: Map<string, ClassProto<ParsedCode>>;
-    stt?: VariableSet | undefined;
+    readonly options: ProjectOptions;
+    readonly dir: VFSDir;
+    readonly prjInfo: ProjectInfo;
+    readonly stt?: VariableSet | undefined;
 
-    constructor(res: PlayerResources) {
-        this.dir = res.dir;
-        this.prjInfo = res.prjInfo;
-        this.classes = res.classes;
-        this.stt = res.stt;
-        const miss = findMissingCommandsRecursive(res.prjInfo.rootClassName, res.classes);
+    constructor({ dir, prjInfo, classes, stt, options }: ProjectResources) {
+        this.dir = dir;
+        this.prjInfo = prjInfo;
+        this.stt = stt;
+        this.options = { ...options };
+
+        const classlib = new Map<string, ClassProto<ParsedCode>>();
+        for (const p of classes) {
+            const keyUC = p.name.toUpperCase();
+            const prev = classlib.size;
+            classlib.set(keyUC, p);
+            if (classlib.size === prev) {
+                const files = classes.filter((c) => c.name.toUpperCase() === keyUC).map((c) => c.filepathDos);
+                throw Error(`Конфликт имен имиджей: "${p.name}" обнаружен в файлах:\n${files.join(";\n")}.`);
+            }
+        }
+        this.classlib = classlib;
+
+        const miss = findMissingCommandsRecursive(prjInfo.rootClassName, classlib);
         if (miss.errors.length > 0) console.warn("Ошибки:", miss.errors);
         if (miss.missingOperations.length > 0) console.warn(formatMissingCommands(miss.missingOperations));
         this._diag = {
@@ -75,25 +90,24 @@ export class Player implements Project, ProjectManager, PlayerResources {
         this._computer = value;
     }
 
-    play(options?: HTMLElement | ProjectPlayOptions): this {
+    play(container?: HTMLElement): this {
         if (this.loop) return this;
-        if (options instanceof HTMLElement) {
-            this.wnd = new WindowWrapper(options);
-        } else if (options && options.mainWindowContainer) {
-            this.wnd = new WindowWrapper(options.mainWindowContainer, options);
-        }
-        // TODO: по идее то что здесь создается надо подкешировать
-        const { classes, prjInfo: prj, stt } = this;
-        const tree = build(prj.rootClassName, classes);
-        const memoryManager = tree.createMemoryManager();
 
+        const host = container && new SimpleWs(container);
+        if (host) this.ws = new SimpleWindowManager(host, this.options);
+        else this.ws = this.ws || new SimpleWindowManager(undefined, this.options);
+
+        // TODO: по идее то что здесь создается надо подкешировать
+        const { classlib, prjInfo: prj, stt } = this;
+        const tree = build(prj.rootClassName, classlib);
+        const memoryManager = tree.createMemoryManager();
         if (stt) tree.applyVarSet(stt);
 
         const ctx = new ExecutionContext({
             classManager: new TreeManager({ tree }),
             memoryManager,
             projectManager: this,
-            windows: new SimpleWindowManager(this.wnd), // FIXME:
+            windows: this.ws,
         });
 
         this._diag.iterations = 0;
@@ -109,7 +123,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
                 } else {
                     this._state = "closed";
                     this.loop = undefined;
-                    if (this.wnd) this.wnd.destroy(); //FIXME: А нужно ли закрывать окно?
+                    if (this.ws) this.ws.closeAll();
                     this.handlers.closed.forEach((h) => h());
                 }
                 return false;
@@ -127,7 +141,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
     close(): this {
         this.computer.stop();
         this.loop = undefined;
-        if (this.wnd) this.wnd.destroy();
+        if (this.ws) this.ws.closeAll();
         this._state = "closed";
         return this;
     }
@@ -167,19 +181,19 @@ export class Player implements Project, ProjectManager, PlayerResources {
     }
 
     getClassScheme(className: string): VectorDrawing | undefined {
-        const data = this.classes.get(className.toUpperCase());
+        const data = this.classlib.get(className.toUpperCase());
         if (!data || !data.scheme) return undefined;
         //TODO: закешировать скомпозированную схему.
         const { children, scheme } = data;
-        return children ? createComposedScheme(scheme, children, this.classes) : scheme;
+        return children ? createComposedScheme(scheme, children, this.classlib) : scheme;
     }
 
     hasClass(className: string): NumBool {
-        return this.classes.has(className.toUpperCase()) ? 1 : 0;
+        return this.classlib.has(className.toUpperCase()) ? 1 : 0;
     }
 
     getClassDirectory(className: string): string {
-        const cl = this.classes.get(className.toUpperCase());
+        const cl = this.classlib.get(className.toUpperCase());
         return (cl && cl.directoryDos) || "";
     }
 
@@ -190,7 +204,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
         const buf = f.arraybufferSync();
         if (!buf) {
             if (!this._fileWarnShowed) throw Error(`Не удалось прочесть содержимое ${f.pathDos}. Возможно, файл не был предзагружен.`);
-            this._vdrWarnShowed = true;
+            this._fileWarnShowed = true;
             return undefined;
         }
         return new BinaryStream(buf, { filepathDos: f.pathDos });
@@ -202,8 +216,7 @@ export class Player implements Project, ProjectManager, PlayerResources {
         if (!f || f.dir) return undefined;
         const vdr = f.readSyncAs("vdr");
         if (!vdr) {
-            if (!this._vdrWarnShowed)
-                throw Error(`Не удалось прочесть ${f.pathDos}. Возможно, файл не является VDR-файлом или не был предзагружен.`);
+            if (!this._vdrWarnShowed) throw Error(`Не удалось прочесть ${f.pathDos}. Возможно, файл не является VDR-файлом или не был предзагружен.`);
             this._vdrWarnShowed = true;
         }
         return vdr;

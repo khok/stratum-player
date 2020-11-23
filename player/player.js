@@ -46,14 +46,15 @@
         {
             const handleClick = ({ target }) => {
                 switch (target) {
-                    case playerPlayElem:
-                        currentProject.state === "closed"
-                            ? currentProject.play({
-                                  mainWindowContainer: mainWindowContainerElem,
-                                  disableWindowResize: optionsNoResize.checked,
-                              })
-                            : currentProject.close();
+                    case playerPlayElem: {
+                        if (currentProject.state === "closed") {
+                            currentProject.options.disableWindowResize = optionsNoResize.checked;
+                            currentProject.play();
+                        } else {
+                            currentProject.close();
+                        }
                         break;
+                    }
                     case playerPauseElem:
                         currentProject.state === "paused" ? currentProject.continue() : currentProject.pause();
                         break;
@@ -107,12 +108,10 @@
                 if (stdlib && !optionsNolib.checked) fs.merge(stdlib);
                 // Открываем проект
                 currentProject = await fs.project({ additionalClassPaths: ["L:"], tailPath });
+                currentProject.options.disableWindowResize = optionsNoResize.checked;
                 // Попытаемся запустить выполнение проекта прямо здесь.
                 // Таким образом перехватываем ошибку на старте.
-                currentProject.play({
-                    mainWindowContainer: mainWindowContainerElem,
-                    disableWindowResize: optionsNoResize.checked,
-                });
+                currentProject.play(mainWindowContainerElem);
             } catch (e) {
                 removeCurrentProject();
                 alert(`При загрузке проекта произошла ошибка:\n${e.message}`);

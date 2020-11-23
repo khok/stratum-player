@@ -1,9 +1,10 @@
+import { options, WindowHost } from "stratum/api";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { GraphicSpace } from "stratum/vm/interfaces/graphicSpace";
 import { WindowsManager } from "stratum/vm/interfaces/windowsManager";
 import { NumBool } from "stratum/vm/types";
-import { WindowWrapper } from "./html";
+import { WindowWrapper, WindowWrapperOptions } from "./html";
 import { Scene } from "./scene";
 import { SimpleWindow } from "./simpleWindow";
 
@@ -20,25 +21,16 @@ export class SimpleWindowManager implements WindowsManager {
     areaWidth: number;
     areaHeight: number;
 
-    constructor(private wnd?: WindowWrapper) {
-        this.screenWidth = this.areaWidth = wnd ? wnd.width : 1920;
-        this.screenHeight = this.areaHeight = wnd ? wnd.height : 1080;
+    constructor(private host?: WindowHost, public options?: WindowWrapperOptions) {
+        this.screenWidth = this.areaWidth = host?.width || 0;
+        this.screenHeight = this.areaHeight = host?.height || 0;
     }
 
     private noWndShowed = false;
-    private secondWndWarned = false;
-    private windowWasOpen = false;
     openSchemeWindow(windowName: string, attrib: string, vdr?: VectorDrawing): number {
-        const { wnd } = this;
-        if (!wnd) {
+        if (!this.host) {
             if (!this.noWndShowed) console.warn(`Проект попытался открыть окно "${windowName}" с атрибутами "${attrib}"`);
             this.noWndShowed = true;
-            return 0;
-        }
-
-        if (this.windowWasOpen) {
-            if (!this.secondWndWarned) console.warn(`Проект попытался открыть второе окно "${windowName}" с атрибутами "${attrib}"`);
-            this.secondWndWarned = true;
             return 0;
         }
 
@@ -65,8 +57,8 @@ export class SimpleWindowManager implements WindowsManager {
 
         if (this.hasWindow(windowName)) throw Error(`Окно "${windowName}" уже существует`);
 
-        document.title = windowName;
         // ширину нужно передавать в зависимости от attrib
+        const wnd = new WindowWrapper(this.host.window({ title: windowName }).container, this.options);
         const window = new SimpleWindow(wnd, vdr && vdr.source);
 
         const handle = HandleMap.getFreeHandle(this.scenes);
@@ -78,7 +70,6 @@ export class SimpleWindowManager implements WindowsManager {
         this.scenes.set(handle, scene);
         this.windowsBySpaceHandle.set(handle, windowName);
 
-        this.windowWasOpen = true;
         return handle;
     }
 
@@ -91,11 +82,21 @@ export class SimpleWindowManager implements WindowsManager {
     }
 
     closeWindow(windowName: string): NumBool {
-        if (this.windows.delete(windowName.toUpperCase())) {
-            this.windowWasOpen = false;
-            return 1;
-        }
-        return 0;
+        const nameUC = windowName.toUpperCase();
+        const wnd = this.windows.get(nameUC);
+        if (!wnd) return 0;
+        wnd.close();
+        this.windows.delete(nameUC);
+        this.scenesByWinName.delete(nameUC);
+        return 1;
+    }
+
+    closeAll() {
+        for (const w of this.windows.values()) w.close();
+        this.windows = new Map();
+        this.scenesByWinName = new Map();
+        this.scenes = new Map();
+        this.windowsBySpaceHandle = new Map();
     }
 
     getSpace(spaceHandle: number) {

@@ -6,10 +6,6 @@ import { InputWrapper, InputWrapperOptions } from "./inputWrapper";
 
 export interface WindowWrapperOptions {
     disableWindowResize?: boolean;
-    customRes?: {
-        width?: number;
-        height?: number;
-    };
 }
 
 export class WindowWrapper {
@@ -18,21 +14,19 @@ export class WindowWrapper {
     private computer = new SimpleComputer();
     private disableResize: boolean = false;
 
-    constructor(private root: HTMLElement, private opts: WindowWrapperOptions = {}) {}
+    constructor(private root: HTMLElement, public options: WindowWrapperOptions = {}) {}
 
     private get container() {
         if (this._container) return this._container;
 
         //prettier-ignore
-        const { root, opts: { customRes, disableWindowResize } } = this;
-        const width = customRes && customRes.width && customRes.width > 0 ? customRes.width + "px" : "100%";
-        const height = customRes && customRes.height && customRes.height > 0 ? customRes.height + "px" : "100%";
+        const { root, options: { disableWindowResize } } = this;
 
         const container = document.createElement("div");
         container.style.setProperty("position", "relative");
-        container.style.setProperty("width", width);
-        container.style.setProperty("height", height);
         container.style.setProperty("overflow", "hidden");
+        container.style.setProperty("width", "100%");
+        container.style.setProperty("height", "100%");
         this.disableResize = disableWindowResize || false;
         root.appendChild(container);
         return (this._container = container);
@@ -66,6 +60,9 @@ export class WindowWrapper {
     get width() {
         return this.container.clientWidth;
     }
+
+    set width(value) {}
+    set height(value) {}
 
     // private sizeWarned = false;
     fixedSize(x: number, y: number): boolean {

@@ -36,4 +36,8 @@ export class SimpleWindow implements WindowWithSpace {
     get height(): number {
         return this.wnd.height;
     }
+
+    close() {
+        this.wnd.destroy();
+    }
 }
