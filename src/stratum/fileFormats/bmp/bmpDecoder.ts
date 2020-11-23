@@ -527,7 +527,7 @@ class BmpDecoder {
     }
 }
 
-export function readBMPFull(view: DataView): { width: number; height: number; data: Uint8ClampedArray } {
+export function decodeBmp(view: DataView): { width: number; height: number; data: Uint8ClampedArray } {
     return new BmpDecoder(view);
 }
 

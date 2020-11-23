@@ -1,4 +1,4 @@
-import { readBitmap, readDoubleBitmap } from "stratum/helpers/bmpReaders";
+import { readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
 import { readNext } from "../Collection";
 import { VdrEntry } from "../vdrEntry";
 
@@ -32,13 +32,13 @@ function read_ttBRUSH2D(stream) {
 function read_ttDIB2D(stream) {
     return {
         ...readTools(stream),
-        ...readBitmap(stream),
+        ...readBmpFile(stream),
     };
 }
 function read_ttDOUBLEDIB2D(stream) {
     return {
         ...readTools(stream),
-        ...readDoubleBitmap(stream),
+        ...readDbmFile(stream),
     };
 }
 function read_ttFONT2D(stream) {

@@ -1,7 +1,7 @@
 import { options } from "stratum/api";
 import { ImageToolParams } from "stratum/fileFormats/vdr";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { readBitmap, readDoubleBitmap } from "stratum/helpers/bmpReaders";
+import { readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
 import { SceneBmpTool } from "./tools/sceneBmpTool";
 
 export class BmpToolFactory {
@@ -22,8 +22,7 @@ export class BmpToolFactory {
             const data = await fetch(url);
             const bytes = await data.arrayBuffer();
             try {
-                const png = readDoubleBitmap(new BinaryStream(bytes)).base64Image;
-                res(this.loadImage(png));
+                res(this.loadImage(readDbmFile(new BinaryStream(bytes)).base64Image));
             } catch {}
         });
     }
@@ -57,7 +56,7 @@ export class BmpToolFactory {
     }
 
     static loadFromStream(stream: BinaryStream, handle: number, isDouble: boolean): SceneBmpTool | undefined {
-        const { base64Image, width, height } = isDouble ? readDoubleBitmap(stream) : readBitmap(stream);
+        const { base64Image, width, height } = isDouble ? readDbmFile(stream) : readBmpFile(stream);
         const tool = new SceneBmpTool({ handle, width, height });
         const imagePr = this.loadImage(base64Image);
         imagePr
