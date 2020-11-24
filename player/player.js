@@ -81,7 +81,7 @@
 
                 let tailPath;
                 {
-                    const projectFiles = [...fs.search(/.+\.(prj)|(spj)$/i)];
+                    const projectFiles = [...fs.search(/.+\.(prj|spj)$/i)];
                     if (projectFiles.length !== 1) {
                         if (projectFiles.length > 0) {
                             const matches = projectFiles.map((f) => f.pathDos).join("\n");

@@ -85,7 +85,7 @@ export class VFS implements FileSystem {
             const matches = new Array<string>();
 
             const tailPathDosUC = options.tailPath && getPathParts(options.tailPath).join("\\").toUpperCase();
-            for (const v of this.search(/.+\.(prj)|(spj)$/i)) {
+            for (const v of this.search(/.+\.(prj|spj)$/i)) {
                 if (tailPathDosUC && !v.pathDos.toUpperCase().includes(tailPathDosUC)) continue;
                 prjFile = v;
                 matches.push(v.pathDos);
