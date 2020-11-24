@@ -25,7 +25,7 @@ export interface ZipFSConstructor {
      * @param source Источник ZIP-архива.
      * @param options Опции распаковки ZIP-архива.
      */
-    (source: File | Blob | ArrayBuffer, options?: OpenZipOptions): Promise<FileSystem>;
+    (source: File | Blob | ArrayBuffer | Uint8Array, options?: OpenZipOptions): Promise<FileSystem>;
 }
 
 /**

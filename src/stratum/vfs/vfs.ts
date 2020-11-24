@@ -8,7 +8,7 @@ import { parseBytecode } from "stratum/vm/parseBytecode";
 import { VFSDir, VFSFile } from ".";
 
 export class VFS implements FileSystem {
-    static async fromZip(source: File | Blob | ArrayBuffer, options: OpenZipOptions = {}): Promise<VFS> {
+    static async fromZip(source: File | Blob | ArrayBuffer | Uint8Array, options: OpenZipOptions = {}): Promise<VFS> {
         const decoder = new TextDecoder(options.encoding || "cp866");
 
         let zip: ReturnType<typeof loadAsync> extends Promise<infer U> ? U : never;
@@ -20,7 +20,7 @@ export class VFS implements FileSystem {
                     ? `Файл ${source.name}`
                     : source instanceof Blob
                     ? `Blob { size: ${source.size}, type: ${source.type} }`
-                    : `ArrayBuffer(${source.byteLength})`;
+                    : `${source.toString()}(${source.byteLength})`;
             throw Error(`${str} не является ZIP-архивом`);
         }
 

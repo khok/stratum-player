@@ -5,6 +5,6 @@ export { VFS } from "./vfs";
 export { VFSDir } from "./vfsDir";
 export { VFSFile } from "./vfsFile";
 
-export function createZipFS(source: File | Blob | ArrayBuffer, options?: OpenZipOptions): Promise<VFS> {
+export function createZipFS(source: File | Blob | ArrayBuffer | Uint8Array, options?: OpenZipOptions): Promise<VFS> {
     return VFS.fromZip(source, options);
 }
