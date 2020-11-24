@@ -136,10 +136,7 @@ export class VFSDir implements FileSystemDir {
     }
 
     *files(regexp?: RegExp): IterableIterator<VFSFile> {
-        if (regexp) {
-            for (const f of this._files()) if (regexp.test(f.pathDos)) yield f;
-        } else {
-            for (const f of this._files()) yield f;
-        }
+        if (!regexp) return this._files();
+        for (const f of this._files()) if (regexp.test(f.pathDos)) yield f;
     }
 }
