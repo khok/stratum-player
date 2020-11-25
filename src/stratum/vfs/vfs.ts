@@ -1,5 +1,5 @@
 import { loadAsync } from "jszip";
-import { FileSystem, OpenProjectOptions, OpenZipOptions } from "stratum/api";
+import { FileSystem, OpenProjectOptions, OpenZipOptions, ZipSource } from "stratum/api";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { getPathParts, getPrefixAndPathParts, SLASHES } from "stratum/helpers/pathOperations";
@@ -8,7 +8,7 @@ import { parseBytecode } from "stratum/vm/parseBytecode";
 import { VFSDir, VFSFile } from ".";
 
 export class VFS implements FileSystem {
-    static async fromZip(source: File | Blob | ArrayBuffer | Uint8Array, options: OpenZipOptions = {}): Promise<VFS> {
+    static async fromZip(source: ZipSource, options: OpenZipOptions = {}): Promise<VFS> {
         const decoder = new TextDecoder(options.encoding || "cp866");
 
         let zip: ReturnType<typeof loadAsync> extends Promise<infer U> ? U : never;
