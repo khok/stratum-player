@@ -1,0 +1,6 @@
+*
+!.gitignore
+!*.ts
+*d.ts
+!grammar*
+!parser.js

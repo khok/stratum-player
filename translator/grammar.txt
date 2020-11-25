@@ -1,0 +1,126 @@
+// https://pegjs.org/online
+// шпора по квантификаторам:
+// n? - 0-или-1 n-символов
+// n* - 0-или-больше n-символов
+// n - только 1 n-символ
+// n+ - 1-или-больше n-символов
+
+Code =
+ val:(Space* op:CodeLine? Space* NewLine { return op })*
+ { return val.filter(v => v) }
+
+CodeLine =
+ VarsDecl / // блок объявления переменных
+ AssigmentOperator / // Оператор присваивания
+ IfDecl / IfNotDecl / ElseThen / ElseDecl / EndifDecl / //if-ы
+ BreakDecl / WhileDecl / EndwhileDecl /  DoDecl / UntilDecl / //циклы-ы (do, while)
+ EndSwitchDecl / SwitchDecl /  CaseDecl / DefaultDecl / //switch-case-default
+ CallOperatorChain / //Вызов функции
+ FunctionDecl / ReturnDecl //function и return
+
+IfNotDecl 'if !<condition>)' = 'if'i _ expr:ExpressionForIfNot { return { type: "if!", expr } }
+IfDecl 'if(<condition>)' = 'if'i _ expr:Expression { return { type: "if", expr } }
+ElseThen 'else <operator>' = ElseDecl Space+ then:CodeLine { return { type: "else", then } }
+ElseDecl = 'else'i { return { type: "else", then: null } }
+EndifDecl 
+ = 'endif'i then:(Space+ val:CodeLine { return val })?
+ { return { type: "endif", then } }
+
+BreakDecl = 'break'i { return { type: "break" } }
+WhileDecl 'while(<condition>)' = 'while'i _ expr:Expression { return { type: "while", expr } }
+EndwhileDecl = 'endwhile'i { return { type: "endwhile" } }
+DoDecl = 'do'i { return { type: "do" } }
+UntilDecl 'until(<condition>)' = 'until'i _ expr:Expression { return { type: "until", expr } }
+
+EndSwitchDecl = 'endswitch'i { return { type: "endswitch" } }
+SwitchDecl = 'switch'i { return { type: "switch" } }
+CaseDecl 'case(<condition>)' 
+ = 'case'i _ expr:Expression then:(Space+ val:CodeLine { return val })?
+ { return { type: "case", expr, then } } 
+DefaultDecl 
+ = 'default'i then:(Space+ val:CodeLine { return val })?
+ { return { type: "default", then } }
+
+FunctionDecl = 'function'i { return { type: "function" } }
+ReturnDecl 'return <var name>' = 'return'i _ to:ValidVarName { return { type: "return", to } }
+
+VarsDecl
+ = datatype:VarType Space+ _ modifiers:(mod:VarModifier Space+ { return mod })* names:VarNames
+ { return { type: "varsDec", datatype, modifiers, names } }
+
+AssigmentOperator 'assigment operator'
+  =  to:ValidVarName _ type:(':=' / '::=' / '=') Space* operand:Operand
+  { return { type, to, operand } }
+
+CallOperator 'function call'
+ = name:ValidFunctionName Space* "(" Space* args:CallOperatorArg* Space* ")"
+ { return { type: "call", name, args } }
+
+CallOperatorChain 'function call chain'
+ = first:CallOperator rest:(Space+ val:CallOperator { return val } )*
+ { return { type: "callChain", functions:[first].concat(rest) } }
+
+UnaryOperator 'unary operator'
+ = type:UnaryAction Space* operand:Operand UnaryAction?
+ { return { type, operand } }
+
+Expression 'expression'
+ = '(' Space* body:Operand Space* ')'
+ { return {type: "expression",  body } }
+
+ExpressionForIfNot 'expression'
+ = Space* body:Operand Space* ')'
+ { return {type: "expression",  body } }
+
+Const 'constant'
+ = value:$("\"" [^\"]* "\"" / "'" [^']* "'" / [-+]?[0-9\.][0-9\.e]* / "#"[0-9]*)
+ { return { type: "const", value } }
+
+VarValueOperator
+ = isNew:'~'? Space* name:ValidVarName
+ { return { type: "var", name, isNew: !!isNew } }
+
+ValidFunctionName 'valid function name'
+ = ValidVarName
+
+UnaryAction
+ = '-' / '+' / '!'
+
+BinaryAction
+ = '^' /
+ '*' / '/' / '%' / 
+ '+' / '-' /
+ '>>' / '>=' / '>' / '<<' / '<=' / "<" /
+ '==' / '!=' /
+ '&&' / '&' /'||' /  '|'
+
+Operand 'operand'
+ = first:OP rest:(Space* action:BinaryAction Space* op:OP { return { action, op } })*
+ { return { first, rest } }
+//Ибо левая рекурсия
+
+OP 'operator'
+ = UnaryOperator / Const / CallOperator / VarValueOperator / Expression
+
+//Все что касается блока объявления переменных
+VarType = 'HANDLE'i / "STRING"i / "FLOAT"i / "COLORREF"i / "INTEGER"i
+VarModifier = 'LOCAL'i / 'NOSAVE'i / 'PARAMETER'i
+
+VarNames
+ = first:ValidVarName rest:(_ ',' _ value:ValidVarName { return value })*
+ { return [first].concat(rest) }
+
+CallOperatorArg
+ = ref:'&'? Space* val:Operand Space* ","?
+ { return { ref: !!ref, val } }
+
+ValidVarName "variable name"
+ //= $ ([a-zа-я_]i[_a-zа-я0-9]i*)
+ = $ ([_a-zа-я0-9]i+)
+
+Space "space or tab"
+ = [ \t]
+NewLine "new line"
+ = [\n]
+_ "whitespace"
+ = [ \t\n\r]*

@@ -1,0 +1,134 @@
+// https://pegjs.org/online
+// шпора по квантификаторам:
+// n? - 0-или-1 n-символов
+// n* - 0-или-больше n-символов
+// n - только 1 n-символ
+// n+ - 1-или-больше n-символов
+
+Code =
+ val:(Space* op:CodeLine? Space* NewLine { return op })*
+ { return val.filter(v => v) }
+
+CodeLine =
+ IfDecl / IfNotDecl / ElseThen / ElseDecl / EndifDecl / //if-ы
+ BreakDecl / WhileDecl / EndwhileDecl /  DoDecl / UntilDecl / //циклы-ы (do, while)
+ EndSwitchDecl / SwitchDecl /  CaseDecl / DefaultDecl / //switch-case-default
+ FunctionDecl / ReturnDecl / //function и return
+ AssigmentOperator / // Оператор присваивания
+ CallOperator / //Вызов функции
+ VarsDecl // блок объявления переменных
+
+IfNotDecl 'if !<condition>)' = 'if'i _ expr:ExpressionForIfNot { return { type: "ifnot", expr } }
+IfDecl 'if(<condition>)' = 'if'i _ expr:Expression { return { type: "if", expr } }
+ElseThen 'else if(<condition>)' = ElseDecl Space+ then:CodeLine { return { type: "elsethen", then } }
+ElseDecl = 'else'i { return { type: "else" } }
+EndifDecl = 'endif'i { return { type: "endif" } }
+
+BreakDecl = 'break'i { return { type: "break" } }
+WhileDecl 'while(<condition>)' = 'while'i _ expr:Expression { return { type: "while", expr } }
+EndwhileDecl = 'endwhile'i { return { type: "endwhile" } }
+DoDecl = 'do'i { return { type: "do" } }
+UntilDecl 'until(<condition>)' = 'until'i _ expr:Expression { return { type: "until", expr } }
+
+EndSwitchDecl = 'endswitch'i { return { type: "endswitch" } }
+SwitchDecl = 'switch'i { return { type: "switch" } }
+CaseDecl 'case(<condition>)' = 'case'i _ expr:Expression { return { type: "case", expr } }
+DefaultDecl = 'default'i { return { type: "default" } }
+
+FunctionDecl = 'function'i { return { type: "function" } }
+ReturnDecl 'return <var name>' = 'return'i _ to:ValidVarName { return { type: "return", to } }
+
+VarsDecl
+ = type:VarType local:(IsParameter / NoSave / IsLocal / NotLocal) names:VarNames
+ { return { type: "varsDec", dataType: type, local, names } }
+
+AssigmentOperator 'assigment operator'
+  =  to:VariableDef _ op:(':=' / '::=' / '=') Space* operand:Operand
+  { return { type: "assigmentOp", op, to, operand } }
+
+CallOperator 'function call'
+ = name:ValidFunctionName Space* "(" Space* args:CallOperatorArg* Space* ")"
+ { return { type: "callOp", name, args } }
+
+UnaryOperator 'unary operator'
+ = action:UnaryAction Space* operand:Operand
+ { return { type: "unaryOp", action, operand } }
+
+Expression 'expression'
+ = '(' Space* body:Operand Space* ')'
+ { return {type: "expression",  body } }
+
+ExpressionForIfNot 'expression'
+ = Space* body:Operand Space* ')'
+ { return {type: "expression",  body } }
+
+Const 'constant'
+ = value:$("\"" [^\"]* "\"" / "'" [^']* "'" / [-+]?[0-9\.]+ / "#"[0-9]+)
+ { return { type: "const", value } }
+
+BinaryOperator 'binary operator'
+ = operand1:_Operand Space* action:BinaryAction Space* operand2:Operand
+ { return { type: "binaryOp", action, operand1, operand2 } }
+//Ибо левая рекурсия
+_Operand
+ = Const / UnaryOperator / Expression / CallOperator / VarValOperator
+Operand 'operand'
+ = BinaryOperator / _Operand
+
+VariableDef 'variable name'
+ = isNew:'~'? Space* name:ValidVarName
+ { return { name, isNew: !!isNew } }
+
+VarValOperator
+ = name:ValidVarName
+ { return { type: "var", name } }
+
+ValidFunctionName 'valid function name'
+ = ValidVarName
+
+UnaryAction
+ = '~' / '-' / '!' / '+'
+
+BinaryAction
+ = '+' / '-' / '*' / '/' /
+   '||' / '|' / '&&' / '&' /
+   '>=' / '>' / '<=' / '<' / '==' / '!=' /
+   '^' / '%'
+
+//Все что касается блока объявления переменных
+VarType = 'HANDLE'i / "STRING"i / "FLOAT"i / "COLORREF"i
+
+IsLocal
+ = _ 'LOCAL'i _
+ { return { type: "local" } }
+
+IsParameter
+ = _ 'PARAMETER'i _
+ { return { type: "parameter" } }
+
+NoSave
+ = _ 'NOSAVE'i _
+ { return { type: "parameter" } }
+
+NotLocal
+ = _
+ { return { type: "notlocal"} }
+
+VarNames
+ = first:ValidVarName rest:(_ ',' _ value:ValidVarName { return value })*
+ { return [first].concat(rest) }
+
+CallOperatorArg
+ = ref:'&'? Space* val:Operand Space* ","?
+ { return { ref: !!ref, val } }
+
+ValidVarName "variable name"
+ //= $ ([a-zа-я_]i[_a-zа-я0-9]i*)
+ = $ ([_a-zа-я0-9]i+)
+
+Space "space or tab"
+ = [ \t] {}
+NewLine "new line"
+ = [\n] {}
+_ "whitespace"
+ = [ \t\n\r]* {}
