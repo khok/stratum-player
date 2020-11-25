@@ -21,7 +21,7 @@ export interface ZipFSConstructor {
      * @param source Источник ZIP-архива.
      * @param options Опции распаковки ZIP-архива.
      */
-    (source: File | Blob | ArrayBuffer, options?: OpenZipOptions): Promise<FileSystem>;
+    (source: File | Blob | ArrayBuffer | Uint8Array, options?: OpenZipOptions): Promise<FileSystem>;
 }
 /**
  * Файловая система.
@@ -64,7 +64,8 @@ export interface FileSystemDir {
      * Пытается создать файл.
      * @param path - нечувствительный к регистру относительный или абсолютный
      * путь к искомому файлу.
-     * Если файл или каталог с указанным именем не удалось создать, возвращает undefined.
+     * Если файл или каталог с указанным именем не удалось создать, возвращает
+     * undefined.
      */
     fileNew(path: string, data: ArrayBuffer): FileSystemFile | undefined;
     /**
@@ -96,7 +97,8 @@ export interface FileSystemFile {
     readonly pathDos: string;
     /**
      * Явно предзагружает содержимое файла.
-     * Только явно предзагруженные файлы могут быть прочитаны в процессе исполнения проекта.
+     * Только явно предзагруженные файлы могут быть прочитаны в процессе
+     * исполнения проекта.
      * В противном случае будет создано исключение.
      */
     makeSync(): Promise<void>;
@@ -107,42 +109,30 @@ export interface FileSystemFile {
      */
     arraybuffer(): Promise<ArrayBuffer>;
 }
-export interface OpenProjectOptions {
+export interface ProjectOptions {
     /**
-     * Дополнительные пути поиска файлов имиджей.
+     * Запрещает проекту изменять размеры главного окна.
      */
-    additionalClassPaths?: string[];
+    disableWindowResize?: boolean;
+}
+export interface OpenProjectOptions extends ProjectOptions {
     /**
      * Завершающая часть пути к файлу проекта.
      */
     tailPath?: string;
     /**
-     * Открывать первый найденный файл проекта.
+     * Дополнительные пути поиска файлов имиджей.
      */
-    firstMatch?: boolean;
-}
-export interface ProjectPlayOptions {
-    /**
-     * Контейнер главного окна проекта.
-     */
-    mainWindowContainer?: HTMLElement;
-    /**
-     * Запрещает проекту изменять размеры главного окна.
-     */
-    disableWindowResize?: boolean;
-    /**
-     * Произвольные размеры открываемого главного окна.
-     * По умолчанию открываемое окно занимает все доступную длину и ширину контейнера.
-     */
-    customRes?: {
-        width?: number;
-        height?: number;
-    };
+    additionalClassPaths?: string[];
 }
 /**
- * Проект
+ * Проект.
  */
 export interface Project {
+    /**
+     * Опции проекта.
+     */
+    readonly options: ProjectOptions;
     /**
      * Рабочая директория проекта.
      */
@@ -162,11 +152,10 @@ export interface Project {
     computer: Executor;
     /**
      * Запускает выполнение проекта.
-     * @param mainWindowContainer - HTML элемент, к которому будет привязано
-     * открываемое окно с проектом.
+     * @param container - HTML элемент, в котором будут размещаться
+     * открываемые в проекте окна.
      */
-    play(mainWindowContainer?: HTMLElement): this;
-    play(options?: ProjectPlayOptions): this;
+    play(container?: HTMLElement): this;
     /**
      * Закрывает проект.
      */
@@ -184,11 +173,13 @@ export interface Project {
      */
     step(): this;
     /**
-     * Регистрирует обработчик события закрытия проекта (вызов функции CloseAll).
+     * Регистрирует обработчик события закрытия проекта
+     * (вызов функции CloseAll).
      */
     on(event: "closed", handler: () => void): this;
     /**
-     * Разегистрирует обработчик события закрытия проекта (вызов функции CloseAll).
+     * Разрегистрирует обработчик события закрытия проекта
+     * (вызов функции CloseAll).
      * @param handler Если обработчик не указан, разрегистрируются все
      * обработчики данного события.
      */
@@ -229,6 +220,71 @@ export interface ProjectDiag {
         name: string;
         classNames: string[];
     }[];
+}
+export interface WindowOptions {
+    /**
+     * Имя открытого окна.
+     */
+    title?: string;
+}
+/**
+ * Хост оконной системы.
+ */
+export interface WindowHost {
+    /**
+     * Параметры рабочей области.
+     */
+    readonly width: number;
+    readonly height: number;
+    window(options?: WindowOptions): WindowHostWindow;
+}
+export interface WindowHostWindow {
+    readonly container: HTMLElement;
+    /**
+     * Имя окна.
+     */
+    title: string;
+    /**
+     * Область окна.
+     */
+    /**
+     * Регистрирует обработчик события загрузки ресурсов окна.
+     */
+    /**
+     * Разрегистрирует обработчик события загрузки ресурсов окна.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    /**
+     * Регистрирует обработчик события перемещения окна пользователем.
+     */
+    /**
+     * Разрегистрирует обработчик события перемещения окна пользователем.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    /**
+     * Регистрирует обработчик события изменения размера окна пользователем.
+     */
+    /**
+     * Разрегистрирует обработчик события изменения размера окна пользователем.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    /**
+     * Регистрирует обработчик события изменения закрытия окна пользователем.
+     */
+    on(event: "closed", handler: () => void): void;
+    /**
+     * Разрегистрирует обработчик события изменения закрытия окна пользователем.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    off(event: "closed", handler?: () => void): void;
+    /**
+     * Закрывает окно.
+     */
+    close(): void;
 }
 export declare const unzip: ZipFSConstructor;
 export declare const options: {
