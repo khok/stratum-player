@@ -1,4 +1,10 @@
-import { InputEventReceiver } from "../scene/interfaces";
+interface InputEventReceiver {
+    handleEvent(data: { x: number; y: number; buttons: number; button: number }, type: "down" | "up" | "move"): void;
+    //подписки на события от пользователя (клик мышью, изменение html текстбоксов)
+    subscribeToMouseEvents(callback: (code: number, buttons: number, x: number, y: number) => void): void;
+    subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
+    subscribeToWindowResize(callback: (width: number, height: number) => void): void;
+}
 
 function convertTouch(touch: Touch, rect: DOMRect) {
     return { buttons: 1, button: 0, x: touch.clientX - rect.left, y: touch.clientY - rect.top };
@@ -67,8 +73,7 @@ export function addListeners(receiver: InputEventReceiver, canvas: HTMLCanvasEle
 
                 const rect = canvas.getBoundingClientRect();
                 const data = convertTouch(t, rect);
-                if (data.x < 0 || data.y < 0 || data.x > rect.width || data.y > rect.height)
-                    receiver.handleEvent(convertTouch(lastTouch, rect), "up");
+                if (data.x < 0 || data.y < 0 || data.x > rect.width || data.y > rect.height) receiver.handleEvent(convertTouch(lastTouch, rect), "up");
                 else receiver.handleEvent(data, "move");
                 lastTouch = t;
             },

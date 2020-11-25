@@ -1,4 +1,4 @@
-import { VarCode } from "stratum/common/varCode";
+import { VarType } from "stratum/fileFormats/cls";
 
 export interface MemoryManager {
     oldDoubleValues: Float64Array; //<- заменить на 32, мб быстрее будет бегать. в контексте тоже.
@@ -10,6 +10,6 @@ export interface MemoryManager {
     oldStringValues: string[];
     newStringValues: string[];
 
-    getOldValues(type: VarCode): Float64Array | Int32Array | string[];
-    getNewValues(type: VarCode): Float64Array | Int32Array | string[];
+    getOldValues(type: VarType): Float64Array | Int32Array | string[];
+    getNewValues(type: VarType): Float64Array | Int32Array | string[];
 }

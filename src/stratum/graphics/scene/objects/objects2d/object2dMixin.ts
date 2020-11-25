@@ -1,8 +1,7 @@
 import { fabric } from "fabric";
 import { Element2dBase, VectorDrawingElement2d } from "stratum/fileFormats/vdr";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { Object2dBase } from "stratum/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { RenderableElement } from "../../interfaces";
 import { BaseObjectMixin } from "../baseObjectMixin";
 
@@ -10,7 +9,7 @@ const radToDeg = 180 / Math.PI;
 
 export type Object2dArgs = Optional<Element2dBase, "name" | "options" | "size">;
 
-export abstract class Object2dMixin extends BaseObjectMixin implements Object2dBase {
+export abstract class Object2dMixin extends BaseObjectMixin {
     abstract readonly type: VectorDrawingElement2d["type"];
     abstract readonly renderable: RenderableElement;
 
@@ -82,9 +81,9 @@ export abstract class Object2dMixin extends BaseObjectMixin implements Object2dB
         return this._isVisible;
     }
 
-    setVisibility(value: NumBool): NumBool {
+    setVisibility(value: number): NumBool {
         if (value === this._isVisible) return 1;
-        this._isVisible = value;
+        this._isVisible = value !== 0 ? 1 : 0;
         if (value && this._layerVisible) this.showVisual();
         else this.hideVisual();
         return 1;

@@ -14,8 +14,14 @@ export class InputWrapper {
     height: number = 0;
     hidden: boolean = false;
 
-    constructor(private elem: HTMLInputElement, opts: InputWrapperOptions) {
+    private elem: HTMLInputElement;
+    constructor(root: HTMLElement, opts: InputWrapperOptions) {
+        const elem = (this.elem = document.createElement("input"));
+        elem.setAttribute("type", "text");
+        elem.setAttribute("class", "stratum-textbox");
+        elem.style.setProperty("position", "absolute");
         this.set(opts);
+        root.appendChild(elem);
     }
 
     private updateValues() {

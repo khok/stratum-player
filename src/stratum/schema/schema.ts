@@ -1,17 +1,13 @@
+import { ClassLibrary } from "stratum/common/classLibrary";
 import { ClassProto } from "stratum/common/classProto";
-import { VarCode } from "stratum/common/varCode";
-import { parseVarValue } from "stratum/common/varParsers";
+import { parseVarValue } from "stratum/common/parseVarValue";
+import { VarType } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
-import { UsageError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
-import { executeCode } from "stratum/vm/executeCode";
-import { ExecutionContext } from "stratum/vm/executionContext";
-import { ComputableClass, ComputableClassVars } from "stratum/vm/interfaces/computableClass";
-import { NodeCode } from "./nodeCode";
-import { TreeMemoryManager, TreeMemoryManagerArgs } from "./treeMemoryManager";
+import { ClassModel, Enviroment, EventCode, EventSubscriber, SchemaFunctions } from "stratum/translator";
+import { MemoryManagerArgs } from ".";
+import { buildSchema } from "./buildSchema";
 import { VarGraphNode } from "./varGraphNode";
-
-const disabledDefault = () => false;
 
 /**
  * Описание размещения имиджа на схеме.
@@ -23,257 +19,423 @@ export interface PlacementDescription {
     name: string;
 }
 
-export interface TreeVars extends ComputableClassVars {
-    mmanager: TreeMemoryManager;
-}
+export class Schema implements SchemaFunctions, EventSubscriber {
+    static build(root: string, lib: ClassLibrary, env: Enviroment) {
+        return buildSchema(root, lib, env);
+    }
 
-export interface TreeNodeArgs {
-    proto: ClassProto<NodeCode>;
-    placement?: PlacementDescription;
-}
+    private readonly env: Enviroment;
+    private readonly neighMapUC: Map<string, Schema>;
+    private readonly root: Schema;
+    private readonly parent: Schema = this;
+    private readonly handle: number = 0;
+    private readonly name: string = "";
+    private readonly position: Point2D = { x: 0, y: 0 };
 
-export class Schema implements ComputableClass {
-    private varGraphNodes: VarGraphNode[];
-    private captureEventsFromSpace = 0;
-    private neighbourMap: Map<string, Schema>;
-    readonly proto: ClassProto<NodeCode>;
-    private placement?: PlacementDescription;
-    private isDisabled: () => boolean = disabledDefault;
+    private children: Schema[] = [];
 
-    private root: Schema;
-    private _canReceiveEvents: boolean = false;
+    private readonly varGraphNodes: VarGraphNode[] = [];
+    private isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
 
-    private children?: Schema[];
+    readonly proto: ClassProto;
+    readonly TLB: SchemaFunctions["TLB"] = new Uint16Array(0);
 
-    private variablesCreated = false;
-
-    vars?: TreeVars;
-
-    readonly protoName: string;
-    readonly protoNameLowCase: string;
-
-    constructor({ proto, placement }: TreeNodeArgs) {
+    captureEventsFromSpace = 0;
+    constructor(proto: ClassProto, env: Enviroment, placement?: PlacementDescription) {
         this.proto = proto;
-        this.protoName = proto.name;
-        this.protoNameLowCase = proto.name.toLowerCase();
-        this.placement = placement;
+        this.env = env;
+        if (placement) {
+            this.handle = placement.handle;
+            this.name = placement.name;
+            this.position = placement.position;
+            this.parent = placement.parent;
+        }
 
-        this.varGraphNodes = proto.vars ? proto.vars.typeCodes.map((t) => new VarGraphNode(t)) : [];
+        const vars = proto.vars;
+        if (vars) {
+            this.varGraphNodes = vars.types.map((t) => new VarGraphNode(t));
+            this.TLB = new Uint16Array(vars.count);
 
-        let root: Schema = this;
-        while (root.placement && root.placement.parent !== root) root = root.placement.parent;
-        this.root = root;
-
-        this.neighbourMap = new Map([
-            ["", this],
-            ["\\", this.root],
-        ]);
-        const parent = placement && placement.parent;
-        if (parent) this.neighbourMap.set("..", parent);
+            const enableId = this.proto._enableVarId;
+            const disableId = this.proto._disableVarId;
+            if (enableId > 0 && (disableId < 0 || enableId < disableId)) {
+                this.isDisabled = Schema.disabledByEnable;
+            }
+            if (disableId > 0 && (enableId < 0 || disableId < enableId)) {
+                this.isDisabled = Schema.disabledByDisable;
+            }
+        }
+        {
+            let root: Schema = this;
+            while (root.parent !== root) root = root.parent;
+            this.root = root;
+            this.neighMapUC = new Map([
+                ["", this],
+                ["\\", root],
+            ]);
+            if (placement) this.neighMapUC.set("..", placement.parent);
+        }
     }
 
+    // ComputableSchema
+    getHObject() {
+        return this.handle;
+    }
+
+    getClassName(path: string) {
+        const resolved = this.resolve(path);
+        if (resolved === undefined) return "";
+        return resolved.proto.name;
+    }
+
+    setVar(objectName: string, varName: string, value: number | string): void {
+        const target = this.resolve(objectName);
+        if (target === undefined) return;
+        const { vars } = target.proto;
+        if (vars === undefined) return;
+        const id = vars.nameUCToId.get(varName.toUpperCase());
+        if (id !== undefined) target.setVarValue2(id, vars.types[id], value);
+    }
+
+    sendMessage(objectName: string, className: string, ...varNames: string[]) {
+        const { env, proto, TLB } = this;
+        if (env.level > 59) return;
+
+        if (objectName !== "") throw Error(`Вызов SendMessage с objectName=${objectName} не реализован`);
+        if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
+
+        const nameUC = className.toUpperCase();
+        const receivers = this.findClasses(nameUC);
+        if (receivers.length === 0) return;
+
+        const oProto = receivers[0].proto;
+        const otherModel = oProto.model;
+        if (!otherModel) return;
+
+        const myVars = proto.vars;
+        const otherVars = oProto.vars;
+
+        if (myVars === undefined || otherVars === undefined) {
+            for (const rec of receivers) if (rec !== this) Schema.computeModel(otherModel, rec, env);
+            return;
+        }
+
+        const idTypes = new Array<number>(varNames.length + varNames.length / 2);
+        let idx = 0;
+        for (let i = 0; i < varNames.length; i += 2) {
+            const myVarName = varNames[i].toUpperCase();
+            const myId = myVars.nameUCToId.get(myVarName);
+            if (myId === undefined) continue;
+
+            const otherVarName = varNames[i + 1].toUpperCase();
+            const otherId = otherVars.nameUCToId.get(otherVarName);
+            if (otherId === undefined) continue;
+
+            const typ = myVars.types[myId];
+            const otherTyp = otherVars.types[otherId];
+            if (typ !== otherTyp) continue;
+
+            idTypes[idx + 0] = TLB[myId];
+            idTypes[idx + 1] = otherId;
+            idTypes[idx + 2] = typ;
+            idx += 3;
+        }
+
+        const { news, olds } = env.memory;
+        for (const rec of receivers) {
+            if (rec === this) continue;
+            for (let i = 0; i < idTypes.length; i += 3) {
+                const myId = idTypes[i + 0];
+                if (myId === undefined) continue;
+                const otherId = rec.TLB[idTypes[i + 1]];
+                const typ = idTypes[i + 2];
+
+                const newA = news[typ];
+                const oldA = olds[typ];
+
+                const val = newA[myId];
+                newA[otherId] = val;
+                oldA[otherId] = val;
+
+                // olds[typ][otherId] = news[typ][otherId] = news[typ][myId];
+            }
+            Schema.computeModel(otherModel, rec, env);
+            for (let i = 0; i < idTypes.length; i += 3) {
+                const myId = idTypes[i + 0];
+                if (myId === undefined) continue;
+                const otherId = rec.TLB[idTypes[i + 1]];
+                const typ = idTypes[i + 2];
+
+                const newA = news[typ];
+                const oldA = olds[typ];
+
+                const val = newA[otherId];
+                newA[myId] = val;
+                oldA[myId] = val;
+                // news[typ][myId] = news[typ][otherId];
+                // olds[typ][myId] = news[typ][myId] = news[typ][otherId];
+            }
+        }
+    }
+
+    setCapture(hspace: number, path: string, flags: number) {
+        if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
+        const target = /*this.resolve(path)*/ this;
+        if (target === undefined || target.proto.msgVarId < 0) return;
+        target.captureEventsFromSpace = hspace;
+    }
+
+    releaseCapture() {
+        this.captureEventsFromSpace = 0;
+    }
+
+    registerObject(hspace: number, obj2d: number, path: string, message: number, flags: number): void;
+    registerObject(wname: string, obj2d: number, path: string, message: number, flags: number): void;
+    registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number) {
+        if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
+        const target = /*this.resolve(path)*/ this;
+        if (target === undefined || target.proto.msgVarId < 0) return;
+        this.env.graphics!.subscribe(target, wnameOrHspace, obj2d, message);
+    }
+    unregisterObject(hspace: number, path: string, code: number): void;
+    unregisterObject(wname: string, path: string, code: number): void;
+    unregisterObject(wnameOrHspace: number | string, path: string, code: number): void {
+        if (path !== "") throw Error(`Вызов UnRegisterObject с path=${path} не реализован`);
+        const target = /*this.resolve(path)*/ this;
+        if (target === undefined || target.proto.msgVarId < 0) return;
+        this.env.graphics!.unsubscribe(target, wnameOrHspace, code);
+    }
+
+    receive(code: EventCode, ...args: (string | number)[]) {
+        const { proto } = this;
+        if (proto.msgVarId < 0) return;
+        this.setVarValue2(proto.msgVarId, VarType.Float, code);
+
+        switch (code) {
+            case EventCode.WM_CONTROLNOTIFY:
+                this.setVarValue2(proto._hobjectVarId, VarType.Handle, args[0]);
+                this.setVarValue2(proto.iditemVarId, VarType.Float, args[1]);
+                this.setVarValue2(proto.wnotifycodeVarId, VarType.Float, args[2]);
+                break;
+            case EventCode.WM_SIZE:
+                this.setVarValue2(proto.nwidthVarId, VarType.Float, args[0]);
+                this.setVarValue2(proto.nheightVarId, VarType.Float, args[1]);
+                break;
+            case EventCode.WM_MOUSEMOVE:
+            case EventCode.WM_LBUTTONDOWN:
+            case EventCode.WM_LBUTTONUP:
+            case EventCode.WM_LBUTTONDBLCLK:
+            case EventCode.WM_RBUTTONDOWN:
+            case EventCode.WM_RBUTTONUP:
+            case EventCode.WM_RBUTTONDBLCLK:
+            case EventCode.WM_MBUTTONDOWN:
+            case EventCode.WM_MBUTTONUP:
+            case EventCode.WM_MBUTTONDBLCLK:
+                this.setVarValue2(proto.xposVarId, VarType.Float, args[0]);
+                this.setVarValue2(proto.yposVarId, VarType.Float, args[1]);
+                this.setVarValue2(proto.fwkeysVarId, VarType.Float, args[2]);
+                break;
+        }
+
+        const m = proto.model;
+        if (m === undefined) return;
+
+        const { env, TLB } = this;
+        Schema.computeModel(m, this, env);
+        // prettier-ignore
+        const { memory: { newFloats, oldFloats,newInts,oldInts,newStrings,oldStrings } } = env;
+        // Синхронизируем измененные в ходе вычислений переменные только на этом промежутке,
+        // чтобы не гонять memoryManager.sync()
+        for (const id of TLB) {
+            oldFloats[id] = newFloats[id];
+            oldInts[id] = newInts[id];
+            oldStrings[id] = newStrings[id];
+        }
+    }
+
+    // Для построения схемы.
     setChildren(children: Schema[]) {
-        if (this.children) throw new UsageError("Изменение подимиджей не реализовано");
-        this.children = children;
-
-        children.forEach((c) => {
-            const name = c.placement && c.placement.name;
-            if (name) this.neighbourMap.set(name.toLowerCase(), c);
+        if (this.children.length > 0) throw Error("Изменение подимиджей не реализовано");
+        (this.children = children).forEach((c) => {
+            if (c.name) this.neighMapUC.set(c.name.toUpperCase(), c);
         });
+        return this;
     }
 
-    getChild(handle: number): Schema | undefined {
-        return this.children && this.children.find((c) => c.placement!.handle === handle);
+    child(handle: number) {
+        return this.children.find((c) => c.handle === handle);
     }
 
-    static connectVar(first: Schema, firstId: number, second: Schema, secondId: number) {
-        return VarGraphNode.connect(first.varGraphNodes[firstId], second.varGraphNodes[secondId]);
-    }
-
-    /**
-     * Рекурсивно создает переменные имиджа и всех подимиджей.
-     *
-     * Необходимо применять к корню схемы после установки всех связей.
-     */
-    private createVarsRecursive(mmanagerArgs: TreeMemoryManagerArgs, mmanager: TreeMemoryManager) {
-        this.variablesCreated = true;
-        if (this.children) this.children.forEach((c) => c.createVarsRecursive(mmanagerArgs, mmanager));
-
-        if (!this.proto.vars) return;
-
-        const vars: TreeVars = {
-            nameToIdMap: this.proto.vars.varNameToId,
-            typeCodes: this.proto.vars.typeCodes,
-            names: this.proto.vars.names,
-            globalIds: new Uint16Array(this.varGraphNodes.map((v) => v.getIndex(mmanagerArgs))),
-            mmanager,
-        };
-
-        const enableId = vars.nameToIdMap.get("_enable");
-        const disableId = vars.nameToIdMap.get("_disable");
-        const msgId = vars.nameToIdMap.get("msg");
-
-        if (enableId !== undefined && vars.typeCodes[enableId] === VarCode.Float) {
-            if (disableId === undefined || vars.typeCodes[disableId] !== VarCode.Float || enableId < disableId) {
-                const id = vars.globalIds[enableId];
-                this.isDisabled = () => mmanager.newDoubleValues[id] < 1;
-            }
-        }
-
-        if (disableId !== undefined && vars.typeCodes[disableId] === VarCode.Float) {
-            if (enableId === undefined || vars.typeCodes[enableId] !== VarCode.Float || disableId < enableId) {
-                const id = vars.globalIds[disableId];
-                this.isDisabled = () => mmanager.newDoubleValues[id] > 0;
-            }
-        }
-
-        this._canReceiveEvents = msgId !== undefined && vars.typeCodes[msgId] === VarCode.Float;
-        this.vars = vars;
+    connectVar(id: number, second: Schema, secondId: number) {
+        return VarGraphNode.connect(this.varGraphNodes[id], second.varGraphNodes[secondId]);
     }
 
     /**
-     * Инициализирует значения переменных по умолчанию.
-     *
-     * Необходимо применять к корню схемы.
-     *
-     * Замечание: Значения родительского имиджа превыше дочерних, поэтому они применяются последними.
-     */
-    private applyDefaultValuesRecursive() {
-        if (this.children) this.children.forEach((c) => c.applyDefaultValuesRecursive());
-
-        if (!this.proto.vars || !this.vars) return;
-        const varCount = this.vars.globalIds.length;
-        for (let localIdx = 0; localIdx < varCount; localIdx++) {
-            const defaultValue = this.proto.vars.defaultValues[localIdx];
-            const type = this.vars.typeCodes[localIdx];
-            const name = this.vars.names[localIdx].toLowerCase();
-
-            let defValue: number | string | undefined;
-
-            //Значение по умолчанию
-            if (defaultValue !== undefined) {
-                defValue = defaultValue;
-            } else {
-                //Если знач. по умолчанию нет, пытаемся получить специальное значение переменной.
-                if (type === VarCode.Float) {
-                    if (name === "orgx") defValue = this.placement && this.placement.position.x;
-                    else if (name === "orgy") defValue = this.placement && this.placement.position.y;
-                } else if (type === VarCode.String) {
-                    if (name === "_objname") defValue = this.placement && this.placement.name;
-                    else if (name === "_classname") defValue = this.proto.name;
-                } else if (type === VarCode.Handle && name === "_hobject") defValue = this.placement && this.placement.handle;
-            }
-
-            if (defValue !== undefined) {
-                this.vars.mmanager.getDefaultValues(this.vars.typeCodes[localIdx])[this.vars.globalIds[localIdx]] = defValue;
-            }
-        }
-    }
-
-    /**
-     * Инициализирует память всего дерева и возвращает экземпляр `MemoryManager`.
+     * Рекурсивно пересоздает TLB и возвращает количество переменных каждого типа.
      *
      * Необходимо вызывать после проведения всех связей.
      */
-    createMemoryManager() {
-        if (this.vars && this.vars.mmanager) return this.vars.mmanager;
-
-        const mmanagerArgs: TreeMemoryManagerArgs = {
+    createTLB() {
+        const mmanagerArgs: MemoryManagerArgs = {
             floatsCount: 1,
             longsCount: 1,
             stringsCount: 1,
         };
-        const mmanager = new TreeMemoryManager();
-        this.createVarsRecursive(mmanagerArgs, mmanager);
-        mmanager.createBuffers(mmanagerArgs);
-        this.applyDefaultValuesRecursive();
-        return mmanager;
-    }
 
+        (function rebuild({ children, TLB, varGraphNodes }: Schema) {
+            children.forEach(rebuild);
+            TLB.set(varGraphNodes.map((v) => v.getIndex(mmanagerArgs)));
+        })(this);
+
+        return mmanagerArgs;
+    }
+    /**
+     * Устанавливает значения переменных по умолчанию для данного и всех дочерних имиджей.
+     *
+     * Замечание: Значения родительского имиджа превыше дочерних, поэтому они применяются последними.
+     */
+    applyDefaults() {
+        this.children.forEach((c) => c.applyDefaults());
+
+        const { vars } = this.proto;
+        if (!vars) return this;
+
+        for (let id = 0; id < vars.count; ++id) {
+            const type = vars.types[id];
+
+            //Значение по умолчанию
+            const defaultValue = vars.defaultValues[id];
+            if (defaultValue !== undefined) {
+                this.setNewVarValue(id, type, defaultValue);
+                continue;
+            }
+
+            //Если знач. по умолчанию нет, пытаемся получить специальное значение переменной.
+            switch (id) {
+                case this.proto.orgxVarId:
+                    this.setNewVarValue(id, type, this.position.x);
+                    break;
+                case this.proto.orgyVarId:
+                    this.setNewVarValue(id, type, this.position.y);
+                    break;
+                case this.proto._hobjectVarId:
+                    this.setNewVarValue(id, type, this.handle);
+                    break;
+                case this.proto._objnameVarId:
+                    this.setNewVarValue(id, type, this.name);
+                    break;
+                case this.proto._classnameVarId:
+                    this.setNewVarValue(id, type, this.proto.name);
+                    break;
+            }
+        }
+        return this;
+    }
     /**
      * Применяет к дереву имиджей набор переменных `varSet`, считанных из .stt файла.
      *
      * Замечание: Значения дочерних превыше родительских, поэтому они применяются последними.
      */
     applyVarSet(varSet: VariableSet) {
-        if (!this.variablesCreated) throw new UsageError("Память имиджей не инициализирована (сперва вызови createMemoryManager)");
-        // const handleMatch = !this.onSchemeData || this.onSchemeData.handle === varSet.handle;
-        if (this.vars && this.protoNameLowCase === varSet.classname.toLowerCase()) {
-            for (const { name, value } of varSet.values) {
-                const varId = this.vars.nameToIdMap.get(name.toLowerCase());
-                if (varId === undefined) continue;
-                const typeCode = this.vars.typeCodes[varId];
-                const globalId = this.vars.globalIds[varId];
-                this.vars.mmanager.getDefaultValues(typeCode)[globalId] = parseVarValue(typeCode, value);
+        const { name, vars } = this.proto;
+        if (vars && name.toUpperCase() === varSet.classname.toUpperCase()) {
+            for (const v of varSet.values) {
+                const id = vars.nameUCToId.get(v.name.toUpperCase());
+                if (id === undefined) continue;
+                const type = vars.types[id];
+                this.setNewVarValue(id, type, parseVarValue(type, v.value));
             }
         }
 
-        if (this.children) {
-            for (const childSet of varSet.childSets) {
-                const child = this.children.find((c) => c.placement && c.placement.handle === childSet.handle);
-                if (child) child.applyVarSet(childSet);
-            }
-        }
+        varSet.childSets.forEach((s) => this.child(s.handle)?.applyVarSet(s));
+        return this;
     }
 
-    getClassByPath(path: string): Schema | undefined {
+    /**
+     * Рекурсивно вычисляет схему имиджа.
+     */
+    compute() {
+        if (this.isDisabled(this) === true) return;
+        const { children, proto } = this;
+        for (const c of children) c.compute();
+
+        const m = proto.model;
+        if (m !== undefined) Schema.computeModel(m, this, this.env);
+    }
+
+    private resolve(path: string): Schema | undefined {
         if (path === "") return this;
         const filter = path.split("\\");
         let root = path[0] === "\\" ? this.root : this;
-        for (let i = 0; i < filter.length; i++) {
-            const cl = root.neighbourMap.get(filter[i]);
+        for (let i = 0; i < filter.length; ++i) {
+            const cl = root.neighMapUC.get(filter[i]);
             if (cl === undefined) return undefined;
             root = cl;
         }
         return root;
     }
 
-    getAllChildren() {
-        const collectNodes = (par: Schema, nodes: Schema[]) => {
-            if (par.children) par.children.forEach((c) => collectNodes(c, nodes));
-            nodes.push(par);
-        };
-        const nodes = new Array<Schema>();
-        collectNodes(this, nodes);
-        return nodes;
+    private setNewVarValue(id: number, type: VarType, value: number | string) {
+        if (id < 0) return;
+        this.env.memory.news[type][this.TLB[id]] = value;
+    }
+    private setVarValue2(id: number, type: VarType, value: number | string) {
+        if (id < 0) return;
+        const trl = this.TLB[id];
+        this.env.memory.olds[type][trl] = value;
+        this.env.memory.news[type][trl] = value;
     }
 
-    startCaptureEvents(spaceHandle: number): void {
-        this.captureEventsFromSpace = spaceHandle;
+    private classNodeCache = new Map<string, Schema[]>();
+    private findClasses(classNameUC: string): Schema[] {
+        const { root } = this;
+        const nodes = root.classNodeCache.get(classNameUC);
+        if (nodes !== undefined) return nodes;
+
+        const nodes2 = new Array<Schema>();
+        (function collect(s: Schema) {
+            s.children.forEach(collect);
+            if (s.proto.name.toUpperCase() === classNameUC) nodes2.push(s);
+        })(root);
+
+        root.classNodeCache.set(classNameUC, nodes2);
+        return nodes2;
     }
 
-    get canReceiveEvents(): boolean {
-        return this._canReceiveEvents;
+    /*
+    private static computeModelSafe(model: ClassModel, schema: Schema, env: Enviroment) {
+        env.inc();
+        try {
+            model(schema, env);
+        } catch (e) {
+            if (e instanceof SchemaError) throw e;
+            console.error(e);
+            let root: Schema = schema;
+            let path = "";
+            while (root.parent !== root) {
+                path = ` -> ${root.proto.name} #${root.handle}` + path;
+                root = root.parent;
+            }
+            throw new SchemaError("Ошибка выполнения " + root.proto.name + path);
+        }
+        env.dec();
+    }
+    */
+
+    private static computeModel(model: ClassModel, schema: Schema, env: Enviroment) {
+        env.inc();
+        model(schema, env);
+        env.dec();
     }
 
-    stopCaptureEvents(): void {
-        this.captureEventsFromSpace = 0;
+    private static alwaysEnabled() {
+        return false;
     }
-
-    isCapturingEvents(spaceHandle: number): boolean {
-        return this.captureEventsFromSpace === spaceHandle;
+    private static disabledByEnable({ env, proto, TLB }: Schema) {
+        return env.memory.newFloats[TLB[proto._enableVarId]] <= 0;
     }
-
-    toCompactString() {
-        return `${this.placement ? "#" + this.placement.handle + " " : ""}${this.proto.name}`;
-    }
-
-    compute(ctx: ExecutionContext, force: boolean = false): void {
-        if (ctx.hasError === true || (force === false && this.isDisabled() === true)) return;
-
-        const children = this.children;
-        if (children !== undefined) for (let i = 0; i < children.length; i++) children[i].compute(ctx);
-
-        const code = this.proto.code;
-        if (code === undefined) return;
-
-        const prevCmdIdx = ctx.nextOpPointer;
-        const prevClass = ctx.currentClass;
-
-        ctx.pushClass(this);
-        executeCode(ctx, code);
-
-        ctx.popClass(prevClass);
-        ctx.nextOpPointer = prevCmdIdx;
+    private static disabledByDisable({ env, proto, TLB }: Schema) {
+        return env.memory.newFloats[TLB[proto._disableVarId]] > 0;
     }
 }
+// class SchemaError extends Error {}

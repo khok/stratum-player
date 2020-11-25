@@ -1,5 +1,8 @@
 {
     "extends": "../tsconfig.base.json",
+    "exclude": [
+        "./stratum/vm"
+    ],
     "compilerOptions": {
         "baseUrl": ".",
         "noUnusedLocals": true,

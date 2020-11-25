@@ -1,6 +1,4 @@
-import { NotImplementedError } from "stratum/helpers/errors";
-import { GroupObject } from "stratum/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { SceneObject, SceneObject2d } from ".";
 import { BaseObjectMixin, ObjectArgs } from "./baseObjectMixin";
 
@@ -8,7 +6,7 @@ export interface SceneGroupObjectArgs extends ObjectArgs {
     items?: SceneObject[];
 }
 
-export class SceneGroupObject extends BaseObjectMixin implements GroupObject {
+export class SceneGroupObject extends BaseObjectMixin {
     readonly type = "otGROUP2D";
     readonly angle = 0;
     positionX: number = 0;
@@ -44,6 +42,11 @@ export class SceneGroupObject extends BaseObjectMixin implements GroupObject {
     //item operations
     getItem(index: number): SceneObject | undefined {
         return this.items[index];
+    }
+
+    getItemHandle(index: number): number {
+        const it = this.items[index];
+        return it !== undefined ? it.handle : 0;
     }
 
     hasItem(obj: SceneObject): NumBool {
@@ -147,8 +150,8 @@ export class SceneGroupObject extends BaseObjectMixin implements GroupObject {
         return 1;
     }
 
-    setVisibility(value: NumBool): NumBool {
-        if (!value) throw new NotImplementedError("Попытка скрыть объект-группу.");
+    setVisibility(value: number): NumBool {
+        if (!value) throw Error("Не реализовано: попытка скрыть объект-группу.");
         else return 1;
     }
 

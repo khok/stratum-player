@@ -1,84 +1,56 @@
-import { Project, ProjectDiag, ProjectOptions } from "stratum/api";
-import { ClassProto } from "stratum/common/classProto";
-import { createComposedScheme } from "stratum/common/createComposedScheme";
+import { Project, ProjectOptions, SmoothExecutor, WindowHost } from "stratum/api";
+import { ClassLibrary } from "stratum/common/classLibrary";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
-import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
-import { SimpleWs } from "stratum/graphics/simpleWs";
-import { BinaryStream } from "stratum/helpers/binaryStream";
-import { Mutable } from "stratum/helpers/utilityTypes";
-import { build } from "stratum/schema/build";
-import { TreeManager } from "stratum/schema/treeManager";
+import { GraphicsManager } from "stratum/graphics";
+import { Schema } from "stratum/schema";
+import { Enviroment, ProjectFunctions } from "stratum/translator";
 import { VFSDir } from "stratum/vfs";
-import { ExecutionContext } from "stratum/vm/executionContext";
-import { ProjectManager } from "stratum/vm/interfaces/projectManager";
-import { findMissingCommandsRecursive, formatMissingCommands } from "stratum/vm/showMissingCommands";
-import { NumBool, ParsedCode } from "stratum/vm/types";
-import { SimpleComputer } from "../common/simpleComputer";
+import { MemoryManager } from "./memoryManager";
+import { NativeWs, SimpleWs } from "./ws";
 
 export interface ProjectResources {
     dir: VFSDir;
     prjInfo: ProjectInfo;
-    classes: ClassProto<ParsedCode>[];
+    classes: ClassLibrary;
     stt?: VariableSet;
     options?: ProjectOptions;
 }
 
-export class Player implements Project, ProjectManager {
-    private _diag: Mutable<ProjectDiag>;
-    private _computer = new SimpleComputer();
-    private _state: "closed" | "playing" | "paused" | "error" = "closed";
+export class Player implements Project, ProjectFunctions {
+    private _state: Project["state"] = "closed";
+    private readonly _diag = { iterations: 0, missingCommands: [] };
+    private _computer = new SmoothExecutor();
+    private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
+
+    private readonly prjInfo: ProjectInfo;
+    private readonly classes: ClassLibrary;
+    private readonly stt?: VariableSet | undefined;
+
+    private graphics?: GraphicsManager;
     private loop: (() => boolean) | undefined;
-    private handlers = {
-        closed: new Set<any>(),
-        error: new Set<any>(),
-    };
-    private classlib: Map<string, ClassProto<ParsedCode>>;
-    private ws?: SimpleWindowManager;
 
     readonly options: ProjectOptions;
     readonly dir: VFSDir;
-    readonly prjInfo: ProjectInfo;
-    readonly stt?: VariableSet | undefined;
 
     constructor({ dir, prjInfo, classes, stt, options }: ProjectResources) {
         this.dir = dir;
         this.prjInfo = prjInfo;
+        this.classes = classes;
         this.stt = stt;
         this.options = { ...options };
-
-        const classlib = new Map<string, ClassProto<ParsedCode>>();
-        for (const p of classes) {
-            const keyUC = p.name.toUpperCase();
-            const prev = classlib.size;
-            classlib.set(keyUC, p);
-            if (classlib.size === prev) {
-                const files = classes.filter((c) => c.name.toUpperCase() === keyUC).map((c) => c.filepathDos);
-                throw Error(`Конфликт имен имиджей: "${p.name}" обнаружен в файлах:\n${files.join(";\n")}.`);
-            }
-        }
-        this.classlib = classlib;
-
-        const miss = findMissingCommandsRecursive(prjInfo.rootClassName, classlib);
-        if (miss.errors.length > 0) console.warn("Ошибки:", miss.errors);
-        if (miss.missingOperations.length > 0) console.warn(formatMissingCommands(miss.missingOperations));
-        this._diag = {
-            iterations: 0,
-            missingCommands: miss.missingOperations,
-        };
     }
 
     get state() {
         return this._state;
     }
 
-    get computer() {
-        return this._computer;
-    }
-
     get diag() {
         return this._diag;
+    }
+
+    get computer() {
+        return this._computer;
     }
 
     set computer(value) {
@@ -90,49 +62,49 @@ export class Player implements Project, ProjectManager {
         this._computer = value;
     }
 
-    play(container?: HTMLElement): this {
+    play(): this;
+    play(container: HTMLElement): this;
+    play(host: WindowHost): this;
+    play(project: Player): this;
+    play(ghost?: HTMLElement | WindowHost | Player): this {
         if (this.loop) return this;
 
-        const host = container && new SimpleWs(container);
-        if (host) this.ws = new SimpleWindowManager(host, this.options);
-        else this.ws = this.ws || new SimpleWindowManager(undefined, this.options);
+        let graphics = ghost instanceof Player ? ghost.graphics : this.graphics;
+        if (!graphics) {
+            let host: WindowHost;
+            if (!ghost || ghost instanceof Player) host = new NativeWs();
+            else host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
+            graphics = new GraphicsManager(host);
 
-        // TODO: по идее то что здесь создается надо подкешировать
-        const { classlib, prjInfo: prj, stt } = this;
-        const tree = build(prj.rootClassName, classlib);
-        const memoryManager = tree.createMemoryManager();
-        if (stt) tree.applyVarSet(stt);
+            this.graphics = graphics;
+            if (ghost instanceof Player) ghost.graphics = graphics;
+        } else if (ghost && !(ghost instanceof Player)) {
+            graphics.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
+        }
 
-        const ctx = new ExecutionContext({
-            classManager: new TreeManager({ tree }),
-            memoryManager,
-            projectManager: this,
-            windows: this.ws,
-        });
+        const mem = new MemoryManager(); // Память имиджей.
+        const schema = Schema.build(this.prjInfo.rootClassName, this.classes, new Enviroment(mem, { graphics, project: this }));
+        mem.createBuffers(schema.createTLB()); // Инициализируем память
+
+        schema.applyDefaults(); //Заполняем значениями по умолчанию
+        if (this.stt) schema.applyVarSet(this.stt); // Применяем _preload.stt
 
         this._diag.iterations = 0;
-
         // Main Loop
         this.loop = () => {
-            ++this._diag.iterations;
-            tree.compute(ctx);
-            if (ctx.executionStopped) {
-                if (ctx.hasError) {
-                    this._state = "error";
-                    this.handlers.error.forEach((h) => h(ctx.error));
-                } else {
-                    this._state = "closed";
-                    this.loop = undefined;
-                    if (this.ws) this.ws.closeAll();
-                    this.handlers.closed.forEach((h) => h());
-                }
+            mem.sync().assertZeroIndexEmpty();
+            try {
+                schema.compute();
+            } catch (e) {
+                console.error(e);
+                this._state = "error";
+                this.handlers.error.forEach((h) => h(e.message));
                 return false;
             }
-            memoryManager.sync().assertZeroIndexEmpty();
+            ++this._diag.iterations;
             return true;
         };
 
-        memoryManager.init();
         this.computer.run(this.loop);
         this._state = "playing";
         return this;
@@ -141,7 +113,7 @@ export class Player implements Project, ProjectManager {
     close(): this {
         this.computer.stop();
         this.loop = undefined;
-        if (this.ws) this.ws.closeAll();
+        this.graphics?.closeAllWindows();
         this._state = "closed";
         return this;
     }
@@ -176,53 +148,37 @@ export class Player implements Project, ProjectManager {
         return this;
     }
 
-    get rootClassName() {
-        return this.prjInfo.rootClassName;
+    // Методы ProjectManager
+    closeAll(): void {
+        this.close();
+        this.handlers.closed.forEach((h) => h());
     }
-
-    getClassScheme(className: string): VectorDrawing | undefined {
-        const data = this.classlib.get(className.toUpperCase());
-        if (!data || !data.scheme) return undefined;
-        //TODO: закешировать скомпозированную схему.
-        const { children, scheme } = data;
-        return children ? createComposedScheme(scheme, children, this.classlib) : scheme;
+    openSchemeWindow(wname: string, className: string, attribute: string): number {
+        const vdr = this.classes.getComposedScheme(className);
+        return this.graphics!.openWindow(wname, attribute, vdr, this);
     }
-
-    hasClass(className: string): NumBool {
-        return this.classlib.has(className.toUpperCase()) ? 1 : 0;
+    loadSpaceWindow(wname: string, fileName: string, attribute: string): number {
+        const file = this.dir.get(fileName);
+        const vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
+        return this.graphics!.openWindow(wname, attribute, vdr, this);
     }
-
+    createObjectFromFile2D(hspace: number, fileName: string, x: number, y: number, flags: number): number {
+        const file = this.dir.get(fileName);
+        const vdr = file && !file.dir && file.readSyncAs("vdr");
+        return vdr ? this.graphics!.insertVDR(hspace, x, y, flags, vdr) : 0;
+    }
+    createDIB2d(hspace: number, fileName: string): number {
+        const file = this.dir.get(fileName);
+        const st = file && !file.dir && file.streamSync();
+        return st ? this.graphics!.createBitmap(hspace, st) : 0;
+    }
+    createDoubleDib2D(hspace: number, fileName: string): number {
+        const file = this.dir.get(fileName);
+        const st = file && !file.dir && file.streamSync();
+        return st ? this.graphics!.createDoubleBitmap(hspace, st) : 0;
+    }
     getClassDirectory(className: string): string {
-        const cl = this.classlib.get(className.toUpperCase());
-        return (cl && cl.directoryDos) || "";
-    }
-
-    private _fileWarnShowed = false;
-    openFileStream(path: string): BinaryStream | undefined {
-        const f = this.dir.get(path);
-        if (!f || f.dir) return undefined;
-        const buf = f.arraybufferSync();
-        if (!buf) {
-            if (!this._fileWarnShowed) throw Error(`Не удалось прочесть содержимое ${f.pathDos}. Возможно, файл не был предзагружен.`);
-            this._fileWarnShowed = true;
-            return undefined;
-        }
-        return new BinaryStream(buf, { filepathDos: f.pathDos });
-    }
-
-    private _vdrWarnShowed = false;
-    openVdrFile(path: string): VectorDrawing | undefined {
-        const f = this.dir.get(path);
-        if (!f || f.dir) return undefined;
-        const vdr = f.readSyncAs("vdr");
-        if (!vdr) {
-            if (!this._vdrWarnShowed) throw Error(`Не удалось прочесть ${f.pathDos}. Возможно, файл не является VDR-файлом или не был предзагружен.`);
-            this._vdrWarnShowed = true;
-        }
-        return vdr;
-    }
-
-    isFileExist(path: string): NumBool {
-        return this.dir.get(path) ? 1 : 0;
+        const proto = this.classes.get(className);
+        return proto !== undefined ? proto.directoryDos : "";
     }
 }

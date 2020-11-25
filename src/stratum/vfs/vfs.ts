@@ -1,10 +1,10 @@
 import { loadAsync } from "jszip";
 import { FileSystem, OpenProjectOptions, OpenZipOptions, ZipSource } from "stratum/api";
+import { ClassLibrary } from "stratum/common/classLibrary";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { getPathParts, getPrefixAndPathParts, SLASHES } from "stratum/helpers/pathOperations";
 import { Player } from "stratum/player";
-import { parseBytecode } from "stratum/vm/parseBytecode";
 import { VFSDir, VFSFile } from ".";
 
 export class VFS implements FileSystem {
@@ -84,9 +84,9 @@ export class VFS implements FileSystem {
             let prjFile: VFSFile | undefined;
             const matches = new Array<string>();
 
-            const tailPathDosUC = options.path && getPathParts(options.path).join("\\").toUpperCase();
+            const pathDosUC = options.path && getPathParts(options.path).join("\\").toUpperCase();
             for (const v of this.files(/.+\.(prj|spj)$/i)) {
-                if (tailPathDosUC && !v.pathDos.toUpperCase().includes(tailPathDosUC)) continue;
+                if (pathDosUC && !v.pathDos.toUpperCase().includes(pathDosUC)) continue;
                 prjFile = v;
                 matches.push(v.pathDos);
             }
@@ -94,12 +94,14 @@ export class VFS implements FileSystem {
 
             if (!prjFile) throw Error("Не найдено файлов проектов");
             workDir = prjFile.parent;
+            console.log(`Открываем проект ${prjFile.pathDos}`);
             prjInfo = await prjFile.readAs("prj");
         }
 
-        // 2) Определяем пути поиска файлов имиджей.
-        const classDirs = new Set([workDir]);
+        // 2) Загружаем имиджи
+        let classes: ClassLibrary;
         {
+            const classDirs = new Set([workDir]);
             // 2.1) Разбираем пути поиска имиджей, которые через запятую прописаны в настройках проекта.
             const settingsPaths = prjInfo.settings?.classSearchPaths;
             if (settingsPaths) {
@@ -119,17 +121,21 @@ export class VFS implements FileSystem {
                     if (resolved?.dir) classDirs.add(resolved);
                 }
             }
-            // Исключаем ошибки рекурсивного сканирования имиджей
-            // (оригинальный Stratum так, кстати, не умеет)
+            // 2.3) Исключаем ошибки рекурсивного сканирования имиджей (оригинальный Stratum так, кстати, не умеет)
             for (let c of classDirs) for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
+
+            const dirs = [...classDirs];
+            console.log(`Пути поиска имиджей:\n${dirs.map((d) => d.pathDos).join(";\n")}`);
+
+            // 2.4) Загружаем имиджи из выбранных директорий.
+            const searchRes = dirs.map((c) => [...c.files(/.+\.cls$/i)]);
+            const clsFiles = new Array<VFSFile>().concat(...searchRes);
+            const clsProtos = await Promise.all(clsFiles.map((f) => f.readAs("cls")));
+            console.log(`Загружено ${clsFiles.length} имиджей объемом ${(clsProtos.reduce((a, b) => a + b.byteSize, 0) / 1024).toFixed()} КБ`);
+            classes = new ClassLibrary(clsProtos);
         }
 
-        // 3) Загружаем имиджи из выбранных директорий.
-        const searchRes = [...classDirs].map((c) => [...c.files(/.+\.cls$/i)]);
-        const classFiles = new Array<VFSFile>().concat(...searchRes);
-        const classes = await Promise.all(classFiles.map((f) => f.readAs("cls", parseBytecode)));
-
-        // 4) Загружаем STT файл.
+        // 3) Загружаем STT файл.
         let stt: VariableSet | undefined;
         {
             const sttFile = workDir.get("_preload.stt");
@@ -142,7 +148,7 @@ export class VFS implements FileSystem {
             }
         }
 
-        // 5) Из всего этого создаем новый проигрыватель проекта.
+        // 4) Из всего этого создаем новый проигрыватель проекта.
         return new Player({ dir: workDir, prjInfo, classes, stt, options });
     }
 }

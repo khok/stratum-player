@@ -1,17 +1,15 @@
-import { ClassProto } from "stratum/common/classProto";
-import { VarCode } from "stratum/common/varCode";
-import { ClassLink } from "stratum/fileFormats/cls";
-import { BadDataError } from "stratum/helpers/errors";
-import { NodeCode } from "./nodeCode";
+import { ClassLibrary } from "stratum/common/classLibrary";
+import { ClassLink, VarType } from "stratum/fileFormats/cls";
+import { Enviroment } from "stratum/translator";
 import { PlacementDescription, Schema } from "./schema";
 
 function applyLinks(node: Schema, links: ClassLink[]) {
-    const warn = (msg: string) => console.warn(`Имидж ${node.protoName}: ${msg}`);
+    const warn = (msg: string) => console.warn(`Имидж ${node.proto.name}: ${msg}`);
 
     for (const { handle1, handle2, connectedVars } of links) {
         // Получаем соединяемые объекты
-        const first = handle1 === 0 ? node : node.getChild(handle1);
-        const second = handle2 === 0 ? node : node.getChild(handle2);
+        const first = handle1 === 0 ? node : node.child(handle1);
+        const second = handle2 === 0 ? node : node.child(handle2);
 
         if (!first) warn(`Подимидж #${handle1} не найден`);
         else if (!first.proto.vars) warn(`Подимидж #${handle1} не имеет переменных`);
@@ -23,21 +21,21 @@ function applyLinks(node: Schema, links: ClassLink[]) {
         const firstVars = first.proto.vars;
         const secondVars = second.proto.vars;
 
-        const obj1Name = `подимидже ${first.protoName} #${handle1}`;
-        const obj2Name = `подимидже ${second.protoName} #${handle2}`;
+        const obj1Name = `подимидже ${first.proto.name} #${handle1}`;
+        const obj2Name = `подимидже ${second.proto.name} #${handle2}`;
 
         // Соединяем каждую пару переменных этих объектов.
         for (const { name1, name2 } of connectedVars) {
-            const varId1 = firstVars.varNameToId.get(name1.toLowerCase());
-            const varId2 = secondVars.varNameToId.get(name2.toLowerCase());
+            const varId1 = firstVars.nameUCToId.get(name1.toUpperCase());
+            const varId2 = secondVars.nameUCToId.get(name2.toUpperCase());
 
             if (varId1 === undefined) warn(`Переменная ${name1} не найдена в ${obj1Name}`);
             if (varId2 === undefined) warn(`Переменная ${name2} не найдена в ${obj2Name}`);
             if (varId1 === undefined || varId2 === undefined) continue;
 
-            if (!Schema.connectVar(first, varId1, second, varId2)) {
-                const typeFirst = VarCode[first.proto.vars.typeCodes[varId1]];
-                const typeSecond = VarCode[second.proto.vars.typeCodes[varId2]];
+            if (!first.connectVar(varId1, second, varId2)) {
+                const typeFirst = VarType[first.proto.vars.types[varId1]];
+                const typeSecond = VarType[second.proto.vars.types[varId2]];
                 warn(`Не удалось соединить ${name1} (${typeFirst}) в ${obj1Name} и ${name2} (${typeSecond}) в ${obj2Name}`);
             }
         }
@@ -47,20 +45,20 @@ function applyLinks(node: Schema, links: ClassLink[]) {
 /**
  * Рекурсивно создает дерево имиджей.
  * @param protoName - имя прототипа имиджа;
- * @param classes - коллекция имиджей;
+ * @param lib - коллекция имиджей;
  * @param placement - описание размещения имиджа на схеме родительского имиджа.
  */
-function buildSchemaRecursive(protoName: string, classes: Map<string, ClassProto<NodeCode>>, placement?: PlacementDescription): Schema {
-    const proto = classes.get(protoName.toUpperCase());
+export function buildSchema(protoName: string, lib: ClassLibrary, env: Enviroment, placement?: PlacementDescription): Schema {
+    const proto = lib.get(protoName);
     if (!proto) throw Error(`Имидж "${protoName}" не найден.`);
 
     //Создаем текущий узел дерева.
-    const node = new Schema({ proto, placement });
+    const node = new Schema(proto, env, placement);
 
     //Создаем детей.
     if (proto.children) {
         const children = proto.children.map((child) => {
-            return buildSchemaRecursive(child.classname, classes, {
+            return buildSchema(child.classname, lib, env, {
                 parent: node,
                 ...child.schemeInfo,
             });
@@ -69,16 +67,6 @@ function buildSchemaRecursive(protoName: string, classes: Map<string, ClassProto
     }
 
     //Проводим связи между дочерними узлами и текущим узлом.
-    if (proto.links) {
-        applyLinks(node, proto.links);
-    }
-
+    if (proto.links) applyLinks(node, proto.links);
     return node;
-}
-
-/**
- * Создает дерево вычисляемых имиджей и проводит связи между ними.
- */
-export function build(rootClassName: string, classes: Map<string, ClassProto<NodeCode>>) {
-    return buildSchemaRecursive(rootClassName, classes);
 }

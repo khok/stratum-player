@@ -1,3 +1,4 @@
+import { FastestComputer, SmoothComputer } from "stratum/common/computers";
 import { createZipFS } from "stratum/vfs";
 
 export interface FileSystemConstructor {
@@ -39,7 +40,8 @@ export interface FileSystem {
      */
     merge(fs: FileSystem): this;
     /**
-     * Возвращает список файлов, попадающих под условия поиска.
+     * Возвращает список файлов в системе.
+     * @param regexp - условия поиска файлов.
      */
     files(regexp?: RegExp): IterableIterator<FileSystemFile>;
     /**
@@ -128,7 +130,7 @@ export interface ProjectOptions {
 
 export interface OpenProjectOptions extends ProjectOptions {
     /**
-     * Завершающая часть пути к файлу проекта.
+     * Часть пути к файлу проекта.
      */
     path?: string;
     /**
@@ -167,10 +169,25 @@ export interface Project {
 
     /**
      * Запускает выполнение проекта.
+     * Открываемые в проекте окна будут всплывающими.
+     */
+    play(): this;
+    /**
+     * Запускает выполнение проекта.
      * @param container - HTML элемент, в котором будут размещаться
      * открываемые в проекте окна.
      */
-    play(container?: HTMLElement): this;
+    play(container: HTMLElement): this;
+    /**
+     * Запускает выполнение проекта.
+     * @param host - Хост оконной системы.
+     */
+    play(host: WindowHost): this;
+    /**
+     * Запускает выполнение проекта.
+     * @param project - Проект, ресурсы которого будут переиспользованы.
+     */
+    play(project: Project): this;
     /**
      * Закрывает проект.
      */
@@ -238,10 +255,11 @@ export interface ProjectDiag {
 }
 
 export interface WindowOptions {
+    view: HTMLDivElement;
     /**
-     * Имя открытого окна.
+     * Название открываемого окна.
      */
-    title?: string;
+    title: string;
 }
 
 /**
@@ -253,41 +271,11 @@ export interface WindowHost {
      */
     readonly width: number;
     readonly height: number;
-    window(options?: WindowOptions): WindowHostWindow;
+    window(options: WindowOptions): WindowHostWindow;
 }
 
 export interface WindowHostWindow {
-    readonly container: HTMLElement;
-    /**
-     * Имя окна.
-     */
-    title: string;
-    /**
-     * Область окна.
-     */
-    // width: number;
-    // height: number;
-
-    /**
-     * Регистрирует обработчик события загрузки ресурсов окна.
-     */
-    // on(event: "loaded", handler: () => void): void;
-    /**
-     * Разрегистрирует обработчик события загрузки ресурсов окна.
-     * @param handler Если обработчик не указан, разрегистрируются все
-     * обработчики данного события.
-     */
-    // off(event: "loaded", handler?: () => void): void;
-    /**
-     * Регистрирует обработчик события перемещения окна пользователем.
-     */
-    // on(event: "moved", handler: (x: number, y: number) => void): void;
-    /**
-     * Разрегистрирует обработчик события перемещения окна пользователем.
-     * @param handler Если обработчик не указан, разрегистрируются все
-     * обработчики данного события.
-     */
-    // off(event: "moved", handler?: (x: number, y: number) => void): void;
+    setTitle(title: string): void;
     /**
      * Регистрирует обработчик события изменения размера окна пользователем.
      */
@@ -309,6 +297,7 @@ export interface WindowHostWindow {
      */
     off(event: "closed", handler?: () => void): void;
 
+    toTop(): void;
     /**
      * Закрывает окно.
      */
@@ -336,6 +325,13 @@ export function setLogLevel(logLevel: "err" | "full") {
     console.log = logLevel === "err" ? function () {} : origL;
 }
 setLogLevel("err");
+
+export interface ExecutorConstructor {
+    new (args?: any): Executor;
+}
+
+export const SmoothExecutor: ExecutorConstructor = SmoothComputer;
+export const FastestExecutor: ExecutorConstructor = FastestComputer;
 
 /**
  * Версия API.

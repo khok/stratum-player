@@ -1,43 +1,32 @@
 import { VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
-import { EventCode } from "stratum/vm/consts";
-import { ExecutionContext } from "stratum/vm/executionContext";
-import { ComputableClass } from "stratum/vm/interfaces/computableClass";
-import { GraphicSpace } from "stratum/vm/interfaces/graphicSpace";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { createObjects, createTools } from "./createToolsAndObjects";
-import { InputEventReceiver, Renderer } from "./interfaces";
+import { Renderer } from "./interfaces";
 import { SceneBitmapObject, SceneGroupObject, SceneLineObject, SceneObject, SceneTextObject } from "./objects";
 import { SceneTools } from "./sceneTools";
 
-export interface SceneEventSubscriber {
-    receiver: ComputableClass;
-    ctx: ExecutionContext;
-    eventCode: EventCode;
-    objectHandle?: number;
-}
-
 export interface SceneArgs {
-    renderer: Renderer & InputEventReceiver;
-    handle: number;
+    renderer: Renderer;
     vdr?: VectorDrawing;
 }
 
-export class Scene implements GraphicSpace {
+export class Scene {
+    setScale(ms: number): NumBool {
+        return 1;
+    }
     tools: SceneTools;
 
-    private objects: HandleMap<SceneObject>;
+    readonly objects: HandleMap<SceneObject>;
     private _originX: number = 0;
     private _originY: number = 0;
-    private subs = new Array<SceneEventSubscriber>();
     private layers: number = 0;
 
-    readonly handle: number;
     readonly renderer: Renderer;
+    scale: number = 1;
 
-    constructor({ handle, vdr, renderer }: SceneArgs) {
-        this.handle = handle;
+    constructor({ vdr, renderer }: SceneArgs) {
         this.renderer = renderer;
 
         if (vdr) {
@@ -62,12 +51,12 @@ export class Scene implements GraphicSpace {
             this.objects = HandleMap.create();
         }
 
-        renderer.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
-        renderer.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
-        renderer.subscribeToWindowResize((...args) => this.dispatchWindowResizeEvent(...args));
+        // renderer.subscribeToControlEvents((...args) => this.dispatchControlEvent(...args));
+        // renderer.subscribeToMouseEvents((...args) => this.dispatchMouseEvent(...args));
+        // renderer.subscribeToWindowResize((...args) => this.dispatchWindowResizeEvent(...args));
     }
 
-    insertVectorDrawing(vdr: VectorDrawing, x: number, y: number) {
+    insertVectorDrawing(x: number, y: number, flags: number, vdr: VectorDrawing): number {
         const tools = createTools(vdr);
         const topLevelItems: SceneObject[] = [];
 
@@ -88,7 +77,7 @@ export class Scene implements GraphicSpace {
             }
         }
         this.tools.merge(tools);
-        if (topLevelItems.length === 0) return undefined;
+        if (topLevelItems.length === 0) return 0;
 
         let root: SceneObject;
         if (topLevelItems.length > 1) {
@@ -101,7 +90,7 @@ export class Scene implements GraphicSpace {
 
         root.setPosition(x, y);
         if (vdr.elementOrder) this.renderer.placeObjects(vdr.elementOrder.map((h) => map.get(h)!));
-        return root;
+        return root.handle;
     }
 
     get originX() {
@@ -124,13 +113,15 @@ export class Scene implements GraphicSpace {
         if (this.layers !== layers) for (const obj of this.objects.values()) if (obj.type !== "otGROUP2D") obj.setHiddenLayers(layers);
     }
 
-    createLine(points: Point2D[], penHandle: number, brushHandle: number): SceneLineObject {
+    createLine(hpen: number, hbrush: number, coords: number[]): number {
         const handle = HandleMap.getFreeHandle(this.objects);
+
+        const points = Array.from({ length: coords.length / 2 }, (_, i) => ({ x: coords[i * 2], y: coords[i * 2 + 1] }));
         const obj = SceneLineObject.create(
             {
                 handle,
-                brushHandle,
-                penHandle,
+                brushHandle: hbrush,
+                penHandle: hpen,
                 points,
             },
             this.renderer,
@@ -138,10 +129,10 @@ export class Scene implements GraphicSpace {
         );
         this.objects.set(handle, obj);
         this.renderer.appendObjectToEnd(obj.renderable);
-        return obj;
+        return handle;
     }
 
-    createBitmap(x: number, y: number, bmpHandle: number, isDouble: boolean): SceneBitmapObject | undefined {
+    createBitmap(x: number, y: number, bmpHandle: number, isDouble: boolean): number {
         const handle = HandleMap.getFreeHandle(this.objects);
         const obj = SceneBitmapObject.create(
             {
@@ -153,54 +144,80 @@ export class Scene implements GraphicSpace {
             this.renderer,
             this.tools
         );
-        if (!obj) return undefined;
+        if (obj === undefined) return 0;
         this.objects.set(handle, obj);
         this.renderer.appendObjectToEnd(obj.renderable);
-        return obj;
+        return handle;
     }
 
-    createText(x: number, y: number, angle: number, textToolHandle: number): SceneTextObject | undefined {
+    createText(htext: number, x: number, y: number, angle: number): number {
         const handle = HandleMap.getFreeHandle(this.objects);
         const obj = SceneTextObject.create(
             {
                 handle,
                 angle,
                 position: { x, y },
-                textToolHandle,
+                textToolHandle: htext,
             },
             this.renderer,
             this.tools
         );
-        if (!obj) return undefined;
+        if (obj === undefined) return 0;
         this.objects.set(handle, obj);
         this.renderer.appendObjectToEnd(obj.renderable);
-        return obj;
+        return handle;
     }
 
-    createGroup(objectHandles: number[]): SceneGroupObject | undefined {
+    createGroup(objectHandles: number[]): number {
         const items = new Array<SceneObject>(objectHandles.length);
         for (let i = 0; i < objectHandles.length; i++) {
             const handle = objectHandles[i];
             const obj = this.objects.get(handle);
-            if (!obj) console.warn(`Попытка создать группу с несуществующим объектом ${handle}`);
-            else items[i] = obj;
+            // if (obj === undefined) console.warn(`Попытка создать группу с несуществующим объектом ${handle}`);
+            // else items[i] = obj;
+            if (obj !== undefined) items[i] = obj;
         }
 
         const handle = HandleMap.getFreeHandle(this.objects);
         const obj = new SceneGroupObject({ handle, items });
         this.objects.set(handle, obj);
-        return obj;
+        return handle;
     }
 
     getObject(handle: number): SceneObject | undefined {
         return this.objects.get(handle);
     }
 
+    getObject2dByName(hgroup: number, name: string): number {
+        const obj = this.findObjectByName(name, hgroup);
+        return obj !== undefined ? obj.handle : 0;
+    }
+
+    getObjectParent2d(hobject: number): number {
+        const obj = this.objects.get(hobject);
+        return obj !== undefined && obj.parent !== undefined ? obj.parent.handle : 0;
+    }
+
+    getGroupItem2d(hgroup: number, index: number): number {
+        const obj = this.objects.get(hgroup);
+        return obj !== undefined && obj.type === "otGROUP2D" ? obj.getItemHandle(index) : 0;
+    }
+
+    delGroupItem2d(hgroup: number, hobject: number): NumBool {
+        const obj = this.objects.get(hobject);
+        return obj !== undefined && obj.parent !== undefined ? obj.parent.removeItem(obj) : 0;
+    }
+
+    getObjectFromPoint2d(x: number, y: number): number {
+        const obj = this.getObjectFromPoint(x, y);
+        return obj !== undefined ? obj.handle : 0;
+    }
+
     deleteObject(handle: number): NumBool {
         const obj = this.objects.get(handle);
-        if (!obj) return 0;
+        if (obj === undefined) return 0;
 
-        if (obj.parent) obj.parent.removeItem(obj);
+        if (obj.parent !== undefined) obj.parent.removeItem(obj);
         if (obj.type !== "otGROUP2D") {
             if (obj.type !== "otCONTROL2D") obj.unsubFromTools();
             this.renderer.removeObject(obj.renderable);
@@ -215,7 +232,7 @@ export class Scene implements GraphicSpace {
 
     deleteGroup(groupHandle: number): NumBool {
         const group = this.objects.get(groupHandle);
-        if (!group || group.type !== "otGROUP2D") return 0;
+        if (group === undefined || group.type !== "otGROUP2D") return 0;
         group.removeAllItems();
         this.objects.delete(groupHandle);
         return 1;
@@ -223,7 +240,7 @@ export class Scene implements GraphicSpace {
 
     moveObjectToTop(handle: number): NumBool {
         const obj = this.objects.get(handle);
-        if (!obj) return 0;
+        if (obj === undefined) return 0;
         if (obj.type === "otGROUP2D") {
             this.renderer.moveObjectRangeToTop(obj.getItemsRecursive().map((t) => t.renderable));
         } else {
@@ -253,7 +270,7 @@ export class Scene implements GraphicSpace {
     }
 
     getObjectFromPoint(x: number, y: number) {
-        const handle = this.renderer.getVisualHandleFromPoint(x, y);
+        const handle = this.renderer.handleAtPoint(x, y);
         if (!handle) return undefined;
         let obj = this.objects.get(handle);
         if (!obj) return undefined;
@@ -265,9 +282,9 @@ export class Scene implements GraphicSpace {
 
     isIntersect(obj1Handle: number, obj2Handle: number): NumBool {
         const obj1 = this.objects.get(obj1Handle);
-        if (!obj1) return 0;
+        if (obj1 === undefined) return 0;
         const obj2 = this.objects.get(obj2Handle);
-        if (!obj2) return 0;
+        if (obj2 === undefined) return 0;
         // if(obj1.positionX === obj2.positionX && obj1.positionY === obj2.positionY) return 1;
         const xmin1 = obj1.positionX;
         const xmax1 = xmin1 + obj1.width;
@@ -278,75 +295,5 @@ export class Scene implements GraphicSpace {
         const ymin2 = obj2.positionY;
         const ymax2 = ymin2 + obj2.height;
         return xmax1 >= xmin2 && xmax2 >= xmin1 && ymax1 >= ymin2 && ymax2 >= ymin1 ? 1 : 0;
-    }
-
-    subscribeToEvent(eventCode: EventCode, objectHandle: number, flags: number, ctx: ExecutionContext): void {
-        const receiver = ctx.currentClass;
-        if (this.subs.some((s) => s.receiver === receiver && s.eventCode === eventCode)) {
-            console.warn(`Повторный RegisterObject(${receiver.protoName}, ${EventCode[eventCode]}, #${objectHandle})`);
-            return;
-        }
-        this.subs.push({ ctx, receiver, objectHandle, eventCode });
-    }
-
-    private static setDoubleValue(sub: SceneEventSubscriber, name: string, value: number) {
-        const varId = sub.receiver.vars!.nameToIdMap.get(name);
-        if (varId !== undefined) {
-            const realId = sub.receiver.vars!.globalIds[varId];
-            sub.ctx.memoryManager.newDoubleValues[realId] = value;
-            sub.ctx.memoryManager.oldDoubleValues[realId] = value;
-        }
-    }
-    private static setLongValue(sub: SceneEventSubscriber, name: string, value: number) {
-        const varId = sub.receiver.vars!.nameToIdMap.get(name);
-        if (varId !== undefined) {
-            const realId = sub.receiver.vars!.globalIds[varId];
-            sub.ctx.memoryManager.newLongValues[realId] = value;
-            sub.ctx.memoryManager.oldLongValues[realId] = value;
-        }
-    }
-
-    private dispatchControlEvent(code: EventCode, controlHandle: number) {
-        this.subs.forEach((sub) => {
-            const shouldReceiveEvent =
-                //prettier-ignore
-                sub.eventCode === code && //совпадает ли код сообщения
-                ((sub.objectHandle ? controlHandle === sub.objectHandle : true) || sub.receiver.isCapturingEvents(this.handle));
-
-            if (!shouldReceiveEvent || !sub.receiver.canReceiveEvents) return;
-            Scene.setDoubleValue(sub, "msg", code);
-            Scene.setLongValue(sub, "_hobject", controlHandle);
-            Scene.setDoubleValue(sub, "iditem", -1);
-            Scene.setDoubleValue(sub, "wnotifycode", 768); //EN_CHANGE = 768
-            sub.receiver.compute(sub.ctx, true);
-        });
-    }
-
-    private dispatchMouseEvent(code: EventCode, buttons: number, x: number, y: number) {
-        this.subs.forEach((sub) => {
-            if (!sub.receiver.canReceiveEvents) return;
-            const msgMatch = sub.eventCode === code || sub.eventCode === EventCode.WM_ALLMOUSEMESSAGE;
-            if (!msgMatch) return;
-            if (!sub.receiver.isCapturingEvents(this.handle) && sub.objectHandle) {
-                const obj = this.getObjectFromPoint(x, y);
-                const handleMatch = obj ? obj.handle === sub.objectHandle : false;
-                if (!handleMatch && !this.renderer.testVisualIntersection(sub.objectHandle, x, y)) return;
-            }
-            Scene.setDoubleValue(sub, "msg", code);
-            Scene.setDoubleValue(sub, "xpos", x);
-            Scene.setDoubleValue(sub, "ypos", y);
-            Scene.setDoubleValue(sub, "fwkeys", buttons);
-            sub.receiver.compute(sub.ctx, true);
-        });
-    }
-
-    private dispatchWindowResizeEvent(width: number, height: number) {
-        this.subs.forEach((sub) => {
-            if (!sub.receiver.canReceiveEvents || sub.eventCode !== EventCode.WM_SIZE) return;
-            Scene.setDoubleValue(sub, "msg", EventCode.WM_SIZE);
-            Scene.setDoubleValue(sub, "nwidth", width);
-            Scene.setDoubleValue(sub, "nheight", height);
-            sub.receiver.compute(sub.ctx, true);
-        });
     }
 }

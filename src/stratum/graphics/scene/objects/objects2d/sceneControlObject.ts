@@ -1,14 +1,13 @@
 import { ControlElement } from "stratum/fileFormats/vdr";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { ControlObject } from "stratum/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { RenderableControl, RenderableFactory } from "../../interfaces";
 import { Object2dMixin } from "./object2dMixin";
 
 type omitKeys = "type" | "name" | "options" | "size" | "exStyle" | "dwStyle" | "id" | "text";
 export type SceneControlObjectArgs = Optional<ControlElement, omitKeys>;
 
-export class SceneControlObject extends Object2dMixin implements ControlObject {
+export class SceneControlObject extends Object2dMixin {
     readonly type = "otCONTROL2D";
     readonly renderable: RenderableControl;
     constructor(args: SceneControlObjectArgs, renderableFactory: RenderableFactory) {

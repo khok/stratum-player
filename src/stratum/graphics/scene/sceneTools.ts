@@ -1,9 +1,11 @@
+import { ExternalBmpToolParams, ExternalDoubleBmpToolParams, VectorDrawingToolParams } from "stratum/fileFormats/vdr";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { GraphicSpaceTools, GraphicSpaceToolType } from "stratum/vm/interfaces/graphicSpace";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { BmpToolFactory } from ".";
 import { SceneBmpTool, SceneBrushTool, SceneFontTool, ScenePenTool, SceneStringTool, SceneTextTool } from "./tools";
+
+type GraphicSpaceToolType = Exclude<VectorDrawingToolParams["type"], ExternalBmpToolParams["type"] | ExternalDoubleBmpToolParams["type"]>;
 
 export interface GraphicSpaceToolsData {
     bitmaps?: HandleMap<SceneBmpTool>;
@@ -18,7 +20,7 @@ export interface GraphicSpaceToolsData {
 /**
  * Контейнер инструментов графического пространства.
  */
-export class SceneTools implements GraphicSpaceTools {
+export class SceneTools {
     readonly bitmaps: HandleMap<SceneBmpTool>;
     readonly brushes: HandleMap<SceneBrushTool>;
     readonly doubleBitmaps: HandleMap<SceneBmpTool>;
@@ -37,57 +39,61 @@ export class SceneTools implements GraphicSpaceTools {
         this.texts = data.texts || HandleMap.create();
     }
 
-    createBitmap(stream: BinaryStream): SceneBmpTool | undefined {
+    createBitmap(stream: BinaryStream): number {
         const handle = HandleMap.getFreeHandle(this.bitmaps);
         const bmp = BmpToolFactory.loadFromStream(stream, handle, false);
-        if (!bmp) return undefined;
+        if (bmp === undefined) return 0;
         this.bitmaps.set(handle, bmp);
-        return bmp;
+        return handle;
     }
 
-    createBrush(color: number, style: number, dibHandle: number): SceneBrushTool {
+    createBrush(style: number, hatch: number, color: number, hdib: number, rop2: number): number {
         const handle = HandleMap.getFreeHandle(this.brushes);
-        const brush = new SceneBrushTool({ handle, color, style, dibHandle }, this.bitmaps);
+        const brush = new SceneBrushTool({ handle, color, style, dibHandle: hdib, hatch, rop2 }, this.bitmaps);
         this.brushes.set(handle, brush);
-        return brush;
+        return handle;
     }
 
-    createDoubleBitmap(stream: BinaryStream): SceneBmpTool | undefined {
+    createDoubleBitmap(stream: BinaryStream): number {
         const handle = HandleMap.getFreeHandle(this.doubleBitmaps);
         const bmp = BmpToolFactory.loadFromStream(stream, handle, false);
-        if (!bmp) return undefined;
+        if (bmp === undefined) return 0;
         this.doubleBitmaps.set(handle, bmp);
-        return bmp;
+        return handle;
     }
 
-    createFont(fontName: string, size: number, bold: boolean): SceneFontTool {
+    createFont(fontName: string, height: number, flags: number): number {
         const handle = HandleMap.getFreeHandle(this.fonts);
-        const font = new SceneFontTool({ handle, fontName, size, weight: +bold });
+        const italic = !!(flags & 1);
+        const underlined = !!(flags & 2);
+        const strikeout = !!(flags & 4);
+        const bold = !!(flags & 8);
+        const font = new SceneFontTool({ handle, fontName, size: height, weight: +bold });
         this.fonts.set(handle, font);
-        return font;
+        return handle;
     }
 
-    createPen(width: number, color: number, style: number): ScenePenTool {
+    createPen(style: number, width: number, color: number, rop2: number): number {
         const handle = HandleMap.getFreeHandle(this.pens);
-        const pen = new ScenePenTool({ handle, width, color, style });
+        const pen = new ScenePenTool({ handle, width, color, style, rop2 });
         this.pens.set(handle, pen);
-        return pen;
+        return handle;
     }
 
-    createString(text: string): SceneStringTool {
+    createString(value: string): number {
         const handle = HandleMap.getFreeHandle(this.strings);
-        const stringTool = new SceneStringTool({ handle, text });
+        const stringTool = new SceneStringTool({ handle, text: value });
         this.strings.set(handle, stringTool);
-        return stringTool;
+        return handle;
     }
 
-    createText(fontHandle: number, stringHandle: number, foregroundColor: number, backgroundColor: number): SceneTextTool | undefined {
+    createText(hfont: number, hstring: number, fgColor: number, bgColor: number): number {
         const handle = HandleMap.getFreeHandle(this.texts);
-        const textCollection = [{ fontHandle, stringHandle, foregroundColor, backgroundColor }];
+        const textCollection = [{ fontHandle: hfont, stringHandle: hstring, foregroundColor: fgColor, backgroundColor: bgColor }];
         const textTool = SceneTextTool.create({ handle, textCollection }, this.fonts, this.strings);
-        if (!textTool) return undefined;
+        if (textTool === undefined) return 0;
         this.texts.set(handle, textTool);
-        return textTool;
+        return textTool.handle;
     }
 
     deleteTool(type: GraphicSpaceToolType, handle: number): NumBool {

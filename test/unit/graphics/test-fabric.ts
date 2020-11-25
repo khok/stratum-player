@@ -1,14 +1,14 @@
 import { unzip } from "stratum/api";
-import { createComposedScheme } from "stratum/common/createComposedScheme";
-import { WindowWrapper } from "stratum/graphics/html";
+import { ClassLibrary } from "stratum/common/classLibrary";
+import { ClassProto } from "stratum/common/classProto";
 import { Scene } from "stratum/graphics/scene";
-import { SimpleWindowManager } from "stratum/graphics/simpleWindowManager";
-import { Player } from "stratum/player";
+import { SimpleGraphicsManager } from "stratum/graphics/simpleGraphicsManager";
+import { BinaryStream } from "stratum/helpers/binaryStream";
+import { SimpleWs } from "stratum/player/ws";
 const { strictEqual } = chai.assert;
 
 describe("Сцена fabric рисуется корректно", () => {
     let space: Scene;
-    let windows: WindowWrapper;
     it("Шаг 1", async () => {
         const [a1, a2] = await Promise.all(
             ["/projects/test_balls.zip", "/data/library.zip"].map((s) =>
@@ -17,22 +17,22 @@ describe("Сцена fabric рисуется корректно", () => {
                     .then(unzip)
             )
         );
-        const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
 
-        const classes = prj.classes;
+        const classFiles = [...a1.merge(a2).files(/.+\.cls$/i)];
+        const cl = await Promise.all(classFiles.map((f) => f.arraybuffer()));
+        const lib = new ClassLibrary(cl.map((s) => new ClassProto(new BinaryStream(s))));
+
         const classname = "WorkSpace";
-        const cl = classes.get(classname.toUpperCase())!;
-        const vdr = createComposedScheme(cl.scheme!, cl.children!, classes);
+        const vdr = lib.getComposedScheme(classname)!;
         strictEqual(vdr.source!.origin, "class");
         strictEqual(vdr.source!.name, classname);
-        windows = new WindowWrapper(document.body);
-        const graphics = new SimpleWindowManager(windows);
+
+        const graphics = new SimpleGraphicsManager(new SimpleWs(document.body));
 
         const wname = "Test Window";
-        const spaceHandle = graphics.openSchemeWindow(wname, "", vdr);
-        strictEqual(document.title, wname);
+        const spaceHandle = graphics.openWindow(wname, "", vdr);
 
-        space = graphics.getSpace(spaceHandle)!;
+        space = graphics["scenes"].get(spaceHandle)!;
 
         const elements = vdr.elements!;
         for (const elem of elements) {
@@ -51,8 +51,8 @@ describe("Сцена fabric рисуется корректно", () => {
     it("Шаг 2", async () => {
         await new Promise((res) => setTimeout(res, 300));
         space.setOrigin(30, 30);
-        strictEqual(space.getObjectFromPoint(40, 40), undefined);
+        strictEqual(space.getObjectFromPoint2d(40, 40), 0);
         space.getObject(33)!.setPosition(32, 32);
-        strictEqual(space.getObjectFromPoint(40, 40)!.handle, 34);
+        strictEqual(space.getObjectFromPoint2d(40, 40), 34);
     }).timeout(10000);
 });

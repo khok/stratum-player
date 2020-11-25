@@ -1,11 +1,11 @@
 import { TextToolParams } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Remove } from "stratum/helpers/utilityTypes";
-import { TextFragment, TextTool } from "stratum/vm/interfaces/graphicSpaceTools";
+import { NumBool } from "stratum/translator";
 import { SceneFontTool, SceneStringTool } from ".";
 import { SceneToolMixin } from "./sceneToolMixin";
 
-export interface SceneTextFragment extends TextFragment {
+export interface SceneTextFragment {
     font: SceneFontTool;
     stringFragment: SceneStringTool;
     foregroundColor: number;
@@ -14,7 +14,7 @@ export interface SceneTextFragment extends TextFragment {
 
 export type SceneTextToolArgs = Remove<TextToolParams, "type">;
 
-export class SceneTextTool extends SceneToolMixin implements TextTool {
+export class SceneTextTool extends SceneToolMixin {
     private cachedString?: { text: string; size: number };
     private fragments: SceneTextFragment[];
 
@@ -60,34 +60,51 @@ export class SceneTextTool extends SceneToolMixin implements TextTool {
         return this.fragments[index];
     }
 
-    updateString(str: SceneStringTool, idx: number) {
-        const oldFrag = this.fragments[idx].stringFragment;
-        if (oldFrag !== str) {
-            this.fragments[idx].stringFragment = str;
-            if (oldFrag) oldFrag.unsubscribe(this);
-            str.subscribe(this, () => this.dispatchChanges());
-        }
-        this.update();
+    getStringHandle(index: number): number {
+        const frag = this.fragments[0];
+        return frag !== undefined ? frag.stringFragment.handle : 0;
     }
 
-    updateFont(font: SceneFontTool, idx: number) {
-        const oldFont = this.fragments[idx].font;
-        if (oldFont !== font) {
-            this.fragments[idx].font = font;
+    getFontHandle(index: number): number {
+        const frag = this.fragments[0];
+        return frag !== undefined ? frag.font.handle : 0;
+    }
+
+    getFgColor(index: number): number {
+        const frag = this.fragments[0];
+        return frag !== undefined ? frag.foregroundColor : 0;
+    }
+
+    getBgColor(index: number): number {
+        const frag = this.fragments[0];
+        return frag !== undefined ? frag.backgroundColor : 0;
+    }
+
+    setValues(index: number, hfont: number, hstring: number, fgColor: number, bgColor: number): NumBool {
+        throw Error();
+    }
+    updateVals2(index: number, hfont: SceneFontTool | undefined, hstring: SceneStringTool | undefined, fgColor: number, bgColor: number): NumBool {
+        const frag = this.fragments[0];
+        if (frag === undefined) return 0;
+
+        const oldFont = frag.font;
+        if (hfont !== undefined && oldFont !== hfont) {
+            frag.font = hfont;
             if (oldFont) oldFont.unsubscribe(this);
-            font.subscribe(this, () => this.dispatchChanges());
+            hfont.subscribe(this, () => this.dispatchChanges());
         }
-        this.update();
-    }
 
-    updateFgColor(color: number, idx: number) {
-        this.fragments[idx].foregroundColor = color;
-        this.update();
-    }
+        const oldStr = frag.stringFragment;
+        if (hstring !== undefined && oldStr !== hstring) {
+            frag.stringFragment = hstring;
+            if (oldStr) oldStr.unsubscribe(this);
+            hstring.subscribe(this, () => this.dispatchChanges());
+        }
 
-    updateBgColor(color: number, idx: number) {
-        this.fragments[idx].backgroundColor = color;
+        frag.foregroundColor = fgColor;
+        frag.backgroundColor = bgColor;
         this.update();
+        return 1;
     }
 
     private update() {

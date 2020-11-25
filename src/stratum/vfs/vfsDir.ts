@@ -43,11 +43,13 @@ export class VFSDir implements FileSystemDir {
 
     get(path: string): VFSDir | VFSFile | undefined {
         const pp = getPathParts(path);
+        if (pp.length === 0) return undefined;
         return this.getFast(pp);
     }
 
     fileNew(name: string, data: ArrayBuffer): VFSFile | undefined {
         const pp = getPathParts(name);
+        if (pp.length === 0) return undefined;
         const fold = this.getFast(pp.slice(0, pp.length - 1));
         if (!fold) return undefined;
         const localName = pp[pp.length - 1];
@@ -61,6 +63,7 @@ export class VFSDir implements FileSystemDir {
 
     folderNew(name: string): VFSDir | undefined {
         const pp = getPathParts(name);
+        if (pp.length === 0) return undefined;
         const fold = this.getFast(pp.slice(0, pp.length - 1));
         if (!fold) return undefined;
         const localName = pp[pp.length - 1];

@@ -1,4 +1,4 @@
-import { VarCode } from "stratum/common/varCode";
+import { VarType } from "stratum/fileFormats/cls";
 import { ExecutionContext } from "../executionContext";
 
 /**
@@ -7,7 +7,7 @@ import { ExecutionContext } from "../executionContext";
 export interface ComputableClassVars {
     readonly nameToIdMap: Map<string, number>;
     readonly names: string[];
-    readonly typeCodes: VarCode[];
+    readonly typeCodes: VarType[];
     readonly globalIds: Uint16Array;
 }
 

@@ -1,8 +1,7 @@
 import { BitmapElement, DoubleBitmapElement } from "stratum/fileFormats/vdr";
 import { BadDataError } from "stratum/helpers/errors";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { BitmapObject } from "stratum/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { RenderableBitmap, RenderableFactory } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneBmpTool } from "../../tools";
@@ -12,7 +11,7 @@ type omitKeys = "name" | "options" | "size" | "bmpSize" | "bmpAngle" | "bmpOrigi
 
 export type SceneBitmapObjectArgs = Optional<BitmapElement | DoubleBitmapElement, omitKeys>;
 
-export class SceneBitmapObject extends Object2dMixin implements BitmapObject {
+export class SceneBitmapObject extends Object2dMixin {
     readonly type: (BitmapElement | DoubleBitmapElement)["type"];
     readonly renderable: RenderableBitmap;
     private _bmpTool: SceneBmpTool;

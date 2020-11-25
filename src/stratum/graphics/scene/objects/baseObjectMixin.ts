@@ -1,6 +1,6 @@
 import { ElementBase } from "stratum/fileFormats/vdr";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { SceneGroupObject } from ".";
 
 export type ObjectArgs = Optional<ElementBase, "name" | "options">;

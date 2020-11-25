@@ -26,7 +26,3 @@ export function getPrefixAndPathParts(baseDir: string, defPrefixUC: string): [st
     }
     return [prefixUC, getPathParts(rest)];
 }
-
-export function extractDirDos(path: string) {
-    return path.substring(0, path.lastIndexOf("\\"));
-}

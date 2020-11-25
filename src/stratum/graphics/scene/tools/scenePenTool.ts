@@ -1,21 +1,28 @@
 import { PenToolParams } from "stratum/fileFormats/vdr";
-import { Optional, Remove } from "stratum/helpers/utilityTypes";
-import { PenTool } from "stratum/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "stratum/vm/types";
+import { Remove } from "stratum/helpers/utilityTypes";
+import { NumBool } from "stratum/translator";
 import { SceneToolMixin } from "./sceneToolMixin";
 
-export type ScenePenToolArgs = Optional<Remove<PenToolParams, "type">, "rop2">;
+export type ScenePenToolArgs = Remove<PenToolParams, "type">;
 
-export class ScenePenTool extends SceneToolMixin implements PenTool {
+export class ScenePenTool extends SceneToolMixin {
     private _color: number;
     private _width: number;
-    private _style: PenTool["style"];
+    private _rop2: number;
+    private _style2: number;
+    private _style: "SOLID" | "DASH" | "DOT" | "DASHDOT" | "DASHDOTDOT" | "NULL";
 
     constructor(args: ScenePenToolArgs) {
         super(args);
         this._color = args.color;
         this._width = args.width;
+        this._rop2 = args.rop2;
         this._style = args.style === 5 ? "NULL" : "SOLID";
+        this._style2 = args.style;
+    }
+
+    get rop() {
+        return this._rop2;
     }
 
     get color() {
@@ -28,6 +35,21 @@ export class ScenePenTool extends SceneToolMixin implements PenTool {
 
     get style() {
         return this._style;
+    }
+
+    get style2() {
+        return this._style2;
+    }
+
+    setStyle(style: number): NumBool {
+        this._style2 = style;
+        this._style = style === 5 ? "NULL" : "SOLID";
+        return 1;
+    }
+
+    setRop(rop: number): NumBool {
+        this._rop2 = rop;
+        return 1;
     }
 
     setColor(value: number): NumBool {

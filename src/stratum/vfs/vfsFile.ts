@@ -1,6 +1,5 @@
 import { FileSystemFile } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
-import { BytecodeParser } from "stratum/fileFormats/cls";
 import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
@@ -42,18 +41,23 @@ export class VFSFile implements FileSystemFile {
         await this.arraybuffer();
     }
 
-    private read<TVmCode>(data: ArrayBuffer, type: "prj" | "cls" | "stt" | "vdr", bytecodeParser?: BytecodeParser<TVmCode>) {
+    private cache: ReturnType<VFSFile["read"]>;
+    private readed = false;
+    private read(data: ArrayBuffer, type: "prj" | "cls" | "stt" | "vdr"): ProjectInfo | ClassProto | VariableSet | VectorDrawing | undefined {
+        if (this.readed === true) return this.cache;
+        this.readed = true;
+
         const st = new BinaryStream(data, { filepathDos: this.pathDos });
-        switch (type) {
-            case "prj":
-                return readPrjFile(st);
-            case "cls":
-                return new ClassProto(st, bytecodeParser);
-            case "stt":
-                return readSttFile(st);
-            case "vdr":
-                try {
-                    const vdr = readVdrFile(st);
+        try {
+            switch (type) {
+                case "prj":
+                    return (this.cache = readPrjFile(st));
+                case "cls":
+                    return (this.cache = new ClassProto(st));
+                case "stt":
+                    return (this.cache = readSttFile(st));
+                case "vdr":
+                    const vdr = (this.cache = readVdrFile(st));
                     vdr.source = { origin: "file", name: this.pathDos };
                     if (st.position !== st.size) {
                         const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
@@ -62,28 +66,32 @@ export class VFSFile implements FileSystemFile {
                         console.warn(msg);
                     }
                     return vdr;
-                } catch (e) {
-                    console.warn(`${this.pathDos}: ошибка чтения.\nПричина: ${e.message}`);
-                    return undefined;
-                }
+            }
+        } catch (e) {
+            console.warn(`${this.pathDos}: ошибка чтения.\nПричина: ${e.message}`);
+            return undefined;
         }
     }
 
     readAs(type: "prj"): Promise<ProjectInfo>;
-    readAs<TVmCode>(type: "cls", byteCodeParser?: BytecodeParser<TVmCode>): Promise<ClassProto<TVmCode>>;
+    readAs(type: "cls"): Promise<ClassProto>;
     readAs(type: "stt"): Promise<VariableSet>;
     readAs(type: "vdr"): Promise<VectorDrawing>;
-    async readAs<TVmCode>(type: "prj" | "cls" | "stt" | "vdr", bytecodeParser?: BytecodeParser<TVmCode>) {
+    async readAs(type: "prj" | "cls" | "stt" | "vdr") {
         const s = await this.arraybuffer();
-        return this.read(s, type, bytecodeParser);
+        return this.read(s, type);
     }
 
     readSyncAs(type: "prj"): ProjectInfo | undefined;
-    readSyncAs<TVmCode>(type: "cls", byteCodeParser?: BytecodeParser<TVmCode>): ClassProto<TVmCode> | undefined;
+    readSyncAs(type: "cls"): ClassProto | undefined;
     readSyncAs(type: "stt"): VariableSet | undefined;
     readSyncAs(type: "vdr"): VectorDrawing | undefined;
-    readSyncAs<TVmCode>(type: "prj" | "cls" | "stt" | "vdr", bytecodeParser?: BytecodeParser<TVmCode>) {
+    readSyncAs(type: "prj" | "cls" | "stt" | "vdr") {
         const buf = this.arraybufferSync();
-        return buf && this.read(buf, type, bytecodeParser);
+        return buf && this.read(buf, type);
+    }
+    streamSync() {
+        const buf = this.arraybufferSync();
+        return buf && new BinaryStream(buf, { filepathDos: this.pathDos });
     }
 }

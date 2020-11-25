@@ -1,12 +1,11 @@
 import { StringToolParams } from "stratum/fileFormats/vdr";
 import { Remove } from "stratum/helpers/utilityTypes";
-import { StringTool } from "stratum/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type SceneStringToolArgs = Remove<StringToolParams, "type">;
 
-export class SceneStringTool extends SceneToolMixin implements StringTool {
+export class SceneStringTool extends SceneToolMixin {
     private _text: string;
 
     constructor(args: SceneStringToolArgs) {

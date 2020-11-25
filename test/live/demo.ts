@@ -1,17 +1,18 @@
-import { options, unzip } from "stratum/api";
+import { options, setLogLevel, unzip } from "stratum/api";
 
 // Запуск одной строкой:
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
-export async function runDemo(name: string, tailPath?: string) {
+export async function runDemo(name: string, path?: string) {
     options.iconsLocation = "./data/icons";
+    setLogLevel("full");
     //prettier-ignore
     //Подгруаем архивчики
     const pr = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(unzip)));
     const fs = pr.reduce((a, b) => a.merge(b));
     // Предзагружаем файлы vdr и bmp.
     // Открываем проект
-    await Promise.all([...fs.search(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()));
-    const project = await fs.project({ additionalClassPaths: ["library"], tailPath });
+    await Promise.all([...fs.files(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()));
+    const project = await fs.project({ additionalClassPaths: ["library"], path });
 
     if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));
 
@@ -67,16 +68,7 @@ export async function runDemo(name: string, tailPath?: string) {
             playerPauseElem.addEventListener("click", handleClick);
             playerStepElem.addEventListener("click", handleClick);
 
-            project
-                .on("error", (err) => {
-                    console.warn(err);
-                    updateControls();
-                })
-                .on("closed", () => {
-                    alert("Проект остановлен");
-                    updateControls();
-                });
-
+            project.on("closed", updateControls);
             updateControls();
             playerPlayElem.disabled = false;
             playerStepElem.disabled = false;

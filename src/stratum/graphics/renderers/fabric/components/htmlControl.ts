@@ -1,6 +1,8 @@
-import { InputWrapper, WindowWrapper } from "stratum/graphics/html";
+import { InputWrapper } from "stratum/graphics/html";
 import { RenderableControl, RenderableControlParams } from "stratum/graphics/scene/interfaces";
+import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { Point2D } from "stratum/helpers/types";
+import { EventCode, EventSubscriber } from "stratum/translator";
 
 export class HtmlControl implements RenderableControl {
     readonly type = "control";
@@ -11,11 +13,7 @@ export class HtmlControl implements RenderableControl {
     readonly selectable: boolean;
     private inp: InputWrapper;
 
-    constructor(
-        { handle, isVisible, position, classname, controlSize, text }: RenderableControlParams,
-        private viewRef: Point2D,
-        wnd: WindowWrapper
-    ) {
+    constructor({ handle, isVisible, position, classname, controlSize, text }: RenderableControlParams, private viewRef: Point2D, wnd: SceneWindow) {
         if (classname !== "Edit") throw Error(`Элементы ввода типа "${classname}" пока не поддерживаются`);
         this.handle = handle;
         this.posX = position.x;
@@ -29,6 +27,9 @@ export class HtmlControl implements RenderableControl {
             height: controlSize.y,
             hidden: !isVisible,
             text,
+        });
+        this.inp.onEdit(() => {
+            for (const c of this.subs) c.receive(EventCode.WM_CONTROLNOTIFY, this.handle, -1, 768);
         });
     }
 
@@ -68,8 +69,13 @@ export class HtmlControl implements RenderableControl {
         this.inp.set({ hidden: true });
     }
 
-    onChange(fn: () => void) {
-        this.inp.onEdit(fn);
+    private subs = new Set<EventSubscriber>();
+    onChange(sub: EventSubscriber) {
+        this.subs.add(sub);
+    }
+
+    offChange(sub: EventSubscriber) {
+        this.subs.delete(sub);
     }
 
     setText(text: string): void {

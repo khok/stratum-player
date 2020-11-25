@@ -1,5 +1,6 @@
 import { ControlElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
+import { EventSubscriber } from "stratum/translator";
 import { SceneBmpTool, SceneBrushTool, ScenePenTool, SceneTextTool } from "./tools";
 
 interface _RenderableBase {
@@ -28,6 +29,8 @@ export interface RenderableBitmap extends _RenderableBase {
 }
 
 export interface RenderableControl extends _RenderableBase {
+    onChange(sub: EventSubscriber): void;
+    offChange(sub: EventSubscriber): void;
     setText(text: string): void;
     getText(): string;
 }
@@ -92,15 +95,5 @@ export interface Renderer extends RenderableFactory {
     setView(x: number, y: number): void;
 
     //визуальные проверки
-    getVisualHandleFromPoint(x: number, y: number): number;
-    /** Проверяет, находится ли точка (`x`; `y`) в пределах области объекта */
-    testVisualIntersection(visualHandle: number, x: number, y: number): boolean;
-}
-
-export interface InputEventReceiver {
-    handleEvent(data: { x: number; y: number; buttons: number; button: number }, type: "down" | "up" | "move"): void;
-    //подписки на события от пользователя (клик мышью, изменение html текстбоксов)
-    subscribeToMouseEvents(callback: (code: number, buttons: number, x: number, y: number) => void): void;
-    subscribeToControlEvents(callback: (code: number, controlHandle: number) => void): void;
-    subscribeToWindowResize(callback: (width: number, height: number) => void): void;
+    handleAtPoint(x: number, y: number): number;
 }

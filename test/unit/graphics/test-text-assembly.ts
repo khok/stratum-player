@@ -10,9 +10,8 @@ it("Правильно собирается текст", async () => {
         .then((r) => r.blob())
         .then(unzip);
     const prj = (await fs.project({ additionalClassPaths: ["library"] })) as Player;
-    const classes = prj.classes;
 
-    const scheme = classes.get(prj.rootClassName.toUpperCase())!.scheme!;
+    const scheme = prj["classes"].get(prj["prjInfo"].rootClassName)!.scheme!;
     console.dir(scheme);
     const tools = createTools(scheme);
     ((tools as any).texts as HandleMap<TextTool>).forEach((t, idx) => {

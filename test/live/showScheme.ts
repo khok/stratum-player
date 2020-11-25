@@ -1,11 +1,13 @@
-import { unzip } from "stratum/api";
-import { createComposedScheme } from "stratum/common/createComposedScheme";
+import { options, unzip } from "stratum/api";
 import { WindowWrapper } from "stratum/graphics/html";
 import { Scene } from "stratum/graphics/scene";
-import { VirtualFile } from "stratum/vfs";
+import { Player } from "stratum/player";
+import { VFSFile } from "stratum/vfs";
 
 // Просмотр схемы или изображения имиджа.
 export async function showScheme(name: string, { className, image }: { className?: string; image?: boolean } = {}) {
+    options.iconsLocation = "./data/icons";
+
     const [a1, a2] = await Promise.all(
         [`/projects/${name}.zip`, "/data/library.zip"].map((s) =>
             fetch(s)
@@ -14,21 +16,16 @@ export async function showScheme(name: string, { className, image }: { className
         )
     );
 
-    const files = [...a1.merge(a2).search(/.+\.cls$/i)];
-    const prj = await (a1.search(/.+\.(prj)|(spj)$/i).next().value as VirtualFile).readAs("prj");
-    const mp = files.map((f) => (f as VirtualFile).readAs("cls"));
-    const cls = new Map((await Promise.all(mp)).map((c) => [c.name.toUpperCase(), c]));
+    const prjFile = a1.files(/.+\.(prj|spj)$/i).next().value as VFSFile;
+    const prjInfo = await prjFile.readAs("prj");
+    const dir = prjFile.parent;
 
-    const target = className || prj.rootClassName;
-    const root = cls.get(target.toUpperCase());
-    console.log(cls);
-    if (!root) return console.log(`no ${target}`);
+    const clsFiles = [...a1.merge(a2).files(/.+\.cls$/i)];
+    const classes = await Promise.all(clsFiles.map((f) => (f as VFSFile).readAs("cls")));
 
-    const scheme =
-        (image && root.image) ||
-        (root.scheme && root.children ? createComposedScheme(root.scheme, root.children, cls) : root.scheme) ||
-        root.image;
-    if (!scheme) return console.log(`no scheme or image for ${target}`);
-    new Scene({ handle: 0, vdr: scheme, renderer: new WindowWrapper(document.getElementById("main_window_container")!).renderer });
-    console.dir(scheme);
+    const target = className || prjInfo.rootClassName;
+    const pl = new Player({ classes, dir, prjInfo });
+    const vdr = image ? pl.getClass(target)?.image : pl.getComposedScheme(target);
+    new Scene({ handle: 0, vdr, renderer: new WindowWrapper(document.getElementById("main_window_container")!).renderer });
+    console.dir(vdr);
 }

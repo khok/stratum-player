@@ -10,16 +10,6 @@
 		]
 	},
 	{
-		"path": "$ROOTPATH$\\src\\stratum\\player\\player.ts",
-		"bookmarks": [
-			{
-				"line": 125,
-				"column": 67,
-				"label": "Нужно ли закрывать окно при остановке проекта?"
-			}
-		]
-	},
-	{
 		"path": "$ROOTPATH$\\examples\\player.js",
 		"bookmarks": [
 			{
@@ -30,12 +20,22 @@
 		]
 	},
 	{
-		"path": "$ROOTPATH$\\src\\stratum\\graphics\\simpleWindowManager.ts",
+		"path": "$ROOTPATH$\\src\\stratum\\schema\\schema.ts",
 		"bookmarks": [
 			{
-				"line": 76,
-				"column": 4,
-				"label": "Не забудь закрыть сцену"
+				"line": 388,
+				"column": 0,
+				"label": "Вызвать этот метод один раз при сборке схемы"
+			}
+		]
+	},
+	{
+		"path": "$ROOTPATH$\\src\\stratum\\graphics\\simpleGraphicsManager.ts",
+		"bookmarks": [
+			{
+				"line": 576,
+				"column": 36,
+				"label": "Закрывать окна только опр. проекта"
 			}
 		]
 	}

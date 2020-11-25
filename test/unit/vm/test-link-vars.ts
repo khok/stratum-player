@@ -1,6 +1,8 @@
 import { unzip } from "stratum/api";
 import { Player } from "stratum/player";
-import { build } from "stratum/schema/build";
+import { MemoryManager } from "stratum/player/memoryManager";
+import { Schema } from "stratum/schema";
+import { Enviroment } from "stratum/translator";
 const { strictEqual } = chai.assert;
 
 async function load(name: string) {
@@ -12,12 +14,13 @@ async function load(name: string) {
         )
     );
     const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
-    return build(prj.rootClassName, prj.classes).createMemoryManager();
+    const mem = new MemoryManager();
+    return mem.createBuffers(Schema.build(prj["prjInfo"].rootClassName, prj["classes"], new Enviroment(mem)).createTLB());
 }
 
 it("Корректно проводятся связи", async () => {
     const [balls, balls2] = await Promise.all([load("balls"), load("many_balls")]);
     //минус 3 под зарезервированные поля в начале.
-    strictEqual(balls.defaultDoubleValues.length + balls.defaultLongValues.length + balls.defaultStringValues.length - 3, 1235);
-    strictEqual(balls2.defaultDoubleValues.length + balls2.defaultLongValues.length + balls2.defaultStringValues.length - 3, 2328);
+    strictEqual(balls.newFloats.length + balls.newInts.length + balls.newStrings.length - 3, 1235);
+    strictEqual(balls2.newFloats.length + balls2.newInts.length + balls2.newStrings.length - 3, 2328);
 }).timeout(10000);

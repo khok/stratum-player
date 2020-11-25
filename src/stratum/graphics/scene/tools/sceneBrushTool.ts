@@ -1,27 +1,34 @@
 import { BrushToolParams } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { Optional, Remove } from "stratum/helpers/utilityTypes";
-import { BrushTool } from "stratum/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "stratum/vm/types";
+import { Remove } from "stratum/helpers/utilityTypes";
+import { NumBool } from "stratum/translator";
 import { SceneBmpTool } from ".";
 import { SceneToolMixin } from "./sceneToolMixin";
 
-const codeToStyle: { [idx: number]: BrushTool["fillType"] } = {
+type FillType = "SOLID" | "NULL" | "PATTERN" | "HATCED";
+const codeToStyle: { [idx: number]: FillType } = {
     0: "SOLID",
     1: "NULL",
     2: "HATCED",
     3: "PATTERN",
 };
 
-export type SceneBrushToolArgs = Optional<Remove<BrushToolParams, "type">, "hatch" | "rop2">;
+export type SceneBrushToolArgs = Remove<BrushToolParams, "type">;
 
-export class SceneBrushTool extends SceneToolMixin implements BrushTool {
+export class SceneBrushTool extends SceneToolMixin {
     private _color: number;
-    private _fillType: BrushTool["fillType"];
+    private _fillType: FillType;
     private _bmpTool: SceneBmpTool | undefined;
+
+    private _style: number;
+    private _hatch: number;
+    private _rop: number;
 
     constructor(args: SceneBrushToolArgs, bitmaps?: HandleMap<SceneBmpTool>) {
         super(args);
+        this._style = args.style;
+        this._hatch = args.hatch;
+        this._rop = args.rop2;
         this._color = args.color;
         this._fillType = codeToStyle[args.style];
 
@@ -33,6 +40,16 @@ export class SceneBrushTool extends SceneToolMixin implements BrushTool {
             // if (!bmp) throw new NoSuchToolError("Битовая карта", args.dibHandle, "Инструмент 'Кисть'", this.handle);
             this.changeBmpTool(bmp);
         }
+    }
+
+    get style(): number {
+        return this._style;
+    }
+    get hatch(): number {
+        return this._hatch;
+    }
+    get rop(): number {
+        return this._rop;
     }
 
     get color() {
@@ -47,13 +64,26 @@ export class SceneBrushTool extends SceneToolMixin implements BrushTool {
         return this._bmpTool;
     }
 
+    setRop(rop: number): NumBool {
+        this._rop = rop;
+        return 1;
+    }
+    setHatch(hatch: number): NumBool {
+        this._hatch = hatch;
+        return 1;
+    }
+    setStyle(style: number): NumBool {
+        this._style = style;
+        return 1;
+    }
+
     setColor(value: number): NumBool {
         this._color = value;
         this.dispatchChanges();
         return 1;
     }
 
-    setFillType(value: BrushTool["fillType"]): NumBool {
+    setFillType(value: FillType): NumBool {
         this._fillType = value;
         this.dispatchChanges();
         return 1;

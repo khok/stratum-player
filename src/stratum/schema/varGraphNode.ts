@@ -1,18 +1,17 @@
-import { VarCode } from "stratum/common/varCode";
-import { UsageError } from "stratum/helpers/errors";
-import { TreeMemoryManagerArgs } from "./treeMemoryManager";
+import { VarType } from "stratum/fileFormats/cls";
+import { MemoryManagerArgs } from ".";
 
 export class VarGraphNode {
     private indexWasSet = false;
     private globalVarIdx = -1;
     private connectedNodes = new Set<VarGraphNode>();
 
-    constructor(private readonly type: VarCode) {}
+    constructor(private readonly type: VarType) {}
 
     static connect(first: VarGraphNode, second: VarGraphNode) {
         if (first.type !== second.type) return false;
         if (first.indexWasSet || second.indexWasSet) {
-            throw new UsageError("Соединение уже инициализированных переменных не реализовано");
+            throw Error("Соединение уже инициализированных переменных не реализовано");
         }
         first.connectedNodes.add(second);
         second.connectedNodes.add(first);
@@ -26,17 +25,17 @@ export class VarGraphNode {
         this.connectedNodes.forEach((n) => n.shareIndex(index));
     }
 
-    getIndex(mmanagerArgs: TreeMemoryManagerArgs): number {
+    getIndex(mmanagerArgs: MemoryManagerArgs): number {
         if (!this.indexWasSet) {
             switch (this.type) {
-                case VarCode.Float:
+                case VarType.Float:
                     this.shareIndex(mmanagerArgs.floatsCount++);
                     break;
-                case VarCode.Handle:
-                case VarCode.ColorRef:
+                case VarType.Handle:
+                case VarType.ColorRef:
                     this.shareIndex(mmanagerArgs.longsCount++);
                     break;
-                case VarCode.String:
+                case VarType.String:
                     this.shareIndex(mmanagerArgs.stringsCount++);
                     break;
             }

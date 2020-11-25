@@ -2,13 +2,12 @@ import { BmpToolParams } from "stratum/fileFormats/vdr";
 import { BadDataError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
 import { Optional, Remove } from "stratum/helpers/utilityTypes";
-import { BmpTool } from "stratum/vm/interfaces/graphicSpaceTools";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type SceneBmpToolArgs = Optional<Remove<BmpToolParams, "type" | "base64Image">, "width" | "height"> & { image?: HTMLImageElement };
 
-export class SceneBmpTool extends SceneToolMixin implements BmpTool {
+export class SceneBmpTool extends SceneToolMixin {
     private _image?: HTMLImageElement;
     readonly size?: Point2D;
     private asyncLoaded: boolean;

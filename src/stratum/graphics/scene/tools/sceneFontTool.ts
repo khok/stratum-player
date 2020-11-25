@@ -1,11 +1,10 @@
 import { FontToolParams } from "stratum/fileFormats/vdr";
 import { Remove, Require } from "stratum/helpers/utilityTypes";
-import { FontTool } from "stratum/vm/interfaces/graphicSpaceTools";
 import { SceneToolMixin } from "./sceneToolMixin";
 
 export type SceneFontToolArgs = Require<Partial<Remove<FontToolParams, "type">>, "handle" | "fontName" | "size">;
 
-export class SceneFontTool extends SceneToolMixin implements FontTool {
+export class SceneFontTool extends SceneToolMixin {
     private _name: string;
     private _size: number;
     private _bold: boolean;

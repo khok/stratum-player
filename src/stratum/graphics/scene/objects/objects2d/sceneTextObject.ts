@@ -1,7 +1,6 @@
 import { TextElement } from "stratum/fileFormats/vdr";
 import { Optional } from "stratum/helpers/utilityTypes";
-import { TextObject } from "stratum/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { RenderableFactory, RenderableText } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneTextTool } from "../../tools";
@@ -11,7 +10,7 @@ type omitKeys = "type" | "name" | "options" | "size" | "angle" | "delta";
 
 export type SceneTextObjectArgs = Optional<TextElement, omitKeys>;
 
-export class SceneTextObject extends Object2dMixin implements TextObject {
+export class SceneTextObject extends Object2dMixin {
     readonly type = "otTEXT2D";
     readonly renderable: RenderableText;
 

@@ -1,8 +1,7 @@
 import { LineElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
 import { Optional, Require } from "stratum/helpers/utilityTypes";
-import { LineObject } from "stratum/vm/interfaces/graphicSpaceObjects";
-import { NumBool } from "stratum/vm/types";
+import { NumBool } from "stratum/translator";
 import { RenderableFactory, RenderableLine } from "../../interfaces";
 import { SceneTools } from "../../sceneTools";
 import { SceneBrushTool, ScenePenTool } from "../../tools";
@@ -12,7 +11,7 @@ type omitKeys = "type" | "name" | "options" | "size" | "brushHandle" | "penHandl
 
 export type SceneLineObjectArgs = Optional<LineElement, omitKeys>;
 
-export class SceneLineObject extends Object2dMixin implements LineObject {
+export class SceneLineObject extends Object2dMixin {
     readonly type = "otLINE2D";
     readonly renderable: RenderableLine;
     private _pen: ScenePenTool | undefined;
@@ -75,13 +74,26 @@ export class SceneLineObject extends Object2dMixin implements LineObject {
         return this._brush;
     }
 
-    getPoint(index: number): Point2D {
-        return this.points[index];
+    get hpen(): number {
+        return this.pen !== undefined ? this.pen.handle : 0;
+    }
+    get hbrush(): number {
+        return this.brush !== undefined ? this.brush.handle : 0;
     }
 
-    setPointPosition(index: number, x: number, y: number): NumBool {
+    pointX(index: number): number {
         const p = this.points[index];
-        if (!p) return 0;
+        return p !== undefined ? p.x : 0;
+    }
+
+    pointY(index: number): number {
+        const p = this.points[index];
+        return p !== undefined ? p.y : 0;
+    }
+
+    setPointXY(index: number, x: number, y: number): NumBool {
+        const p = this.points[index];
+        if (p === undefined) return 0;
         if (p.x === x && p.y === y) return 1;
         p.x = x;
         p.y = y;
