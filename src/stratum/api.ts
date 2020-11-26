@@ -318,12 +318,24 @@ export interface WindowHostWindow {
 
 export const unzip: ZipFSConstructor = createZipFS;
 
+// export interface Logger {
+//     info(msg: string): void;
+//     warn(msg: string): void;
+//     err(msg: string): void;
+// }
+
 export const options: {
     /**
      * URL каталога иконок.
      */
     iconsLocation?: string;
 } = {};
+
+const origL = console.log;
+export function setLogLevel(logLevel: "err" | "full") {
+    console.log = logLevel === "err" ? function () {} : origL;
+}
+setLogLevel("err");
 
 /**
  * Версия API.
