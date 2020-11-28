@@ -24,21 +24,13 @@ import {
     VectorDrawing,
     VectorDrawingElement,
     VectorDrawingToolParams,
-    VectorDrawingTools
+    VectorDrawingTools,
 } from "stratum/fileFormats/vdr";
 import { BadDataError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
 import { Require } from "stratum/helpers/utilityTypes";
 
-const toolKeys: (keyof VectorDrawingTools)[] = [
-    "brushTools",
-    "penTools",
-    "bitmapTools",
-    "doubleBitmapTools",
-    "fontTools",
-    "stringTools",
-    "textTools",
-];
+const toolKeys: (keyof VectorDrawingTools)[] = ["brushTools", "penTools", "bitmapTools", "doubleBitmapTools", "fontTools", "stringTools", "textTools"];
 
 function copyArray<T extends object>(arr?: Array<T>) {
     if (!arr) return undefined;
@@ -53,8 +45,8 @@ function deepVdrCopy(vdr: VectorDrawing) {
     dataCopy.doubleBitmapTools = copyArray(vdr.doubleBitmapTools);
     dataCopy.fontTools = copyArray(vdr.fontTools);
     dataCopy.stringTools = copyArray(vdr.stringTools);
-    dataCopy.textTools = vdr.textTools && vdr.textTools.map((t) => ({ ...t, textCollection: t.textCollection.map((c) => ({ ...c })) }));
-    dataCopy.elements = copyArray(vdr.elements);
+    dataCopy.textTools = vdr.textTools?.map((t) => ({ ...t, textCollection: t.textCollection.map((c) => ({ ...c })) }));
+    dataCopy.elements = vdr.elements?.map((el) => (el.type === "otGROUP2D" ? { ...el, childHandles: el.childHandles.slice() } : { ...el }));
     dataCopy.elementOrder = vdr.elementOrder && vdr.elementOrder.slice();
     return dataCopy;
 }
@@ -127,11 +119,7 @@ function updateRefsFromToolsToTools(tools: VectorDrawingTools, collectionType: k
     }
 }
 
-function updateRefsFromElementsToTools(
-    elements: VectorDrawingElement[],
-    collectionType: keyof VectorDrawingTools,
-    map: Map<number, number>
-) {
+function updateRefsFromElementsToTools(elements: VectorDrawingElement[], collectionType: keyof VectorDrawingTools, map: Map<number, number>) {
     switch (collectionType) {
         case "brushTools":
             const lines = elements.filter((t): t is LineElement => t.type === "otLINE2D");
