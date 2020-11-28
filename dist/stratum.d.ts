@@ -15,13 +15,14 @@ export interface OpenZipOptions {
      */
     encoding?: string;
 }
+export declare type ZipSource = File | Blob | ArrayBuffer | Uint8Array;
 export interface ZipFSConstructor {
     /**
      * Создает новую файловую систему из указанных источников ZIP-архивов.
      * @param source Источник ZIP-архива.
      * @param options Опции распаковки ZIP-архива.
      */
-    (source: File | Blob | ArrayBuffer | Uint8Array, options?: OpenZipOptions): Promise<FileSystem>;
+    (source: ZipSource, options?: OpenZipOptions): Promise<FileSystem>;
 }
 /**
  * Файловая система.
@@ -293,6 +294,7 @@ export declare const options: {
      */
     iconsLocation?: string;
 };
+export declare function setLogLevel(logLevel: "err" | "full"): void;
 /**
  * Версия API.
  */
