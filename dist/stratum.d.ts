@@ -35,7 +35,7 @@ export interface FileSystem {
     /**
      * Возвращает список файлов, попадающих под условия поиска.
      */
-    search(regexp: RegExp): IterableIterator<FileSystemFile>;
+    files(regexp?: RegExp): IterableIterator<FileSystemFile>;
     /**
      * Открывает проект.
      */
@@ -120,7 +120,7 @@ export interface OpenProjectOptions extends ProjectOptions {
     /**
      * Завершающая часть пути к файлу проекта.
      */
-    tailPath?: string;
+    path?: string;
     /**
      * Дополнительные пути поиска файлов имиджей.
      */

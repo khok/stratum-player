@@ -6,7 +6,7 @@
     stratum.options.iconsLocation = "./data/icons";
 
     // Подзагружает все динамически открываемые файлы bmp и vdr.
-    const preloadDynamicResources = (fs) => Promise.all([[...fs.search(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync())]);
+    const preloadDynamicResources = (fs) => Promise.all([[...fs.files(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync())]);
 
     // Начинаем загружать стандартную библиотеку.
     let stdlib;
@@ -79,24 +79,24 @@
                 // Распаковываем все закинутые архивы и собираем из них одно целое.
                 const fs = (await Promise.all(Array.from(files).map(stratum.unzip))).reduce((a, b) => a.merge(b));
 
-                let tailPath;
+                let path;
                 {
-                    const projectFiles = [...fs.search(/.+\.(prj|spj)$/i)];
+                    const projectFiles = [...fs.files(/.+\.(prj|spj)$/i)];
                     if (projectFiles.length !== 1) {
                         if (projectFiles.length > 0) {
                             const matches = projectFiles.map((f) => f.pathDos).join("\n");
                             const msg = `Найдено несколько файлов проектов:\n${matches}\nВведите путь/часть пути к файлу проекта:`;
-                            tailPath = prompt(msg, projectFiles[0].pathDos);
+                            path = prompt(msg, projectFiles[0].pathDos);
                         } else {
-                            tailPath = prompt("Не найдено файлов проектов. Введите путь/часть пути к файлу проекта:");
+                            path = prompt("Не найдено файлов проектов. Введите путь/часть пути к файлу проекта:");
                         }
-                        dropzoneStatusElem.innerHTML = `Ищем что-нибудь похожее на ${tailPath} ...`;
+                        dropzoneStatusElem.innerHTML = `Ищем что-нибудь похожее на ${path} ...`;
                     } else {
-                        tailPath = projectFiles[0].pathDos;
-                        dropzoneStatusElem.innerHTML = `Загружаем проект ${tailPath} ...`;
+                        path = projectFiles[0].pathDos;
+                        dropzoneStatusElem.innerHTML = `Загружаем проект ${path} ...`;
                     }
                 }
-                if (!tailPath) {
+                if (!path) {
                     dropzoneStatusElem.innerHTML = dropzoneStatusOrigText;
                     return;
                 }
@@ -107,7 +107,7 @@
                 // Приделываем стандартную библиотеку.
                 if (stdlib && !optionsNolib.checked) fs.merge(stdlib);
                 // Открываем проект
-                currentProject = await fs.project({ additionalClassPaths: ["L:"], tailPath });
+                currentProject = await fs.project({ additionalClassPaths: ["L:"], path });
                 currentProject.options.disableWindowResize = optionsNoResize.checked;
                 // Попытаемся запустить выполнение проекта прямо здесь.
                 // Таким образом перехватываем ошибку на старте.

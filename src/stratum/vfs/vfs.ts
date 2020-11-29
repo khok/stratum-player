@@ -73,7 +73,7 @@ export class VFS implements FileSystem {
         return this;
     }
 
-    *search(regexp: RegExp): IterableIterator<VFSFile> {
+    *files(regexp?: RegExp): IterableIterator<VFSFile> {
         for (const disk of this.disks.values()) for (const f of disk.files(regexp)) yield f;
     }
 
@@ -84,8 +84,8 @@ export class VFS implements FileSystem {
             let prjFile: VFSFile | undefined;
             const matches = new Array<string>();
 
-            const tailPathDosUC = options.tailPath && getPathParts(options.tailPath).join("\\").toUpperCase();
-            for (const v of this.search(/.+\.(prj|spj)$/i)) {
+            const tailPathDosUC = options.path && getPathParts(options.path).join("\\").toUpperCase();
+            for (const v of this.files(/.+\.(prj|spj)$/i)) {
                 if (tailPathDosUC && !v.pathDos.toUpperCase().includes(tailPathDosUC)) continue;
                 prjFile = v;
                 matches.push(v.pathDos);
