@@ -1,6 +1,6 @@
 {
     "name": "stratum-player",
-    "version": "0.5.1",
+    "version": "0.6.0",
     "description": "",
     "scripts": {
         "live": "node utils/live live",
@@ -17,7 +17,7 @@
     "devDependencies": {
         "@types/chai": "^4.2.14",
         "@types/fabric": "^3.6.9",
-        "@types/mocha": "^8.0.3",
+        "@types/mocha": "^8.0.4",
         "fabric": "^4.2.0",
         "jszip": "git+https://github.com/khokm/jszip.git",
         "serve-handler": "^6.1.3",
