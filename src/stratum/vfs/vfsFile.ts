@@ -1,5 +1,6 @@
 import { FileSystemFile } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
+import { Base64Image, readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
 import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
@@ -18,14 +19,14 @@ export class VFSFile implements FileSystemFile {
     readonly parent: VFSDir;
     readonly pathDos: string;
 
-    constructor(private localName: string, src: LazyBuffer, parent: VFSDir) {
-        this.buf = src;
+    constructor(private localName: string, parent: VFSDir, src?: LazyBuffer) {
+        this.buf = src || new ArrayBuffer(0);
         this.parent = parent;
         this.pathDos = parent.pathDos + "\\" + localName;
     }
 
-    asSymlinkAt(parent: VFSDir, newLocalName?: string) {
-        return new VFSFile(newLocalName || this.localName, this.buf, parent);
+    hardlink(parent: VFSDir, newLocalName?: string) {
+        return new VFSFile(newLocalName || this.localName, parent, this.buf);
     }
 
     async arraybuffer(): Promise<ArrayBuffer> {
@@ -33,43 +34,36 @@ export class VFSFile implements FileSystemFile {
         return this.buf;
     }
 
-    arraybufferSync(): ArrayBuffer | undefined {
-        return this.buf instanceof ArrayBuffer ? this.buf : undefined;
-    }
-
     async makeSync(): Promise<void> {
         await this.arraybuffer();
     }
 
-    private cache: ReturnType<VFSFile["read"]>;
-    private readed = false;
-    private read(data: ArrayBuffer, type: "prj" | "cls" | "stt" | "vdr"): ProjectInfo | ClassProto | VariableSet | VectorDrawing | undefined {
-        if (this.readed === true) return this.cache;
-        this.readed = true;
-
+    private cache?: ReturnType<VFSFile["read"]>;
+    private read(data: ArrayBuffer, type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm"): ProjectInfo | ClassProto | VariableSet | VectorDrawing | Base64Image {
+        if (this.cache) return this.cache;
         const st = new BinaryStream(data, { filepathDos: this.pathDos });
-        try {
-            switch (type) {
-                case "prj":
-                    return (this.cache = readPrjFile(st));
-                case "cls":
-                    return (this.cache = new ClassProto(st));
-                case "stt":
-                    return (this.cache = readSttFile(st));
-                case "vdr":
-                    const vdr = (this.cache = readVdrFile(st));
-                    vdr.source = { origin: "file", name: this.pathDos };
-                    if (st.position !== st.size) {
-                        const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
-                            st.meta.fileversion && st.meta.fileversion.toString(16)
-                        }.`;
-                        console.warn(msg);
-                    }
-                    return vdr;
+        switch (type) {
+            case "prj":
+                return (this.cache = readPrjFile(st));
+            case "cls":
+                return (this.cache = new ClassProto(st));
+            case "stt":
+                return (this.cache = readSttFile(st));
+            case "vdr": {
+                const vdr = (this.cache = readVdrFile(st));
+                vdr.source = { origin: "file", name: this.pathDos };
+                if (st.position !== st.size) {
+                    const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
+                        st.meta.fileversion && st.meta.fileversion.toString(16)
+                    }.`;
+                    console.warn(msg);
+                }
+                return vdr;
             }
-        } catch (e) {
-            console.warn(`${this.pathDos}: ошибка чтения.\nПричина: ${e.message}`);
-            return undefined;
+            case "bmp":
+                return (this.cache = readBmpFile(st));
+            case "dbm":
+                return (this.cache = readDbmFile(st));
         }
     }
 
@@ -82,16 +76,31 @@ export class VFSFile implements FileSystemFile {
         return this.read(s, type);
     }
 
+    private startLoading = false;
+    private warnShowed = false;
     readSyncAs(type: "prj"): ProjectInfo | undefined;
     readSyncAs(type: "cls"): ClassProto | undefined;
     readSyncAs(type: "stt"): VariableSet | undefined;
     readSyncAs(type: "vdr"): VectorDrawing | undefined;
-    readSyncAs(type: "prj" | "cls" | "stt" | "vdr") {
-        const buf = this.arraybufferSync();
-        return buf && this.read(buf, type);
-    }
-    streamSync() {
-        const buf = this.arraybufferSync();
-        return buf && new BinaryStream(buf, { filepathDos: this.pathDos });
+    readSyncAs(type: "bmp"): Base64Image;
+    readSyncAs(type: "dbm"): Base64Image;
+    readSyncAs(type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm") {
+        const { buf } = this;
+        if (!(buf instanceof ArrayBuffer)) {
+            if (this.startLoading) return undefined;
+            this.startLoading = true;
+            buf.async("arraybuffer").then((b) => (this.buf = b));
+            console.warn(`${this.pathDos} загружается асинхронно.`);
+            return undefined;
+        }
+        try {
+            return this.read(buf, type);
+        } catch (e) {
+            if (!this.warnShowed) {
+                console.warn(`${this.pathDos}: ошибка чтения.\nПричина: ${e.message}`);
+                this.warnShowed = true;
+            }
+            return undefined;
+        }
     }
 }

@@ -3,7 +3,7 @@ import { FileSystem, OpenProjectOptions, OpenZipOptions, ZipSource } from "strat
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
-import { getPathParts, getPrefixAndPathParts, SLASHES } from "stratum/helpers/pathOperations";
+import { getPrefixAndPathParts, SLASHES, splitPath } from "stratum/helpers/pathOperations";
 import { Player } from "stratum/player";
 import { VFSDir, VFSFile } from ".";
 
@@ -24,19 +24,19 @@ export class VFS implements FileSystem {
             throw Error(`${str} не является ZIP-архивом`);
         }
 
-        const [diskPrefixUC, p1] = getPrefixAndPathParts(options.directory || "", "Z");
         const fs = new VFS();
-        let root = new VFSDir(diskPrefixUC + ":", fs);
 
-        fs.diskNew(diskPrefixUC, root);
-        for (const p of p1) root = root.folderLocal(p);
+        const [diskPrefixUC, p1] = getPrefixAndPathParts(options.directory || "", "Z");
+        let root = new VFSDir(diskPrefixUC, fs);
+        fs.disks.set(diskPrefixUC, root);
+        for (const p of p1) root = root.createLocalDir(p);
 
         zip.forEach((path, zipObj) => {
             const p2 = path.split(SLASHES);
             let fd = root;
-            for (let i = 0; i < p2.length - 1; i++) fd = fd.folderLocal(p2[i]);
+            for (let i = 0; i < p2.length - 1; i++) fd = fd.createLocalDir(p2[i]);
             // Лучше это
-            if (!zipObj.dir) fd.fileNewLocal(p2[p2.length - 1], zipObj);
+            if (!zipObj.dir) fd.createLocalFile(p2[p2.length - 1], zipObj);
             // А такой вариант создал бы пустую директорию.
             // {
             //     const last = p2[p2.length - 1];
@@ -48,27 +48,16 @@ export class VFS implements FileSystem {
     }
 
     private readonly disks = new Map<string, VFSDir>();
-
     disk(name: string) {
         return this.disks.get(name.toUpperCase());
-    }
-
-    private diskNew(prefixUC: string, dir: VFSDir) {
-        const { disks } = this;
-
-        const prv = disks.size;
-        this.disks.set(prefixUC, dir);
-        if (disks.size === prv) throw Error(`Конфликт имен дисков: ${prefixUC}`);
     }
 
     merge(fs: FileSystem): this {
         if (!(fs instanceof VFS)) throw Error("fs is not instanceof VFS");
         const { disks: otherDisks } = fs;
         const { disks: myDisks } = this;
-        for (const [prefixUC, otherRoot] of otherDisks) {
-            const myRoot = myDisks.get(prefixUC);
-            if (myRoot) myRoot.merge(otherRoot);
-            else myDisks.set(prefixUC, otherRoot);
+        for (const [k, v] of otherDisks) {
+            myDisks.set(k, (myDisks.get(k) || new VFSDir(k, this)).merge(v));
         }
         return this;
     }
@@ -84,7 +73,7 @@ export class VFS implements FileSystem {
             let prjFile: VFSFile | undefined;
             const matches = new Array<string>();
 
-            const pathDosUC = options.path && getPathParts(options.path).join("\\").toUpperCase();
+            const pathDosUC = options.path && splitPath(options.path).join("\\").toUpperCase();
             for (const v of this.files(/.+\.(prj|spj)$/i)) {
                 if (pathDosUC && !v.pathDos.toUpperCase().includes(pathDosUC)) continue;
                 prjFile = v;

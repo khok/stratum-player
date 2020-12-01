@@ -1,30 +1,42 @@
-import { FileSystemDir } from "stratum/api";
-import { getPathParts } from "stratum/helpers/pathOperations";
+import { FileSystemDir, FileSystemFileData } from "stratum/api";
+import { assertDiskPrefix, splitPath } from "stratum/helpers/pathOperations";
 import { VFS, VFSFile } from ".";
 import { LazyBuffer } from "./vfsFile";
 
 const pathErr = (path: string) => Error(`Невозможно создать каталог ${path} - по этому пути уже существует файл.`);
 export class VFSDir implements FileSystemDir {
     private readonly nodes = new Map<string, VFSDir | VFSFile>();
+    private readonly fs: VFS;
 
     readonly dir = true;
     readonly parent: VFSDir;
     readonly pathDos: string;
 
-    constructor(private localName: string, private fs: VFS, parent?: VFSDir) {
-        this.pathDos = parent ? parent.pathDos + "\\" + localName : localName;
-        this.parent = parent || this;
+    constructor(private localName: string, parent: VFS | VFSDir) {
+        if (parent instanceof VFSDir) {
+            this.fs = parent.fs;
+            this.parent = parent;
+            this.pathDos = parent.pathDos + "\\" + localName;
+        } else {
+            this.fs = parent;
+            this.parent = this;
+            assertDiskPrefix(localName);
+            this.pathDos = this.localName = localName + ":";
+        }
     }
 
-    private getFast(pp: string[]): VFSDir | VFSFile | undefined {
+    private resolve(pp: string[]): VFSDir | VFSFile | undefined {
+        if (pp.length === 0) return undefined;
         const isAbsolute = pp[0].length === 2 && pp[0][1] === ":";
 
-        let root: VFSDir = this;
+        let root: VFSDir;
         if (isAbsolute) {
             const d = this.fs.disk(pp[0][0]);
-            if (!d) return undefined;
             if (pp.length === 1) return d; //Особый случай когда указан только диск.
+            if (d === undefined) return undefined;
             root = d;
+        } else {
+            root = this;
         }
 
         for (let i = isAbsolute ? 1 : 0; i < pp.length - 1; i++) {
@@ -32,7 +44,7 @@ export class VFSDir implements FileSystemDir {
                 root = root.parent;
             } else {
                 const next = root.nodes.get(pp[i].toUpperCase());
-                if (!next || !next.dir) return undefined;
+                if (!next?.dir) return undefined;
                 root = next;
             }
         }
@@ -42,88 +54,70 @@ export class VFSDir implements FileSystemDir {
     }
 
     get(path: string): VFSDir | VFSFile | undefined {
-        const pp = getPathParts(path);
-        if (pp.length === 0) return undefined;
-        return this.getFast(pp);
+        return this.resolve(splitPath(path));
     }
 
-    fileNew(name: string, data: ArrayBuffer): VFSFile | undefined {
-        const pp = getPathParts(name);
-        if (pp.length === 0) return undefined;
-        const fold = this.getFast(pp.slice(0, pp.length - 1));
-        if (!fold) return undefined;
+    create(type: "file", path: string, data?: FileSystemFileData): VFSFile | undefined;
+    create(type: "dir", path: string): VFSDir | undefined;
+    create(type: "file" | "dir", path: string, data?: FileSystemFileData): VFSFile | VFSDir | undefined {
+        const pp = splitPath(path);
+        const where = this.resolve(pp.slice(0, pp.length - 1));
+        if (!where?.dir) return undefined;
+
         const localName = pp[pp.length - 1];
         const keyUC = localName.toUpperCase();
-        const { nodes } = this;
-        if (nodes.get(keyUC)) return undefined;
-        const f = new VFSFile(localName, data, this);
-        nodes.set(keyUC, f);
+
+        const existingNode = where.nodes.get(keyUC);
+        if (existingNode) return existingNode.dir && type === "dir" ? existingNode : undefined;
+
+        const f = type === "file" ? new VFSFile(localName, where, data) : new VFSDir(localName, where);
+        where.nodes.set(keyUC, f);
         return f;
     }
 
-    folderNew(name: string): VFSDir | undefined {
-        const pp = getPathParts(name);
-        if (pp.length === 0) return undefined;
-        const fold = this.getFast(pp.slice(0, pp.length - 1));
-        if (!fold) return undefined;
-        const localName = pp[pp.length - 1];
-        const keyUC = localName.toUpperCase();
+    private setLocalSafe(localName: string, fileOrDir: VFSDir | VFSFile) {
         const { nodes } = this;
-        if (nodes.get(keyUC)) return undefined;
-        const f = new VFSDir(localName, this.fs, this);
-        nodes.set(keyUC, f);
-        return f;
-    }
-
-    private setLocal(localName: string, fileOrDir: VFSDir | VFSFile) {
-        const { nodes } = this;
-
         const prv = nodes.size;
         nodes.set(localName.toUpperCase(), fileOrDir);
         if (nodes.size === prv) throw Error(`Конфликт имен: ${fileOrDir.pathDos}`);
     }
 
-    fileNewLocal(localName: string, source: LazyBuffer): VFSFile {
-        const f = new VFSFile(localName, source, this);
-        this.setLocal(localName, f);
-        return f;
+    createLocalFile(name: string, source: LazyBuffer): void {
+        const f = new VFSFile(name, this, source);
+        this.setLocalSafe(name, f);
     }
 
-    folderLocalGet(name: string): VFSDir | undefined {
-        const res = this.get(name);
-        return res && res.dir ? res : undefined;
-    }
-
-    folderLocal(localName: string): VFSDir {
+    createLocalDir(name: string): VFSDir {
         const { nodes } = this;
-        const keyUC = localName.toUpperCase();
+        const keyUC = name.toUpperCase();
 
         const node = nodes.get(keyUC);
         if (node) {
-            if (!node.dir) throw pathErr(node.pathDos);
-            return node;
+            if (node.dir) return node;
+            throw pathErr(node.pathDos);
         }
-        const fd = new VFSDir(localName, this.fs, this);
-        nodes.set(keyUC, fd);
-        return fd;
+        const d = new VFSDir(name, this);
+        nodes.set(keyUC, d);
+        return d;
     }
 
-    merge({ nodes: otherNodes }: VFSDir) {
+    merge({ nodes: otherNodes }: VFSDir): this {
         const { nodes: myNodes } = this;
         for (const [otherNameUC, otherNode] of otherNodes) {
             let thisNode = myNodes.get(otherNameUC);
             if (thisNode && !thisNode.dir) throw pathErr(thisNode.pathDos);
             if (otherNode.dir) {
                 if (!thisNode) {
-                    thisNode = new VFSDir(otherNode.localName, this.fs, this);
+                    thisNode = new VFSDir(otherNode.localName, this);
                     myNodes.set(otherNameUC, thisNode);
                 }
                 thisNode.merge(otherNode);
                 continue;
             }
             if (thisNode) throw pathErr(thisNode.pathDos);
-            myNodes.set(otherNameUC, otherNode.asSymlinkAt(this));
+            myNodes.set(otherNameUC, otherNode.hardlink(this));
         }
+        return this;
     }
 
     private *_files(): IterableIterator<VFSFile> {

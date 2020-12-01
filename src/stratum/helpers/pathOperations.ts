@@ -1,14 +1,20 @@
+import { assert } from "chai";
+
 /**
  * Различные операции по нормализации файловых путей.
  */
 export const SLASHES = /[/\\]/;
 
 // console.log(getPathParts("c:\\ Pgra m \\  \\  \\ Files kek  ///// \\..\\ / lol.prj").join("\\"));
-export function getPathParts(path: string) {
+export function splitPath(path: string) {
     return path
         .split(SLASHES) //Делим по слешам
         .map((s) => s.trim()) // Убираем лишние пробелы
-        .filter((s) => s); // Фильтруем пустоты.
+        .filter((s) => s.length > 0); // Фильтруем пустоты.
+}
+
+export function assertDiskPrefix(prefix: string) {
+    if (prefix.length !== 1 || !/[A-Z]/.test(prefix)) throw Error(`Некорректный префикс диска: ${prefix}.`);
 }
 
 export function getPrefixAndPathParts(baseDir: string, defPrefixUC: string): [string, string[]] {
@@ -21,8 +27,8 @@ export function getPrefixAndPathParts(baseDir: string, defPrefixUC: string): [st
     if (prefAndDir.length !== 1) {
         rest = prefAndDir[1];
         const firstUC = prefAndDir[0].trim().toUpperCase();
-        if (firstUC.length !== 1 || !/[A-Z]/.test(firstUC)) throw Error("Префикс диска должен состоять из одной латинской буквы");
+        assertDiskPrefix(firstUC);
         prefixUC = firstUC;
     }
-    return [prefixUC, getPathParts(rest)];
+    return [prefixUC, splitPath(rest)];
 }

@@ -169,13 +169,13 @@ export class Player implements Project, ProjectFunctions {
     }
     createDIB2d(hspace: number, fileName: string): number {
         const file = this.dir.get(fileName);
-        const st = file && !file.dir && file.streamSync();
-        return st ? this.graphics!.createBitmap(hspace, st) : 0;
+        const bmp = file && !file.dir && file.readSyncAs("bmp");
+        return bmp ? this.graphics!.createBitmap(hspace, bmp) : 0;
     }
     createDoubleDib2D(hspace: number, fileName: string): number {
         const file = this.dir.get(fileName);
-        const st = file && !file.dir && file.streamSync();
-        return st ? this.graphics!.createDoubleBitmap(hspace, st) : 0;
+        const dbm = file && !file.dir && file.readSyncAs("dbm");
+        return dbm ? this.graphics!.createDoubleBitmap(hspace, dbm) : 0;
     }
     getClassDirectory(className: string): string {
         const proto = this.classes.get(className);

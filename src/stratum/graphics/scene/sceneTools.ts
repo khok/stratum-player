@@ -1,8 +1,8 @@
+import { Base64Image } from "stratum/fileFormats/bmp";
 import { ExternalBmpToolParams, ExternalDoubleBmpToolParams, VectorDrawingToolParams } from "stratum/fileFormats/vdr";
-import { BinaryStream } from "stratum/helpers/binaryStream";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { NumBool } from "stratum/translator";
-import { BmpToolFactory } from ".";
+import { loadImage } from "./bmpToolFactory";
 import { SceneBmpTool, SceneBrushTool, SceneFontTool, ScenePenTool, SceneStringTool, SceneTextTool } from "./tools";
 
 type GraphicSpaceToolType = Exclude<VectorDrawingToolParams["type"], ExternalBmpToolParams["type"] | ExternalDoubleBmpToolParams["type"]>;
@@ -39,11 +39,12 @@ export class SceneTools {
         this.texts = data.texts || HandleMap.create();
     }
 
-    createBitmap(stream: BinaryStream): number {
+    createBitmap(bmp: Base64Image): number {
         const handle = HandleMap.getFreeHandle(this.bitmaps);
-        const bmp = BmpToolFactory.loadFromStream(stream, handle, false);
-        if (bmp === undefined) return 0;
-        this.bitmaps.set(handle, bmp);
+        const { base64Image, width, height } = bmp;
+        const tool = new SceneBmpTool({ handle, width, height });
+        loadImage(base64Image).then((el) => tool.setImage(el));
+        this.bitmaps.set(handle, tool);
         return handle;
     }
 
@@ -54,11 +55,12 @@ export class SceneTools {
         return handle;
     }
 
-    createDoubleBitmap(stream: BinaryStream): number {
+    createDoubleBitmap(dbm: Base64Image): number {
         const handle = HandleMap.getFreeHandle(this.doubleBitmaps);
-        const bmp = BmpToolFactory.loadFromStream(stream, handle, false);
-        if (bmp === undefined) return 0;
-        this.doubleBitmaps.set(handle, bmp);
+        const { base64Image, width, height } = dbm;
+        const tool = new SceneBmpTool({ handle, width, height });
+        loadImage(base64Image).then((el) => tool.setImage(el));
+        this.doubleBitmaps.set(handle, tool);
         return handle;
     }
 

@@ -50,6 +50,9 @@ export interface FileSystem {
     project(options?: OpenProjectOptions): Promise<Project>;
 }
 
+// export type FileSystemFileData = ZipSource | string;
+export type FileSystemFileData = ArrayBuffer;
+
 /**
  * Представляет каталог в файловой системе.
  */
@@ -65,26 +68,25 @@ export interface FileSystemDir {
      */
     readonly pathDos: string;
     /**
-     * Возвращает файл или каталог относительно текущего каталога.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к искомому файлу или каталогу.
-     */
-    get(path: string): FileSystemDir | FileSystemFile | undefined;
-    /**
      * Пытается создать файл.
      * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к искомому файлу.
-     * Если файл или каталог с указанным именем не удалось создать, возвращает
-     * undefined.
+     * путь к создаваемому файлу.
+     * Если файл с указанным именем не удалось создать, возвращает undefined.
      */
-    fileNew(path: string, data: ArrayBuffer): FileSystemFile | undefined;
+    create(type: "file", path: string, data?: FileSystemFileData): FileSystemFile | undefined;
     /**
      * Пытается создать каталог.
      * @param path - нечувствительный к регистру относительный или абсолютный
      * путь к создаваемому каталогу.
      * Если каталог с указанным именем не удалось создать, возвращает undefined.
      */
-    folderNew(path: string): FileSystemDir | undefined;
+    create(type: "dir", path: string): FileSystemDir | undefined;
+    /**
+     * Возвращает файл или каталог относительно текущего каталога.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к искомому файлу или каталогу.
+     */
+    get(path: string): FileSystemDir | FileSystemFile | undefined;
     /**
      * Возвращает список файлов в каталоге и его подкаталогах.
      * @param regexp - условия поиска файлов.
@@ -336,4 +338,4 @@ export const FastestExecutor: ExecutorConstructor = FastestComputer;
 /**
  * Версия API.
  */
-export const version: string = "0.6.0";
+export const version: string = "0.7.0";

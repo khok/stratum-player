@@ -1,6 +1,6 @@
 import { Project, SmoothExecutor, WindowHost } from "stratum/api";
+import { Base64Image } from "stratum/fileFormats/bmp";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { BinaryStream } from "stratum/helpers/binaryStream";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { EventCode, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool } from "stratum/translator";
 import { Scene } from "./scene";
@@ -565,13 +565,13 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
         const scene = this.scenes.get(hspace);
         return scene !== undefined ? scene.insertVectorDrawing(x, y, flags, vdr) : 0;
     }
-    createBitmap(hspace: number, stream: BinaryStream): number {
+    createBitmap(hspace: number, bmp: Base64Image): number {
         const scene = this.scenes.get(hspace);
-        return scene !== undefined ? scene.tools.createBitmap(stream) : 0;
+        return scene !== undefined ? scene.tools.createBitmap(bmp) : 0;
     }
-    createDoubleBitmap(hspace: number, stream: BinaryStream): number {
+    createDoubleBitmap(hspace: number, dbm: Base64Image): number {
         const scene = this.scenes.get(hspace);
-        return scene !== undefined ? scene.tools.createDoubleBitmap(stream) : 0;
+        return scene !== undefined ? scene.tools.createDoubleBitmap(dbm) : 0;
     }
     closeAllWindows(prj?: Project) {
         // Как вариант, можно помечать открываемые окна объектом проекта
