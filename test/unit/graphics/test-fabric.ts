@@ -2,7 +2,7 @@ import { unzip } from "stratum/api";
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { ClassProto } from "stratum/common/classProto";
 import { Scene } from "stratum/graphics/scene";
-import { SimpleGraphicsManager } from "stratum/graphics/simpleGraphicsManager";
+import { GraphicsManager } from "stratum/graphics";
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { SimpleWs } from "stratum/player/ws";
 const { strictEqual } = chai.assert;
@@ -27,7 +27,7 @@ describe("Сцена fabric рисуется корректно", () => {
         strictEqual(vdr.source!.origin, "class");
         strictEqual(vdr.source!.name, classname);
 
-        const graphics = new SimpleGraphicsManager(new SimpleWs(document.body));
+        const graphics = new GraphicsManager(new SimpleWs(document.body));
 
         const wname = "Test Window";
         const spaceHandle = graphics.openWindow(wname, "", vdr);
