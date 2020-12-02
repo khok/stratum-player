@@ -18,7 +18,8 @@ export class SceneWindow {
     private readonly classname: string = "";
     private readonly filename: string = "";
     private rnd: FabricRenderer;
-    private disableResize: boolean;
+    private resizible: boolean;
+    private ignoreSetSize: boolean;
 
     private wnd: WindowHostWindow;
     private prevWidth: number = 0;
@@ -28,7 +29,8 @@ export class SceneWindow {
     readonly view: HTMLDivElement;
 
     constructor({ handle, wname, attribute, vdr, host, disableResize }: SceneWindowArgs) {
-        this.disableResize = disableResize ?? false;
+        this.ignoreSetSize = disableResize ?? false;
+        this.resizible = vdr?.otDATAITEMS?.some((d) => d.id === 11) ? false : true;
 
         if (vdr !== undefined && vdr.source !== undefined) {
             const { name, origin } = vdr.source;
@@ -55,10 +57,7 @@ export class SceneWindow {
         const renderer = (this.rnd = new FabricRenderer(cnv, this, handle));
         view.appendChild(cnv);
 
-        const wnd = (this.wnd = host.window({ title: wname, view }));
-        wnd.on("closed", () => {
-            for (const c of this.closeSubs) c.receive(Constant.WM_SPACEDONE);
-        });
+        this.wnd = host.window({ title: attribute.toUpperCase().includes("WS_NOCAPTION") ? undefined : wname, view });
         this.prevWidth = this.width;
         this.prevWidth = this.height;
         this.scene = new Scene({ vdr, renderer });
@@ -74,6 +73,9 @@ export class SceneWindow {
     }
     offClose(sub: EventSubscriber) {
         this.closeSubs.delete(sub);
+    }
+    dispatchClose() {
+        for (const c of this.closeSubs) c.receive(Constant.WM_SPACEDONE);
     }
 
     private sizeSubs = new Set<EventSubscriber>();
@@ -92,9 +94,9 @@ export class SceneWindow {
     }
 
     redraw() {
-        const { view: body, rnd } = this;
-        const nw = body.clientWidth;
-        const nh = body.clientHeight;
+        const { view, rnd } = this;
+        const nw = view.clientWidth;
+        const nh = view.clientHeight;
 
         let changed = false;
         if (nw !== this.prevWidth) {
@@ -136,13 +138,13 @@ export class SceneWindow {
     }
 
     setSize(width: number, height: number): NumBool {
-        if (this.disableResize === true) return 1;
-
+        if (this.ignoreSetSize === true) return 1;
+        this.wnd.setSize(width, height);
+        if (this.resizible === true) return 1;
         // prettier-ignore
-        const { view: { clientWidth, clientHeight, style } } = this;
-
-        if (clientWidth !== width) style.setProperty("width", width + "px");
-        if (clientHeight !== height) style.setProperty("height", height + "px");
+        const { view: { style } } = this;
+        style.setProperty("width", width + "px");
+        style.setProperty("height", height + "px");
         return 1;
     }
 

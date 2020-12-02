@@ -89,7 +89,7 @@ function read2xFormat(stream, res, _pos) {
 //space2d.cpp:1761, 2122
 function _readVectorDrawing(stream) {
     const signature = stream.uint16();
-    if (signature !== 0x4432) throw new FileSignatureError(signature, 0x4432);
+    if (signature !== 0x4432) throw new FileSignatureError(stream, signature, 0x4432);
 
     const _pos = stream.position;
 

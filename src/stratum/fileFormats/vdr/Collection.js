@@ -10,6 +10,22 @@ export function readNext(stream, _mustBeCollection, objectCode) {
 
     if (objectCode !== undefined && objectCode !== chunk.code) throw Error(`Chunk code is ${chunk.code} instead of ${objectCode}`);
 
+    // GWINTYPE.H:308
+    if (chunk.code === 203) {
+        const type = stream.uint16();
+        const objectHandle = stream.int16();
+        const center = stream.point2d();
+        const matrix = Array.from({ length: 9 }, () => stream.float64());
+        chunk.checkReaded();
+        const data = {
+            type,
+            objectHandle,
+            center,
+            matrix,
+        };
+        return { type: "crdSystem", data };
+    }
+
     const isCollection = chunk.code > 999 && chunk.code < 1200;
 
     if (_mustBeCollection && !isCollection) throw Error("not a collection: " + chunk.code);

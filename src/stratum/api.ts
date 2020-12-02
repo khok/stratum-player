@@ -171,25 +171,16 @@ export interface Project {
 
     /**
      * Запускает выполнение проекта.
-     * Открываемые в проекте окна будут всплывающими.
-     */
-    play(): this;
-    /**
-     * Запускает выполнение проекта.
      * @param container - HTML элемент, в котором будут размещаться
      * открываемые в проекте окна.
+     * Если он не указан, окна будут всплывающими.
      */
-    play(container: HTMLElement): this;
+    play(container?: HTMLElement): this;
     /**
      * Запускает выполнение проекта.
      * @param host - Хост оконной системы.
      */
     play(host: WindowHost): this;
-    /**
-     * Запускает выполнение проекта.
-     * @param project - Проект, ресурсы которого будут переиспользованы.
-     */
-    play(project: Project): this;
     /**
      * Закрывает проект.
      */
@@ -261,7 +252,7 @@ export interface WindowOptions {
     /**
      * Название открываемого окна.
      */
-    title: string;
+    title?: string;
 }
 
 /**
@@ -278,6 +269,7 @@ export interface WindowHost {
 
 export interface WindowHostWindow {
     setTitle(title: string): void;
+    setSize(width: number, height: number): void;
     /**
      * Регистрирует обработчик события изменения размера окна пользователем.
      */
@@ -338,4 +330,4 @@ export const FastestExecutor: ExecutorConstructor = FastestComputer;
 /**
  * Версия API.
  */
-export const version: string = "0.7.0";
+export const version: string = "0.7.1";

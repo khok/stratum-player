@@ -8,7 +8,7 @@ import { Enviroment, NumBool, ProjectFunctions } from "stratum/translator";
 import { unreleasedFunctions } from "stratum/translator/translator";
 import { VFSDir } from "stratum/vfs";
 import { MemoryManager } from "./memoryManager";
-import { NativeWs, SimpleWs } from "./ws";
+import { SimpleWs } from "./ws";
 
 export interface ProjectResources {
     dir: VFSDir;
@@ -29,7 +29,7 @@ export class Player implements Project, ProjectFunctions {
     private readonly classes: ClassLibrary;
     private readonly stt?: VariableSet | undefined;
 
-    private graphics?: GraphicsManager;
+    private readonly graphics: GraphicsManager = new GraphicsManager(new SimpleWs());
     private loop: (() => boolean) | undefined;
 
     readonly options: ProjectOptions;
@@ -64,29 +64,15 @@ export class Player implements Project, ProjectFunctions {
         this._computer = value;
     }
 
-    play(): this;
-    play(container: HTMLElement): this;
+    play(container?: HTMLElement): this;
     play(host: WindowHost): this;
-    play(project: Player): this;
-    play(ghost?: HTMLElement | WindowHost | Player): this {
+    play(ghost?: HTMLElement | null | WindowHost): this {
         if (this.loop) return this;
-
-        let graphics = ghost instanceof Player ? ghost.graphics : this.graphics;
-        if (!graphics) {
-            let host: WindowHost;
-            if (!ghost || ghost instanceof Player) host = new NativeWs();
-            else host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
-            graphics = new GraphicsManager(host);
-
-            this.graphics = graphics;
-            if (ghost instanceof Player) ghost.graphics = graphics;
-        } else if (ghost && !(ghost instanceof Player)) {
-            graphics.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
-        }
+        if (ghost) this.graphics.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
 
         const mem = new MemoryManager(); // Память имиджей.
         unreleasedFunctions.clear();
-        const schema = Schema.build(this.prjInfo.rootClassName, this.classes, new Enviroment(mem, { graphics, project: this }));
+        const schema = Schema.build(this.prjInfo.rootClassName, this.classes, new Enviroment(mem, { graphics: this.graphics, project: this }));
         if (unreleasedFunctions.size > 0) console.log(`Нереализованные функции:\n${[...unreleasedFunctions.values()].join("\n")}`);
         mem.createBuffers(schema.createTLB()); // Инициализируем память
 
@@ -123,7 +109,7 @@ export class Player implements Project, ProjectFunctions {
     close(): this {
         this.computer.stop();
         this.loop = undefined;
-        this.graphics?.closeAllWindows();
+        this.graphics.closeAllWindows();
         this._state = "closed";
         return this;
     }
@@ -164,27 +150,27 @@ export class Player implements Project, ProjectFunctions {
     }
     openSchemeWindow(wname: string, className: string, attribute: string): number {
         const vdr = this.classes.getComposedScheme(className);
-        return this.graphics!.openWindow(wname, attribute, vdr, this);
+        return this.graphics.openWindow(wname, attribute, vdr, this);
     }
     loadSpaceWindow(wname: string, fileName: string, attribute: string): number {
         const file = this.dir.get(fileName);
         const vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
-        return this.graphics!.openWindow(wname, attribute, vdr, this);
+        return this.graphics.openWindow(wname, attribute, vdr, this);
     }
     createObjectFromFile2D(hspace: number, fileName: string, x: number, y: number, flags: number): number {
         const file = this.dir.get(fileName);
         const vdr = file && !file.dir && file.readSyncAs("vdr");
-        return vdr ? this.graphics!.insertVDR(hspace, x, y, flags, vdr) : 0;
+        return vdr ? this.graphics.insertVDR(hspace, x, y, flags, vdr) : 0;
     }
     createDIB2d(hspace: number, fileName: string): number {
         const file = this.dir.get(fileName);
         const bmp = file && !file.dir && file.readSyncAs("bmp");
-        return bmp ? this.graphics!.createBitmap(hspace, bmp) : 0;
+        return bmp ? this.graphics.createBitmap(hspace, bmp) : 0;
     }
     createDoubleDib2D(hspace: number, fileName: string): number {
         const file = this.dir.get(fileName);
         const dbm = file && !file.dir && file.readSyncAs("dbm");
-        return dbm ? this.graphics!.createDoubleBitmap(hspace, dbm) : 0;
+        return dbm ? this.graphics.createDoubleBitmap(hspace, dbm) : 0;
     }
     getClassDirectory(className: string): string {
         const proto = this.classes.get(className);

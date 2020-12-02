@@ -565,6 +565,10 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
             vdr,
             disableResize: prj?.options.disableWindowResize,
         });
+        wnd["wnd"].on("closed", () => {
+            this.closeWindow(wname);
+            wnd.dispatchClose();
+        });
 
         this.hspaceToWname.set(handle, wname);
         this.wnameToHspace.set(wname, handle);

@@ -9,7 +9,7 @@ import {
     FontToolParams,
     PenToolParams,
     StringToolParams,
-    TextToolParams
+    TextToolParams,
 } from "./vectorDrawingTools";
 
 export interface VectorDrawingTools {
@@ -20,6 +20,13 @@ export interface VectorDrawingTools {
     penTools?: PenToolParams[];
     stringTools?: StringToolParams[];
     textTools?: TextToolParams[];
+}
+
+export interface CoordinateSystem {
+    type: number;
+    objectHandle: number;
+    center: Point2D;
+    matrix: number[];
 }
 
 /**
@@ -39,4 +46,6 @@ export interface VectorDrawing extends VectorDrawingTools {
 
     elements?: VectorDrawingElement[];
     elementOrder?: number[];
+    crdSystem?: CoordinateSystem;
+    otDATAITEMS?: { id: number; data: unknown }[];
 }

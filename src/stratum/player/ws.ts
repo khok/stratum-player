@@ -2,42 +2,31 @@ import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/api";
 
 export class SimpleWindow implements WindowHostWindow {
     private origTitle: string;
-    constructor(title: string, private view: HTMLDivElement) {
+    constructor(private view: HTMLDivElement, title?: string) {
         this.origTitle = document.title;
-        if (title) document.title = title;
+        if (title) document.title = this.origTitle ? `${this.origTitle} - ${title}` : title;
     }
     setTitle(title: string) {
         document.title = title;
+    }
+    setSize(width: number, height: number) {
+        // prettier-ignore
+        const { view: { clientWidth, clientHeight, style } } = this;
+        if (clientWidth !== width) style.setProperty("width", width + "px");
+        if (clientHeight !== height) style.setProperty("height", height + "px");
     }
     close(): void {
         this.view.remove();
         document.title = this.origTitle;
     }
-    // on(event: "resized", handler: (width: number, height: number) => void): void;
     on() {}
-    // on(event: any, handler: any) {}
-    // off(event: "resized", handler?: (width: number, height: number) => void): void;
     off() {}
-    // off(event: any, handler?: any) {}
     toTop() {}
 }
 
-export class SimpleWs implements WindowHost {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    constructor(private root?: HTMLElement) {}
-
-    window({ title, view }: WindowOptions): WindowHostWindow {
-        if (!this.root) throw Error(`Не удалось открыть окно ${title}: корень для открытия окна не был указан`);
-        this.root.appendChild(view);
-        return new SimpleWindow(title, view);
-    }
-}
-
-export class Wrapper implements WindowHostWindow {
-    constructor(private wnd: Window, title: string, view: HTMLDivElement) {
-        wnd.document.body.appendChild(view);
-        wnd.document.title = title;
+export class PopupWrapper implements WindowHostWindow {
+    constructor(private wnd: Window, title?: string) {
+        if (title) wnd.document.title = title;
     }
 
     private handlers = new Set<() => void>();
@@ -59,6 +48,15 @@ export class Wrapper implements WindowHostWindow {
     setTitle(title: string) {
         this.wnd.document.title = title;
     }
+    sizedOnce = false;
+    setSize(width: number, height: number) {
+        if (this.sizedOnce === true) return;
+        const { wnd } = this;
+        wnd.addEventListener("resize", () => wnd.resizeTo(width + wnd.outerWidth - wnd.innerWidth + 15, height + wnd.outerHeight - wnd.innerHeight + 15), {
+            once: true,
+        });
+        this.sizedOnce = true;
+    }
 
     toTop() {}
 
@@ -68,12 +66,23 @@ export class Wrapper implements WindowHostWindow {
     }
 }
 
-export class NativeWs implements WindowHost {
-    width: number = window.innerWidth;
-    height: number = window.innerHeight;
+export class SimpleWs implements WindowHost {
+    constructor(private root?: HTMLElement) {}
+
+    get width() {
+        return window.innerWidth;
+    }
+    get height() {
+        return window.innerHeight;
+    }
     window({ title, view }: WindowOptions): WindowHostWindow {
-        const wnd = window.open("about:blank", title, `menubar=no,toolbar=no,location=no`);
+        if (this.root) {
+            this.root.appendChild(view);
+            return new SimpleWindow(view, title);
+        }
+        const wnd = window.open("about:blank", undefined, `width=${this.width / 1.5},height=${this.height / 1.5}`);
         if (!wnd) throw Error(`Не удалось открыть окно ${title}`);
-        return new Wrapper(wnd, title, view);
+        wnd.document.body.appendChild(view);
+        return new PopupWrapper(wnd, title);
     }
 }
