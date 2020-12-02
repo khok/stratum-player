@@ -6,16 +6,17 @@ const runProject = (name) => {
     .then(async (fsArr) => {
         const fs = fsArr.reduce((a, b) => a.merge(b));
         if(document.body) document.body.innerHTML = "Подзагруажем BMP и VDR файлы..."
-        await Promise.all([...fs.search(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()))
+        await Promise.all([...fs.files(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()))
         if(document.body) document.body.innerHTML = "Загружаем ресурсы проекта..."
         return fs.project({ additionalClassPaths: ["library"] });
     })
-    .then(prj => {
-        if(!document.body) window.onload = () => prj.play(document.body);
-        else {
+    .then((prj) => {
+        const cb = () => {
             document.body.innerHTML = "";
-            prj.on("closed", () => history.back()).play(document.body)
+            prj.on("closed", () => history.back()).play(document.body);
         }
+        if(document.body) cb();
+        else window.addEventListener("load", cb);
     })
     .catch((err) => {
         console.error(err);
