@@ -32,6 +32,8 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private readonly name: string = "";
     private readonly position: Point2D = { x: 0, y: 0 };
 
+    private model: ClassModel;
+
     private children: Schema[] = [];
 
     private readonly varGraphNodes: VarGraphNode[] = [];
@@ -42,6 +44,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
     captureEventsFromSpace = 0;
     constructor(proto: ClassProto, env: Enviroment, placement?: PlacementDescription) {
+        this.model = proto.model ?? Schema.NoModel;
         this.proto = proto;
         this.env = env;
         if (placement) {
@@ -99,7 +102,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
     sendMessage(objectName: string, className: string, ...varNames: string[]) {
         const { env, proto, TLB } = this;
-        if (env.level > 59) return;
+        if (env.level > 58) return;
 
         if (objectName !== "") throw Error(`Вызов SendMessage с objectName=${objectName} не реализован`);
         if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
@@ -108,15 +111,18 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         const receivers = this.findClasses(nameUC);
         if (receivers.length === 0) return;
 
-        const oProto = receivers[0].proto;
-        const otherModel = oProto.model;
-        if (!otherModel) return;
-
+        const rec0 = receivers[0];
         const myVars = proto.vars;
-        const otherVars = oProto.vars;
+        const otherVars = rec0.proto.vars;
 
+        const otherModel = rec0.model;
         if (myVars === undefined || otherVars === undefined) {
-            for (const rec of receivers) if (rec !== this) Schema.computeModel(otherModel, rec, env);
+            for (const rec of receivers) {
+                if (rec === this) continue;
+                env.inc();
+                otherModel(rec, env);
+                env.dec();
+            }
             return;
         }
 
@@ -135,7 +141,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
             const otherTyp = otherVars.types[otherId];
             if (typ !== otherTyp) continue;
 
-            idTypes[idx + 0] = TLB[myId];
+            idTypes[idx + 0] = myId;
             idTypes[idx + 1] = otherId;
             idTypes[idx + 2] = typ;
             idx += 3;
@@ -145,10 +151,10 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         for (const rec of receivers) {
             if (rec === this) continue;
             for (let i = 0; i < idTypes.length; i += 3) {
-                const myId = idTypes[i + 0];
-                if (myId === undefined) continue;
-                const otherId = rec.TLB[idTypes[i + 1]];
                 const typ = idTypes[i + 2];
+                if (typ === undefined) continue;
+                const myId = TLB[idTypes[i + 0]];
+                const otherId = rec.TLB[idTypes[i + 1]];
 
                 const newA = news[typ];
                 const oldA = olds[typ];
@@ -159,12 +165,14 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
                 // olds[typ][otherId] = news[typ][otherId] = news[typ][myId];
             }
-            Schema.computeModel(otherModel, rec, env);
+            env.inc();
+            otherModel(rec, env);
+            env.dec();
             for (let i = 0; i < idTypes.length; i += 3) {
-                const myId = idTypes[i + 0];
-                if (myId === undefined) continue;
-                const otherId = rec.TLB[idTypes[i + 1]];
                 const typ = idTypes[i + 2];
+                if (typ === undefined) continue;
+                const myId = TLB[idTypes[i + 0]];
+                const otherId = rec.TLB[idTypes[i + 1]];
 
                 const newA = news[typ];
                 const oldA = olds[typ];
@@ -237,11 +245,8 @@ export class Schema implements SchemaFunctions, EventSubscriber {
                 break;
         }
 
-        const m = proto.model;
-        if (m === undefined) return;
-
-        const { env, TLB } = this;
-        Schema.computeModel(m, this, env);
+        const { env, TLB, model } = this;
+        model(this, env);
         // prettier-ignore
         const { memory: { newFloats, oldFloats,newInts,oldInts,newStrings,oldStrings } } = env;
         // Синхронизируем измененные в ходе вычислений переменные только на этом промежутке,
@@ -356,11 +361,8 @@ export class Schema implements SchemaFunctions, EventSubscriber {
      */
     compute() {
         if (this.isDisabled(this) === true) return;
-        const { children, proto } = this;
-        for (const c of children) c.compute();
-
-        const m = proto.model;
-        if (m !== undefined) Schema.computeModel(m, this, this.env);
+        for (const c of this.children) c.compute();
+        this.model(this, this.env);
     }
 
     private resolve(path: string): Schema | undefined {
@@ -403,7 +405,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     }
 
     /*
-    private static computeModelSafe(model: ClassModel, schema: Schema, env: Enviroment) {
+    private static computeModel(model: ClassModel, schema: Schema, env: Enviroment) {
         env.inc();
         try {
             model(schema, env);
@@ -422,12 +424,6 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     }
     */
 
-    private static computeModel(model: ClassModel, schema: Schema, env: Enviroment) {
-        env.inc();
-        model(schema, env);
-        env.dec();
-    }
-
     private static alwaysEnabled() {
         return false;
     }
@@ -437,5 +433,6 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private static disabledByDisable({ env, proto, TLB }: Schema) {
         return env.memory.newFloats[TLB[proto._disableVarId]] > 0;
     }
+    private static NoModel() {}
 }
 // class SchemaError extends Error {}
