@@ -85,7 +85,7 @@ export enum EventCode {
     // otREFTODIB2D       = 110,
     // otREFTODOUBLEDIB2D = 111,
 
-    // ATTRSET          = 1,
+    ATTRSET = 1,
     // ATTRRESET = 2,
     // ATTRPUT          = 3,
 
@@ -474,7 +474,7 @@ export enum EventCode {
 
     // LT_POINT = 0,
     // LT_DIRECTIONAL = 1,
-    // LT_SPOTLIGHT = 2,
+    LT_SPOTLIGHT = 2,
 
     // PT_ORTHOGRAPHIC = 0,
     // PT_PERSPECTIVE = 1,

@@ -35,7 +35,9 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
     switch (subop.type) {
         case "const": {
             const val = subop.value;
-            return val.startsWith("#") ? val.substring(1, val.length) : val;
+            if (val[0] === "#") return val.substring(1, val.length);
+            if (val[0] === '"' || val[0] === "'") return val.split("\\").join("\\\\");
+            return val;
         }
         case "-":
             return "-" + opToString(subop.operand, vars, funcs);
@@ -64,10 +66,10 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
                 const floatArr = arrNames.get(VarType.Float);
                 if (!vars) throw Error("Имидж не имеет переменных");
                 const a = subop.args.map((a: any) => {
-                    const nm = a.val.first.name;
+                    const nm = a.first.name;
                     const id = vars.nameUCToId.get(nm.toUpperCase());
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetTime: ${nm}`);
-                    return `${a.val.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
+                    return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
                 return `env.getTime(${a.join(",")})`;
             }
@@ -77,20 +79,20 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
                 const floatArr = arrNames.get(VarType.Float);
                 if (!vars) throw Error("Имидж не имеет переменных");
 
-                const a0Res = opToString(subop.args[0].val, vars, funcs);
-                const a1Res = opToString(subop.args[1].val, vars, funcs);
+                const a0Res = opToString(subop.args[0], vars, funcs);
+                const a1Res = opToString(subop.args[1], vars, funcs);
 
                 const a2 = subop.args[2];
-                const a2name = a2.val.first.name;
+                const a2name = a2.first.name;
                 const a2id = vars.nameUCToId.get(a2name.toUpperCase());
                 if (a2id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${a2name}`);
-                const a2Res = `${a2.val.first.isNew ? "new" : "old"}${floatArr},TLB[${a2id}]`;
+                const a2Res = `${a2.first.isNew ? "new" : "old"}${floatArr},TLB[${a2id}]`;
 
                 const a3 = subop.args[3];
-                const a3name = a3.val.first.name;
+                const a3name = a3.first.name;
                 const a3id = vars.nameUCToId.get(a3name.toUpperCase());
                 if (a3id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${a3name}`);
-                const a3res = `${a3.val.first.isNew ? "new" : "old"}${floatArr},TLB[${a3id}]`;
+                const a3res = `${a3.first.isNew ? "new" : "old"}${floatArr},TLB[${a3id}]`;
 
                 console.log(`${graphicsVarName}.getActualSize2d(${a0Res},${a1Res},${a2Res},${a3res})`);
                 throw Error();
@@ -98,7 +100,7 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
             }
             */
 
-            const fargs = subop.args.map((a: any) => opToString(a.val, vars, funcs));
+            const fargs = subop.args.map((a: any) => opToString(a, vars, funcs));
             if (nameUC === "NOT") return `((${fargs[0]})>0===true?0:1)`;
             if (nameUC === "AND") return `(((${fargs[0]})>0&&(${fargs[1]})>0)===true?1:0)`;
 
@@ -143,6 +145,7 @@ function opToString(op: any, vars: ClassProtoVars | undefined, funcs: FuncsColle
     return f + r.join("");
 }
 
+let _hasEquals = false;
 function parseCodeline(c: any, vars: ClassProtoVars | undefined, funcs: FuncsCollection): string | undefined {
     switch (c.type) {
         case ":=": {
@@ -155,17 +158,25 @@ function parseCodeline(c: any, vars: ClassProtoVars | undefined, funcs: FuncsCol
             return `new${typ}[TLB[${id}]] = ${opToString(c.operand, vars, funcs)};`;
         }
         case "varsDec":
-        case "=":
             return undefined;
+        case "=":
+            _hasEquals = true;
+            return undefined;
+        case "switch":
+            return "if(false){";
         case "if":
         case "while":
             return `${c.type} (${opToString(c.expr.body, vars, funcs)}) {`;
+        case "break":
+            return "break;";
+        case "case":
+            return `} else if (${opToString(c.expr.body, vars, funcs)}) {`;
         case "endif":
         case "endwhile":
-            if (c.then) return `}\n${parseCodeline(c.then, vars, funcs)}`;
+        case "endswitch":
             return `}`;
         case "else":
-            if (c.then) return `} else {\n${parseCodeline(c.then, vars, funcs)}`;
+        case "default":
             return `} else {`;
         case "callChain":
             return c.functions.map((f: any) => `${subOpToString(f, vars, funcs)}`).join("; ") + ";";
@@ -184,24 +195,44 @@ export function translate(source: string, vars: ClassProtoVars | undefined, objn
         throw Error(`Ошибка парсинга ${objname}: ${e.message}`);
     }
 
-    // const errors: string[] = [];
+    if (data[0].type === "function") {
+        console.warn(`Объявление ${objname} как функции не реализовано`);
+        return undefined;
+    }
+
     const funcs = new Map<string, string>();
     let body = "";
-    for (let i = 0; i < data.length; i++) {
+    _hasEquals = false;
+    for (let i = 0; i < data.length; ++i) {
         try {
-            const line = parseCodeline(data[i], vars, funcs);
-            if (line) body += line + "\n";
+            const cd = data[i];
+            {
+                const line = parseCodeline(cd, vars, funcs);
+                if (line) body += line + "\n";
+            }
+            let th = cd.then;
+            while (th) {
+                const line = parseCodeline(th, vars, funcs);
+                if (line) body += line + "\n";
+                th = th.then;
+            }
         } catch (e) {
             // prettier-ignore
             console.log(norm.split("\n").filter(s => s.trim()).map((s, idx) => `${idx + 1}: ${s}`).join("\n"));
             throw Error(`Ошибка компиляции ${objname}: ${e.message} в строке ${i + 1}`);
-            // errors.push(e.message + ` в строке ${i + 1}`);
         }
     }
+    if (_hasEquals) console.warn(`Уравнения в ${objname} не реализованы`);
     if (body.length === 0) return undefined;
 
     console.log(`Компилируем ${objname}`);
-    // if (errors.length > 0) throw Error(`Ошибка компиляции ${objname}:\n${errors.join(";\n")}.`);
     if (funcs.size) console.warn(`Функции ${[...funcs.values()].join(", ")} в ${objname} не реализованы.`);
-    return new Function("schema", "env", header + body + `//# sourceURL=${objname}`) as ClassModel;
+    try {
+        return new Function("schema", "env", header + body + `//# sourceURL=${objname}`) as ClassModel;
+    } catch (e) {
+        // prettier-ignore
+        console.log(norm.split("\n").filter(s => s.trim()).map((s, idx) => `${idx + 1}: ${s}`).join("\n"));
+        console.log(body);
+        throw Error(`Ошибка eval ${objname}: ${e.message}`);
+    }
 }

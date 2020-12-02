@@ -153,6 +153,7 @@ export const graphicsVarName: keyof Enviroment = "graphics";
 export const funcTable = new Map([
     ["ROUND", "roundPrec"],
     ["ADDSLASH", "addSlash"],
+    ["NEW", `(() =>{throw Error("Функция New не реализована")})`],
     ...schemaFuncs.map((c): [string, string] => [c.toUpperCase(), `${schemaVarName}.${c}`]),
     ...projectFuncs.map((c): [string, string] => [c.toUpperCase(), `${projectVarName}.${c}`]),
     ...graphicsFuncs.map((c): [string, string] => [c.toUpperCase(), `${graphicsVarName}.${c}`]),
