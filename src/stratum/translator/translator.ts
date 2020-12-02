@@ -29,9 +29,7 @@ const { ${TLBVarName} } = ${schemaVarName};
 const { ${memoryVarName}: { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings }, ${projectVarName}, ${graphicsVarName} } = env;
 `;
 
-type FuncsCollection = Map<string, string>;
-
-function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: FuncsCollection) {
+function subOpToString(subop: any, vars: ClassProtoVars | undefined) {
     switch (subop.type) {
         case "const": {
             const val = subop.value;
@@ -40,9 +38,9 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
             return val;
         }
         case "-":
-            return "-" + opToString(subop.operand, vars, funcs);
+            return "-" + opToString(subop.operand, vars);
         case "!":
-            return "!" + opToString(subop.operand, vars, funcs);
+            return "!" + opToString(subop.operand, vars);
         case "var": {
             if (!vars) throw Error("Имидж не имеет переменных");
             const nameUC: string = subop.name.toUpperCase();
@@ -90,7 +88,7 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
                 const floatArr = arrNames.get(VarType.Float);
                 if (!vars) throw Error("Имидж не имеет переменных");
 
-                const f1 = subop.args.slice(0, 2).map((a: any) => opToString(a, vars, funcs));
+                const f1 = subop.args.slice(0, 2).map((a: any) => opToString(a, vars));
                 const f2 = subop.args.slice(2, 4).map((a: any) => {
                     const nm = a.first.name;
                     const id = vars.nameUCToId.get(nm.toUpperCase());
@@ -100,7 +98,7 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
                 return `${graphicsVarName}.getActualSize2d(${f1.join(",")},${f2.join(",")})`;
             }
 
-            const fargs = subop.args.map((a: any) => opToString(a, vars, funcs));
+            const fargs = subop.args.map((a: any) => opToString(a, vars));
             if (nameUC === "NOT") return `((${fargs[0]})>0===true?0:1)`;
             if (nameUC === "AND") return `(((${fargs[0]})>0&&(${fargs[1]})>0)===true?1:0)`;
 
@@ -131,24 +129,24 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
             return `${fname || subop.name}(${fargs.join(",")})`;
         }
         case "expression":
-            return `(${opToString(subop.body, vars, funcs)})`;
+            return `(${opToString(subop.body, vars)})`;
         default:
             console.log(subop);
             throw Error(`Неизвестный операнд: ${subop.type}`);
     }
 }
 
-function opToString(op: any, vars: ClassProtoVars | undefined, funcs: FuncsCollection): string {
-    const f = subOpToString(op.first, vars, funcs);
+function opToString(op: any, vars: ClassProtoVars | undefined): string {
+    const f = subOpToString(op.first, vars);
     const r = op.rest.map((exp: any) => {
-        if (exp.action === "/") return `/(${subOpToString(exp.op, vars, funcs)} || Infinity)`;
-        return exp.action + subOpToString(exp.op, vars, funcs);
+        if (exp.action === "/") return `/(${subOpToString(exp.op, vars)} || Infinity)`;
+        return exp.action + subOpToString(exp.op, vars);
     });
     return f + r.join("");
 }
 
 let _hasEquals = false;
-function parseCodeline(c: any, vars: ClassProtoVars | undefined, funcs: FuncsCollection): string | undefined {
+function parseCodeline(c: any, vars: ClassProtoVars | undefined): string | undefined {
     switch (c.type) {
         case ":=": {
             if (!vars) throw Error("Имидж не имеет переменных");
@@ -157,7 +155,7 @@ function parseCodeline(c: any, vars: ClassProtoVars | undefined, funcs: FuncsCol
             if (id === undefined) throw Error(`Неизвестная переменная: ${c.to}`);
             const typ = arrNames.get(vars.types[id]);
             if (!typ) throw Error(`Неизвестный тип переменной: ${vars.types[id]} ${c.to}`);
-            return `new${typ}[TLB[${id}]] = ${opToString(c.operand, vars, funcs)};`;
+            return `new${typ}[TLB[${id}]] = ${opToString(c.operand, vars)};`;
         }
         case "varsDec":
             return undefined;
@@ -168,11 +166,11 @@ function parseCodeline(c: any, vars: ClassProtoVars | undefined, funcs: FuncsCol
             return "if(false){";
         case "if":
         case "while":
-            return `${c.type} (${opToString(c.expr.body, vars, funcs)}) {`;
+            return `${c.type} (${opToString(c.expr.body, vars)}) {`;
         case "break":
             return "break;";
         case "case":
-            return `} else if (${opToString(c.expr.body, vars, funcs)}) {`;
+            return `} else if (${opToString(c.expr.body, vars)}) {`;
         case "endif":
         case "endwhile":
         case "endswitch":
@@ -181,13 +179,16 @@ function parseCodeline(c: any, vars: ClassProtoVars | undefined, funcs: FuncsCol
         case "default":
             return `} else {`;
         case "callChain":
-            return c.functions.map((f: any) => `${subOpToString(f, vars, funcs)}`).join("; ") + ";";
+            return c.functions.map((f: any) => `${subOpToString(f, vars)}`).join("; ") + ";";
         default:
             throw Error(`Неизвестный оператор: ${c.type}`);
     }
 }
 
+const funcs = new Map<string, string>();
+export const unreleasedFunctions = new Map<string, string>();
 export function translate(source: string, vars: ClassProtoVars | undefined, objname: string): ClassModel | undefined {
+    funcs.clear();
     const norm = normalizeSource(source);
     let data: Array<any>;
     try {
@@ -202,19 +203,18 @@ export function translate(source: string, vars: ClassProtoVars | undefined, objn
         return undefined;
     }
 
-    const funcs = new Map<string, string>();
     let body = "";
     _hasEquals = false;
     for (let i = 0; i < data.length; ++i) {
         try {
             const cd = data[i];
             {
-                const line = parseCodeline(cd, vars, funcs);
+                const line = parseCodeline(cd, vars);
                 if (line) body += line + "\n";
             }
             let th = cd.then;
             while (th) {
-                const line = parseCodeline(th, vars, funcs);
+                const line = parseCodeline(th, vars);
                 if (line) body += line + "\n";
                 th = th.then;
             }
@@ -228,7 +228,8 @@ export function translate(source: string, vars: ClassProtoVars | undefined, objn
     if (body.length === 0) return undefined;
 
     console.log(`Компилируем ${objname}`);
-    if (funcs.size) console.warn(`Функции ${[...funcs.values()].join(", ")} в ${objname} не реализованы.`);
+    if (funcs.size > 0) console.warn(`Функции ${[...funcs.values()].join(", ")} в ${objname} не реализованы.`);
+    funcs.forEach((v, k) => unreleasedFunctions.set(k, v));
     try {
         return new Function("schema", "env", header + body + `//# sourceURL=${objname}`) as ClassModel;
     } catch (e) {

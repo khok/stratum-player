@@ -5,6 +5,7 @@ import { VariableSet } from "stratum/fileFormats/stt";
 import { GraphicsManager } from "stratum/graphics";
 import { Schema } from "stratum/schema";
 import { Enviroment, NumBool, ProjectFunctions } from "stratum/translator";
+import { unreleasedFunctions } from "stratum/translator/translator";
 import { VFSDir } from "stratum/vfs";
 import { MemoryManager } from "./memoryManager";
 import { NativeWs, SimpleWs } from "./ws";
@@ -84,7 +85,9 @@ export class Player implements Project, ProjectFunctions {
         }
 
         const mem = new MemoryManager(); // Память имиджей.
+        unreleasedFunctions.clear();
         const schema = Schema.build(this.prjInfo.rootClassName, this.classes, new Enviroment(mem, { graphics, project: this }));
+        if (unreleasedFunctions.size > 0) console.log(`Нереализованные функции:\n${[...unreleasedFunctions.values()].join("\n")}`);
         mem.createBuffers(schema.createTLB()); // Инициализируем память
 
         schema.applyDefaults(); //Заполняем значениями по умолчанию
