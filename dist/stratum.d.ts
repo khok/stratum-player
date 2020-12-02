@@ -33,7 +33,8 @@ export interface FileSystem {
      */
     merge(fs: FileSystem): this;
     /**
-     * Возвращает список файлов, попадающих под условия поиска.
+     * Возвращает список файлов в системе.
+     * @param regexp - условия поиска файлов.
      */
     files(regexp?: RegExp): IterableIterator<FileSystemFile>;
     /**
@@ -41,6 +42,7 @@ export interface FileSystem {
      */
     project(options?: OpenProjectOptions): Promise<Project>;
 }
+export declare type FileSystemFileData = ArrayBuffer;
 /**
  * Представляет каталог в файловой системе.
  */
@@ -56,26 +58,25 @@ export interface FileSystemDir {
      */
     readonly pathDos: string;
     /**
-     * Возвращает файл или каталог относительно текущего каталога.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к искомому файлу или каталогу.
-     */
-    get(path: string): FileSystemDir | FileSystemFile | undefined;
-    /**
      * Пытается создать файл.
      * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к искомому файлу.
-     * Если файл или каталог с указанным именем не удалось создать, возвращает
-     * undefined.
+     * путь к создаваемому файлу.
+     * Если файл с указанным именем не удалось создать, возвращает undefined.
      */
-    fileNew(path: string, data: ArrayBuffer): FileSystemFile | undefined;
+    create(type: "file", path: string, data?: FileSystemFileData): FileSystemFile | undefined;
     /**
      * Пытается создать каталог.
      * @param path - нечувствительный к регистру относительный или абсолютный
      * путь к создаваемому каталогу.
      * Если каталог с указанным именем не удалось создать, возвращает undefined.
      */
-    folderNew(path: string): FileSystemDir | undefined;
+    create(type: "dir", path: string): FileSystemDir | undefined;
+    /**
+     * Возвращает файл или каталог относительно текущего каталога.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к искомому файлу или каталогу.
+     */
+    get(path: string): FileSystemDir | FileSystemFile | undefined;
     /**
      * Возвращает список файлов в каталоге и его подкаталогах.
      * @param regexp - условия поиска файлов.
@@ -118,7 +119,7 @@ export interface ProjectOptions {
 }
 export interface OpenProjectOptions extends ProjectOptions {
     /**
-     * Завершающая часть пути к файлу проекта.
+     * Часть пути к файлу проекта.
      */
     path?: string;
     /**
@@ -153,10 +154,25 @@ export interface Project {
     computer: Executor;
     /**
      * Запускает выполнение проекта.
+     * Открываемые в проекте окна будут всплывающими.
+     */
+    play(): this;
+    /**
+     * Запускает выполнение проекта.
      * @param container - HTML элемент, в котором будут размещаться
      * открываемые в проекте окна.
      */
-    play(container?: HTMLElement): this;
+    play(container: HTMLElement): this;
+    /**
+     * Запускает выполнение проекта.
+     * @param host - Хост оконной системы.
+     */
+    play(host: WindowHost): this;
+    /**
+     * Запускает выполнение проекта.
+     * @param project - Проект, ресурсы которого будут переиспользованы.
+     */
+    play(project: Project): this;
     /**
      * Закрывает проект.
      */
@@ -223,10 +239,11 @@ export interface ProjectDiag {
     }[];
 }
 export interface WindowOptions {
+    view: HTMLDivElement;
     /**
-     * Имя открытого окна.
+     * Название открываемого окна.
      */
-    title?: string;
+    title: string;
 }
 /**
  * Хост оконной системы.
@@ -237,33 +254,10 @@ export interface WindowHost {
      */
     readonly width: number;
     readonly height: number;
-    window(options?: WindowOptions): WindowHostWindow;
+    window(options: WindowOptions): WindowHostWindow;
 }
 export interface WindowHostWindow {
-    readonly container: HTMLElement;
-    /**
-     * Имя окна.
-     */
-    title: string;
-    /**
-     * Область окна.
-     */
-    /**
-     * Регистрирует обработчик события загрузки ресурсов окна.
-     */
-    /**
-     * Разрегистрирует обработчик события загрузки ресурсов окна.
-     * @param handler Если обработчик не указан, разрегистрируются все
-     * обработчики данного события.
-     */
-    /**
-     * Регистрирует обработчик события перемещения окна пользователем.
-     */
-    /**
-     * Разрегистрирует обработчик события перемещения окна пользователем.
-     * @param handler Если обработчик не указан, разрегистрируются все
-     * обработчики данного события.
-     */
+    setTitle(title: string): void;
     /**
      * Регистрирует обработчик события изменения размера окна пользователем.
      */
@@ -282,6 +276,7 @@ export interface WindowHostWindow {
      * обработчики данного события.
      */
     off(event: "closed", handler?: () => void): void;
+    toTop(): void;
     /**
      * Закрывает окно.
      */
@@ -295,6 +290,11 @@ export declare const options: {
     iconsLocation?: string;
 };
 export declare function setLogLevel(logLevel: "err" | "full"): void;
+export interface ExecutorConstructor {
+    new (args?: any): Executor;
+}
+export declare const SmoothExecutor: ExecutorConstructor;
+export declare const FastestExecutor: ExecutorConstructor;
 /**
  * Версия API.
  */
