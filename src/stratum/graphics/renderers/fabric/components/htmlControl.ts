@@ -55,7 +55,14 @@ export class HtmlControl implements RenderableControl {
 
     setAngle(angle: number): void {}
 
+    hasPoint(x: number, y: number) {
+        const diffX = x - this.posX;
+        const diffY = y - this.posY;
+        return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
+    }
+
     testIntersect(x: number, y: number) {
+        if (this.inp.hidden) return false;
         const diffX = x - this.posX;
         const diffY = y - this.posY;
         return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;

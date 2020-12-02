@@ -263,7 +263,7 @@ export class FabricRenderer implements Renderer {
     //
     private pointInObject(visualHandle: number, x: number, y: number): boolean {
         const obj = this.objects.get(visualHandle);
-        return obj !== undefined ? obj.testIntersect(x, y) : false;
+        return obj !== undefined ? obj.hasPoint(x, y) : false;
     }
 
     handleAtPoint(x: number, y: number): number {

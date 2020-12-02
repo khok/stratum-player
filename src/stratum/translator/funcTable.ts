@@ -18,6 +18,7 @@ const projectFuncs: (keyof ProjectFunctions)[] = [
     "createDIB2d",
     "createDoubleDib2D",
     "getClassDirectory",
+    "fileExist",
 ];
 const graphicsFuncs: (keyof GraphicsFunctions)[] = [
     "getAsyncKeyState",
@@ -35,14 +36,18 @@ const graphicsFuncs: (keyof GraphicsFunctions)[] = [
     "getObjectOrg2dx",
     "getObjectOrg2dy",
     "setObjectOrg2d",
+
     "rotateObject2d",
+
     "getActualWidth2d",
     "getActualHeight2d",
     "getObjectWidth2d",
     "getObjectHeight2d",
     "setObjectSize2d",
+
     "getZOrder2d",
     "setZOrder2d",
+
     "setObjectName2d",
     "setShowObject2d",
     "objectToTop2d",
@@ -51,9 +56,10 @@ const graphicsFuncs: (keyof GraphicsFunctions)[] = [
     // Группы
     "createGroup2d",
     "getGroupItem2d",
+    "delGroupItem2d",
     "getObject2dByName",
     "getObjectParent2d",
-    "delGroupItem2d",
+    "deleteGroup2d",
 
     // Прочее
     "getObjectFromPoint2d",
@@ -62,10 +68,12 @@ const graphicsFuncs: (keyof GraphicsFunctions)[] = [
     // Объект Polyline
     "createPolyLine2d",
     "createLine2d",
+
     "addPoint2d",
     "getVectorPoint2dx",
     "getVectorPoint2dy",
     "setVectorPoint2d",
+
     "getPenObject2d",
     "getBrushObject2d",
 
@@ -153,7 +161,9 @@ export const graphicsVarName: keyof Enviroment = "graphics";
 export const funcTable = new Map([
     ["ROUND", "roundPrec"],
     ["ADDSLASH", "addSlash"],
-    ["NEW", `(() =>{throw Error("Функция New не реализована")})`],
+    ["NEW", "env.newArray"],
+    ["MCISENDSTRING", "env.MCISendString"],
+    ["GETTICKCOUNT", "env.getTickCount"],
     ...schemaFuncs.map((c): [string, string] => [c.toUpperCase(), `${schemaVarName}.${c}`]),
     ...projectFuncs.map((c): [string, string] => [c.toUpperCase(), `${projectVarName}.${c}`]),
     ...graphicsFuncs.map((c): [string, string] => [c.toUpperCase(), `${graphicsVarName}.${c}`]),

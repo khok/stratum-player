@@ -2,7 +2,7 @@ import { Project, SmoothExecutor, WindowHost } from "stratum/api";
 import { Base64Image } from "stratum/fileFormats/bmp";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { EventCode, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool } from "stratum/translator";
+import { EventCode, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool, SchemaMemory } from "stratum/translator";
 import { Scene } from "./scene";
 import { SceneWindow } from "./sceneWindow";
 
@@ -79,6 +79,15 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
         // FIXME: надо возвращать obj.actualHeight
         return obj !== undefined ? obj.height : 0;
     }
+    getActualSize2d(hspace: number, hobject: number, xArr: SchemaMemory["newFloats"], xId: number, yArr: SchemaMemory["newFloats"], yId: number): NumBool {
+        const obj = this.getObject(hspace, hobject);
+        if (obj === undefined) return 0;
+        // FIXME: надо возвращать obj.actualWidth
+        xArr[xId] = obj.width;
+        // FIXME: надо возвращать obj.actualHeight
+        yArr[yId] = obj.height;
+        return 1;
+    }
     getObjectWidth2d(hspace: number, hobject: number): number {
         const obj = this.getObject(hspace, hobject);
         return obj !== undefined ? obj.width : 0;
@@ -136,6 +145,10 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
     getObjectParent2d(hspace: number, hobject: number): number {
         const scene = this.scenes.get(hspace);
         return scene !== undefined ? scene.getObjectParent2d(hobject) : 0;
+    }
+    deleteGroup2d(hspace: number, hgroup: number): NumBool {
+        const scene = this.scenes.get(hspace);
+        return scene !== undefined ? scene.deleteGroup2d(hgroup) : 0;
     }
 
     // Прочее

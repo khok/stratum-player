@@ -1,3 +1,5 @@
+import { NumBool } from "..";
+
 export interface ProjectFunctions {
     closeAll(): void;
     openSchemeWindow(wname: string, className: string, attribute: string): number;
@@ -6,4 +8,5 @@ export interface ProjectFunctions {
     createDIB2d(hspace: number, fileName: string): number;
     createDoubleDib2D(hspace: number, fileName: string): number;
     getClassDirectory(className: string): string;
+    fileExist(fileName: string): NumBool;
 }

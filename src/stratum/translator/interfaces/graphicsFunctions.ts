@@ -32,16 +32,17 @@ export interface GraphicsFunctions {
     objectToTop2d(hspace: number, hobject: number): NumBool;
     deleteObject2d(hspace: number, hobject: number): NumBool;
 
-    // Прочее
-    getObjectFromPoint2d(hspace: number, x: number, y: number): number;
-    isObjectsIntersect2d(hspace: number, obj1: number, obj2: number, flags: number): NumBool;
-
     // Группы
     createGroup2d(hspace: number, ...hobject: number[]): number;
     getGroupItem2d(hspace: number, hgroup: number, index: number): number;
     delGroupItem2d(hspace: number, hgroup: number, hobject: number): NumBool;
     getObject2dByName(hspace: number, hgroup: number, name: string): number;
     getObjectParent2d(hspace: number, hobject: number): number;
+    deleteGroup2d(hspace: number, hgroup: number): NumBool;
+
+    // Прочее
+    getObjectFromPoint2d(hspace: number, x: number, y: number): number;
+    isObjectsIntersect2d(hspace: number, obj1: number, obj2: number, flags: number): NumBool;
 
     // Объект Polyline
     createPolyLine2d(hspace: number, hpen: number, hbrush: number, ...coords: number[]): number;

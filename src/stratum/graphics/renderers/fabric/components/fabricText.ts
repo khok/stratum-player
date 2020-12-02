@@ -70,6 +70,12 @@ export class FabricText implements RenderableText {
         this.requestRedraw();
     }
 
+    hasPoint(x: number, y: number) {
+        const diffX = x - this.posX;
+        const diffY = y - this.posY;
+        return diffX > 0 && diffX <= this.visibleArea.x && diffY > 0 && diffY <= this.visibleArea.y;
+    }
+
     testIntersect(x: number, y: number) {
         if (!this.obj.visible) return false;
         const diffX = x - this.posX;

@@ -74,35 +74,37 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined, funcs: Func
                 return `env.getTime(${a.join(",")})`;
             }
 
-            /*
+            if (nameUC === "GETDATE") {
+                const floatArr = arrNames.get(VarType.Float);
+                if (!vars) throw Error("Имидж не имеет переменных");
+                const a = subop.args.map((a: any) => {
+                    const nm = a.first.name;
+                    const id = vars.nameUCToId.get(nm.toUpperCase());
+                    if (id === undefined) throw Error(`Неопределенная переменная в функции GetDate: ${nm}`);
+                    return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
+                });
+                return `env.getDate(${a.join(",")})`;
+            }
+
             if (nameUC === "GETACTUALSIZE2D") {
                 const floatArr = arrNames.get(VarType.Float);
                 if (!vars) throw Error("Имидж не имеет переменных");
 
-                const a0Res = opToString(subop.args[0], vars, funcs);
-                const a1Res = opToString(subop.args[1], vars, funcs);
-
-                const a2 = subop.args[2];
-                const a2name = a2.first.name;
-                const a2id = vars.nameUCToId.get(a2name.toUpperCase());
-                if (a2id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${a2name}`);
-                const a2Res = `${a2.first.isNew ? "new" : "old"}${floatArr},TLB[${a2id}]`;
-
-                const a3 = subop.args[3];
-                const a3name = a3.first.name;
-                const a3id = vars.nameUCToId.get(a3name.toUpperCase());
-                if (a3id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${a3name}`);
-                const a3res = `${a3.first.isNew ? "new" : "old"}${floatArr},TLB[${a3id}]`;
-
-                console.log(`${graphicsVarName}.getActualSize2d(${a0Res},${a1Res},${a2Res},${a3res})`);
-                throw Error();
-                return `env.getTime(${a.join(",")})`;
+                const f1 = subop.args.slice(0, 2).map((a: any) => opToString(a, vars, funcs));
+                const f2 = subop.args.slice(2, 4).map((a: any) => {
+                    const nm = a.first.name;
+                    const id = vars.nameUCToId.get(nm.toUpperCase());
+                    if (id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${nm}`);
+                    return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
+                });
+                return `${graphicsVarName}.getActualSize2d(${f1.join(",")},${f2.join(",")})`;
             }
-            */
 
             const fargs = subop.args.map((a: any) => opToString(a, vars, funcs));
             if (nameUC === "NOT") return `((${fargs[0]})>0===true?0:1)`;
             if (nameUC === "AND") return `(((${fargs[0]})>0&&(${fargs[1]})>0)===true?1:0)`;
+
+            if (nameUC === "SQR") return `(${fargs[0]})**2`;
 
             if (nameUC === "ABS") return `(Math.abs(${fargs[0]})||0)`;
             if (nameUC === "TRUNC") return `(Math.trunc(${fargs[0]})||0)`;

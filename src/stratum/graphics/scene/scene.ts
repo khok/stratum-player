@@ -230,7 +230,7 @@ export class Scene {
         return 1;
     }
 
-    deleteGroup(groupHandle: number): NumBool {
+    deleteGroup2d(groupHandle: number): NumBool {
         const group = this.objects.get(groupHandle);
         if (group === undefined || group.type !== "otGROUP2D") return 0;
         group.removeAllItems();

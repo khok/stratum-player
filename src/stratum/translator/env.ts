@@ -27,4 +27,21 @@ export class Enviroment {
         arr3[sec] = time.getSeconds();
         arr4[hund] = time.getMilliseconds() * 0.1;
     }
+
+    getDate(arr1: Farr, year: number, arr2: Farr, mon: number, arr3: Farr, day: number) {
+        const time = new Date();
+        arr1[year] = time.getFullYear();
+        arr2[mon] = time.getMonth();
+        arr3[day] = time.getDate();
+    }
+    getTickCount() {
+        return new Date().getTime() - start;
+    }
+    newArray() {
+        throw Error("Функция New не реализована");
+    }
+    MCISendString() {
+        return 263;
+    }
 }
+const start = new Date().getTime();

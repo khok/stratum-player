@@ -4,7 +4,7 @@ import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { GraphicsManager } from "stratum/graphics";
 import { Schema } from "stratum/schema";
-import { Enviroment, ProjectFunctions } from "stratum/translator";
+import { Enviroment, NumBool, ProjectFunctions } from "stratum/translator";
 import { VFSDir } from "stratum/vfs";
 import { MemoryManager } from "./memoryManager";
 import { NativeWs, SimpleWs } from "./ws";
@@ -18,6 +18,7 @@ export interface ProjectResources {
 }
 
 export class Player implements Project, ProjectFunctions {
+    private shouldClose = false;
     private _state: Project["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
     private _computer = new SmoothExecutor();
@@ -91,6 +92,7 @@ export class Player implements Project, ProjectFunctions {
 
         this._diag.iterations = 0;
         // Main Loop
+        this.shouldClose = false;
         this.loop = () => {
             mem.sync().assertZeroIndexEmpty();
             try {
@@ -102,6 +104,11 @@ export class Player implements Project, ProjectFunctions {
                 return false;
             }
             ++this._diag.iterations;
+            if (this.shouldClose === true) {
+                this.close();
+                this.handlers.closed.forEach((h) => h());
+                return false;
+            }
             return true;
         };
 
@@ -150,8 +157,7 @@ export class Player implements Project, ProjectFunctions {
 
     // Методы ProjectManager
     closeAll(): void {
-        this.close();
-        this.handlers.closed.forEach((h) => h());
+        this.shouldClose = true;
     }
     openSchemeWindow(wname: string, className: string, attribute: string): number {
         const vdr = this.classes.getComposedScheme(className);
@@ -180,5 +186,9 @@ export class Player implements Project, ProjectFunctions {
     getClassDirectory(className: string): string {
         const proto = this.classes.get(className);
         return proto !== undefined ? proto.directoryDos : "";
+    }
+    fileExist(fileName: string): NumBool {
+        const file = this.dir.get(fileName);
+        return file !== undefined ? 1 : 0;
     }
 }

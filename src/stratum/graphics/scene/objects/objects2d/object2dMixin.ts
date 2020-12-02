@@ -82,9 +82,10 @@ export abstract class Object2dMixin extends BaseObjectMixin {
     }
 
     setVisibility(value: number): NumBool {
-        if (value === this._isVisible) return 1;
-        this._isVisible = value !== 0 ? 1 : 0;
-        if (value && this._layerVisible) this.showVisual();
+        const vis = value > 0 ? 1 : 0;
+        if (vis === this._isVisible) return 1;
+        this._isVisible = vis;
+        if (vis !== 0 && this._layerVisible) this.showVisual();
         else this.hideVisual();
         return 1;
     }
