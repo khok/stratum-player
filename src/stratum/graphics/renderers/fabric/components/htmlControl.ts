@@ -2,7 +2,7 @@ import { InputWrapper } from "stratum/graphics/html";
 import { RenderableControl, RenderableControlParams } from "stratum/graphics/scene/interfaces";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { Point2D } from "stratum/helpers/types";
-import { EventCode, EventSubscriber } from "stratum/translator";
+import { Constant, EventSubscriber } from "stratum/translator";
 
 export class HtmlControl implements RenderableControl {
     readonly type = "control";
@@ -29,7 +29,7 @@ export class HtmlControl implements RenderableControl {
             text,
         });
         this.inp.onEdit(() => {
-            for (const c of this.subs) c.receive(EventCode.WM_CONTROLNOTIFY, this.handle, -1, 768);
+            for (const c of this.subs) c.receive(Constant.WM_CONTROLNOTIFY, this.handle, -1, 768);
         });
     }
 

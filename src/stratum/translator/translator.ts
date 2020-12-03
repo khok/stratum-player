@@ -1,6 +1,6 @@
 import { ClassProtoVars } from "stratum/common/classProto";
 import { VarType } from "stratum/fileFormats/cls";
-import { ClassModel, Enviroment, EventCode, SchemaFunctions } from ".";
+import { ClassModel, Enviroment, Constant, SchemaFunctions } from ".";
 import { funcTable, graphicsVarName, projectVarName, schemaVarName } from "./funcTable";
 import { normalizeSource } from "./normalizer";
 import { parse } from "./parser";
@@ -29,7 +29,9 @@ const { ${TLBVarName} } = ${schemaVarName};
 const { ${memoryVarName}: { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings }, ${projectVarName}, ${graphicsVarName} } = env;
 `;
 
+let _hasBug = false;
 function subOpToString(subop: any, vars: ClassProtoVars | undefined) {
+    if (subop.isNew && subop.type !== "var") _hasBug = true;
     switch (subop.type) {
         case "const": {
             const val = subop.value;
@@ -46,7 +48,7 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined) {
             const nameUC: string = subop.name.toUpperCase();
             const id = vars.nameUCToId.get(nameUC);
             if (id === undefined) {
-                const constValue = EventCode[nameUC as keyof typeof EventCode];
+                const constValue = Constant[nameUC as keyof typeof Constant];
                 if (constValue === undefined) throw Error(`Неопределенная переменная или константа: ${subop.name}`);
                 return constValue;
             }
@@ -163,21 +165,27 @@ function parseCodeline(c: any, vars: ClassProtoVars | undefined): string | undef
             _hasEquals = true;
             return undefined;
         case "switch":
-            return "if(false){";
+            return "do{let exc=false;{";
+        case "case":
+            return `}if ((${opToString(c.expr.body, vars)})&&exc===false) {exc=true;`;
+        case "default":
+            return `}if (exc===false) {exc=true;`;
+        case "endswitch":
+            return `}}while(false);`;
         case "if":
         case "while":
             return `${c.type} (${opToString(c.expr.body, vars)}) {`;
-        case "break":
-            return "break;";
-        case "case":
-            return `} else if (${opToString(c.expr.body, vars)}) {`;
         case "endif":
         case "endwhile":
-        case "endswitch":
             return `}`;
         case "else":
-        case "default":
             return `} else {`;
+        case "do":
+            return "do {";
+        case "until":
+            return `}\nwhile(${opToString(c.expr.body, vars)});`;
+        case "break":
+            return "break;";
         case "callChain":
             return c.functions.map((f: any) => `${subOpToString(f, vars)}`).join("; ") + ";";
         default:
@@ -204,7 +212,7 @@ export function translate(source: string, vars: ClassProtoVars | undefined, objn
     }
 
     let body = "";
-    _hasEquals = false;
+    _hasEquals = _hasBug = false;
     for (let i = 0; i < data.length; ++i) {
         try {
             const cd = data[i];
@@ -225,6 +233,7 @@ export function translate(source: string, vars: ClassProtoVars | undefined, objn
         }
     }
     if (_hasEquals) console.warn(`Уравнения в ${objname} не реализованы`);
+    if (_hasBug) console.warn(`${objname}: игнорируется применение оператора '~' к не переменной`);
     if (body.length === 0) return undefined;
 
     console.log(`Компилируем ${objname}`);

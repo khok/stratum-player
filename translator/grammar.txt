@@ -81,11 +81,9 @@ Const 'constant'
  = value:$("\"" [^\"]* "\"" / "'" [^']* "'" / [-+]?[0-9\.][0-9\.e]* / "#"[0-9]*)
  { return { type: "const", value } }
 
-VarValueOperator = BuggedVarValueOperator2 / NormalVarValueOperator / BuggedVarValueOperator
-
-NormalVarValueOperator
- = isNew:'~'? Space* name:ValidVarName
- { return { type: "var", name, isNew: !!isNew } } 
+VarValueOperator
+ = name:ValidVarName
+ { return { type: "var", name } } 
 
 ValidFunctionName 'valid function name'
  = ValidVarName
@@ -107,7 +105,8 @@ Operand 'operand'
 //Ибо левая рекурсия
 
 OP 'operator'
- = UnaryOperator / Const / CallOperator / VarValueOperator / Expression
+ = isNew:'~'? Space* val:(UnaryOperator / Const / CallOperator / VarValueOperator / Expression)
+ { return {...val, isNew: !!isNew } }
 
 //Все что касается блока объявления переменных
 VarType = 'HANDLE'i / "STRING"i / "FLOAT"i / "COLORREF"i / "INTEGER"i
@@ -133,15 +132,16 @@ _ "whitespace"
  = [ \t\n\r]*
 
 // Баги
+//BuggedVarValueOperator = BuggedVarValueOperatorOgre / BuggedVarValueOperatorGst
 // Ogre_Billboard
-BuggedVarValueOperator
- = '~' Space* "!" Space* name:ValidVarName
- { return { type: "!", operand: { first: { type: "var", name, isNew: true }, rest: [] } } }
+//BuggedVarValueOperatorOgre
+ //= '~' Space* "!" Space* name:ValidVarName
+ //{ return { type: "!", operand: { first: { type: "var", name, isNew: true }, rest: [] } } }
 
 // gst01
-BuggedVarValueOperator2
- = '~' Space* val:Const
- { return val }
+//BuggedVarValueOperatorGst
+ //= '~' Space* val:Const
+ //{ return val }
 
 // Ogre_OverlayElement
 BuggedIfDecl 'if !<condition>)' = 'if'i _ expr:ExpressionForBuggedIf { return { type: "if", expr } }

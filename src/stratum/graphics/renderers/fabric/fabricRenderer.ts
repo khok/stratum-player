@@ -17,7 +17,7 @@ import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { BadDataError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
-import { EventCode, EventSubscriber } from "stratum/translator";
+import { Constant, EventSubscriber } from "stratum/translator";
 import { FabricImage, FabricLine, FabricText } from "./components";
 import { HtmlControl } from "./components/htmlControl";
 import { canvasOptions } from "./fabricConfig";
@@ -67,10 +67,10 @@ export class FabricRenderer implements Renderer {
                 case "mousedown": {
                     switch (evt.button) {
                         case 0: //Левая кнопка
-                            this.mevent(this.leftButtonDownSubs, EventCode.WM_LBUTTONDOWN, x, y, fwkeys);
+                            this.mevent(this.leftButtonDownSubs, Constant.WM_LBUTTONDOWN, x, y, fwkeys);
                             return;
                         case 1: //Колесико
-                            this.mevent(this.middleButtonDownSubs, EventCode.WM_MBUTTONDOWN, x, y, fwkeys);
+                            this.mevent(this.middleButtonDownSubs, Constant.WM_MBUTTONDOWN, x, y, fwkeys);
                             return;
                         case 2: //Правая кнопка
                             // this.mevent(this.rightButtonDownSubs, EventCode.WM_RBUTTONDOWN, x, y, fwkeys);
@@ -81,10 +81,10 @@ export class FabricRenderer implements Renderer {
                 case "mouseup": {
                     switch (evt.button) {
                         case 0:
-                            this.mevent(this.leftButtonUpSubs, EventCode.WM_LBUTTONUP, x, y, fwkeys);
+                            this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, x, y, fwkeys);
                             return;
                         case 1:
-                            this.mevent(this.middleButtonUpSubs, EventCode.WM_MBUTTONUP, x, y, fwkeys);
+                            this.mevent(this.middleButtonUpSubs, Constant.WM_MBUTTONUP, x, y, fwkeys);
                             return;
                         case 2:
                             // this.mevent(this.rightButtonUpSubs, EventCode.WM_RBUTTONUP, x, y, fwkeys);
@@ -93,7 +93,7 @@ export class FabricRenderer implements Renderer {
                     return;
                 }
                 case "mousemove":
-                    this.mevent(this.moveSubs, EventCode.WM_MOUSEMOVE, x, y, fwkeys);
+                    this.mevent(this.moveSubs, Constant.WM_MOUSEMOVE, x, y, fwkeys);
                     return;
             }
         };
@@ -111,7 +111,7 @@ export class FabricRenderer implements Renderer {
                 scrollEnabled = true;
                 // Перед активацией скрола тригернем MOUSEUP
                 SYSTEM_KEYS[1] = 0;
-                this.mevent(this.leftButtonUpSubs, EventCode.WM_LBUTTONUP, lastX, lastY, 0);
+                this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, lastX, lastY, 0);
                 return;
             }
             scrollEnabled = false;
@@ -119,7 +119,7 @@ export class FabricRenderer implements Renderer {
             if (evt.type === "touchend") {
                 dontTriggerMouse = 3;
                 SYSTEM_KEYS[1] = 0;
-                this.mevent(this.leftButtonUpSubs, EventCode.WM_LBUTTONUP, lastX, lastY, 0);
+                this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, lastX, lastY, 0);
                 return;
             }
             dontTriggerMouse = 0;
@@ -133,7 +133,7 @@ export class FabricRenderer implements Renderer {
             if (evt.type === "touchstart") {
                 lastX = this.view.x + localX;
                 lastY = this.view.y + localY;
-                this.mevent(this.leftButtonDownSubs, EventCode.WM_LBUTTONDOWN, lastX, lastY, 1);
+                this.mevent(this.leftButtonDownSubs, Constant.WM_LBUTTONDOWN, lastX, lastY, 1);
             } else {
                 // if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) return;
                 if (evt.cancelable === false) return;
@@ -144,7 +144,7 @@ export class FabricRenderer implements Renderer {
                 if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) return;
                 lastX = this.view.x + localX;
                 lastY = this.view.y + localY;
-                this.mevent(this.moveSubs, EventCode.WM_MOUSEMOVE, lastX, lastY, 1);
+                this.mevent(this.moveSubs, Constant.WM_MOUSEMOVE, lastX, lastY, 1);
             }
         };
 
@@ -298,36 +298,36 @@ export class FabricRenderer implements Renderer {
     private rightButtonDownSubs = new Map<EventSubscriber, number>();
     private middleButtonUpSubs = new Map<EventSubscriber, number>();
     private middleButtonDownSubs = new Map<EventSubscriber, number>();
-    onMouse(sub: EventSubscriber, code: EventCode, handle: number) {
+    onMouse(sub: EventSubscriber, code: Constant, handle: number) {
         switch (code) {
-            case EventCode.WM_MOUSEMOVE:
+            case Constant.WM_MOUSEMOVE:
                 this.moveSubs.set(sub, handle);
                 break;
-            case EventCode.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONDOWN:
                 this.leftButtonDownSubs.set(sub, handle);
                 break;
-            case EventCode.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONUP:
                 this.leftButtonUpSubs.set(sub, handle);
                 break;
             // case EventCode.WM_LBUTTONDBLCLK:
             //     break;
-            case EventCode.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONDOWN:
                 this.rightButtonDownSubs.set(sub, handle);
                 break;
-            case EventCode.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONUP:
                 this.rightButtonUpSubs.set(sub, handle);
                 break;
             // case EventCode.WM_RBUTTONDBLCLK:
             //     break;
-            case EventCode.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONDOWN:
                 this.middleButtonDownSubs.set(sub, handle);
                 break;
-            case EventCode.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONUP:
                 this.middleButtonUpSubs.set(sub, handle);
                 break;
             // case EventCode.WM_MBUTTONDBLCLK:
             //     break;
-            case EventCode.WM_ALLMOUSEMESSAGE:
+            case Constant.WM_ALLMOUSEMESSAGE:
                 this.moveSubs.set(sub, handle);
                 this.leftButtonDownSubs.set(sub, handle);
                 this.leftButtonUpSubs.set(sub, handle);
@@ -339,36 +339,36 @@ export class FabricRenderer implements Renderer {
         }
     }
 
-    offMouse(sub: EventSubscriber, code: EventCode) {
+    offMouse(sub: EventSubscriber, code: Constant) {
         switch (code) {
-            case EventCode.WM_MOUSEMOVE:
+            case Constant.WM_MOUSEMOVE:
                 this.moveSubs.delete(sub);
                 break;
-            case EventCode.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONDOWN:
                 this.leftButtonDownSubs.delete(sub);
                 break;
-            case EventCode.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONUP:
                 this.leftButtonUpSubs.delete(sub);
                 break;
             // case EventCode.WM_LBUTTONDBLCLK:
             //     break;
-            case EventCode.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONDOWN:
                 this.rightButtonDownSubs.delete(sub);
                 break;
-            case EventCode.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONUP:
                 this.rightButtonUpSubs.delete(sub);
                 break;
             // case EventCode.WM_RBUTTONDBLCLK:
             //     break;
-            case EventCode.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONDOWN:
                 this.middleButtonDownSubs.delete(sub);
                 break;
-            case EventCode.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONUP:
                 this.middleButtonUpSubs.delete(sub);
                 break;
             // case EventCode.WM_MBUTTONDBLCLK:
             //     break;
-            case EventCode.WM_ALLMOUSEMESSAGE:
+            case Constant.WM_ALLMOUSEMESSAGE:
                 this.moveSubs.delete(sub);
                 this.leftButtonDownSubs.delete(sub);
                 this.leftButtonUpSubs.delete(sub);
@@ -380,7 +380,7 @@ export class FabricRenderer implements Renderer {
         }
     }
 
-    private mevent(subs: Map<EventSubscriber, number>, code: EventCode, x: number, y: number, keys: number) {
+    private mevent(subs: Map<EventSubscriber, number>, code: Constant, x: number, y: number, keys: number) {
         for (const [sub, handle] of subs) {
             if (handle < 1 || sub.captureEventsFromSpace === this.sceneHandle || this.pointInObject(handle, x, y)) sub.receive(code, x, y, keys);
         }

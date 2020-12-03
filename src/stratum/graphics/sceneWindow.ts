@@ -1,6 +1,6 @@
 import { WindowHost, WindowHostWindow } from "stratum/api";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { EventCode, EventSubscriber, NumBool } from "stratum/translator";
+import { Constant, EventSubscriber, NumBool } from "stratum/translator";
 import { InputWrapper, InputWrapperOptions } from "./html";
 import { FabricRenderer } from "./renderers";
 import { Scene } from "./scene";
@@ -55,7 +55,7 @@ export class SceneWindow {
 
         const wnd = (this.wnd = host.window({ title: wname, view }));
         wnd.on("closed", () => {
-            for (const c of this.closeSubs) c.receive(EventCode.WM_SPACEDONE);
+            for (const c of this.closeSubs) c.receive(Constant.WM_SPACEDONE);
         });
         this.prevWidth = this.width;
         this.prevWidth = this.height;
@@ -82,10 +82,10 @@ export class SceneWindow {
         this.sizeSubs.delete(sub);
     }
 
-    onMouse(sub: EventSubscriber, code: EventCode, handle: number) {
+    onMouse(sub: EventSubscriber, code: Constant, handle: number) {
         this.rnd.onMouse(sub, code, handle);
     }
-    offMouse(sub: EventSubscriber, code: EventCode) {
+    offMouse(sub: EventSubscriber, code: Constant) {
         this.rnd.offMouse(sub, code);
     }
 
@@ -107,7 +107,7 @@ export class SceneWindow {
         }
         if (changed) {
             rnd.calcOffset();
-            for (const c of this.sizeSubs) c.receive(EventCode.WM_SIZE, nw, nh);
+            for (const c of this.sizeSubs) c.receive(Constant.WM_SIZE, nw, nh);
         }
         this.rnd.redraw();
     }

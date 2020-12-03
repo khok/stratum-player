@@ -2,7 +2,7 @@ import { Project, SmoothExecutor, WindowHost } from "stratum/api";
 import { Base64Image } from "stratum/fileFormats/bmp";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { EventCode, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool, SchemaMemory } from "stratum/translator";
+import { Constant, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool, SchemaMemory } from "stratum/translator";
 import { Scene } from "./scene";
 import { SceneWindow } from "./sceneWindow";
 
@@ -473,36 +473,36 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
     }
 
     // Методы EventDispatcher
-    subscribe(sub: EventSubscriber, wnameOrHspace: string | number, obj2d: number, code: EventCode) {
+    subscribe(sub: EventSubscriber, wnameOrHspace: string | number, obj2d: number, code: Constant) {
         const nm = typeof wnameOrHspace === "string" ? wnameOrHspace : this.hspaceToWname.get(wnameOrHspace);
         if (!nm) return;
         const wnd = this.windows.get(nm);
         if (wnd === undefined) return;
 
         switch (code) {
-            case EventCode.WM_CONTROLNOTIFY: {
+            case Constant.WM_CONTROLNOTIFY: {
                 const obj = wnd.scene.objects.get(obj2d);
                 if (obj === undefined || obj.type !== "otCONTROL2D") return;
                 obj.renderable.onChange(sub);
                 break;
             }
-            case EventCode.WM_SIZE:
+            case Constant.WM_SIZE:
                 wnd.onResize(sub);
                 break;
-            case EventCode.WM_SPACEDONE:
+            case Constant.WM_SPACEDONE:
                 wnd.onClose(sub);
                 break;
-            case EventCode.WM_MOUSEMOVE:
-            case EventCode.WM_LBUTTONDOWN:
-            case EventCode.WM_LBUTTONUP:
-            case EventCode.WM_LBUTTONDBLCLK:
-            case EventCode.WM_RBUTTONDOWN:
-            case EventCode.WM_RBUTTONUP:
-            case EventCode.WM_RBUTTONDBLCLK:
-            case EventCode.WM_MBUTTONDOWN:
-            case EventCode.WM_MBUTTONUP:
-            case EventCode.WM_MBUTTONDBLCLK:
-            case EventCode.WM_ALLMOUSEMESSAGE: {
+            case Constant.WM_MOUSEMOVE:
+            case Constant.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONDBLCLK:
+            case Constant.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONDBLCLK:
+            case Constant.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONDBLCLK:
+            case Constant.WM_ALLMOUSEMESSAGE: {
                 wnd.onMouse(sub, code, obj2d);
                 break;
             }
@@ -512,7 +512,7 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
         }
     }
 
-    unsubscribe(sub: EventSubscriber, wnameOrHspace: string | number, code: EventCode) {
+    unsubscribe(sub: EventSubscriber, wnameOrHspace: string | number, code: Constant) {
         const nm = typeof wnameOrHspace === "string" ? wnameOrHspace : this.hspaceToWname.get(wnameOrHspace);
         if (!nm) return;
         const wnd = this.windows.get(nm);
@@ -525,23 +525,23 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
             //     obj.renderable.offChange(sub);
             //     break;
             // }
-            case EventCode.WM_SIZE:
+            case Constant.WM_SIZE:
                 wnd.offResize(sub);
                 break;
-            case EventCode.WM_SPACEDONE:
+            case Constant.WM_SPACEDONE:
                 wnd.offClose(sub);
                 break;
-            case EventCode.WM_MOUSEMOVE:
-            case EventCode.WM_LBUTTONDOWN:
-            case EventCode.WM_LBUTTONUP:
-            case EventCode.WM_LBUTTONDBLCLK:
-            case EventCode.WM_RBUTTONDOWN:
-            case EventCode.WM_RBUTTONUP:
-            case EventCode.WM_RBUTTONDBLCLK:
-            case EventCode.WM_MBUTTONDOWN:
-            case EventCode.WM_MBUTTONUP:
-            case EventCode.WM_MBUTTONDBLCLK:
-            case EventCode.WM_ALLMOUSEMESSAGE: {
+            case Constant.WM_MOUSEMOVE:
+            case Constant.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONDBLCLK:
+            case Constant.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONDBLCLK:
+            case Constant.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONDBLCLK:
+            case Constant.WM_ALLMOUSEMESSAGE: {
                 wnd.offMouse(sub, code);
                 break;
             }

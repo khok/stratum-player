@@ -4,7 +4,7 @@ import { parseVarValue } from "stratum/common/parseVarValue";
 import { VarType } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
-import { ClassModel, Enviroment, EventCode, EventSubscriber, SchemaFunctions } from "stratum/translator";
+import { ClassModel, Enviroment, Constant, EventSubscriber, SchemaFunctions } from "stratum/translator";
 import { MemoryManagerArgs } from ".";
 import { buildSchema } from "./buildSchema";
 import { VarGraphNode } from "./varGraphNode";
@@ -214,31 +214,31 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         this.env.graphics!.unsubscribe(target, wnameOrHspace, code);
     }
 
-    receive(code: EventCode, ...args: (string | number)[]) {
+    receive(code: Constant, ...args: (string | number)[]) {
         const { proto } = this;
         if (proto.msgVarId < 0) return;
         this.setVarValue2(proto.msgVarId, VarType.Float, code);
 
         switch (code) {
-            case EventCode.WM_CONTROLNOTIFY:
+            case Constant.WM_CONTROLNOTIFY:
                 this.setVarValue2(proto._hobjectVarId, VarType.Handle, args[0]);
                 this.setVarValue2(proto.iditemVarId, VarType.Float, args[1]);
                 this.setVarValue2(proto.wnotifycodeVarId, VarType.Float, args[2]);
                 break;
-            case EventCode.WM_SIZE:
+            case Constant.WM_SIZE:
                 this.setVarValue2(proto.nwidthVarId, VarType.Float, args[0]);
                 this.setVarValue2(proto.nheightVarId, VarType.Float, args[1]);
                 break;
-            case EventCode.WM_MOUSEMOVE:
-            case EventCode.WM_LBUTTONDOWN:
-            case EventCode.WM_LBUTTONUP:
-            case EventCode.WM_LBUTTONDBLCLK:
-            case EventCode.WM_RBUTTONDOWN:
-            case EventCode.WM_RBUTTONUP:
-            case EventCode.WM_RBUTTONDBLCLK:
-            case EventCode.WM_MBUTTONDOWN:
-            case EventCode.WM_MBUTTONUP:
-            case EventCode.WM_MBUTTONDBLCLK:
+            case Constant.WM_MOUSEMOVE:
+            case Constant.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONDBLCLK:
+            case Constant.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONDBLCLK:
+            case Constant.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONDBLCLK:
                 this.setVarValue2(proto.xposVarId, VarType.Float, args[0]);
                 this.setVarValue2(proto.yposVarId, VarType.Float, args[1]);
                 this.setVarValue2(proto.fwkeysVarId, VarType.Float, args[2]);
