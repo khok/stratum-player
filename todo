@@ -7,7 +7,7 @@
 В гипербазе: при показе схемы объекта размещать ее на сцене в виде отдельного объекта (не смешивать с объектами сцены);
 
  - разобраться с флагами в CLS и VDR файлах;
- - API: `additionalClassPaths` заменить на `libs`; `directory` в unzip - на `mount`
+ - API: `additionalClassPaths` заменить на `libs`; `directory` в unzip - на `mount`, makeSync, arrayBuffer -> load
  - оконная система;
 
  - Добавить логгер;

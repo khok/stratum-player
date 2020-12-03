@@ -8,6 +8,7 @@ import { Player } from "stratum/player";
 import { VFSDir, VFSFile } from ".";
 
 export class VFS implements FileSystem {
+    private static defaultPrefix = "C";
     static async fromZip(source: ZipSource, options: OpenZipOptions = {}): Promise<VFS> {
         const decoder = new TextDecoder(options.encoding || "cp866");
 
@@ -26,7 +27,7 @@ export class VFS implements FileSystem {
 
         const fs = new VFS();
 
-        const [diskPrefixUC, p1] = getPrefixAndPathParts(options.directory || "", "Z");
+        const [diskPrefixUC, p1] = getPrefixAndPathParts(options.directory || "", VFS.defaultPrefix);
         let root = new VFSDir(diskPrefixUC, fs);
         fs.disks.set(diskPrefixUC, root);
         for (const p of p1) root = root.createLocalDir(p);
@@ -106,7 +107,7 @@ export class VFS implements FileSystem {
             const addPaths = options.additionalClassPaths;
             if (addPaths) {
                 for (const p of addPaths) {
-                    const resolved = (this.disks.get("Z") || workDir).get(p);
+                    const resolved = (this.disks.get(VFS.defaultPrefix) || workDir).get(p);
                     if (resolved?.dir) classDirs.add(resolved);
                 }
             }
