@@ -49,6 +49,8 @@ export class SceneWindow {
         cnv.style.setProperty("top", "0px");
         cnv.style.setProperty("left", "0px");
         cnv.style.setProperty("position", "absolute");
+        // cnv.style.setProperty("touch-action", "pan-x pan-y");
+        cnv.style.setProperty("touch-action", "pinch-zoom");
 
         const renderer = (this.rnd = new FabricRenderer(cnv, this, handle));
         view.appendChild(cnv);

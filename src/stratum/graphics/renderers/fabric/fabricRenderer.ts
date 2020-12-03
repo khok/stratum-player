@@ -24,9 +24,6 @@ import { canvasOptions } from "./fabricConfig";
 
 type FabricObject = FabricLine | FabricImage | FabricText | HtmlControl;
 
-// const downCodes = [EventCode.WM_LBUTTONDOWN, EventCode.WM_MBUTTONDOWN, EventCode.WM_RBUTTONDOWN];
-// const upCodes = [EventCode.WM_LBUTTONUP, EventCode.WM_MBUTTONUP, EventCode.WM_RBUTTONUP];
-
 export class FabricRenderer implements Renderer {
     private canvas: fabric.StaticCanvas;
     private objects: HandleMap<FabricObject> = HandleMap.create();
@@ -37,19 +34,7 @@ export class FabricRenderer implements Renderer {
     constructor(canvas: HTMLCanvasElement, private wnd: SceneWindow, private sceneHandle: number) {
         this.canvas = new fabric.StaticCanvas(canvas, canvasOptions);
 
-        // let ts = 0;
-        let dontTriggerMouse = 0;
-        const mouseHandler = (evt: MouseEvent) => {
-            evt.preventDefault();
-            if (dontTriggerMouse > 0) {
-                --dontTriggerMouse;
-                return;
-            }
-            // if (evt.type === "mousemove") {
-            //     if (evt.timeStamp - ts < 50) return;
-            //     ts = evt.timeStamp;
-            // }
-
+        const handler = (evt: PointerEvent) => {
             const rect = (evt.target as HTMLCanvasElement).getBoundingClientRect();
             const x = this.view.x + evt.clientX - rect.left;
             const y = this.view.y + evt.clientY - rect.top;
@@ -60,11 +45,11 @@ export class FabricRenderer implements Renderer {
             const fwkeys = lmb | rmb | wheel;
 
             SYSTEM_KEYS[1] = lmb;
-            // systemKeysTemp[1] = rmb;
+            SYSTEM_KEYS[2] = rmb;
             SYSTEM_KEYS[4] = wheel;
             switch (evt.type) {
                 // https://developer.mozilla.org/ru/docs/Web/API/MouseEvent/button
-                case "mousedown": {
+                case "pointerdown": {
                     switch (evt.button) {
                         case 0: //Левая кнопка
                             this.mevent(this.leftButtonDownSubs, Constant.WM_LBUTTONDOWN, x, y, fwkeys);
@@ -73,12 +58,12 @@ export class FabricRenderer implements Renderer {
                             this.mevent(this.middleButtonDownSubs, Constant.WM_MBUTTONDOWN, x, y, fwkeys);
                             return;
                         case 2: //Правая кнопка
-                            // this.mevent(this.rightButtonDownSubs, EventCode.WM_RBUTTONDOWN, x, y, fwkeys);
+                            this.mevent(this.rightButtonDownSubs, Constant.WM_RBUTTONDOWN, x, y, fwkeys);
                             return;
                     }
                     return;
                 }
-                case "mouseup": {
+                case "pointerup": {
                     switch (evt.button) {
                         case 0:
                             this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, x, y, fwkeys);
@@ -87,70 +72,24 @@ export class FabricRenderer implements Renderer {
                             this.mevent(this.middleButtonUpSubs, Constant.WM_MBUTTONUP, x, y, fwkeys);
                             return;
                         case 2:
-                            // this.mevent(this.rightButtonUpSubs, EventCode.WM_RBUTTONUP, x, y, fwkeys);
+                            this.mevent(this.rightButtonUpSubs, Constant.WM_RBUTTONUP, x, y, fwkeys);
                             return;
                     }
                     return;
                 }
-                case "mousemove":
+                case "pointerleave": {
+                    this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, x, y, 0);
+                    return;
+                }
+                case "pointermove":
                     this.mevent(this.moveSubs, Constant.WM_MOUSEMOVE, x, y, fwkeys);
                     return;
             }
         };
-        canvas.addEventListener("mousedown", mouseHandler);
-        canvas.addEventListener("mouseup", mouseHandler);
-        canvas.addEventListener("mousemove", mouseHandler);
-
-        let lastX = 0;
-        let lastY = 0;
-        let scrollEnabled = false;
-        const touchHandler = (evt: TouchEvent) => {
-            // Если жмем двумя пальцами, то событие не обрабатываем.
-            if (evt.targetTouches.length > 1) {
-                if (scrollEnabled === true) return;
-                scrollEnabled = true;
-                // Перед активацией скрола тригернем MOUSEUP
-                SYSTEM_KEYS[1] = 0;
-                this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, lastX, lastY, 0);
-                return;
-            }
-            scrollEnabled = false;
-
-            if (evt.type === "touchend") {
-                dontTriggerMouse = 3;
-                SYSTEM_KEYS[1] = 0;
-                this.mevent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, lastX, lastY, 0);
-                return;
-            }
-            dontTriggerMouse = 0;
-            const rect = (evt.target as HTMLCanvasElement).getBoundingClientRect();
-
-            const touch = evt.targetTouches[0];
-            const localX = touch.clientX - rect.left;
-            const localY = touch.clientY - rect.top;
-
-            SYSTEM_KEYS[1] = 1;
-            if (evt.type === "touchstart") {
-                lastX = this.view.x + localX;
-                lastY = this.view.y + localY;
-                this.mevent(this.leftButtonDownSubs, Constant.WM_LBUTTONDOWN, lastX, lastY, 1);
-            } else {
-                // if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) return;
-                if (evt.cancelable === false) return;
-                // Если жмем одним пальцем, то дисаблим перемещение экрана.
-                evt.preventDefault();
-                // Если тач вышел за пределы канваса, не отправляем событие.
-                // Это можно и отключить, а лучше - предлагать выбор пользователю (touchOutStrategy).
-                if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) return;
-                lastX = this.view.x + localX;
-                lastY = this.view.y + localY;
-                this.mevent(this.moveSubs, Constant.WM_MOUSEMOVE, lastX, lastY, 1);
-            }
-        };
-
-        canvas.addEventListener("touchstart", touchHandler);
-        canvas.addEventListener("touchend", touchHandler);
-        canvas.addEventListener("touchmove", touchHandler);
+        canvas.addEventListener("pointerdown", handler);
+        canvas.addEventListener("pointerup", handler);
+        canvas.addEventListener("pointerleave", handler);
+        canvas.addEventListener("pointermove", handler);
     }
 
     private requestRedraw() {
