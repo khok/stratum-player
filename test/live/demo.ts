@@ -11,7 +11,7 @@ export async function runDemo(name: string, path?: string) {
     const fs = pr.reduce((a, b) => a.merge(b));
     // Предзагружаем файлы vdr и bmp.
     // Открываем проект
-    await Promise.all([...fs.files(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()));
+    await Promise.all([...fs.files(/.+\.(bmp|vdr)$/i)].map((f) => f.makeSync()));
     const project = await fs.project({ additionalClassPaths: ["library"], path });
 
     if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));

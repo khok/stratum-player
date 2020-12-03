@@ -6,7 +6,7 @@
     stratum.options.iconsLocation = "./data/icons";
 
     // Подзагружает все динамически открываемые файлы bmp и vdr.
-    const preloadDynamicResources = (fs) => Promise.all([[...fs.files(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync())]);
+    const preloadDynamicResources = (fs) => Promise.all([[...fs.files(/.+\.(bmp|vdr)$/i)].map((f) => f.makeSync())]);
 
     // Начинаем загружать стандартную библиотеку.
     let stdlib;
