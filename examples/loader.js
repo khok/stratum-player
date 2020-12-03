@@ -6,7 +6,7 @@ const runProject = (name) => {
     .then(async (fsArr) => {
         const fs = fsArr.reduce((a, b) => a.merge(b));
         if(document.body) document.body.innerHTML = "Подзагруажем BMP и VDR файлы..."
-        await Promise.all([...fs.files(/.+\.(bmp)|(vdr)$/i)].map((f) => f.makeSync()))
+        await Promise.all([...fs.files(/.+\.(bmp|vdr)$/i)].map((f) => f.makeSync()))
         if(document.body) document.body.innerHTML = "Загружаем ресурсы проекта..."
         return fs.project({ additionalClassPaths: ["library"] });
     })
