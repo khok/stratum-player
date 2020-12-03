@@ -35,8 +35,18 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined) {
     switch (subop.type) {
         case "const": {
             const val = subop.value;
-            if (val[0] === "#") return val.substring(1, val.length);
-            if (val[0] === '"' || val[0] === "'") return val.split("\\").join("\\\\");
+            if (val[0] === "#") return val.length > 1 ? val.substring(1, val.length) : "0";
+            if (val[0] === '"' || val[0] === "'")
+                return (
+                    "`" +
+                    val
+                        .substring(1, val.length - 1)
+                        .split("\\")
+                        .join("\\\\")
+                        .split("`")
+                        .join("\\`") +
+                    "`"
+                );
             return val;
         }
         case "-":
@@ -205,6 +215,7 @@ export function translate(source: string, vars: ClassProtoVars | undefined, objn
         console.log(norm);
         throw Error(`Ошибка парсинга ${objname}: ${e.message}`);
     }
+    if (data.length === 0) return undefined;
 
     if (data[0].type === "function") {
         console.warn(`Объявление ${objname} как функции не реализовано`);
