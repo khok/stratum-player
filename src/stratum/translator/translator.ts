@@ -1,6 +1,6 @@
 import { ClassProtoVars } from "stratum/common/classProto";
 import { VarType } from "stratum/fileFormats/cls";
-import { ClassModel, Enviroment, Constant, SchemaFunctions } from ".";
+import { ClassModel, Constant, SchemaFunctions } from ".";
 import { funcTable, graphicsVarName, projectVarName, schemaVarName } from "./funcTable";
 import { normalizeSource } from "./normalizer";
 import { parse } from "./parser";
@@ -12,7 +12,6 @@ const arrNames = new Map([
     [VarType.String, "Strings"],
 ]);
 const TLBVarName: keyof SchemaFunctions = "TLB";
-const memoryVarName: keyof Enviroment = "memory";
 
 const header = `
 function right(a, n) {
@@ -26,7 +25,7 @@ function addSlash(a) {
     return a[a.length - 1] === "\\\\" ? a : a + "\\\\";
 }
 const { ${TLBVarName} } = ${schemaVarName};
-const { ${memoryVarName}: { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings }, ${projectVarName}, ${graphicsVarName} } = env;
+const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings, ${projectVarName}, ${graphicsVarName} } = env;
 `;
 
 let _hasBug = false;

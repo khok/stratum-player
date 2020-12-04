@@ -1,6 +1,5 @@
 import { unzip } from "stratum/api";
 import { Player } from "stratum/player";
-import { MemoryManager } from "stratum/player/memoryManager";
 import { Schema } from "stratum/schema";
 import { Enviroment } from "stratum/translator";
 const { strictEqual } = chai.assert;
@@ -14,8 +13,8 @@ async function load(name: string) {
         )
     );
     const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
-    const mem = new MemoryManager();
-    return mem.createBuffers(Schema.build(prj["prjInfo"].rootClassName, prj["classes"], new Enviroment(mem)).createTLB());
+    const env = new Enviroment();
+    return env.init(Schema.build(prj["prjInfo"].rootClassName, prj["classes"], env).createTLB());
 }
 
 it("Корректно проводятся связи", async () => {

@@ -1,5 +1,5 @@
 import { VarType } from "stratum/fileFormats/cls";
-import { MemoryManagerArgs } from ".";
+import { MemorySize } from "stratum/translator";
 
 export class VarGraphNode {
     private indexWasSet = false;
@@ -25,18 +25,18 @@ export class VarGraphNode {
         this.connectedNodes.forEach((n) => n.shareIndex(index));
     }
 
-    getIndex(mmanagerArgs: MemoryManagerArgs): number {
+    getIndex(memSize: MemorySize): number {
         if (!this.indexWasSet) {
             switch (this.type) {
                 case VarType.Float:
-                    this.shareIndex(mmanagerArgs.floatsCount++);
+                    this.shareIndex(memSize.floatsCount++);
                     break;
                 case VarType.Handle:
                 case VarType.ColorRef:
-                    this.shareIndex(mmanagerArgs.longsCount++);
+                    this.shareIndex(memSize.intsCount++);
                     break;
                 case VarType.String:
-                    this.shareIndex(mmanagerArgs.stringsCount++);
+                    this.shareIndex(memSize.stringsCount++);
                     break;
             }
         }

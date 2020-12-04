@@ -1,13 +1,78 @@
-import { ProjectFunctions, GraphicsFunctions, EventDispatcher, SchemaMemory } from ".";
+import { VarType } from "stratum/fileFormats/cls";
+import { EventDispatcher, GraphicsFunctions, ProjectFunctions } from ".";
 
-type Farr = SchemaMemory["newFloats"];
+export interface MemorySize {
+    floatsCount: number;
+    intsCount: number;
+    stringsCount: number;
+}
+
+// FIXME: можно подставить Float32Array, если нужен небольшой перформанс.
+type Farr = Float64Array;
 export class Enviroment {
     private _level = 0;
     readonly project?: ProjectFunctions;
     readonly graphics?: GraphicsFunctions & EventDispatcher;
-    constructor(public memory: SchemaMemory, { project, graphics }: Pick<Enviroment, "project" | "graphics"> = {}) {
+
+    oldFloats: Farr = new Float64Array(0);
+    newFloats: Farr = new Float64Array(0);
+
+    oldInts = new Int32Array(0);
+    newInts = new Int32Array(0);
+
+    oldStrings = new Array<string>();
+    newStrings = new Array<string>();
+
+    olds: { [index: number]: Farr | Int32Array | string[] } = [];
+    news: { [index: number]: Farr | Int32Array | string[] } = [];
+
+    constructor({ project, graphics }: Pick<Enviroment, "project" | "graphics"> = {}) {
         this.project = project;
         this.graphics = graphics;
+    }
+
+    init({ floatsCount, intsCount, stringsCount }: MemorySize) {
+        this.oldFloats = new Float64Array(floatsCount);
+        this.newFloats = new Float64Array(floatsCount);
+
+        this.oldInts = new Int32Array(intsCount);
+        this.newInts = new Int32Array(intsCount);
+
+        this.oldStrings = new Array<string>(stringsCount).fill("");
+        this.newStrings = new Array<string>(stringsCount).fill("");
+
+        this.olds[VarType.Float] = this.oldFloats;
+        this.olds[VarType.Handle] = this.oldInts;
+        this.olds[VarType.ColorRef] = this.oldInts;
+        this.olds[VarType.String] = this.oldStrings;
+
+        this.news[VarType.Float] = this.newFloats;
+        this.news[VarType.Handle] = this.newInts;
+        this.news[VarType.ColorRef] = this.newInts;
+        this.news[VarType.String] = this.newStrings;
+        return this;
+    }
+
+    sync() {
+        this.oldFloats.set(this.newFloats);
+        this.oldInts.set(this.newInts);
+        for (let i = 0; i < this.newStrings.length; i++) this.oldStrings[i] = this.newStrings[i];
+        return this;
+    }
+
+    /**
+     * Проверка, не было ли изменено (в результате багов) зарезервированное значение.
+     */
+    assertZeroIndexEmpty() {
+        if (
+            this.oldFloats[0] !== 0 ||
+            this.newFloats[0] !== 0 ||
+            this.oldInts[0] !== 0 ||
+            this.newInts[0] !== 0 ||
+            this.oldStrings[0] !== "" ||
+            this.newStrings[0] !== ""
+        )
+            throw Error("Было изменено зарезервированное значение переменной");
     }
 
     get level() {

@@ -7,7 +7,6 @@ import { Schema } from "stratum/schema";
 import { Enviroment, NumBool, ProjectFunctions } from "stratum/translator";
 import { unreleasedFunctions } from "stratum/translator/translator";
 import { VFSDir } from "stratum/vfs";
-import { MemoryManager } from "./memoryManager";
 import { SimpleWs } from "./ws";
 
 export interface ProjectResources {
@@ -70,11 +69,11 @@ export class Player implements Project, ProjectFunctions {
         if (this.loop) return this;
         if (ghost) this.graphics.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
 
-        const mem = new MemoryManager(); // Память имиджей.
         unreleasedFunctions.clear();
-        const schema = Schema.build(this.prjInfo.rootClassName, this.classes, new Enviroment(mem, { graphics: this.graphics, project: this }));
+        const env = new Enviroment({ graphics: this.graphics, project: this });
+        const schema = Schema.build(this.prjInfo.rootClassName, this.classes, env);
         if (unreleasedFunctions.size > 0) console.log(`Нереализованные функции:\n${[...unreleasedFunctions.values()].join("\n")}`);
-        mem.createBuffers(schema.createTLB()); // Инициализируем память
+        env.init(schema.createTLB()); // Инициализируем память
 
         schema.applyDefaults(); //Заполняем значениями по умолчанию
         if (this.stt) schema.applyVarSet(this.stt); // Применяем _preload.stt
@@ -83,7 +82,7 @@ export class Player implements Project, ProjectFunctions {
         // Main Loop
         this.shouldClose = false;
         this.loop = () => {
-            mem.sync().assertZeroIndexEmpty();
+            env.sync().assertZeroIndexEmpty();
             try {
                 schema.compute();
             } catch (e) {

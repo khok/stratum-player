@@ -1,12 +1,11 @@
-import { Enviroment } from "./env";
 import { Constant } from "./constant";
+import { Enviroment, MemorySize } from "./env";
 import { SchemaFunctions } from "./interfaces/schemaFunctions";
 export { GraphicsFunctions } from "./interfaces/graphicsFunctions";
 export { ProjectFunctions } from "./interfaces/projectFunctions";
-export { SchemaMemory } from "./interfaces/schemaMemory";
 export { translate } from "./translator";
 export { SchemaFunctions };
-export { Enviroment };
+export { Enviroment, MemorySize };
 export { Constant };
 
 export type NumBool = 0 | 1;

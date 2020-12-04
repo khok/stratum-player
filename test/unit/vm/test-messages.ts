@@ -1,6 +1,5 @@
 import { unzip } from "stratum/api";
 import { Player } from "stratum/player";
-import { MemoryManager } from "stratum/player/memoryManager";
 import { Schema } from "stratum/schema";
 import { Enviroment } from "stratum/translator";
 const { ok } = chai.assert;
@@ -10,9 +9,9 @@ it("Тест SendMessage()", async () => {
         .then((r) => r.blob())
         .then(unzip);
     const prj = (await fs.project({ additionalClassPaths: ["library"] })) as Player;
-    const mem = new MemoryManager();
-    const schema = Schema.build(prj["prjInfo"].rootClassName, prj["classes"], new Enviroment(mem));
-    mem.createBuffers(schema.createTLB());
+    const mem = new Enviroment();
+    const schema = Schema.build(prj["prjInfo"].rootClassName, prj["classes"], mem);
+    mem.init(schema.createTLB());
     schema.applyDefaults().applyVarSet(prj["stt"]!);
     mem.sync().assertZeroIndexEmpty();
 

@@ -2,7 +2,7 @@ import { Project, SmoothExecutor, WindowHost } from "stratum/api";
 import { Base64Image } from "stratum/fileFormats/bmp";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { Constant, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool, SchemaMemory } from "stratum/translator";
+import { Constant, EventDispatcher, EventSubscriber, GraphicsFunctions, NumBool } from "stratum/translator";
 import { Scene } from "./scene";
 import { SceneWindow } from "./sceneWindow";
 
@@ -79,7 +79,7 @@ export class GraphicsManager implements GraphicsFunctions, EventDispatcher {
         // FIXME: надо возвращать obj.actualHeight
         return obj !== undefined ? obj.height : 0;
     }
-    getActualSize2d(hspace: number, hobject: number, xArr: SchemaMemory["newFloats"], xId: number, yArr: SchemaMemory["newFloats"], yId: number): NumBool {
+    getActualSize2d(hspace: number, hobject: number, xArr: { [index: number]: number }, xId: number, yArr: { [index: number]: number }, yId: number): NumBool {
         const obj = this.getObject(hspace, hobject);
         if (obj === undefined) return 0;
         // FIXME: надо возвращать obj.actualWidth

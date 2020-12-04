@@ -1,6 +1,5 @@
 import { ClassProto } from "stratum/common/classProto";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { MemoryManager } from "stratum/player/memoryManager";
 import { Schema } from "stratum/schema/schema";
 import { Enviroment } from "stratum/translator";
 const { strictEqual } = chai.assert;
@@ -16,11 +15,11 @@ it("Тест квадратного уравнения", async () => {
     const f = await fetch("/projects/other/square_eq.cls").then((b) => b.arrayBuffer());
     const proto = new ClassProto(new BinaryStream(f));
 
-    const mem = new MemoryManager();
-    const node = new Schema(proto, new Enviroment(mem));
+    const mem = new Enviroment();
+    const node = new Schema(proto, mem);
     const sizes = node.createTLB();
 
-    mem.createBuffers(sizes);
+    mem.init(sizes);
     const varCount = mem.newFloats.length + mem.newInts.length + mem.newStrings.length - 3;
     strictEqual(varCount, node.proto.vars!.count);
 
@@ -31,7 +30,7 @@ it("Тест квадратного уравнения", async () => {
     strictEqual(mem.newStrings[node.TLB[2]], "-0.4+i1.2");
     strictEqual(mem.newStrings[node.TLB[3]], "-0.4-i1.2");
 
-    mem.createBuffers(sizes);
+    mem.init(sizes);
     node.applyDefaults().applyVarSet({
         childSets: [],
         classId: 0,

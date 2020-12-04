@@ -4,8 +4,7 @@ import { parseVarValue } from "stratum/common/parseVarValue";
 import { VarType } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
-import { ClassModel, Enviroment, Constant, EventSubscriber, SchemaFunctions } from "stratum/translator";
-import { MemoryManagerArgs } from ".";
+import { ClassModel, Constant, Enviroment, EventSubscriber, MemorySize, SchemaFunctions } from "stratum/translator";
 import { buildSchema } from "./buildSchema";
 import { VarGraphNode } from "./varGraphNode";
 
@@ -38,6 +37,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
     private readonly varGraphNodes: VarGraphNode[] = [];
     private isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
+    private disOrEnVarId = -1;
 
     readonly proto: ClassProto;
     readonly TLB: SchemaFunctions["TLB"] = new Uint16Array(0);
@@ -63,9 +63,11 @@ export class Schema implements SchemaFunctions, EventSubscriber {
             const disableId = this.proto._disableVarId;
             if (enableId > 0 && (disableId < 0 || enableId < disableId)) {
                 this.isDisabled = Schema.disabledByEnable;
+                this.disOrEnVarId = enableId;
             }
             if (disableId > 0 && (enableId < 0 || disableId < enableId)) {
                 this.isDisabled = Schema.disabledByDisable;
+                this.disOrEnVarId = disableId;
             }
         }
         {
@@ -147,7 +149,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
             idx += 3;
         }
 
-        const { news, olds } = env.memory;
+        const { news, olds } = env;
         for (const rec of receivers) {
             if (rec === this) continue;
             for (let i = 0; i < idTypes.length; i += 3) {
@@ -248,9 +250,9 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         const { env, TLB, model } = this;
         model(this, env);
         // prettier-ignore
-        const { memory: { newFloats, oldFloats,newInts,oldInts,newStrings,oldStrings } } = env;
+        const { newFloats, oldFloats,newInts,oldInts,newStrings,oldStrings } = env;
         // Синхронизируем измененные в ходе вычислений переменные только на этом промежутке,
-        // чтобы не гонять memoryManager.sync()
+        // чтобы не гонять env.sync()
         for (const id of TLB) {
             oldFloats[id] = newFloats[id];
             oldInts[id] = newInts[id];
@@ -281,18 +283,18 @@ export class Schema implements SchemaFunctions, EventSubscriber {
      * Необходимо вызывать после проведения всех связей.
      */
     createTLB() {
-        const mmanagerArgs: MemoryManagerArgs = {
+        const memSize: MemorySize = {
             floatsCount: 1,
-            longsCount: 1,
+            intsCount: 1,
             stringsCount: 1,
         };
 
         (function rebuild({ children, TLB, varGraphNodes }: Schema) {
             children.forEach(rebuild);
-            TLB.set(varGraphNodes.map((v) => v.getIndex(mmanagerArgs)));
+            TLB.set(varGraphNodes.map((v) => v.getIndex(memSize)));
         })(this);
 
-        return mmanagerArgs;
+        return memSize;
     }
     /**
      * Устанавливает значения переменных по умолчанию для данного и всех дочерних имиджей.
@@ -379,13 +381,13 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
     private setNewVarValue(id: number, type: VarType, value: number | string) {
         if (id < 0) return;
-        this.env.memory.news[type][this.TLB[id]] = value;
+        this.env.news[type][this.TLB[id]] = value;
     }
     private setVarValue2(id: number, type: VarType, value: number | string) {
         if (id < 0) return;
         const trl = this.TLB[id];
-        this.env.memory.olds[type][trl] = value;
-        this.env.memory.news[type][trl] = value;
+        this.env.olds[type][trl] = value;
+        this.env.news[type][trl] = value;
     }
 
     private classNodeCache = new Map<string, Schema[]>();
@@ -427,11 +429,11 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private static alwaysEnabled() {
         return false;
     }
-    private static disabledByEnable({ env, proto, TLB }: Schema) {
-        return env.memory.newFloats[TLB[proto._enableVarId]] <= 0;
+    private static disabledByEnable({ env, disOrEnVarId, TLB }: Schema) {
+        return env.newFloats[TLB[disOrEnVarId]] <= 0;
     }
-    private static disabledByDisable({ env, proto, TLB }: Schema) {
-        return env.memory.newFloats[TLB[proto._disableVarId]] > 0;
+    private static disabledByDisable({ env, disOrEnVarId, TLB }: Schema) {
+        return env.newFloats[TLB[disOrEnVarId]] > 0;
     }
     private static NoModel() {}
 }
