@@ -3,7 +3,6 @@
  */
 import { BinaryStream } from "stratum/helpers/binaryStream";
 import { FileSignatureError } from "stratum/helpers/errors";
-import { bytesToBase64 } from "./base64";
 import { decodeBmp, readBMPSize } from "./bmpDecoder";
 
 export interface Base64Image {
@@ -29,7 +28,9 @@ export function readBmpFile(stream: BinaryStream): Base64Image {
     const bmpRaw = stream.bytes(readBitmapSize(stream));
 
     const { width, height } = readBMPSize(u8toView(bmpRaw));
-    return { base64Image: "data:image/bmp;base64," + bytesToBase64(bmpRaw), width, height };
+    const blob = new Blob([bmpRaw], { type: "image/bmp" });
+    const urlCreator = window.URL || window.webkitURL;
+    return { base64Image: urlCreator.createObjectURL(blob), width, height };
 }
 
 const cnv = document.createElement("canvas");
