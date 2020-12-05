@@ -86,10 +86,17 @@ export class ClassProto {
     _objnameVarId: number = -1;
     _classnameVarId: number = -1;
 
-    get vars() {
-        if (this._vars !== undefined) return this._vars;
+    get vars(): ClassProtoVars {
+        if (typeof this._vars !== "undefined") return this._vars;
         const raw = this.body.vars;
-        if (!raw) return undefined;
+        if (!raw) {
+            return (this._vars = {
+                count: 0,
+                nameUCToId: new Map(),
+                defaultValues: [],
+                types: [],
+            });
+        }
 
         const namesUC = raw.map((v) => v.name.toUpperCase());
         const types = raw.map((v) => v.type);

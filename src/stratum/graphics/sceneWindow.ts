@@ -32,7 +32,7 @@ export class SceneWindow {
         this.ignoreSetSize = disableResize ?? false;
         this.resizible = vdr?.otDATAITEMS?.some((d) => d.id === 11) ? false : true;
 
-        if (vdr !== undefined && vdr.source !== undefined) {
+        if (vdr?.source) {
             const { name, origin } = vdr.source;
             if (origin === "class") this.classname = name;
             else if (origin === "file") this.filename = name;

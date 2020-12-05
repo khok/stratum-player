@@ -23,7 +23,7 @@
 		"path": "$ROOTPATH$\\src\\stratum\\schema\\schema.ts",
 		"bookmarks": [
 			{
-				"line": 389,
+				"line": 397,
 				"column": 0,
 				"label": "Вызвать этот метод один раз при сборке схемы"
 			}

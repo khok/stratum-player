@@ -1,5 +1,5 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassProto } from "stratum/common/classProto";
+import { ClassProto, ClassProtoVars } from "stratum/common/classProto";
 import { parseVarValue } from "stratum/common/parseVarValue";
 import { VarType } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
@@ -26,23 +26,22 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private readonly env: Enviroment;
     private readonly neighMapUC: Map<string, Schema>;
     private readonly root: Schema;
-    private readonly parent: Schema = this;
     private readonly handle: number = 0;
     private readonly name: string = "";
     private readonly position: Point2D = { x: 0, y: 0 };
-
-    private model: ClassModel;
+    private readonly parent: Schema = this;
+    private readonly model: ClassModel;
+    private readonly vars: ClassProtoVars;
+    private readonly varGraphNodes: VarGraphNode[] = [];
+    private readonly isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
+    private readonly disOrEnVarId: number = -1;
 
     private children: Schema[] = [];
 
-    private readonly varGraphNodes: VarGraphNode[] = [];
-    private isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
-    private disOrEnVarId = -1;
-
     readonly proto: ClassProto;
-    readonly TLB: SchemaFunctions["TLB"] = new Uint16Array(0);
-
+    readonly TLB: SchemaFunctions["TLB"];
     captureEventsFromSpace = 0;
+
     constructor(proto: ClassProto, env: Enviroment, placement?: PlacementDescription) {
         this.model = proto.model ?? Schema.NoModel;
         this.proto = proto;
@@ -53,9 +52,8 @@ export class Schema implements SchemaFunctions, EventSubscriber {
             this.position = placement.position;
             this.parent = placement.parent;
         }
-
-        const vars = proto.vars;
-        if (vars) {
+        {
+            const vars = (this.vars = proto.vars);
             this.varGraphNodes = vars.types.map((t) => new VarGraphNode(t));
             this.TLB = new Uint16Array(vars.count);
 
@@ -89,21 +87,23 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
     getClassName(path: string) {
         const resolved = this.resolve(path);
-        if (resolved === undefined) return "";
+        if (typeof resolved === "undefined") return "";
         return resolved.proto.name;
     }
 
     setVar(objectName: string, varName: string, value: number | string): void {
         const target = this.resolve(objectName);
-        if (target === undefined) return;
+        if (typeof target === "undefined") return;
         const { vars } = target.proto;
-        if (vars === undefined) return;
+        if (typeof vars === "undefined") return;
         const id = vars.nameUCToId.get(varName.toUpperCase());
-        if (id !== undefined) target.setVarValue2(id, vars.types[id], value);
+        if (typeof id !== "undefined") target.setVarValue2(id, vars.types[id], value);
     }
 
+    private idTypes: number[] = [];
+    private cachedNames: string[] = [];
     sendMessage(objectName: string, className: string, ...varNames: string[]) {
-        const { env, proto, TLB } = this;
+        const { env, vars, TLB, cachedNames } = this;
         if (env.level > 58) return;
 
         if (objectName !== "") throw Error(`Вызов SendMessage с objectName=${objectName} не реализован`);
@@ -114,11 +114,10 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         if (receivers.length === 0) return;
 
         const rec0 = receivers[0];
-        const myVars = proto.vars;
-        const otherVars = rec0.proto.vars;
+        const otherVars = rec0.vars;
 
         const otherModel = rec0.model;
-        if (myVars === undefined || otherVars === undefined) {
+        if (vars.count === 0 || otherVars.count === 0) {
             for (const rec of receivers) {
                 if (rec === this) continue;
                 env.inc();
@@ -128,33 +127,47 @@ export class Schema implements SchemaFunctions, EventSubscriber {
             return;
         }
 
-        const idTypes = new Array<number>(varNames.length + varNames.length / 2);
-        let idx = 0;
-        for (let i = 0; i < varNames.length; i += 2) {
-            const myVarName = varNames[i].toUpperCase();
-            const myId = myVars.nameUCToId.get(myVarName);
-            if (myId === undefined) continue;
-
-            const otherVarName = varNames[i + 1].toUpperCase();
-            const otherId = otherVars.nameUCToId.get(otherVarName);
-            if (otherId === undefined) continue;
-
-            const typ = myVars.types[myId];
-            const otherTyp = otherVars.types[otherId];
-            if (typ !== otherTyp) continue;
-
-            idTypes[idx + 0] = myId;
-            idTypes[idx + 1] = otherId;
-            idTypes[idx + 2] = typ;
-            idx += 3;
+        let cached = varNames.length === cachedNames.length;
+        if (cached === true) {
+            for (let i = 0; i < varNames.length; i++) {
+                if (varNames[i] !== cachedNames[i]) {
+                    cached = false;
+                    break;
+                }
+            }
         }
 
+        if (cached === false) {
+            this.cachedNames = varNames;
+            const idTypes = (this.idTypes = new Array<number>(varNames.length + varNames.length / 2));
+            let idx = 0;
+            for (let i = 0; i < varNames.length; i += 2) {
+                const myVarName = varNames[i].toUpperCase();
+                const myId = vars.nameUCToId.get(myVarName);
+                if (typeof myId === "undefined") continue;
+
+                const otherVarName = varNames[i + 1].toUpperCase();
+                const otherId = otherVars.nameUCToId.get(otherVarName);
+                if (typeof otherId === "undefined") continue;
+
+                const typ = vars.types[myId];
+                const otherTyp = otherVars.types[otherId];
+                if (typ !== otherTyp) continue;
+
+                idTypes[idx + 0] = myId;
+                idTypes[idx + 1] = otherId;
+                idTypes[idx + 2] = typ;
+                idx += 3;
+            }
+        }
+
+        const { idTypes } = this;
         const { news, olds } = env;
         for (const rec of receivers) {
             if (rec === this) continue;
             for (let i = 0; i < idTypes.length; i += 3) {
                 const typ = idTypes[i + 2];
-                if (typ === undefined) continue;
+                if (typeof typ === "undefined") continue;
                 const myId = TLB[idTypes[i + 0]];
                 const otherId = rec.TLB[idTypes[i + 1]];
 
@@ -172,7 +185,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
             env.dec();
             for (let i = 0; i < idTypes.length; i += 3) {
                 const typ = idTypes[i + 2];
-                if (typ === undefined) continue;
+                if (typeof typ === "undefined") continue;
                 const myId = TLB[idTypes[i + 0]];
                 const otherId = rec.TLB[idTypes[i + 1]];
 
@@ -191,7 +204,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     setCapture(hspace: number, path: string, flags: number) {
         if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
-        if (target === undefined || target.proto.msgVarId < 0) return;
+        if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
         target.captureEventsFromSpace = hspace;
     }
 
@@ -204,7 +217,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number) {
         if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
-        if (target === undefined || target.proto.msgVarId < 0) return;
+        if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
         this.env.graphics!.subscribe(target, wnameOrHspace, obj2d, message);
     }
     unregisterObject(hspace: number, path: string, code: number): void;
@@ -212,7 +225,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     unregisterObject(wnameOrHspace: number | string, path: string, code: number): void {
         if (path !== "") throw Error(`Вызов UnRegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
-        if (target === undefined || target.proto.msgVarId < 0) return;
+        if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
         this.env.graphics!.unsubscribe(target, wnameOrHspace, code);
     }
 
@@ -312,7 +325,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
             //Значение по умолчанию
             const defaultValue = vars.defaultValues[id];
-            if (defaultValue !== undefined) {
+            if (typeof defaultValue !== "undefined") {
                 this.setNewVarValue(id, type, defaultValue);
                 continue;
             }
@@ -348,7 +361,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         if (vars && name.toUpperCase() === varSet.classname.toUpperCase()) {
             for (const v of varSet.values) {
                 const id = vars.nameUCToId.get(v.name.toUpperCase());
-                if (id === undefined) continue;
+                if (typeof id === "undefined") continue;
                 const type = vars.types[id];
                 this.setNewVarValue(id, type, parseVarValue(type, v.value));
             }
@@ -373,7 +386,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         let root = path[0] === "\\" ? this.root : this;
         for (let i = 0; i < filter.length; ++i) {
             const cl = root.neighMapUC.get(filter[i]);
-            if (cl === undefined) return undefined;
+            if (typeof cl === "undefined") return undefined;
             root = cl;
         }
         return root;
@@ -394,7 +407,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private findClasses(classNameUC: string): Schema[] {
         const { root } = this;
         const nodes = root.classNodeCache.get(classNameUC);
-        if (nodes !== undefined) return nodes;
+        if (typeof nodes !== "undefined") return nodes;
 
         const nodes2 = new Array<Schema>();
         (function collect(s: Schema) {
