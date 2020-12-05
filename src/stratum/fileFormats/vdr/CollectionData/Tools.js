@@ -1,4 +1,4 @@
-import { readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
+import { readBmpFile, readDbmFile } from "../../bmp";
 import { readNext } from "../Collection";
 import { VdrEntry } from "../vdrEntry";
 

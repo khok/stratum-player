@@ -26,7 +26,6 @@ import {
     VectorDrawingToolParams,
     VectorDrawingTools,
 } from "stratum/fileFormats/vdr";
-import { BadDataError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
 import { Require } from "stratum/helpers/utilityTypes";
 
@@ -53,7 +52,7 @@ function deepVdrCopy(vdr: VectorDrawing) {
 
 function findRootGroup(elements: VectorDrawingElement[], rootGroupHandle: number) {
     const rootGroup = elements.find((el) => el.handle === rootGroupHandle);
-    if (!rootGroup || rootGroup.type !== "otGROUP2D") throw new BadDataError(`На схеме нет группы ${rootGroupHandle}`);
+    if (!rootGroup || rootGroup.type !== "otGROUP2D") throw Error(`На схеме нет группы ${rootGroupHandle}`);
     return rootGroup;
 }
 
@@ -217,7 +216,7 @@ export class VdrMerger {
      */
     constructor(scheme: VectorDrawing) {
         const schemeCopy = deepVdrCopy(scheme);
-        if (!schemeHasElements(schemeCopy)) throw new BadDataError(`Схема не имеет элементов`);
+        if (!schemeHasElements(schemeCopy)) throw Error(`Схема не имеет элементов`);
         this.scheme = schemeCopy;
     }
 

@@ -1,23 +1,15 @@
 // class.cpp:6100
-import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
-import { BinaryStream } from "stratum/helpers/binaryStream";
-import { FileReadingError, FileSignatureError } from "stratum/helpers/errors";
+import { BinaryStream, FileReadingError, FileSignatureError } from "stratum/helpers/binaryStream";
 import { EntryCode } from "./entryCode";
+import { readVdrFile, VectorDrawing } from "./vdr";
 
 export type BytecodeParser<TVmCode> = (bytes: Uint8Array) => TVmCode;
-
-export enum VarType {
-    Float = 1,
-    Handle = 2,
-    String = 3,
-    ColorRef = 4,
-}
 
 export interface ClassVar {
     name: string;
     description: string;
     defaultValue: string;
-    type: VarType;
+    type: "STRING" | "FLOAT" | "INTEGER" | "HANDLE" | "COLORREF";
     flags: number;
 }
 
@@ -72,28 +64,11 @@ function readVars(stream: BinaryStream): ClassVar[] {
         const description = stream.string();
         const defaultValue = stream.string();
         const readedType = stream.string().toUpperCase();
-
-        let type: VarType;
-        switch (readedType) {
-            case "STRING":
-                type = VarType.String;
-                break;
-            case "FLOAT":
-            case "INTEGER":
-                type = VarType.Float;
-                break;
-            case "HANDLE":
-                type = VarType.Handle;
-                break;
-            case "COLORREF":
-                type = VarType.ColorRef;
-                break;
-            default:
-                throw new FileReadingError(stream, `неизвестный тип переменной: ${readedType}.`);
+        if (readedType !== "STRING" && readedType !== "FLOAT" && readedType !== "INTEGER" && readedType !== "HANDLE" && readedType !== "COLORREF") {
+            throw new FileReadingError(stream, `неизвестный тип переменной: ${readedType}.`);
         }
-
         const flags = stream.int32();
-        vars[i] = { name, description, defaultValue, type, flags };
+        vars[i] = { name, description, defaultValue, type: readedType, flags };
     }
     //RETURN VALUE - (v.flags & 1024)
     return vars;

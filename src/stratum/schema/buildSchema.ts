@@ -1,6 +1,6 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassLink, VarType } from "stratum/fileFormats/cls";
-import { Enviroment } from "stratum/translator";
+import { ClassLink } from "stratum/fileFormats/cls";
+import { Enviroment, VarType } from "stratum/translator";
 import { PlacementDescription, Schema } from "./schema";
 
 function applyLinks(node: Schema, links: ClassLink[]) {

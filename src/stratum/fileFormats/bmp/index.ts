@@ -1,8 +1,7 @@
 /*
  * Код для чтения размерностей битовых карт, объединения двойных битовых карт в изображение с прозрачностью.
  */
-import { BinaryStream } from "stratum/helpers/binaryStream";
-import { FileSignatureError } from "stratum/helpers/errors";
+import { BinaryStream, FileSignatureError } from "stratum/helpers/binaryStream";
 import { decodeBmp, readBMPSize } from "./bmpDecoder";
 
 export interface Base64Image {

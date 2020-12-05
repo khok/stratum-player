@@ -1,6 +1,5 @@
 //class.cpp:3623
-import { BinaryStream } from "stratum/helpers/binaryStream";
-import { FileReadingError, FileSignatureError } from "stratum/helpers/errors";
+import { BinaryStream, FileReadingError, FileSignatureError } from "stratum/helpers/binaryStream";
 import { EntryCode } from "./entryCode";
 
 export interface VariableSet {

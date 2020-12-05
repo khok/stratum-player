@@ -1,5 +1,4 @@
 import { BitmapElement, DoubleBitmapElement } from "stratum/fileFormats/vdr";
-import { BadDataError } from "stratum/helpers/errors";
 import { Optional } from "stratum/helpers/utilityTypes";
 import { NumBool } from "stratum/translator";
 import { RenderableBitmap, RenderableFactory } from "../../interfaces";
@@ -33,7 +32,7 @@ export class SceneBitmapObject extends Object2dMixin {
         const bmpSize = args.bmpSize || args.size || bmpTool.size;
         if (!bmpSize) {
             const textType = `${args.type === "otBITMAP2D" ? "Б" : "Двойная б"}итовая карта`;
-            throw new BadDataError(`${textType} #${args.handle}: у изображения нет размеров (объект: ${this.handle}).`);
+            throw Error(`${textType} #${args.handle}: у изображения нет размеров (объект: ${this.handle}).`);
         }
 
         const scale = {

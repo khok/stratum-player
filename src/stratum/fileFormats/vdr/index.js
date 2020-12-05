@@ -1,4 +1,4 @@
-import { FileSignatureError } from "stratum/helpers/errors";
+import { FileSignatureError } from "stratum/helpers/binaryStream";
 import { readNext } from "./Collection";
 import { DataChunk } from "./DataChunk";
 import { VdrEntry } from "./vdrEntry";

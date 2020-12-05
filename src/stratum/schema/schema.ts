@@ -1,10 +1,9 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassProto, ClassProtoVars } from "stratum/common/classProto";
+import { ClassProto } from "stratum/common/classProto";
 import { parseVarValue } from "stratum/common/parseVarValue";
-import { VarType } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
-import { ClassModel, Constant, Enviroment, EventSubscriber, MemorySize, SchemaFunctions } from "stratum/translator";
+import { ClassModel, ClassVars, Constant, Enviroment, EventSubscriber, MemorySize, SchemaFunctions, VarType } from "stratum/translator";
 import { buildSchema } from "./buildSchema";
 import { VarGraphNode } from "./varGraphNode";
 
@@ -31,7 +30,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private readonly position: Point2D = { x: 0, y: 0 };
     private readonly parent: Schema = this;
     private readonly model: ClassModel;
-    private readonly vars: ClassProtoVars;
+    private readonly vars: ClassVars;
     private readonly varGraphNodes: VarGraphNode[] = [];
     private readonly isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
     private readonly disOrEnVarId: number = -1;

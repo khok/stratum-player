@@ -1,5 +1,4 @@
 import { GroupElement, VectorDrawingElement, VectorDrawingElement2d, VectorDrawingTools } from "stratum/fileFormats/vdr";
-import { BadDataError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { BmpToolFactory } from ".";
 import { RenderableFactory } from "./interfaces";
@@ -20,7 +19,7 @@ export function createTools(tools: VectorDrawingTools): SceneTools {
     //prettier-ignore
     const texts = textTools && HandleMap.create(textTools.map((t) => {
         const tool = SceneTextTool.create(t, fonts!, strings!);
-        if (!tool) throw new BadDataError(`Не удалось создать Текст #${t.handle} из-за отсутствующих инструментов.`);
+        if (!tool) throw Error(`Не удалось создать Текст #${t.handle} из-за отсутствующих инструментов.`);
         return [t.handle, tool];
     }));
 
@@ -54,7 +53,7 @@ export function createObjects(elements: VectorDrawingElement[], renderableFactor
             groups.push({ obj, data });
         } else {
             obj = create2dObject(data, renderableFactory, tools);
-            if (!obj) throw new BadDataError(`Не удалось создать ${data.type} #${data.handle} из-за отсутствующих инструментов.`);
+            if (!obj) throw Error(`Не удалось создать ${data.type} #${data.handle} из-за отсутствующих инструментов.`);
             obj.setHiddenLayers(layers);
         }
 
@@ -64,8 +63,8 @@ export function createObjects(elements: VectorDrawingElement[], renderableFactor
     for (const { obj, data } of groups) {
         const children = data.childHandles.map((h) => {
             const child = allObjects.get(h);
-            if (!child) throw new BadDataError(`Группа #${data.handle} ссылается на несуществующий объект #${h}`);
-            if (child.parent) throw new BadDataError(`Группа #${data.handle} ссылается на объект #${h}, состоящий в другой группе`);
+            if (!child) throw Error(`Группа #${data.handle} ссылается на несуществующий объект #${h}`);
+            if (child.parent) throw Error(`Группа #${data.handle} ссылается на объект #${h}, состоящий в другой группе`);
             return child;
         });
         obj.addItems(children);

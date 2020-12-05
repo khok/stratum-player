@@ -1,4 +1,4 @@
-import { VarType } from "stratum/fileFormats/cls";
+import { VarType } from "stratum/translator";
 import { parseColorRef } from "./colorrefParsers";
 
 export function parseVarValue(type: VarType, value: string): string | number {

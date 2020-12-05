@@ -14,7 +14,6 @@ import {
 } from "stratum/graphics/scene/interfaces";
 import { SceneBrushTool } from "stratum/graphics/scene/tools";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
-import { BadDataError } from "stratum/helpers/errors";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
 import { Constant, EventSubscriber } from "stratum/translator";
@@ -97,7 +96,7 @@ export class FabricRenderer implements Renderer {
     }
 
     private assertNoObject(handle: number) {
-        if (this.objects.has(handle)) throw new BadDataError(`Объект #${handle} уже существует на сцене`);
+        if (this.objects.has(handle)) throw Error(`Объект #${handle} уже существует на сцене`);
     }
 
     //Создание объектов
@@ -147,7 +146,7 @@ export class FabricRenderer implements Renderer {
         const newObjs = [];
         for (const handle of order) {
             const obj = this.objects.get(handle);
-            if (!obj) throw new BadDataError(`Объект #${handle} не найден на сцене`);
+            if (!obj) throw Error(`Объект #${handle} не найден на сцене`);
             if (obj.type !== "control") this.canvas.add(obj.obj);
             newObjs.push(obj);
         }

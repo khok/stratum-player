@@ -1,7 +1,7 @@
-import { parseVarValue } from "stratum/common/parseVarValue";
-import { ClassInfoBody, readClsFileBody, readClsFileHeader, VarType } from "stratum/fileFormats/cls";
+import { ClassInfoBody, readClsFileBody, readClsFileHeader } from "stratum/fileFormats/cls";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { ClassModel, translate } from "stratum/translator";
+import { ClassModel, ClassVars, translate, VarType } from "stratum/translator";
+import { parseVarValue } from "./parseVarValue";
 
 type LazyBody =
     | {
@@ -12,13 +12,6 @@ type LazyBody =
           loaded: false;
           stream: BinaryStream;
       };
-
-export interface ClassProtoVars {
-    count: number;
-    nameUCToId: Map<string, number>;
-    types: VarType[];
-    defaultValues: (string | number | undefined)[];
-}
 
 /*
  * Прототип имиджа, обертка над более низкоуровневыми функциями чтения содержимого имиджа.
@@ -67,7 +60,7 @@ export class ClassProto {
         return this.body.scheme;
     }
 
-    private _vars?: ClassProtoVars;
+    private _vars?: ClassVars;
 
     _enableVarId: number = -1;
     _disableVarId: number = -1;
@@ -86,7 +79,7 @@ export class ClassProto {
     _objnameVarId: number = -1;
     _classnameVarId: number = -1;
 
-    get vars(): ClassProtoVars {
+    get vars(): ClassVars {
         if (typeof this._vars !== "undefined") return this._vars;
         const raw = this.body.vars;
         if (!raw) {
@@ -99,7 +92,19 @@ export class ClassProto {
         }
 
         const namesUC = raw.map((v) => v.name.toUpperCase());
-        const types = raw.map((v) => v.type);
+        const types = raw.map((v) => {
+            switch (v.type) {
+                case "FLOAT":
+                case "INTEGER":
+                    return VarType.Float;
+                case "HANDLE":
+                    return VarType.Handle;
+                case "STRING":
+                    return VarType.String;
+                case "COLORREF":
+                    return VarType.ColorRef;
+            }
+        });
         for (let i = 0; i < raw.length; i++) {
             const nameUC = namesUC[i];
             const typ = types[i];
@@ -141,7 +146,7 @@ export class ClassProto {
             count: raw.length,
             nameUCToId: new Map(namesUC.map((n, idx) => [n, idx])),
             types,
-            defaultValues: raw.map((v) => (v.defaultValue !== "" ? parseVarValue(v.type, v.defaultValue) : undefined)),
+            defaultValues: raw.map((v, i) => (v.defaultValue !== "" ? parseVarValue(types[i], v.defaultValue) : undefined)),
         });
     }
 

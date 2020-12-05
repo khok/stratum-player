@@ -1,5 +1,4 @@
-import { VarType } from "stratum/fileFormats/cls";
-import { EventDispatcher, GraphicsFunctions, ProjectFunctions } from ".";
+import { EventDispatcher, GraphicsFunctions, ProjectFunctions, VarType } from ".";
 
 export interface MemorySize {
     floatsCount: number;

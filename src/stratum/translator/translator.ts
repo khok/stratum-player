@@ -1,6 +1,4 @@
-import { ClassProtoVars } from "stratum/common/classProto";
-import { VarType } from "stratum/fileFormats/cls";
-import { ClassModel, Constant, SchemaFunctions } from ".";
+import { ClassModel, ClassVars, Constant, SchemaFunctions, VarType } from ".";
 import { funcTable, graphicsVarName, projectVarName, schemaVarName } from "./funcTable";
 import { normalizeSource } from "./normalizer";
 import { parse } from "./parser";
@@ -29,7 +27,7 @@ const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings, ${projec
 `;
 
 let _hasBug = false;
-function subOpToString(subop: any, vars: ClassProtoVars | undefined) {
+function subOpToString(subop: any, vars: ClassVars | undefined) {
     if (subop.isNew && subop.type !== "var") _hasBug = true;
     switch (subop.type) {
         case "const": {
@@ -147,7 +145,7 @@ function subOpToString(subop: any, vars: ClassProtoVars | undefined) {
     }
 }
 
-function opToString(op: any, vars: ClassProtoVars | undefined): string {
+function opToString(op: any, vars: ClassVars | undefined): string {
     const f = subOpToString(op.first, vars);
     const r = op.rest.map((exp: any) => {
         if (exp.action === "/") return `/(${subOpToString(exp.op, vars)} || Infinity)`;
@@ -157,7 +155,7 @@ function opToString(op: any, vars: ClassProtoVars | undefined): string {
 }
 
 let _hasEquals = false;
-function parseCodeline(c: any, vars: ClassProtoVars | undefined): string | undefined {
+function parseCodeline(c: any, vars: ClassVars | undefined): string | undefined {
     switch (c.type) {
         case ":=": {
             if (!vars) throw Error("Имидж не имеет переменных");
@@ -204,7 +202,7 @@ function parseCodeline(c: any, vars: ClassProtoVars | undefined): string | undef
 
 const funcs = new Map<string, string>();
 export const unreleasedFunctions = new Map<string, string>();
-export function translate(source: string, vars: ClassProtoVars | undefined, objname: string): ClassModel | undefined {
+export function translate(source: string, vars: ClassVars | undefined, objname: string): ClassModel | undefined {
     funcs.clear();
     const norm = normalizeSource(source);
     let data: Array<any>;

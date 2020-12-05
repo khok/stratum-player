@@ -2,8 +2,6 @@
  * Функции для парсинга и преобразования типа данных `ColorRef`.
  */
 
-import { BadDataError } from "stratum/helpers/errors";
-
 const systemColorTable = [
     "gray",
     "blue",
@@ -54,7 +52,7 @@ export function parseColorRef(value: string) {
         return values[0] | (values[1] << 8) | (values[2] << 16);
     }
 
-    throw new BadDataError(`Неизвестный цвет: ${value}`);
+    throw Error(`Неизвестный цвет: ${value}`);
 }
 
 /**

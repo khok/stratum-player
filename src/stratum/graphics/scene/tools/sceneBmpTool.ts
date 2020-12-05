@@ -1,5 +1,4 @@
 import { BmpToolParams } from "stratum/fileFormats/vdr";
-import { BadDataError } from "stratum/helpers/errors";
 import { Point2D } from "stratum/helpers/types";
 import { Optional, Remove } from "stratum/helpers/utilityTypes";
 import { NumBool } from "stratum/translator";
@@ -28,7 +27,7 @@ export class SceneBmpTool extends SceneToolMixin {
     }
 
     setPixel(x: number, y: number, color: number): NumBool {
-        if (this.asyncLoaded) throw new BadDataError(`Изображение #${this.handle} было загружено асинхронно`);
+        if (this.asyncLoaded) throw Error(`Изображение #${this.handle} было загружено асинхронно`);
         throw new Error("Method not implemented.");
         this.dispatchChanges();
     }
