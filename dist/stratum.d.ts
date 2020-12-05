@@ -5,8 +5,8 @@ export interface OpenZipOptions {
     /**
      * Каталог, в которую монтируется содержимое архива.
      * Может начинаться с префикса диска, например, `C:/Projects`
-     * Если префикс не указан, то он автоматически устанавливается как `Z:`
-     * @default "Z:"
+     * Если префикс не указан, то он автоматически устанавливается как `C:`
+     * @default "C:"
      */
     directory?: string;
     /**
@@ -154,25 +154,16 @@ export interface Project {
     computer: Executor;
     /**
      * Запускает выполнение проекта.
-     * Открываемые в проекте окна будут всплывающими.
-     */
-    play(): this;
-    /**
-     * Запускает выполнение проекта.
      * @param container - HTML элемент, в котором будут размещаться
      * открываемые в проекте окна.
+     * Если он не указан, окна будут всплывающими.
      */
-    play(container: HTMLElement): this;
+    play(container?: HTMLElement): this;
     /**
      * Запускает выполнение проекта.
      * @param host - Хост оконной системы.
      */
     play(host: WindowHost): this;
-    /**
-     * Запускает выполнение проекта.
-     * @param project - Проект, ресурсы которого будут переиспользованы.
-     */
-    play(project: Project): this;
     /**
      * Закрывает проект.
      */
@@ -243,7 +234,7 @@ export interface WindowOptions {
     /**
      * Название открываемого окна.
      */
-    title: string;
+    title?: string;
 }
 /**
  * Хост оконной системы.
@@ -258,6 +249,7 @@ export interface WindowHost {
 }
 export interface WindowHostWindow {
     setTitle(title: string): void;
+    setSize(width: number, height: number): void;
     /**
      * Регистрирует обработчик события изменения размера окна пользователем.
      */
