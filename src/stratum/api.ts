@@ -314,11 +314,9 @@ export const options: {
     iconsLocation?: string;
 } = {};
 
-const origL = console.log;
 export function setLogLevel(logLevel: "err" | "full") {
-    console.log = logLevel === "err" ? function () {} : origL;
+    // console.log = logLevel === "err" ? function () {} : origL;
 }
-setLogLevel("err");
 
 export interface ExecutorConstructor {
     new (args?: any): Executor;
@@ -330,4 +328,4 @@ export const FastestExecutor: ExecutorConstructor = FastestComputer;
 /**
  * Версия API.
  */
-export const version: string = "0.7.1";
+export const version: string = "0.8.0";

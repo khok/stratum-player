@@ -11,7 +11,7 @@ export class BinaryStream {
     private p: number = 0;
 
     meta: BinaryStreamMetadata;
-    constructor(data: ArrayBuffer | Uint8Array | DataView, meta?: BinaryStreamMetadata) {
+    constructor(data: ArrayBuffer | ArrayBufferView, meta?: BinaryStreamMetadata) {
         this.meta = { ...meta };
         this.v = data instanceof ArrayBuffer ? new DataView(data) : new DataView(data.buffer, data.byteOffset, data.byteLength);
     }
