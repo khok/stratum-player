@@ -1,9 +1,11 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { ClassProto } from "stratum/common/classProto";
 import { parseVarValue } from "stratum/common/parseVarValue";
+import { VarType } from "stratum/common/varType";
+import { Constant, Enviroment, EventSubscriber, MemorySize } from "stratum/env";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
-import { ClassModel, ClassVars, Constant, Enviroment, EventSubscriber, MemorySize, SchemaFunctions, VarType } from "stratum/translator";
+import { ClassModel, ClassVars } from "stratum/translator";
 import { buildSchema } from "./buildSchema";
 import { VarGraphNode } from "./varGraphNode";
 
@@ -17,7 +19,7 @@ export interface PlacementDescription {
     name: string;
 }
 
-export class Schema implements SchemaFunctions, EventSubscriber {
+export class Schema implements EventSubscriber {
     static build(root: string, lib: ClassLibrary, env: Enviroment) {
         return buildSchema(root, lib, env);
     }
@@ -38,8 +40,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
     private children: Schema[] = [];
 
     readonly proto: ClassProto;
-    readonly TLB: SchemaFunctions["TLB"];
-    captureEventsFromSpace = 0;
+    readonly TLB: Uint16Array;
 
     constructor(proto: ClassProto, env: Enviroment, placement?: PlacementDescription) {
         this.model = proto.model ?? Schema.NoModel;
@@ -79,18 +80,17 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         }
     }
 
-    // ComputableSchema
-    getHObject() {
+    stratum_getHObject(): number {
         return this.handle;
     }
 
-    getClassName(path: string) {
+    stratum_getClassName(path: string): string {
         const resolved = this.resolve(path);
         if (typeof resolved === "undefined") return "";
         return resolved.proto.name;
     }
 
-    setVar(objectName: string, varName: string, value: number | string): void {
+    stratum_setVar(objectName: string, varName: string, value: number | string): void {
         const target = this.resolve(objectName);
         if (typeof target === "undefined") return;
         const { vars } = target.proto;
@@ -101,7 +101,7 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
     private idTypes: number[] = [];
     private cachedNames: string[] = [];
-    sendMessage(objectName: string, className: string, ...varNames: string[]) {
+    stratum_sendMessage(objectName: string, className: string, ...varNames: string[]): void {
         const { env, vars, TLB, cachedNames } = this;
         if (env.level > 58) return;
 
@@ -119,9 +119,9 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         if (vars.count === 0 || otherVars.count === 0) {
             for (const rec of receivers) {
                 if (rec === this) continue;
-                env.inc();
+                ++env.level;
                 otherModel(rec, env);
-                env.dec();
+                --env.level;
             }
             return;
         }
@@ -179,9 +179,9 @@ export class Schema implements SchemaFunctions, EventSubscriber {
 
                 // olds[typ][otherId] = news[typ][otherId] = news[typ][myId];
             }
-            env.inc();
+            ++env.level;
             otherModel(rec, env);
-            env.dec();
+            --env.level;
             for (let i = 0; i < idTypes.length; i += 3) {
                 const typ = idTypes[i + 2];
                 if (typeof typ === "undefined") continue;
@@ -200,32 +200,24 @@ export class Schema implements SchemaFunctions, EventSubscriber {
         }
     }
 
-    setCapture(hspace: number, path: string, flags: number) {
+    stratum_setCapture(hspace: number, path: string, flags: number): void {
         if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        target.captureEventsFromSpace = hspace;
+        this.env.setCapture(hspace, target);
     }
 
-    releaseCapture() {
-        this.captureEventsFromSpace = 0;
-    }
-
-    registerObject(hspace: number, obj2d: number, path: string, message: number, flags: number): void;
-    registerObject(wname: string, obj2d: number, path: string, message: number, flags: number): void;
-    registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number) {
+    stratum_registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number): void {
         if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.env.graphics!.subscribe(target, wnameOrHspace, obj2d, message);
+        this.env.subscribe(target, wnameOrHspace, obj2d, message);
     }
-    unregisterObject(hspace: number, path: string, code: number): void;
-    unregisterObject(wname: string, path: string, code: number): void;
-    unregisterObject(wnameOrHspace: number | string, path: string, code: number): void {
+    stratum_unregisterObject(wnameOrHspace: number | string, path: string, code: number): void {
         if (path !== "") throw Error(`Вызов UnRegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.env.graphics!.unsubscribe(target, wnameOrHspace, code);
+        this.env.unsubscribe(target, wnameOrHspace, code);
     }
 
     receive(code: Constant, ...args: (string | number)[]) {

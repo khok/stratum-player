@@ -1,5 +1,5 @@
-import { VarType } from "stratum/translator";
 import { parseColorRef } from "./colorrefParsers";
+import { VarType } from "./varType";
 
 export function parseVarValue(type: VarType, value: string): string | number {
     switch (type) {

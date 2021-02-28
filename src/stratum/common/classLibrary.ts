@@ -32,9 +32,9 @@ export class ClassLibrary {
         for (const child of cl.children) {
             const childClassData = this.get(child.classname);
             if (!childClassData) throw Error(`Подимидж ${child.classname} #${child.schemeInfo.handle} не найден.`);
-            const { handle: rootGroupHandle, position } = child.schemeInfo;
-            if (childClassData.iconFile) merger.replaceIcon(rootGroupHandle, childClassData.iconFile);
-            if (childClassData.image) merger.insertChildImage(rootGroupHandle, childClassData.image, position);
+            const { handle: rootGroupHandle } = child.schemeInfo;
+            if (childClassData.iconFile) merger.replaceIcon(rootGroupHandle, childClassData.iconFile, childClassData.iconIndex || 0);
+            if (childClassData.image && !childClassData.alwaysUseIcon()) merger.insertChildImage(rootGroupHandle, childClassData.image);
         }
 
         return merger.result;

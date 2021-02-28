@@ -1,6 +1,7 @@
 import { readNext } from "../Collection";
 import { VdrEntry } from "../vdrEntry";
 
+// object.cpp:186
 function readObject(stream) {
     return {
         handle: stream.uint16(),
@@ -15,11 +16,24 @@ function readObject(stream) {
 }
 
 function readObject2D(stream) {
-    return {
-        ...readObject(stream),
-        position: stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d(),
-        size: stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d(),
-    };
+    const base = readObject(stream);
+    if (stream.meta.fileversion < 0x200) {
+        return {
+            ...base,
+            originX: stream.int16(),
+            originY: stream.int16(),
+            width: stream.int16(),
+            height: stream.int16(),
+        };
+    } else {
+        return {
+            ...base,
+            originX: stream.float64(),
+            originY: stream.float64(),
+            width: stream.float64(),
+            height: stream.float64(),
+        };
+    }
 }
 
 function read_otGROUP(stream) {
@@ -50,32 +64,46 @@ function read_otGROUP2D(stream) {
 // }
 
 function read_otLINE2D(stream) {
-    let data = {
+    const data = {
         ...readObject2D(stream),
         penHandle: stream.uint16(),
         brushHandle: stream.uint16(),
     };
-    const pointCount = stream.uint16();
 
-    data.points = new Array(pointCount);
-    for (let i = 0; i < pointCount; i++) data.points[i] = stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d();
+    const coordCount = stream.uint16() * 2;
+    data.coords = new Array(coordCount);
+    for (let i = 0; i < coordCount; i += 2) {
+        if (stream.meta.fileversion < 0x200) {
+            data.coords[i + 0] = stream.int16();
+            data.coords[i + 1] = stream.int16();
+        } else {
+            data.coords[i + 0] = stream.float64();
+            data.coords[i + 1] = stream.float64();
+        }
+    }
 
-    if (stream.meta.fileversion <= 0x0200) return data;
+    if (stream.meta.fileversion <= 0x0200) {
+        return data;
+    }
 
-    const size = stream.bytes(1)[0];
-
-    if (size) data.arrows = stream.bytes(size);
-
+    const size = stream.byte();
+    if (size) {
+        data.arrows = stream.bytes(size);
+    }
     return data;
 }
 
 function readBitmap(stream) {
+    const fv = stream.meta.fileversion;
     return {
         ...readObject2D(stream),
-        bmpOrigin: stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d(),
-        bmpSize: stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d(),
-        bmpAngle: stream.int16(),
-        bmpHandle: stream.uint16(),
+        hidden: false,
+        cropX: fv < 0x200 ? stream.int16() : stream.float64(),
+        cropY: fv < 0x200 ? stream.int16() : stream.float64(),
+        cropW: fv < 0x200 ? stream.int16() : stream.float64(),
+        cropH: fv < 0x200 ? stream.int16() : stream.float64(),
+        angle: stream.int16(),
+        dibHandle: stream.uint16(),
     };
 }
 
@@ -99,14 +127,14 @@ function read_otTEXT2D(stream) {
 function read_otCONTROL2D(stream) {
     const res = {
         ...readObject2D(stream),
-        classname: stream.string(),
+        className: stream.string().toUpperCase(),
         text: stream.string(),
         dwStyle: stream.int32(),
         exStyle: stream.int32(),
         id: stream.uint16(),
         controlSize: stream.point2dInt(),
     };
-    if (!["Edit", "Button", "ComboBox"].includes(res.classname)) throw new Error(`Неизвестный тип контрола: ${res.classname}`);
+    if (!["EDIT", "BUTTON", "COMBOBOX"].includes(res.className)) throw Error(`Неизвестный тип контрола: ${res.className}`);
     stream.uint16(); //unused
     return res;
 }

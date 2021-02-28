@@ -1,7 +1,27 @@
-import { ClassModel, ClassVars, Constant, SchemaFunctions, VarType } from ".";
-import { funcTable, graphicsVarName, projectVarName, schemaVarName } from "./funcTable";
+import { VarType } from "stratum/common/varType";
+import { Constant, Enviroment } from "stratum/env";
+import { Schema } from "stratum/schema";
+import { ClassModel, ClassVars } from ".";
 import { normalizeSource } from "./normalizer";
 import { parse } from "./parser";
+
+const prefix = "stratum_";
+const prefLen = prefix.length;
+const envFuncs = (Object.getOwnPropertyNames(Enviroment.prototype) as (keyof Enviroment)[]).filter((c) => {
+    const v = Enviroment.prototype[c];
+    return typeof v === "function" && v.name.startsWith(prefix);
+});
+const schemaFuncs = (Object.getOwnPropertyNames(Schema.prototype) as (keyof Schema)[]).filter((c) => {
+    const v = Schema.prototype[c];
+    return typeof v === "function" && v.name.startsWith(prefix);
+});
+const funcTable = new Map([
+    ["ROUND", "roundPrec"],
+    ["ADDSLASH", "addSlash"],
+    ["NEW", Enviroment.prototype.stratum_newArray.name],
+    ...schemaFuncs.map((c): [string, string] => [c.substring(prefLen).toUpperCase(), `schema.${c}`]),
+    ...envFuncs.map((c): [string, string] => [c.substring(prefLen).toUpperCase(), `env.${c}`]),
+]);
 
 const arrNames = new Map([
     [VarType.Float, "Floats"],
@@ -9,21 +29,21 @@ const arrNames = new Map([
     [VarType.ColorRef, "Ints"],
     [VarType.String, "Strings"],
 ]);
-const TLBVarName: keyof SchemaFunctions = "TLB";
+const TLBVarName: keyof Schema = "TLB";
 
 const header = `
 function right(a, n) {
     return a.substr(a.length - n);
 }
 function roundPrec(a, b) {
-    const pw = Math.ceil(100 ** b);
+    const pw = Math.ceil(10 ** b);
     return Math.round(a * pw + Number.EPSILON) / pw;
 }
 function addSlash(a) {
     return a[a.length - 1] === "\\\\" ? a : a + "\\\\";
 }
-const { ${TLBVarName} } = ${schemaVarName};
-const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings, ${projectVarName}, ${graphicsVarName} } = env;
+const { ${TLBVarName} } = schema;
+const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings } = env;
 `;
 
 let _hasBug = false;
@@ -67,7 +87,18 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
         case "call": {
             const nameUC = subop.name.toUpperCase();
             if (nameUC === "EXIT") return "return";
-            if (nameUC === "SYSTEM") return "0";
+
+            if (nameUC === "INC") {
+                const floatArr = arrNames.get(VarType.Float);
+                if (!vars) throw Error("Имидж не имеет переменных");
+
+                const a = subop.args[0];
+                const nm = a.first.name;
+                const id = vars.nameUCToId.get(nm.toUpperCase());
+                if (id === undefined) throw Error(`Неопределенная переменная в функции Inc: ${nm}`);
+                const arg = subop.args.length < 2 ? 1 : opToString(subop.args[1], vars);
+                return `${a.first.isNew ? "new" : "old"}${floatArr}[TLB[${id}]] += ${arg}`;
+            }
 
             if (nameUC === "GETTIME") {
                 const floatArr = arrNames.get(VarType.Float);
@@ -78,7 +109,7 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetTime: ${nm}`);
                     return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
-                return `env.getTime(${a.join(",")})`;
+                return `env.stratum_getTime(${a.join(",")})`;
             }
 
             if (nameUC === "GETDATE") {
@@ -90,7 +121,7 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetDate: ${nm}`);
                     return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
-                return `env.getDate(${a.join(",")})`;
+                return `env.stratum_getDate(${a.join(",")})`;
             }
 
             if (nameUC === "GETACTUALSIZE2D") {
@@ -104,7 +135,7 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${nm}`);
                     return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
-                return `${graphicsVarName}.getActualSize2d(${f1.join(",")},${f2.join(",")})`;
+                return `env.stratum_getActualSize2d(${f1.join(",")},${f2.join(",")})`;
             }
 
             const fargs = subop.args.map((a: any) => opToString(a, vars));

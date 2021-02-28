@@ -7,8 +7,10 @@ export interface ElementBase {
 }
 
 export interface Element2dBase extends ElementBase {
-    position: Point2D;
-    size: Point2D;
+    originX: number;
+    originY: number;
+    width: number;
+    height: number;
 }
 
 export interface GroupElement extends ElementBase {
@@ -20,24 +22,26 @@ export interface LineElement extends Element2dBase {
     type: "otLINE2D";
     penHandle: number;
     brushHandle: number;
-    points: Point2D[];
+    coords: number[];
     arrows?: Uint8Array;
 }
 
 interface BitmapBase extends Element2dBase {
-    bmpOrigin: Point2D;
-    bmpSize: Point2D;
-    bmpAngle: number;
+    hidden: boolean;
+    cropX: number;
+    cropY: number;
+    cropW: number;
+    cropH: number;
+    angle: number;
+    dibHandle: number;
 }
 
 export interface BitmapElement extends BitmapBase {
     type: "otBITMAP2D";
-    bmpHandle: number;
 }
 
 export interface DoubleBitmapElement extends BitmapBase {
     type: "otDOUBLEBITMAP2D";
-    bmpHandle: number;
 }
 
 export interface TextElement extends Element2dBase {
@@ -49,7 +53,7 @@ export interface TextElement extends Element2dBase {
 
 export interface ControlElement extends Element2dBase {
     type: "otCONTROL2D";
-    classname: "Edit" | "Button" | "ComboBox";
+    className: "EDIT" | "BUTTON" | "COMBOBOX";
     text: string;
     dwStyle: number;
     exStyle: number;

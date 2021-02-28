@@ -2,13 +2,7 @@
  * Код для чтения размерностей битовых карт, объединения двойных битовых карт в изображение с прозрачностью.
  */
 import { BinaryStream, FileSignatureError } from "stratum/helpers/binaryStream";
-import { decodeBmp, readBMPSize } from "./bmpDecoder";
-
-export interface Base64Image {
-    base64Image: string;
-    width: number;
-    height: number;
-}
+import { decodeBmp } from "./bmpDecoder";
 
 function readBitmapSize(stream: BinaryStream) {
     const _pos = stream.position;
@@ -23,18 +17,25 @@ function u8toView(arr: Uint8Array) {
     return new DataView(arr.buffer, arr.byteOffset);
 }
 
-export function readBmpFile(stream: BinaryStream): Base64Image {
+export function readBmpFile(stream: BinaryStream): HTMLCanvasElement {
     const bmpRaw = stream.bytes(readBitmapSize(stream));
 
-    const { width, height } = readBMPSize(u8toView(bmpRaw));
-    const blob = new Blob([bmpRaw], { type: "image/bmp" });
-    const urlCreator = window.URL || window.webkitURL;
-    return { base64Image: urlCreator.createObjectURL(blob), width, height };
+    const { data, width, height } = decodeBmp(u8toView(bmpRaw));
+
+    // for (let i = 3; i < data.length; i += 4) {
+    //     data[i] = 255;
+    // }
+
+    const cnv = document.createElement("canvas");
+    cnv.width = width;
+    cnv.height = height;
+    const ctx = cnv.getContext("2d", { alpha: false });
+    if (!ctx) throw Error(`Не удалось создать изображение ${stream.meta.filepathDos}`);
+    ctx.putImageData(new ImageData(data, width, height), 0, 0);
+    return cnv;
 }
 
-const cnv = document.createElement("canvas");
-const ctx = cnv.getContext("2d")!;
-export function readDbmFile(stream: BinaryStream): Base64Image {
+export function readDbmFile(stream: BinaryStream): HTMLCanvasElement {
     const bmpRaw1 = stream.bytes(readBitmapSize(stream));
     const bmpRaw2 = stream.bytes(readBitmapSize(stream));
 
@@ -44,8 +45,11 @@ export function readDbmFile(stream: BinaryStream): Base64Image {
     for (let i = 3; i < imageData.length && i < maskData.length; i += 4) {
         imageData[i] = 255 ^ maskData[i - 1];
     }
+    const cnv = document.createElement("canvas");
     cnv.width = width;
     cnv.height = height;
+    const ctx = cnv.getContext("2d", { alpha: true });
+    if (!ctx) throw Error(`Не удалось создать изображение ${stream.meta.filepathDos}`);
     ctx.putImageData(new ImageData(imageData, width, height), 0, 0);
-    return { base64Image: cnv.toDataURL(), width, height };
+    return cnv;
 }

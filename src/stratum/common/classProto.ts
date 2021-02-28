@@ -1,7 +1,8 @@
 import { ClassInfoBody, readClsFileBody, readClsFileHeader } from "stratum/fileFormats/cls";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { ClassModel, ClassVars, translate, VarType } from "stratum/translator";
+import { ClassModel, ClassVars, translate } from "stratum/translator";
 import { parseVarValue } from "./parseVarValue";
+import { VarType } from "./varType";
 
 type LazyBody =
     | {
@@ -56,8 +57,16 @@ export class ClassProto {
         return this.body.iconFile;
     }
 
+    get iconIndex() {
+        return this.body.iconIndex;
+    }
+
     get scheme() {
         return this.body.scheme;
+    }
+
+    alwaysUseIcon() {
+        return (this.body.flags || 0) & 4096;
     }
 
     private _vars?: ClassVars;

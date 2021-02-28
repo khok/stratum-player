@@ -1,9 +1,8 @@
 import { WindowHost, WindowHostWindow } from "stratum/api";
+import { Constant, EventSubscriber, NumBool } from "stratum/env";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { Constant, EventSubscriber, NumBool } from "stratum/translator";
-import { InputWrapper, InputWrapperOptions } from "./html";
-import { FabricRenderer } from "./renderers";
-import { Scene } from "./scene";
+import { InputWrapper, InputWrapperOptions, Scene } from "./scene";
+import { HTMLFactory } from "./scene/scene";
 
 export interface SceneWindowArgs {
     handle: number;
@@ -14,19 +13,17 @@ export interface SceneWindowArgs {
     disableResize?: boolean;
 }
 
-export class SceneWindow {
+export class SceneWindow implements HTMLFactory {
     private readonly classname: string = "";
     private readonly filename: string = "";
-    private rnd: FabricRenderer;
     private resizible: boolean;
     private ignoreSetSize: boolean;
 
     private wnd: WindowHostWindow;
-    private prevWidth: number = 0;
-    private prevHeight: number = 0;
 
     readonly scene: Scene;
     readonly view: HTMLDivElement;
+    private readonly cnv: HTMLCanvasElement;
 
     constructor({ handle, wname, attribute, vdr, host, disableResize }: SceneWindowArgs) {
         this.ignoreSetSize = disableResize ?? false;
@@ -47,20 +44,19 @@ export class SceneWindow {
         view.style.setProperty("width", "100%");
         view.style.setProperty("height", "100%");
 
-        const cnv = document.createElement("canvas");
+        const cnv = (this.cnv = document.createElement("canvas"));
         cnv.style.setProperty("top", "0px");
         cnv.style.setProperty("left", "0px");
         cnv.style.setProperty("position", "absolute");
         // cnv.style.setProperty("touch-action", "pan-x pan-y");
         cnv.style.setProperty("touch-action", "pinch-zoom");
 
-        const renderer = (this.rnd = new FabricRenderer(cnv, this, handle));
         view.appendChild(cnv);
 
         this.wnd = host.window({ title: attribute.toUpperCase().includes("WS_NOCAPTION") ? undefined : wname, view });
-        this.prevWidth = this.width;
-        this.prevWidth = this.height;
-        this.scene = new Scene({ vdr, renderer });
+        cnv.width = this.width();
+        cnv.height = this.height();
+        this.scene = new Scene(cnv, this, vdr);
     }
 
     textInput(options: InputWrapperOptions) {
@@ -68,7 +64,7 @@ export class SceneWindow {
     }
 
     private closeSubs = new Set<EventSubscriber>();
-    onClose(sub: EventSubscriber) {
+    onSpaceDone(sub: EventSubscriber) {
         this.closeSubs.add(sub);
     }
     offClose(sub: EventSubscriber) {
@@ -86,34 +82,31 @@ export class SceneWindow {
         this.sizeSubs.delete(sub);
     }
 
+    onControlNotifty(sub: EventSubscriber, handle: number) {
+        this.scene.onControlNotify(sub, handle);
+    }
+    offControlNotify(sub: EventSubscriber) {
+        this.scene.offControlNotify(sub);
+    }
+
     onMouse(sub: EventSubscriber, code: Constant, handle: number) {
-        this.rnd.onMouse(sub, code, handle);
+        this.scene.onMouse(sub, code, handle);
     }
     offMouse(sub: EventSubscriber, code: Constant) {
-        this.rnd.offMouse(sub, code);
+        this.scene.offMouse(sub, code);
     }
 
     redraw() {
-        const { view, rnd } = this;
+        const { view, scene } = this;
         const nw = view.clientWidth;
         const nh = view.clientHeight;
 
-        let changed = false;
-        if (nw !== this.prevWidth) {
-            this.prevWidth = nw;
-            rnd.setWidth(nw);
-            changed = true;
-        }
-        if (nh !== this.prevHeight) {
-            this.prevHeight = nh;
-            rnd.setHeight(nh);
-            changed = true;
-        }
-        if (changed) {
-            rnd.calcOffset();
+        if (nw !== this.cnv.width || nh !== this.cnv.height) {
+            this.cnv.width = nw;
+            this.cnv.height = nh;
             for (const c of this.sizeSubs) c.receive(Constant.WM_SIZE, nw, nh);
         }
-        this.rnd.redraw();
+        scene.render();
     }
 
     close() {
@@ -127,12 +120,12 @@ export class SceneWindow {
         return "";
     }
 
-    get width() {
+    width() {
         const wd = this.view.clientWidth;
         return wd > 0 ? wd : window.innerWidth;
     }
 
-    get height() {
+    height() {
         const wh = this.view.clientHeight;
         return wh > 0 ? wh : window.innerHeight;
     }
@@ -157,11 +150,17 @@ export class SceneWindow {
         return 1;
     }
 
-    originX = 0;
-    originY = 0;
+    private _originX = 0;
+    private _originY = 0;
+    originX(): number {
+        return this._originX;
+    }
+    originY(): number {
+        return this._originY;
+    }
     setOrigin(x: number, y: number): NumBool {
-        this.originX = x;
-        this.originY = y;
+        this._originX = x;
+        this._originY = y;
         return 1;
     }
 }

@@ -1,10 +1,10 @@
 export interface InputWrapperOptions {
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    text?: string;
-    hidden?: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    text: string;
+    hidden: boolean;
 }
 
 export class InputWrapper {
@@ -20,32 +20,30 @@ export class InputWrapper {
         elem.setAttribute("type", "text");
         elem.setAttribute("class", "stratum-textbox");
         elem.style.setProperty("position", "absolute");
-        this.set(opts);
+        this.setOrigin(opts.x, opts.y);
+        this.setSize(opts.width, opts.height);
+        this.setText(opts.text);
+        this.setHidden(opts.hidden);
         root.appendChild(elem);
     }
 
-    private updateValues() {
-        const { elem, x, y, width, height, hidden, text } = this;
-        elem.style.setProperty("left", x + "px");
-        elem.style.setProperty("top", y + "px");
-        elem.style.setProperty("width", width + "px");
-        elem.style.setProperty("height", height + "px");
-        elem.hidden = hidden;
-        elem.value = text;
+    setOrigin(x: number, y: number) {
+        this.elem.style.setProperty("left", x + "px");
+        this.elem.style.setProperty("top", y + "px");
+    }
+    setSize(width: number, height: number) {
+        this.elem.style.setProperty("width", width + "px");
+        this.elem.style.setProperty("height", height + "px");
+    }
+    setHidden(hidden: boolean) {
+        this.elem.hidden = hidden;
     }
 
-    set(options: InputWrapperOptions) {
-        Object.assign(this, options);
-        this.updateValues();
-        return this;
-    }
-
-    get text(): string {
+    text(): string {
         return this.elem.value;
     }
-
-    set text(value) {
-        this.elem.value = value;
+    setText(text: string) {
+        this.elem.value = text;
     }
 
     destroy() {

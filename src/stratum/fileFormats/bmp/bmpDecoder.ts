@@ -130,15 +130,7 @@ class BmpDecoder {
         const bitn = "bit" + this.bitPP;
         const len = this.width * this.height * 4;
         this.data = new Uint8ClampedArray(len);
-        if (
-            bitn !== "bit1" &&
-            bitn !== "bit4" &&
-            bitn !== "bit8" &&
-            bitn !== "bit15" &&
-            bitn !== "bit16" &&
-            bitn !== "bit24" &&
-            bitn !== "bit32"
-        )
+        if (bitn !== "bit1" && bitn !== "bit4" && bitn !== "bit8" && bitn !== "bit15" && bitn !== "bit16" && bitn !== "bit24" && bitn !== "bit32")
             throw new Error("Unknown bit: " + bitn);
         this[bitn]();
     }
@@ -159,7 +151,7 @@ class BmpDecoder {
                         this.data[location + i * 4] = rgb.red;
                         this.data[location + i * 4 + 1] = rgb.green;
                         this.data[location + i * 4 + 2] = rgb.blue;
-                        this.data[location + i * 4 + 3] = 0;
+                        this.data[location + i * 4 + 3] = 255;
                     } else {
                         break;
                     }
@@ -276,7 +268,7 @@ class BmpDecoder {
                     this.data[location + 4] = rgb.red;
                     this.data[location + 4 + 1] = rgb.green;
                     this.data[location + 4 + 2] = rgb.blue;
-                    this.data[location + 4 + 3] = 0;
+                    this.data[location + 4 + 3] = 255;
                 }
 
                 if (mode !== 0) {

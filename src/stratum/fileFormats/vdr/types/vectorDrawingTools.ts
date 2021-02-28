@@ -44,45 +44,37 @@ export interface StringToolParams extends ToolBase {
     text: string;
 }
 
+export interface TextToolFragment {
+    fgColor: number;
+    bgColor: number;
+    fontHandle: number;
+    stringHandle: number;
+}
+
 export interface TextToolParams extends ToolBase {
     type: "ttTEXT2D";
-    textCollection: {
-        foregroundColor: number;
-        backgroundColor: number;
-        fontHandle: number;
-        stringHandle: number;
-    }[];
+    textCollection: TextToolFragment[];
 }
 
-export interface BmpToolParams extends ToolBase {
+export interface DibToolParams extends ToolBase {
     type: "ttDIB2D";
-    base64Image: string;
-    width: number;
-    height: number;
+    img: HTMLCanvasElement;
 }
 
-export interface DoubleBmpToolParams extends ToolBase {
+export interface DoubleDibToolParams extends ToolBase {
     type: "ttDOUBLEDIB2D";
-    base64Image: string;
-    width: number;
-    height: number;
+    img: HTMLCanvasElement;
 }
 
-export interface ExternalBmpToolParams extends ToolBase {
+export interface ExternalDibToolParams extends ToolBase {
     type: "ttREFTODIB2D";
     filename: string;
 }
 
-export interface ExternalDoubleBmpToolParams extends ToolBase {
+export interface ExternalDoubleDibToolParams extends ToolBase {
     type: "ttREFTODOUBLEDIB2D";
     filename: string;
 }
 
-export type ImageToolParams = BmpToolParams | DoubleBmpToolParams | ExternalBmpToolParams | ExternalDoubleBmpToolParams;
-export type VectorDrawingToolParams =
-    | BrushToolParams
-    | PenToolParams
-    | FontToolParams
-    | StringToolParams
-    | TextToolParams
-    | ImageToolParams;
+export type ImageToolParams = DibToolParams | DoubleDibToolParams | ExternalDibToolParams | ExternalDoubleDibToolParams;
+export type VectorDrawingToolParams = BrushToolParams | PenToolParams | FontToolParams | StringToolParams | TextToolParams | ImageToolParams;

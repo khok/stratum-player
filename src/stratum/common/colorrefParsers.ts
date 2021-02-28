@@ -26,6 +26,30 @@ const systemColorTable = [
     "white",
 ];
 
+// const systemColorTable2: [number, number, number][] = [
+//     [128, 128, 128], //"gray"
+//     [0, 0, 255], //"blue"
+//     [0, 0, 128], //"navy"
+//     [128, 128, 128], //"gray"
+//     [181, 181, 181], //"#b5b5b5"
+//     [255, 255, 255], //"white"
+//     [0, 0, 0], //"black"
+//     [0, 0, 0], //"black"
+//     [0, 0, 0], //"black"
+//     [255, 255, 255], //"white"
+//     [128, 128, 128], //"gray"
+//     [128, 128, 128], //"gray"
+//     [128, 128, 128], //"gray"
+//     [0, 0, 128], //"navy"
+//     [255, 255, 255], //"white"
+//     [181, 181, 181], //"#b5b5b5"
+//     [128, 128, 128], //"gray"
+//     [128, 128, 128], //"gray"
+//     [0, 0, 0], //"black"
+//     [128, 128, 128], //"gray"
+//     [255, 255, 255], //"white"
+// ].map((e) => [e[0] / 255, e[1] / 255, e[2] / 255]);
+
 const transparentFlag = 1 << 24;
 const syscolorFlag = 2 << 24;
 
@@ -60,7 +84,7 @@ export function parseColorRef(value: string) {
  *
  * Вызывается из системы рендереринга.
  */
-export function colorRefToColor(colorref: number) {
+export function colorrefToCSSColor(colorref: number) {
     if (colorref & transparentFlag) return "transparent";
 
     const r = colorref & 255;
@@ -70,3 +94,14 @@ export function colorRefToColor(colorref: number) {
     const b = (colorref >> 16) & 255;
     return `rgb(${r},${g},${b})`;
 }
+
+// export function colorrefToRGB(colorref: number): [number, number, number] | null {
+//     if (colorref & transparentFlag) return null;
+
+//     const r = colorref & 255;
+//     if (colorref & syscolorFlag) return systemColorTable2[r] || [0, 0, 0];
+
+//     const g = (colorref >> 8) & 255;
+//     const b = (colorref >> 16) & 255;
+//     return [r / 255, g / 255, b / 255];
+// }

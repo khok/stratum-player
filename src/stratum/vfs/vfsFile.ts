@@ -1,6 +1,6 @@
 import { FileSystemFile } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
-import { Base64Image, readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
+import { readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
 import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
@@ -39,7 +39,10 @@ export class VFSFile implements FileSystemFile {
     }
 
     private cache?: ReturnType<VFSFile["read"]>;
-    private read(data: ArrayBuffer, type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm"): ProjectInfo | ClassProto | VariableSet | VectorDrawing | Base64Image {
+    private read(
+        data: ArrayBuffer,
+        type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm"
+    ): ProjectInfo | ClassProto | VariableSet | VectorDrawing | HTMLCanvasElement {
         if (this.cache) return this.cache;
         const st = new BinaryStream(data, { filepathDos: this.pathDos });
         switch (type) {
@@ -82,8 +85,8 @@ export class VFSFile implements FileSystemFile {
     readSyncAs(type: "cls"): ClassProto | undefined;
     readSyncAs(type: "stt"): VariableSet | undefined;
     readSyncAs(type: "vdr"): VectorDrawing | undefined;
-    readSyncAs(type: "bmp"): Base64Image;
-    readSyncAs(type: "dbm"): Base64Image;
+    readSyncAs(type: "bmp"): HTMLCanvasElement;
+    readSyncAs(type: "dbm"): HTMLCanvasElement;
     readSyncAs(type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm") {
         const { buf } = this;
         if (!(buf instanceof ArrayBuffer)) {

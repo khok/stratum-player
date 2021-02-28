@@ -1,10 +1,9 @@
 import { Project, ProjectOptions, SmoothExecutor, WindowHost } from "stratum/api";
 import { ClassLibrary } from "stratum/common/classLibrary";
+import { Enviroment } from "stratum/env";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
-import { GraphicsManager } from "stratum/graphics";
 import { Schema } from "stratum/schema";
-import { Enviroment, NumBool, ProjectFunctions } from "stratum/translator";
 import { unreleasedFunctions } from "stratum/translator/translator";
 import { VFSDir } from "stratum/vfs";
 import { SimpleWs } from "./ws";
@@ -17,8 +16,7 @@ export interface ProjectResources {
     options?: ProjectOptions;
 }
 
-export class Player implements Project, ProjectFunctions {
-    private shouldClose = false;
+export class Player implements Project {
     private _state: Project["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
     private _computer = new SmoothExecutor();
@@ -28,11 +26,12 @@ export class Player implements Project, ProjectFunctions {
     private readonly classes: ClassLibrary;
     private readonly stt?: VariableSet | undefined;
 
-    private readonly graphics: GraphicsManager = new GraphicsManager(new SimpleWs());
+    private host = new SimpleWs();
     private loop: (() => boolean) | undefined;
 
     readonly options: ProjectOptions;
     readonly dir: VFSDir;
+    env: Enviroment | null = null;
 
     constructor({ dir, prjInfo, classes, stt, options }: ProjectResources) {
         this.dir = dir;
@@ -67,10 +66,10 @@ export class Player implements Project, ProjectFunctions {
     play(host: WindowHost): this;
     play(ghost?: HTMLElement | null | WindowHost): this {
         if (this.loop) return this;
-        if (ghost) this.graphics.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
+        if (ghost) this.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
 
         unreleasedFunctions.clear();
-        const env = new Enviroment({ graphics: this.graphics, project: this });
+        const env = (this.env = new Enviroment(this.classes, this.dir, this.host));
         const schema = Schema.build(this.prjInfo.rootClassName, this.classes, env);
         if (unreleasedFunctions.size > 0) console.log(`Нереализованные функции:\n${[...unreleasedFunctions.values()].join("\n")}`);
         env.init(schema.createTLB()); // Инициализируем память
@@ -80,7 +79,7 @@ export class Player implements Project, ProjectFunctions {
 
         this._diag.iterations = 0;
         // Main Loop
-        this.shouldClose = false;
+        env.shouldClose = false;
         this.loop = () => {
             env.sync().assertZeroIndexEmpty();
             try {
@@ -92,7 +91,7 @@ export class Player implements Project, ProjectFunctions {
                 return false;
             }
             ++this._diag.iterations;
-            if (this.shouldClose === true) {
+            if (env.shouldClose === true) {
                 this.close();
                 this.handlers.closed.forEach((h) => h());
                 return false;
@@ -108,7 +107,10 @@ export class Player implements Project, ProjectFunctions {
     close(): this {
         this.computer.stop();
         this.loop = undefined;
-        this.graphics.closeAllWindows();
+        if (this.env) {
+            this.env.closeAllWindows();
+            this.env = null;
+        }
         this._state = "closed";
         return this;
     }
@@ -141,42 +143,5 @@ export class Player implements Project, ProjectFunctions {
         if (handler) this.handlers[event].delete(handler);
         else this.handlers[event].clear();
         return this;
-    }
-
-    // Методы ProjectManager
-    closeAll(): void {
-        this.shouldClose = true;
-    }
-    openSchemeWindow(wname: string, className: string, attribute: string): number {
-        const vdr = this.classes.getComposedScheme(className);
-        return this.graphics.openWindow(wname, attribute, vdr, this);
-    }
-    loadSpaceWindow(wname: string, fileName: string, attribute: string): number {
-        const file = this.dir.get(fileName);
-        const vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
-        return this.graphics.openWindow(wname, attribute, vdr, this);
-    }
-    createObjectFromFile2D(hspace: number, fileName: string, x: number, y: number, flags: number): number {
-        const file = this.dir.get(fileName);
-        const vdr = file && !file.dir && file.readSyncAs("vdr");
-        return vdr ? this.graphics.insertVDR(hspace, x, y, flags, vdr) : 0;
-    }
-    createDIB2d(hspace: number, fileName: string): number {
-        const file = this.dir.get(fileName);
-        const bmp = file && !file.dir && file.readSyncAs("bmp");
-        return bmp ? this.graphics.createBitmap(hspace, bmp) : 0;
-    }
-    createDoubleDib2D(hspace: number, fileName: string): number {
-        const file = this.dir.get(fileName);
-        const dbm = file && !file.dir && file.readSyncAs("dbm");
-        return dbm ? this.graphics.createDoubleBitmap(hspace, dbm) : 0;
-    }
-    getClassDirectory(className: string): string {
-        const proto = this.classes.get(className);
-        return proto !== undefined ? proto.directoryDos : "";
-    }
-    fileExist(fileName: string): NumBool {
-        const file = this.dir.get(fileName);
-        return file !== undefined ? 1 : 0;
     }
 }

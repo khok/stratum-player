@@ -109,8 +109,8 @@ function _readVectorDrawing(stream) {
 const map = {
     otBRUSHCOLLECTION: "brushTools",
     otPENCOLLECTION: "penTools",
-    otDIBCOLLECTION: "bitmapTools",
-    otDOUBLEDIBCOLLECTION: "doubleBitmapTools",
+    otDIBCOLLECTION: "dibTools",
+    otDOUBLEDIBCOLLECTION: "doubleDibTools",
     otSTRINGCOLLECTION: "stringTools",
     otFONTCOLLECTION: "fontTools",
     otTEXTCOLLECTION: "textTools",

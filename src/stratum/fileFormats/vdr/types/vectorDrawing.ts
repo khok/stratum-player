@@ -1,11 +1,11 @@
 import { Point2D } from "stratum/helpers/types";
 import { VectorDrawingElement } from "./vectorDrawingElements";
 import {
-    BmpToolParams,
     BrushToolParams,
-    DoubleBmpToolParams,
-    ExternalBmpToolParams,
-    ExternalDoubleBmpToolParams,
+    DibToolParams,
+    DoubleDibToolParams,
+    ExternalDibToolParams,
+    ExternalDoubleDibToolParams,
     FontToolParams,
     PenToolParams,
     StringToolParams,
@@ -13,11 +13,11 @@ import {
 } from "./vectorDrawingTools";
 
 export interface VectorDrawingTools {
-    bitmapTools?: (BmpToolParams | ExternalBmpToolParams)[];
     brushTools?: BrushToolParams[];
-    doubleBitmapTools?: (DoubleBmpToolParams | ExternalDoubleBmpToolParams)[];
-    fontTools?: FontToolParams[];
     penTools?: PenToolParams[];
+    dibTools?: (DibToolParams | ExternalDibToolParams)[];
+    doubleDibTools?: (DoubleDibToolParams | ExternalDoubleDibToolParams)[];
+    fontTools?: FontToolParams[];
     stringTools?: StringToolParams[];
     textTools?: TextToolParams[];
 }

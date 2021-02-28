@@ -1,4 +1,5 @@
-import { MemorySize, VarType } from "stratum/translator";
+import { VarType } from "stratum/common/varType";
+import { MemorySize } from "stratum/env";
 
 export class VarGraphNode {
     private indexWasSet = false;

@@ -1,42 +1,44 @@
-[
-	{
-		"path": "$ROOTPATH$\\src\\stratum\\graphics\\manager\\graphicsManager.ts",
-		"bookmarks": [
-			{
-				"line": 36,
-				"column": 33,
-				"label": "Вот здесь нужно не выдавать ошибку а возвращать уже открытый хандл"
-			}
-		]
-	},
-	{
-		"path": "$ROOTPATH$\\examples\\player.js",
-		"bookmarks": [
-			{
-				"line": 120,
-				"column": 24,
-				"label": "Вот здесь запретить пользователю рестартить ошибочный проект"
-			}
-		]
-	},
-	{
-		"path": "$ROOTPATH$\\src\\stratum\\schema\\schema.ts",
-		"bookmarks": [
-			{
-				"line": 396,
-				"column": 0,
-				"label": "Вызвать этот метод один раз при сборке схемы"
-			}
-		]
-	},
-	{
-		"path": "$ROOTPATH$\\src\\stratum\\graphics\\simpleGraphicsManager.ts",
-		"bookmarks": [
-			{
-				"line": 576,
-				"column": 36,
-				"label": "Закрывать окна только опр. проекта"
-			}
-		]
-	}
-]
+{
+	"files": [
+		{
+			"path": "src/stratum/graphics/manager/graphicsManager.ts",
+			"bookmarks": [
+				{
+					"line": 36,
+					"column": 33,
+					"label": "Вот здесь нужно не выдавать ошибку а возвращать уже открытый хандл"
+				}
+			]
+		},
+		{
+			"path": "examples/player.js",
+			"bookmarks": [
+				{
+					"line": 120,
+					"column": 24,
+					"label": "Вот здесь запретить пользователю рестартить ошибочный проект"
+				}
+			]
+		},
+		{
+			"path": "src/stratum/schema/schema.ts",
+			"bookmarks": [
+				{
+					"line": 397,
+					"column": 0,
+					"label": "вызывать один раз при сборке схемы"
+				}
+			]
+		},
+		{
+			"path": "src/stratum/graphics/simpleGraphicsManager.ts",
+			"bookmarks": [
+				{
+					"line": 576,
+					"column": 36,
+					"label": "Закрывать окна только опр. проекта"
+				}
+			]
+		}
+	]
+}
