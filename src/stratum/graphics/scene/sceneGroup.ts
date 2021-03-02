@@ -1,18 +1,14 @@
 import { NumBool } from "stratum/env";
-import { SceneMember } from "./scene";
+import { Scene, SceneMember } from "./scene";
 
 export interface GroupArgs {
     handle: number;
     name?: string;
 }
 
-export interface ObjectStorage {
-    readonly objects: ReadonlyMap<number, SceneMember>;
-}
-
 export class SceneGroup implements SceneMember {
     readonly type = "group";
-    private scene: ObjectStorage;
+    private scene: Scene;
 
     private children: SceneMember[];
 
@@ -26,7 +22,7 @@ export class SceneGroup implements SceneMember {
     name: string;
     markDeleted: boolean;
 
-    constructor(scene: ObjectStorage, { handle, name }: GroupArgs) {
+    constructor(scene: Scene, { handle, name }: GroupArgs) {
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";
@@ -98,13 +94,28 @@ export class SceneGroup implements SceneMember {
     }
 
     originX(): number {
-        return this._minX;
+        const mat = this.scene.invMatrix;
+        const realX = this._minX;
+        const realY = this._minY;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        return (realX * mat[0] + realY * mat[3] + mat[6]) / w;
     }
     originY(): number {
-        return this._minY;
+        const mat = this.scene.invMatrix;
+        const realX = this._minX;
+        const realY = this._minY;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        return (realX * mat[1] + realY * mat[4] + mat[7]) / w;
     }
     setOrigin(x: number, y: number): NumBool {
-        this.onParentMoved(x - this._minX, y - this._minY);
+        const mat = this.scene.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
+        this.onParentMoved(realX - this._minX, realY - this._minY);
         this._parent?.updateBorders();
         return 1;
     }

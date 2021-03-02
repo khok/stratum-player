@@ -97,14 +97,29 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
     }
 
     originX(): number {
-        return this._originX;
+        const mat = this.scene.invMatrix;
+        const realX = this._originX;
+        const realY = this._originY;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        return (realX * mat[0] + realY * mat[3] + mat[6]) / w;
     }
     originY(): number {
-        return this._originY;
+        const mat = this.scene.invMatrix;
+        const realX = this._originX;
+        const realY = this._originY;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        return (realX * mat[1] + realY * mat[4] + mat[7]) / w;
     }
     setOrigin(x: number, y: number): NumBool {
-        this._originX = x;
-        this._originY = y;
+        const mat = this.scene.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
+        this._originX = realX;
+        this._originY = realY;
         this._parent?.updateBorders();
         this.scene.dirty = true;
         return 1;
@@ -152,13 +167,25 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
     pointOriginX(index: number): number {
         const coordIdx = index * 2;
         if (coordIdx < 0 || coordIdx >= this.coords.length) return 0;
-        return this.coords[coordIdx + 0] + this._originX;
+
+        const mat = this.scene.invMatrix;
+        const realX = this.coords[coordIdx + 0] + this._originX;
+        const realY = this.coords[coordIdx + 1] + this._originY;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        return (realX * mat[0] + realY * mat[3] + mat[6]) / w;
     }
 
     pointOriginY(index: number): number {
         const coordIdx = index * 2;
         if (coordIdx < 0 || coordIdx >= this.coords.length) return 0;
-        return this.coords[coordIdx + 1] + this._originY;
+
+        const mat = this.scene.invMatrix;
+        const realX = this.coords[coordIdx + 0] + this._originX;
+        const realY = this.coords[coordIdx + 1] + this._originY;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        return (realX * mat[1] + realY * mat[4] + mat[7]) / w;
     }
 
     private updateSize() {
@@ -195,8 +222,13 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         const coordIdx = index * 2;
         if (coordIdx < 0 || coordIdx >= this.coords.length) return 0;
 
-        const localX = x - this._originX;
-        const localY = y - this._originY;
+        const mat = this.scene.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
+        const localX = realX - this._originX;
+        const localY = realY - this._originY;
 
         this.coords[coordIdx + 0] = localX;
         this.coords[coordIdx + 1] = localY;
@@ -208,8 +240,13 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
     addPoint(index: number, x: number, y: number): NumBool {
         if (Math.floor(index) === 0) return 0;
 
-        const localX = x - this._originX;
-        const localY = y - this._originY;
+        const mat = this.scene.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
+        const localX = realX - this._originX;
+        const localY = realY - this._originY;
 
         const coordIdx = index * 2;
         if (coordIdx < 0 || coordIdx >= this.coords.length) {

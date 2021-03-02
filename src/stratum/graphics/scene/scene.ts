@@ -46,6 +46,25 @@ export interface HTMLFactory {
 }
 
 export class Scene implements Env.Scene, ToolStorage {
+    private static getInversedMatrix(matrix: number[]): number[] {
+        const det =
+            matrix[0] * (matrix[4] * matrix[8] - matrix[7] * matrix[5]) -
+            matrix[1] * (matrix[3] * matrix[8] - matrix[5] * matrix[6]) +
+            matrix[2] * (matrix[3] * matrix[7] - matrix[4] * matrix[6]);
+
+        return [
+            (matrix[4] * matrix[8] - matrix[7] * matrix[5]) / det,
+            (matrix[2] * matrix[7] - matrix[1] * matrix[8]) / det,
+            (matrix[1] * matrix[5] - matrix[2] * matrix[4]) / det,
+            (matrix[5] * matrix[6] - matrix[3] * matrix[8]) / det,
+            (matrix[0] * matrix[8] - matrix[2] * matrix[6]) / det,
+            (matrix[3] * matrix[2] - matrix[0] * matrix[5]) / det,
+            (matrix[3] * matrix[7] - matrix[6] * matrix[4]) / det,
+            (matrix[6] * matrix[1] - matrix[0] * matrix[7]) / det,
+            (matrix[0] * matrix[4] - matrix[3] * matrix[1]) / det,
+        ];
+    }
+
     private cnv: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private html: HTMLFactory;
@@ -56,7 +75,8 @@ export class Scene implements Env.Scene, ToolStorage {
     private layers: number;
 
     private fillStyle: string;
-    private matrix: number[];
+    readonly matrix: number[];
+    readonly invMatrix: number[];
 
     private primaryObjects: (SceneLine | SceneBitmap | SceneText | SceneControl)[];
 
@@ -103,6 +123,7 @@ export class Scene implements Env.Scene, ToolStorage {
             this.fonts = new Map();
             this.texts = new Map();
             this.matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+            this.invMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
             return;
         }
         // порядок важен - некоторые инструменты зависят от других.
@@ -120,6 +141,7 @@ export class Scene implements Env.Scene, ToolStorage {
         }
 
         this.matrix = vdr.crdSystem?.matrix.slice() || [1, 0, 0, 0, 1, 0, 0, 0, 1];
+        this.invMatrix = vdr.crdSystem ? Scene.getInversedMatrix(this.matrix) : [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
         this._originX = vdr.origin.x;
         this._originY = vdr.origin.y;
@@ -186,31 +208,58 @@ export class Scene implements Env.Scene, ToolStorage {
 
     createLine(coords: number[], penHandle: number, brushHandle: number): number {
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneLine(this, { handle, penHandle, brushHandle, coords });
+
+        const mat = this.matrix;
+
+        const realCoords = new Array(coords.length);
+        for (let i = 0; i < coords.length; i += 2) {
+            const x = coords[i];
+            const y = coords[i + 1];
+            const w = x * mat[2] + y * mat[5] + mat[8];
+            realCoords[i] = (x * mat[0] + y * mat[3] + mat[6]) / w;
+            realCoords[i + 1] = (x * mat[1] + y * mat[4] + mat[7]) / w;
+        }
+        const obj = new SceneLine(this, { handle, penHandle, brushHandle, coords: realCoords });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
     }
-    createBitmap(originX: number, originY: number, dibHandle: number, isDouble: boolean): number {
+    createBitmap(x: number, y: number, dibHandle: number, isDouble: boolean): number {
+        const mat = this.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneBitmap(this, { handle, originX, originY, type: isDouble ? "otDOUBLEBITMAP2D" : "otBITMAP2D", dibHandle });
+        const obj = new SceneBitmap(this, { handle, originX: realX, originY: realY, type: isDouble ? "otDOUBLEBITMAP2D" : "otBITMAP2D", dibHandle });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
     }
-    createText(originX: number, originY: number, angle: number, textToolHandle: number): number {
+    createText(x: number, y: number, angle: number, textToolHandle: number): number {
+        const mat = this.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneText(this, { handle, originX, originY, angle, textToolHandle });
+        const obj = new SceneText(this, { handle, originX: realX, originY: realY, angle, textToolHandle });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
     }
-    createControl(originX: number, originY: number, width: number, height: number, className: string, text: string, style: number) {
+    createControl(x: number, y: number, width: number, height: number, className: string, text: string, style: number) {
         if (className !== "EDIT" && className !== "BUTTON" && className !== "COMBOBOX") {
             return 0;
         }
+
+        const mat = this.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneControl(this, this.html, { handle, originX, originY, width, height, className, text });
+        const obj = new SceneControl(this, this.html, { handle, originX: realX, originY: realY, width, height, className, text });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
@@ -224,6 +273,11 @@ export class Scene implements Env.Scene, ToolStorage {
     }
     insertVectorDrawing(x: number, y: number, flags: number, vdr: VectorDrawing): number {
         if (!vdr.elements) return 0;
+
+        const mat = this.matrix;
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
         // Сохраняем текущие объекты/инструменты
         const pens = this.pens;
@@ -288,7 +342,7 @@ export class Scene implements Env.Scene, ToolStorage {
         } else {
             root = this.objects.values().next().value;
         }
-        root.setOrigin(x, y);
+        root.setOrigin(realX, realY);
 
         // Объединяем инструменты и объекты с имеющимися
         this.pens.forEach((e) => {
@@ -406,12 +460,22 @@ export class Scene implements Env.Scene, ToolStorage {
         return 1;
     }
 
-    getObjectFromPoint2d(x: number, y: number): number {
+    private getObjectInRealCoords(x: number, y: number): number {
         for (let i = this.primaryObjects.length - 1; i >= 0; --i) {
             const res = this.primaryObjects[i].tryClick(x, y, this.layers);
             if (res) return res.handle;
         }
         return 0;
+    }
+
+    getObjectFromPoint2d(x: number, y: number): number {
+        const mat = this.matrix;
+
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+
+        return this.getObjectInRealCoords(realX, realY);
     }
 
     isIntersect(obj1: number, obj2: number): NumBool {
@@ -618,13 +682,19 @@ export class Scene implements Env.Scene, ToolStorage {
         }
     }
 
-    private dispatchMouseEvent(subs: Map<EventSubscriber, number>, code: Constant, x: number, y: number, keys: number) {
+    private dispatchMouseEvent(subs: Map<EventSubscriber, number>, code: Constant, realX: number, realY: number, keys: number) {
+        const mat = this.invMatrix;
+
+        const w = realX * mat[2] + realY * mat[5] + mat[8];
+        const x = (realX * mat[0] + realY * mat[3] + mat[6]) / w;
+        const y = (realX * mat[1] + realY * mat[4] + mat[7]) / w;
+
         if (this.capture) {
             this.capture.receive(code, x, y, keys);
             // return;
         }
         for (const [sub, objHandle] of subs) {
-            if (objHandle === 0 || this.getObjectFromPoint2d(x, y) === objHandle) sub.receive(code, x, y, keys);
+            if (objHandle === 0 || this.getObjectInRealCoords(realX, realY) === objHandle) sub.receive(code, x, y, keys);
         }
     }
 
