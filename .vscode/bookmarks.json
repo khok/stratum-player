@@ -24,7 +24,7 @@
 			"path": "src/stratum/schema/schema.ts",
 			"bookmarks": [
 				{
-					"line": 397,
+					"line": 401,
 					"column": 0,
 					"label": "вызывать один раз при сборке схемы"
 				}

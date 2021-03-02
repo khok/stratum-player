@@ -99,10 +99,10 @@ export class Schema implements EventSubscriber {
         if (typeof id !== "undefined") target.setVarValue2(id, vars.types[id], value);
     }
 
-    private idTypes: number[] = [];
-    private cachedNames: string[] = [];
+    // private idTypes: number[] = [];
+    // private cachedNames: string[] = [];
     stratum_sendMessage(objectName: string, className: string, ...varNames: string[]): void {
-        const { env, vars, TLB, cachedNames } = this;
+        const { env, vars, TLB /*cachedNames*/ } = this;
         if (env.level > 58) return;
 
         if (objectName !== "") throw Error(`Вызов SendMessage с objectName=${objectName} не реализован`);
@@ -115,52 +115,52 @@ export class Schema implements EventSubscriber {
         const rec0 = receivers[0];
         const otherVars = rec0.vars;
 
-        const otherModel = rec0.model;
         if (vars.count === 0 || otherVars.count === 0) {
             for (const rec of receivers) {
                 if (rec === this) continue;
                 ++env.level;
-                otherModel(rec, env);
+                rec.forceCompute();
                 --env.level;
             }
             return;
         }
 
-        let cached = varNames.length === cachedNames.length;
-        if (cached === true) {
-            for (let i = 0; i < varNames.length; i++) {
-                if (varNames[i] !== cachedNames[i]) {
-                    cached = false;
-                    break;
-                }
-            }
+        // let cached = varNames.length === cachedNames.length;
+        // if (cached === true) {
+        //     for (let i = 0; i < varNames.length; i++) {
+        //         if (varNames[i] !== cachedNames[i]) {
+        //             cached = false;
+        //             break;
+        //         }
+        //     }
+        // }
+
+        // if (cached === false) {
+        // this.cachedNames = varNames;
+        // const idTypes = (this.idTypes = new Array<number>(varNames.length + varNames.length / 2));
+        const idTypes = new Array<number>(varNames.length + varNames.length / 2);
+        let idx = 0;
+        for (let i = 0; i < varNames.length; i += 2) {
+            const myVarName = varNames[i].toUpperCase();
+            const myId = vars.nameUCToId.get(myVarName);
+            if (typeof myId === "undefined") continue;
+
+            const otherVarName = varNames[i + 1].toUpperCase();
+            const otherId = otherVars.nameUCToId.get(otherVarName);
+            if (typeof otherId === "undefined") continue;
+
+            const typ = vars.types[myId];
+            const otherTyp = otherVars.types[otherId];
+            if (typ !== otherTyp) continue;
+
+            idTypes[idx + 0] = myId;
+            idTypes[idx + 1] = otherId;
+            idTypes[idx + 2] = typ;
+            idx += 3;
         }
+        // }
 
-        if (cached === false) {
-            this.cachedNames = varNames;
-            const idTypes = (this.idTypes = new Array<number>(varNames.length + varNames.length / 2));
-            let idx = 0;
-            for (let i = 0; i < varNames.length; i += 2) {
-                const myVarName = varNames[i].toUpperCase();
-                const myId = vars.nameUCToId.get(myVarName);
-                if (typeof myId === "undefined") continue;
-
-                const otherVarName = varNames[i + 1].toUpperCase();
-                const otherId = otherVars.nameUCToId.get(otherVarName);
-                if (typeof otherId === "undefined") continue;
-
-                const typ = vars.types[myId];
-                const otherTyp = otherVars.types[otherId];
-                if (typ !== otherTyp) continue;
-
-                idTypes[idx + 0] = myId;
-                idTypes[idx + 1] = otherId;
-                idTypes[idx + 2] = typ;
-                idx += 3;
-            }
-        }
-
-        const { idTypes } = this;
+        // const { idTypes } = this;
         const { news, olds } = env;
         for (const rec of receivers) {
             if (rec === this) continue;
@@ -180,7 +180,7 @@ export class Schema implements EventSubscriber {
                 // olds[typ][otherId] = news[typ][otherId] = news[typ][myId];
             }
             ++env.level;
-            otherModel(rec, env);
+            rec.forceCompute();
             --env.level;
             for (let i = 0; i < idTypes.length; i += 3) {
                 const typ = idTypes[i + 2];
@@ -362,6 +362,10 @@ export class Schema implements EventSubscriber {
         return this;
     }
 
+    private forceCompute() {
+        for (const c of this.children) c.compute();
+        this.model(this, this.env);
+    }
     /**
      * Рекурсивно вычисляет схему имиджа.
      */
