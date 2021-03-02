@@ -44,6 +44,7 @@ export class DIBTool implements Env.DIBTool {
                     if (!ctx) throw Error(`Не удалось загрузить изображение ${args.filename}`);
                     ctx.drawImage(img, 0, 0);
                     this.img = cnv.getContext("2d") || null;
+                    this.subs.forEach((s) => s.toolChanged());
                 });
                 img.src = url;
             } else {
@@ -53,6 +54,7 @@ export class DIBTool implements Env.DIBTool {
                         const cnv = readDbmFile(new BinaryStream(b, { filepathDos: url }));
                         if (cnv.width === 0 || cnv.height === 0) return;
                         this.img = cnv.getContext("2d") || null;
+                        this.subs.forEach((s) => s.toolChanged());
                     });
             }
         }

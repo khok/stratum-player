@@ -105,6 +105,7 @@ export class SceneWindow implements HTMLFactory {
             this.cnv.width = nw;
             this.cnv.height = nh;
             for (const c of this.sizeSubs) c.receive(Constant.WM_SIZE, nw, nh);
+            scene.dirty = true;
         }
         scene.render();
     }
