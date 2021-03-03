@@ -425,21 +425,28 @@ export class Scene implements Env.Scene, ToolStorage {
         const z = Math.floor(zOrder);
         const obj = this.primaryObjects.find((c) => c.handle === hobject);
         if (!obj) return 0;
-        const res: SceneVisualMember[] = [];
+        const res: typeof Scene.prototype["primaryObjects"] = [];
         for (let i = 0; i < this.primaryObjects.length; ++i) {
             if (z === i + 1) res.push(obj);
             const cur = this.primaryObjects[i];
             if (cur !== obj) res.push(cur);
         }
         if (z > this.primaryObjects.length) res.push(obj);
+        this.primaryObjects = res;
         this.dirty = true;
         return 1;
     }
     moveObjectToTop(hobject: number): NumBool {
         const obj = this.primaryObjects.find((c) => c.handle === hobject);
         if (!obj) return 0;
-        const res = this.primaryObjects.filter((c) => c !== obj);
-        res.push(obj);
+        this.primaryObjects = [...this.primaryObjects.filter((c) => c !== obj), obj];
+        this.dirty = true;
+        return 1;
+    }
+    moveObjectToBottom(hobject: number): NumBool {
+        const obj = this.primaryObjects.find((c) => c.handle === hobject);
+        if (!obj) return 0;
+        this.primaryObjects = [obj, ...this.primaryObjects.filter((c) => c !== obj)];
         this.dirty = true;
         return 1;
     }
