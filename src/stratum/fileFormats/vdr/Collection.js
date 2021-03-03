@@ -35,7 +35,7 @@ export function readNext(stream, _mustBeCollection, objectCode) {
 
     const data = (isCollection ? readAsCollection : readAsCollectionItem)(stream, name);
 
-    if (stream.meta.fileversion < 0x300) return Array.isArray(data) ? { type: name, data } : { type: name, ...data };
+    if (stream.version < 0x300) return Array.isArray(data) ? { type: name, data } : { type: name, ...data };
 
     // Поможет отловить ошибку с постчанком
     // console.log('Считал (' + chunk.code + ") " + Object.keys(consts).find(key => consts[key] === chunk.code));

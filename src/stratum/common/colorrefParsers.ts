@@ -76,7 +76,7 @@ export function parseColorRef(value: string) {
         return values[0] | (values[1] << 8) | (values[2] << 16);
     }
 
-    throw Error(`Неизвестный цвет: ${value}`);
+    throw Error(`Неизвестный код цвета: ${value}`);
 }
 
 /**
@@ -93,6 +93,21 @@ export function colorrefToCSSColor(colorref: number) {
     const g = (colorref >> 8) & 255;
     const b = (colorref >> 16) & 255;
     return `rgb(${r},${g},${b})`;
+}
+
+export function rgbToCref(r: number, g: number, b: number, type: number): number {
+    const flag = type === 1 ? transparentFlag : type === 2 ? syscolorFlag : 0;
+    return (r & 255) | ((g & 255) << 8) | ((b & 255) << 16) | flag;
+}
+
+export function crefToR(cref: number): number {
+    return cref & 255;
+}
+export function crefToG(cref: number): number {
+    return (cref >> 8) & 255;
+}
+export function crefToB(cref: number): number {
+    return (cref >> 16) & 255;
 }
 
 // export function colorrefToRGB(colorref: number): [number, number, number] | null {

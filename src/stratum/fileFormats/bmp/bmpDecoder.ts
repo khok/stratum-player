@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 class BmpDecoder {
-    data!: Uint8ClampedArray;
+    private data: Uint8ClampedArray;
     width: number = 0;
     height: number = 0;
 
@@ -58,7 +58,8 @@ class BmpDecoder {
         quad: number;
     }>;
 
-    constructor(view: DataView, is_with_alpha = false, offset = 0) {
+    constructor(view: DataView, data: Uint8ClampedArray, is_with_alpha = false, offset = 0) {
+        this.data = data;
         this.pos = offset;
         this.view = view;
         this.is_with_alpha = !!is_with_alpha;
@@ -129,7 +130,7 @@ class BmpDecoder {
     parseRGBA() {
         const bitn = "bit" + this.bitPP;
         const len = this.width * this.height * 4;
-        this.data = new Uint8ClampedArray(len);
+        if (this.data.length !== len) throw Error("Error reading BMP file");
         if (bitn !== "bit1" && bitn !== "bit4" && bitn !== "bit8" && bitn !== "bit15" && bitn !== "bit16" && bitn !== "bit24" && bitn !== "bit32")
             throw new Error("Unknown bit: " + bitn);
         this[bitn]();
@@ -513,14 +514,10 @@ class BmpDecoder {
             }
         }
     }
-
-    getData() {
-        return this.data;
-    }
 }
 
-export function decodeBmp(view: DataView): { width: number; height: number; data: Uint8ClampedArray } {
-    return new BmpDecoder(view);
+export function decodeBmp(view: DataView, data: Uint8ClampedArray) {
+    new BmpDecoder(view, data);
 }
 
 export function readBMPSize(view: DataView) {

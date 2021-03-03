@@ -1,13 +1,13 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassProto } from "stratum/common/classProto";
+import { ClassModel, ClassProto, ClassVars } from "stratum/common/classProto";
 import { parseVarValue } from "stratum/common/parseVarValue";
 import { VarType } from "stratum/common/varType";
-import { Constant, Enviroment, EventSubscriber, MemorySize } from "stratum/env";
+import { Constant, EventSubscriber } from "stratum/env";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
-import { ClassModel, ClassVars } from "stratum/translator";
 import { buildSchema } from "./buildSchema";
-import { VarGraphNode } from "./varGraphNode";
+import { Project } from "./project";
+import { MemorySize, VarGraphNode } from "./varGraphNode";
 
 /**
  * Описание размещения имиджа на схеме.
@@ -20,11 +20,10 @@ export interface PlacementDescription {
 }
 
 export class Schema implements EventSubscriber {
-    static build(root: string, lib: ClassLibrary, env: Enviroment) {
-        return buildSchema(root, lib, env);
+    static build(root: string, lib: ClassLibrary, prj: Project) {
+        return buildSchema(root, lib, prj);
     }
 
-    private readonly env: Enviroment;
     private readonly neighMapUC: Map<string, Schema>;
     private readonly root: Schema;
     private readonly handle: number = 0;
@@ -39,13 +38,14 @@ export class Schema implements EventSubscriber {
 
     private children: Schema[] = [];
 
+    readonly prj: Project;
     readonly proto: ClassProto;
     readonly TLB: Uint16Array;
 
-    constructor(proto: ClassProto, env: Enviroment, placement?: PlacementDescription) {
+    constructor(proto: ClassProto, prj: Project, placement?: PlacementDescription) {
         this.model = proto.model ?? Schema.NoModel;
         this.proto = proto;
-        this.env = env;
+        this.prj = prj;
         if (placement) {
             this.handle = placement.handle;
             this.name = placement.name;
@@ -96,14 +96,14 @@ export class Schema implements EventSubscriber {
         const { vars } = target.proto;
         if (typeof vars === "undefined") return;
         const id = vars.nameUCToId.get(varName.toUpperCase());
-        if (typeof id !== "undefined") target.setVarValue2(id, vars.types[id], value);
+        if (typeof id !== "undefined") target.setVarValue(id, vars.types[id], value);
     }
 
     // private idTypes: number[] = [];
     // private cachedNames: string[] = [];
     stratum_sendMessage(objectName: string, className: string, ...varNames: string[]): void {
-        const { env, vars, TLB /*cachedNames*/ } = this;
-        if (env.level > 58) return;
+        const { prj, vars, TLB /*cachedNames*/ } = this;
+        if (prj.canExecute() === false) return;
 
         if (objectName !== "") throw Error(`Вызов SendMessage с objectName=${objectName} не реализован`);
         if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
@@ -118,9 +118,9 @@ export class Schema implements EventSubscriber {
         if (vars.count === 0 || otherVars.count === 0) {
             for (const rec of receivers) {
                 if (rec === this) continue;
-                ++env.level;
+                prj.inc();
                 rec.forceCompute();
-                --env.level;
+                prj.dec();
             }
             return;
         }
@@ -161,7 +161,7 @@ export class Schema implements EventSubscriber {
         // }
 
         // const { idTypes } = this;
-        const { news, olds } = env;
+        const { news, olds } = prj;
         for (const rec of receivers) {
             if (rec === this) continue;
             for (let i = 0; i < idTypes.length; i += 3) {
@@ -179,9 +179,9 @@ export class Schema implements EventSubscriber {
 
                 // olds[typ][otherId] = news[typ][otherId] = news[typ][myId];
             }
-            ++env.level;
+            prj.inc();
             rec.forceCompute();
-            --env.level;
+            prj.dec();
             for (let i = 0; i < idTypes.length; i += 3) {
                 const typ = idTypes[i + 2];
                 if (typeof typ === "undefined") continue;
@@ -204,36 +204,36 @@ export class Schema implements EventSubscriber {
         if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.env.setCapture(hspace, target);
+        this.prj.env.setCapture(hspace, target);
     }
 
     stratum_registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number): void {
         if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.env.subscribe(target, wnameOrHspace, obj2d, message);
+        this.prj.env.subscribe(target, wnameOrHspace, obj2d, message);
     }
     stratum_unregisterObject(wnameOrHspace: number | string, path: string, code: number): void {
         if (path !== "") throw Error(`Вызов UnRegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.env.unsubscribe(target, wnameOrHspace, code);
+        this.prj.env.unsubscribe(target, wnameOrHspace, code);
     }
 
     receive(code: Constant, ...args: (string | number)[]) {
         const { proto } = this;
         if (proto.msgVarId < 0) return;
-        this.setVarValue2(proto.msgVarId, VarType.Float, code);
+        this.setVarValue(proto.msgVarId, VarType.Float, code);
 
         switch (code) {
             case Constant.WM_CONTROLNOTIFY:
-                this.setVarValue2(proto._hobjectVarId, VarType.Handle, args[0]);
-                this.setVarValue2(proto.iditemVarId, VarType.Float, args[1]);
-                this.setVarValue2(proto.wnotifycodeVarId, VarType.Float, args[2]);
+                this.setVarValue(proto._hobjectVarId, VarType.Handle, args[0]);
+                this.setVarValue(proto.iditemVarId, VarType.Float, args[1]);
+                this.setVarValue(proto.wnotifycodeVarId, VarType.Float, args[2]);
                 break;
             case Constant.WM_SIZE:
-                this.setVarValue2(proto.nwidthVarId, VarType.Float, args[0]);
-                this.setVarValue2(proto.nheightVarId, VarType.Float, args[1]);
+                this.setVarValue(proto.nwidthVarId, VarType.Float, args[0]);
+                this.setVarValue(proto.nheightVarId, VarType.Float, args[1]);
                 break;
             case Constant.WM_MOUSEMOVE:
             case Constant.WM_LBUTTONDOWN:
@@ -245,23 +245,14 @@ export class Schema implements EventSubscriber {
             case Constant.WM_MBUTTONDOWN:
             case Constant.WM_MBUTTONUP:
             case Constant.WM_MBUTTONDBLCLK:
-                this.setVarValue2(proto.xposVarId, VarType.Float, args[0]);
-                this.setVarValue2(proto.yposVarId, VarType.Float, args[1]);
-                this.setVarValue2(proto.fwkeysVarId, VarType.Float, args[2]);
+                this.setVarValue(proto.xposVarId, VarType.Float, args[0]);
+                this.setVarValue(proto.yposVarId, VarType.Float, args[1]);
+                this.setVarValue(proto.fwkeysVarId, VarType.Float, args[2]);
                 break;
         }
 
-        const { env, TLB, model } = this;
-        model(this, env);
-        // prettier-ignore
-        const { newFloats, oldFloats,newInts,oldInts,newStrings,oldStrings } = env;
-        // Синхронизируем измененные в ходе вычислений переменные только на этом промежутке,
-        // чтобы не гонять env.sync()
-        for (const id of TLB) {
-            oldFloats[id] = newFloats[id];
-            oldInts[id] = newInts[id];
-            oldStrings[id] = newStrings[id];
-        }
+        this.model(this);
+        this.prj.syncLocal(this.TLB);
     }
 
     // Для построения схемы.
@@ -317,26 +308,26 @@ export class Schema implements EventSubscriber {
             //Значение по умолчанию
             const defaultValue = vars.defaultValues[id];
             if (typeof defaultValue !== "undefined") {
-                this.setNewVarValue(id, type, defaultValue);
+                this.setVarValue(id, type, defaultValue);
                 continue;
             }
 
             //Если знач. по умолчанию нет, пытаемся получить специальное значение переменной.
             switch (id) {
                 case this.proto.orgxVarId:
-                    this.setNewVarValue(id, type, this.position.x);
+                    this.setVarValue(id, type, this.position.x);
                     break;
                 case this.proto.orgyVarId:
-                    this.setNewVarValue(id, type, this.position.y);
+                    this.setVarValue(id, type, this.position.y);
                     break;
                 case this.proto._hobjectVarId:
-                    this.setNewVarValue(id, type, this.handle);
+                    this.setVarValue(id, type, this.handle);
                     break;
                 case this.proto._objnameVarId:
-                    this.setNewVarValue(id, type, this.name);
+                    this.setVarValue(id, type, this.name);
                     break;
                 case this.proto._classnameVarId:
-                    this.setNewVarValue(id, type, this.proto.name);
+                    this.setVarValue(id, type, this.proto.name);
                     break;
             }
         }
@@ -354,7 +345,7 @@ export class Schema implements EventSubscriber {
                 const id = vars.nameUCToId.get(v.name.toUpperCase());
                 if (typeof id === "undefined") continue;
                 const type = vars.types[id];
-                this.setNewVarValue(id, type, parseVarValue(type, v.value));
+                this.setVarValue(id, type, parseVarValue(type, v.value));
             }
         }
 
@@ -362,17 +353,17 @@ export class Schema implements EventSubscriber {
         return this;
     }
 
-    private forceCompute() {
+    private forceCompute(): void {
         for (const c of this.children) c.compute();
-        this.model(this, this.env);
+        this.model(this);
     }
     /**
      * Рекурсивно вычисляет схему имиджа.
      */
-    compute() {
+    compute(): void {
         if (this.isDisabled(this) === true) return;
         for (const c of this.children) c.compute();
-        this.model(this, this.env);
+        this.model(this);
     }
 
     private resolve(path: string): Schema | undefined {
@@ -387,15 +378,15 @@ export class Schema implements EventSubscriber {
         return root;
     }
 
-    private setNewVarValue(id: number, type: VarType, value: number | string) {
+    // private setVarValue(id: number, type: VarType, value: number | string) {
+    //     if (id < 0) return;
+    //     this.prj.news[type][this.TLB[id]] = value;
+    // }
+    private setVarValue(id: number, type: VarType, value: number | string): void {
         if (id < 0) return;
-        this.env.news[type][this.TLB[id]] = value;
-    }
-    private setVarValue2(id: number, type: VarType, value: number | string) {
-        if (id < 0) return;
-        const trl = this.TLB[id];
-        this.env.olds[type][trl] = value;
-        this.env.news[type][trl] = value;
+        const realId = this.TLB[id];
+        this.prj.olds[type][realId] = value;
+        this.prj.news[type][realId] = value;
     }
 
     private classNodeCache = new Map<string, Schema[]>();
@@ -412,6 +403,17 @@ export class Schema implements EventSubscriber {
 
         root.classNodeCache.set(classNameUC, nodes2);
         return nodes2;
+    }
+
+    stubCall(name: string, ...args: unknown[]) {
+        let root: Schema = this;
+        let path = "";
+        while (root.parent !== root) {
+            path = ` -> ${root.proto.name} #${root.handle}${path}`;
+            root = root.parent;
+        }
+        path = root.proto.name + path;
+        throw Error(`Вызов нереализованной функции ${name}(${args.map((a) => typeof a).join(",")})\nв ${path}`);
     }
 
     /*
@@ -437,12 +439,11 @@ export class Schema implements EventSubscriber {
     private static alwaysEnabled() {
         return false;
     }
-    private static disabledByEnable({ env, disOrEnVarId, TLB }: Schema) {
-        return env.newFloats[TLB[disOrEnVarId]] <= 0;
+    private static disabledByEnable(schema: Schema) {
+        return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] <= 0;
     }
-    private static disabledByDisable({ env, disOrEnVarId, TLB }: Schema) {
-        return env.newFloats[TLB[disOrEnVarId]] > 0;
+    private static disabledByDisable(schema: Schema) {
+        return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] > 0;
     }
     private static NoModel() {}
 }
-// class SchemaError extends Error {}

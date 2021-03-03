@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/env";
 import { Scene } from ".";
+import { Hyperbase } from "./hyperbase";
 import { SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { BrushTool } from "./tools/brushTool";
@@ -31,7 +32,7 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
     private _originY: number;
     private _width: number;
     private _height: number;
-    private _visible: number;
+    private _visible: boolean;
     private _selectable: number;
     private _layer: number;
     private _parent: SceneGroup | null;
@@ -39,9 +40,11 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
     handle: number;
     name: string;
     markDeleted: boolean;
+    hyperbase: Hyperbase | null;
 
     constructor(scene: Scene, { handle, name, options, coords, penHandle, brushHandle }: SceneLineArgs) {
         if (coords.length < 2) throw Error("Линия не имеет точек");
+        this.hyperbase = null;
 
         this.scene = scene;
         this.handle = handle;
@@ -79,7 +82,7 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
 
         const opts = options || 0;
         // this._visible = opts & 1 ? 0 : 1;
-        this._visible = 1;
+        this._visible = true;
         this._selectable = opts & 8 ? 0 : 1;
         const layerNumber = (opts >> 8) & 0b11111;
         this._layer = 1 << layerNumber;
@@ -157,7 +160,7 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         return 1;
     }
 
-    setShow(visible: number): NumBool {
+    setVisibility(visible: boolean): NumBool {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
@@ -260,7 +263,7 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
 
     deletePoint(index: number): NumBool {
         const coordIdx = index * 2;
-        if (index < 1 || coordIdx > this.coords.length) return 0;
+        if (index < 0 || coordIdx > this.coords.length) return 0;
 
         this.coords.splice(coordIdx, 2);
         this.updateSize();
@@ -365,47 +368,65 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         this.needRedraw = true;
     }
 
+    private static drawFigure(
+        ctx: CanvasRenderingContext2D,
+        ox: number,
+        oy: number,
+        coords: number[],
+        brush: string | CanvasPattern | null,
+        pen: string | null,
+        penWidth: number
+    ) {
+        ctx.beginPath();
+        ctx.moveTo(coords[0] + ox + penWidth, coords[1] + oy + penWidth);
+        for (let i = 2; i < coords.length; i += 2) {
+            ctx.lineTo(coords[i] + ox + penWidth, coords[i + 1] + oy + penWidth);
+        }
+        if (brush) {
+            ctx.closePath();
+            ctx.fillStyle = brush;
+            ctx.fill("evenodd");
+        }
+        if (pen) {
+            ctx.lineWidth = penWidth;
+            ctx.strokeStyle = pen;
+            ctx.stroke();
+        }
+    }
+
     render(ctx: CanvasRenderingContext2D, sceneX: number, sceneY: number, layers: number) {
-        if (this._visible === 0 || (this._layer & layers) !== 0) return;
-        const offset = this.pen ? this.pen.width() || 0.5 : 0;
-        const ox = this._originX - sceneX - offset;
-        const oy = this._originY - sceneY - offset;
-        if (!this.needRedraw) {
-            ctx.drawImage(this.cnv, ox, oy);
+        if (!this._visible || (this._layer & layers) !== 0) return;
+        const pw = this.pen ? this.pen.width() || 1 : 0;
+        const ox = this._originX - sceneX - pw;
+        const oy = this._originY - sceneY - pw;
+
+        const brush = (this.coords.length > 4 && this.brush?.fillStyle(ctx)) || null;
+        const pen = this.pen?.strokeStyle() || null;
+        if (!brush && !pen) {
             return;
         }
-        this.cnv.width = Math.max(this._width + offset * 4, 1);
-        this.cnv.height = Math.max(this._height + offset * 4, 1);
-        const ctx2 = this.ctx2;
-        ctx2.beginPath();
-        ctx2.moveTo(this.coords[0] + offset, this.coords[1] + offset);
-        for (let i = 2; i < this.coords.length; i += 2) {
-            ctx2.lineTo(this.coords[i] + offset, this.coords[i + 1] + offset);
+
+        if (this._width * this._height > 4194304) {
+            this._selectable = 0;
+            SceneLine.drawFigure(ctx, ox, oy, this.coords, brush, pen, pw);
+            return;
         }
-        if (this.brush && this.coords.length > 4) {
-            const style = this.brush.style();
-            if (style !== 1) {
-                ctx2.closePath();
-                ctx2.fillStyle = style === 0 ? this.brush.cssColor() : (style === 3 && this.brush.dibTool()?.pattern(ctx2)) || "white";
-                ctx2.fill("evenodd");
-            }
+        if (this.needRedraw) {
+            this.cnv.width = Math.max(this._width + pw * 2, 1);
+            this.cnv.height = Math.max(this._height + pw * 2, 1);
+            SceneLine.drawFigure(this.ctx2, 0, 0, this.coords, brush, pen, pw);
+            this.needRedraw = false;
         }
-        if (this.pen) {
-            ctx2.lineWidth = offset;
-            ctx2.strokeStyle = this.pen.cssColor();
-            ctx2.stroke();
-        }
-        this.needRedraw = false;
         ctx.drawImage(this.cnv, ox, oy);
     }
 
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined {
-        if (this._visible === 0 || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
+        if (!this._visible || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
 
-        const offset = this.pen?.width() || 0;
-        const ox = x - this._originX + offset;
-        const oy = y - this._originY + offset;
-        if (ox < 0 || oy < 0 || ox > this._width + offset * 2 || oy > this._height + offset * 2) return undefined;
+        const pw = this.pen ? this.pen.width() || 1 : 0;
+        const ox = x - this._originX;
+        const oy = y - this._originY;
+        if (ox < -pw || oy < -pw || ox > this._width + pw || oy > this._height + pw) return undefined;
 
         if (this.ctx2.getImageData(ox, oy, 1, 1).data[3] === 0) return undefined;
 

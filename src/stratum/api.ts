@@ -47,7 +47,7 @@ export interface FileSystem {
     /**
      * Открывает проект.
      */
-    project(options?: OpenProjectOptions): Promise<Project>;
+    project(options?: OpenProjectOptions): Promise<Player>;
 }
 
 // export type FileSystemFileData = ZipSource | string;
@@ -123,14 +123,14 @@ export interface FileSystemFile {
     arraybuffer(): Promise<ArrayBuffer>;
 }
 
-export interface ProjectOptions {
+export interface PlayerOptions {
     /**
      * Запрещает проекту изменять размеры главного окна.
      */
     disableWindowResize?: boolean;
 }
 
-export interface OpenProjectOptions extends ProjectOptions {
+export interface OpenProjectOptions {
     /**
      * Часть пути к файлу проекта.
      */
@@ -144,15 +144,11 @@ export interface OpenProjectOptions extends ProjectOptions {
 /**
  * Проект.
  */
-export interface Project {
+export interface Player {
     /**
      * Опции проекта.
      */
-    readonly options: ProjectOptions;
-    /**
-     * Рабочая директория проекта.
-     */
-    readonly dir: FileSystemDir;
+    readonly options: PlayerOptions;
     /**
      * Диагностические данные.
      */

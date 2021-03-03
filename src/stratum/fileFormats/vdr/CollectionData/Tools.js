@@ -43,7 +43,7 @@ function read_ttDOUBLEDIB2D(stream) {
 }
 function read_ttFONT2D(stream) {
     const header = readTools(stream);
-    const pos = stream.position;
+    const pos = stream.pos();
     //Структуру искать как typedef struct tagOldLOGFONT
     const data = {
         ...header,
@@ -64,7 +64,7 @@ function read_ttFONT2D(stream) {
     };
     stream.seek(pos + 50);
 
-    if (stream.meta.fileversion >= 0x0203) {
+    if (stream.version >= 0x0203) {
         data.size = stream.int32();
         data.style = stream.int32();
     } else {

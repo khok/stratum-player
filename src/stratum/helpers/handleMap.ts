@@ -11,4 +11,10 @@ export class HandleMap<T> extends Map<number, T> {
         while (map.has(++handle));
         return handle;
     }
+
+    static getFreeNegativeHandle(map: Map<number, any>) {
+        let handle = 0;
+        while (map.has(--handle));
+        return handle;
+    }
 }

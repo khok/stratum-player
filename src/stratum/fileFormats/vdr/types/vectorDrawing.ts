@@ -33,6 +33,12 @@ export interface CoordinateSystem {
  * Формат файла, описывающий содержимое векторного пространства.
  * Разделен на два интерфейса для удобства.
  */
+
+export interface VDRSource {
+    origin: "file" | "class";
+    name: string;
+}
+
 export interface VectorDrawing extends VectorDrawingTools {
     fileversion: number;
     minVersion: number;
@@ -42,7 +48,7 @@ export interface VectorDrawing extends VectorDrawingTools {
     brushHandle: number;
     layers: number;
 
-    source?: { origin: "file" | "class"; name: string };
+    source: VDRSource;
 
     elements?: VectorDrawingElement[];
     elementOrder?: number[];

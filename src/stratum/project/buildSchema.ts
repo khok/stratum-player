@@ -1,7 +1,7 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { VarType } from "stratum/common/varType";
-import { Enviroment } from "stratum/env";
 import { ClassLink } from "stratum/fileFormats/cls";
+import { Project } from "./project";
 import { PlacementDescription, Schema } from "./schema";
 
 function applyLinks(node: Schema, links: ClassLink[]) {
@@ -49,17 +49,17 @@ function applyLinks(node: Schema, links: ClassLink[]) {
  * @param lib - коллекция имиджей;
  * @param placement - описание размещения имиджа на схеме родительского имиджа.
  */
-export function buildSchema(protoName: string, lib: ClassLibrary, env: Enviroment, placement?: PlacementDescription): Schema {
+export function buildSchema(protoName: string, lib: ClassLibrary, prj: Project, placement?: PlacementDescription): Schema {
     const proto = lib.get(protoName);
     if (!proto) throw Error(`Имидж "${protoName}" не найден.`);
 
     //Создаем текущий узел дерева.
-    const node = new Schema(proto, env, placement);
+    const node = new Schema(proto, prj, placement);
 
     //Создаем детей.
     if (proto.children) {
         const children = proto.children.map((child) => {
-            return buildSchema(child.classname, lib, env, {
+            return buildSchema(child.classname, lib, prj, {
                 parent: node,
                 ...child.schemeInfo,
             });

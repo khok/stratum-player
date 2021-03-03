@@ -2,6 +2,7 @@ import { NumBool } from "stratum/env";
 import { ControlElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
 import { InputWrapper } from ".";
+import { Hyperbase } from "./hyperbase";
 import { HTMLFactory, Scene, SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 
@@ -37,7 +38,7 @@ export class SceneControl implements SceneVisualMember {
     private _originY: number;
     private _width: number;
     private _height: number;
-    private _visible: number;
+    private _visible: boolean;
     private _selectable: number;
     private _layer: number;
     private _parent: SceneGroup | null;
@@ -45,9 +46,12 @@ export class SceneControl implements SceneVisualMember {
     handle: number;
     name: string;
     markDeleted: boolean;
+    hyperbase: Hyperbase | null;
 
     constructor(scene: Scene, html: HTMLFactory, { handle, options, name, originX, originY, width, height, className, text }: SceneControlArgs) {
         if (className !== "EDIT") throw Error(`Элемент ввода ${className} не реализован.`);
+
+        this.hyperbase = null;
 
         this.handle = handle;
         this.name = name || "";
@@ -61,7 +65,7 @@ export class SceneControl implements SceneVisualMember {
 
         const opts = options || 0;
         // this._visible = opts & 1 ? 0 : 1;
-        this._visible = 1;
+        this._visible = true;
         this._selectable = opts & 8 ? 0 : 1;
         const layerNumber = (opts >> 8) & 0b11111;
         this._layer = 1 << layerNumber;
@@ -76,7 +80,7 @@ export class SceneControl implements SceneVisualMember {
         this.lastHidden = !this._visible;
 
         this.wrapper = html.textInput({ x: this.lastX, y: this.lastY, width, height, text, hidden: this.lastHidden });
-        this.wrapper.onEdit(() => scene.dispatchControlNotifyEvent(this.handle, 768));
+        this.wrapper.onEdit((ev) => scene.dispatchControlNotifyEvent(this.handle, ev));
     }
 
     parentHandle(): number {
@@ -144,7 +148,7 @@ export class SceneControl implements SceneVisualMember {
         return 1;
     }
 
-    setShow(visible: number): NumBool {
+    setVisibility(visible: boolean): NumBool {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
@@ -223,7 +227,7 @@ export class SceneControl implements SceneVisualMember {
     }
 
     render(_: CanvasRenderingContext2D, sceneX: number, sceneY: number, layers: number): void {
-        const hidden = this._visible === 0 || (this._layer & layers) !== 0;
+        const hidden = !this._visible || (this._layer & layers) !== 0;
         if (hidden !== this.lastHidden) {
             this.lastHidden = hidden;
             this.wrapper.setHidden(hidden);
@@ -246,7 +250,7 @@ export class SceneControl implements SceneVisualMember {
         }
     }
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined {
-        if (this._visible === 0 || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
+        if (!this._visible || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
 
         const ox = x - this._originX;
         const oy = y - this._originY;

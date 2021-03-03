@@ -1,4 +1,5 @@
 import { NumBool } from "stratum/env";
+import { Hyperbase } from "./hyperbase";
 import { Scene, SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { TextTool } from "./tools/textTool";
@@ -27,7 +28,7 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
     private _angle: number;
     private _width: number;
     private _height: number;
-    private _visible: number;
+    private _visible: boolean;
     private _selectable: number;
     private _layer: number;
     private _parent: SceneGroup | null;
@@ -35,8 +36,10 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
     handle: number;
     name: string;
     markDeleted: boolean;
+    hyperbase: Hyperbase | null;
 
     constructor(scene: Scene, { handle, name, options, originX, originY, width, height, angle, textToolHandle }: SceneTextArgs) {
+        this.hyperbase = null;
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";
@@ -55,7 +58,7 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
 
         const opts = options || 0;
         // this._visible = opts & 1 ? 0 : 1;
-        this._visible = 1;
+        this._visible = true;
         this._selectable = opts & 8 ? 0 : 1;
         const layerNumber = (opts >> 8) & 0b11111;
         this._layer = 1 << layerNumber;
@@ -130,7 +133,7 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
         return 1;
     }
 
-    setShow(visible: number): NumBool {
+    setVisibility(visible: boolean): NumBool {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
@@ -202,14 +205,14 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
     }
 
     render(ctx: CanvasRenderingContext2D, sceneX: number, sceneY: number, layers: number): void {
-        if (!this.textTool || this._visible === 0 || (this._layer & layers) !== 0) return;
+        if (!this.textTool || !this._visible || (this._layer & layers) !== 0) return;
         const x = this._originX - sceneX;
         const y = this._originY - sceneY;
         this.textTool.render(ctx, x, y, this._width, this._height, this._angle);
     }
 
     tryClick(x: number, y: number, layers: number): SceneGroup | this | undefined {
-        if (!this.textTool || this._visible === 0 || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
+        if (!this.textTool || !this._visible || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
 
         const s = Math.sin(-this._angle);
         const c = Math.cos(-this._angle);
@@ -271,6 +274,9 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     doubleDIBHandle(): number {
+        return 0;
+    }
+    pointCount(): number {
         return 0;
     }
     //#endregion

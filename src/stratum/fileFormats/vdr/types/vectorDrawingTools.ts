@@ -1,3 +1,5 @@
+import { DibToolImage } from "stratum/helpers/types";
+
 interface ToolBase {
     handle: number;
 }
@@ -58,12 +60,12 @@ export interface TextToolParams extends ToolBase {
 
 export interface DibToolParams extends ToolBase {
     type: "ttDIB2D";
-    img: HTMLCanvasElement;
+    img: DibToolImage;
 }
 
 export interface DoubleDibToolParams extends ToolBase {
     type: "ttDOUBLEDIB2D";
-    img: HTMLCanvasElement;
+    img: DibToolImage;
 }
 
 export interface ExternalDibToolParams extends ToolBase {

@@ -2,23 +2,40 @@ import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { ClassProto } from "./classProto";
 import { VdrMerger } from "./vdrMerger";
 
+interface ClassLibraryValue {
+    cls: ClassProto;
+    id: number;
+}
+
 export class ClassLibrary {
-    private readonly lib: Map<string, ClassProto>;
-    constructor(classes: ClassProto[]) {
-        const lib = (this.lib = new Map<string, ClassProto>());
-        for (const p of classes) {
-            const keyUC = p.name.toUpperCase();
-            const prev = lib.size;
-            lib.set(keyUC, p);
-            if (lib.size === prev) {
-                const files = classes.filter((c) => c.name.toUpperCase() === keyUC).map((c) => c.filepathDos);
-                throw Error(`Конфликт имен имиджей: "${p.name}" обнаружен в файлах:\n${files.join(";\n")}.`);
+    private lib = new Map<string, ClassLibraryValue>();
+    add(classes: ClassProto[], id: number = 0): this {
+        for (const cls of classes) {
+            const keyUC = cls.name.toUpperCase();
+            // const prev = this.lib.size;
+
+            const exCls = this.lib.get(keyUC);
+            if (exCls) {
+                if (exCls.cls.filepathDos === cls.filepathDos) continue;
+                throw Error(`Конфликт имен имиджей: "${cls.name}" обнаружен в файлах:\n${cls.filepathDos},${exCls.cls.filepathDos}.`);
             }
+            this.lib.set(keyUC, { cls, id });
+            // if (this.lib.size === prev) {
+            //     const files = classes.filter((c) => c.name.toUpperCase() === keyUC).map((c) => c.filepathDos);
+            //     throw Error(`Конфликт имен имиджей: "${cls.name}" обнаружен в файлах:\n${files.join(";\n")}.`);
+            // }
         }
+        return this;
+    }
+
+    remove(id: number): this {
+        if (id === 0) return this;
+        this.lib = new Map([...this.lib].filter((v) => v[1].id !== id));
+        return this;
     }
 
     get(className: string): ClassProto | undefined {
-        return this.lib.get(className.toUpperCase());
+        return this.lib.get(className.toUpperCase())?.cls;
     }
 
     getComposedScheme(className: string): VectorDrawing | undefined {

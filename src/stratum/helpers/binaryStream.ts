@@ -1,22 +1,54 @@
 import { Point2D } from "./types";
+import { decode } from "./win1251";
 
-export interface BinaryStreamMetadata {
-    filepathDos?: string;
-    fileversion?: number;
+export interface FlushCallback {
+    (data: ArrayBuffer): void;
+}
+
+export interface BinaryStreamOptions {
+    data?: ArrayBuffer | ArrayBufferView;
+    canWrite?: boolean;
+    canRead?: boolean;
+    onflush?: FlushCallback;
+    name?: string;
+    version?: number;
 }
 
 export class BinaryStream {
-    private static d = new TextDecoder("windows-1251");
-    private v: DataView;
-    private p: number = 0;
+    // private static d = new TextDecoder("windows-1251");
 
-    meta: BinaryStreamMetadata;
-    constructor(data: ArrayBuffer | ArrayBufferView, meta?: BinaryStreamMetadata) {
-        this.meta = { ...meta };
-        this.v = data instanceof ArrayBuffer ? new DataView(data) : new DataView(data.buffer, data.byteOffset, data.byteLength);
+    private v: DataView;
+    private p: number;
+    private canWrite: boolean;
+    private canRead: boolean;
+    private onflush: FlushCallback | null;
+
+    readonly name: string;
+    version: number;
+
+    constructor(opts: BinaryStreamOptions = {}) {
+        const d = opts.data;
+        const cw = opts.canWrite ?? false;
+        if (!d) {
+            this.v = new DataView(new ArrayBuffer(0));
+        } else if (d instanceof ArrayBuffer) {
+            this.v = new DataView(cw ? d.slice(0) : d);
+        } else if (cw) {
+            const copy = d.buffer.slice(d.byteOffset, d.byteOffset + d.byteLength);
+            this.v = new DataView(copy);
+        } else {
+            this.v = new DataView(d.buffer, d.byteOffset, d.byteLength);
+        }
+        this.p = 0;
+
+        this.canWrite = cw;
+        this.canRead = opts.canRead ?? true;
+        this.onflush = opts.onflush ?? null;
+        this.name = opts.name ?? "";
+        this.version = opts.version ?? 0;
     }
 
-    get position(): number {
+    pos(): number {
         return this.p;
     }
 
@@ -25,17 +57,17 @@ export class BinaryStream {
         return this;
     }
 
-    skip(length: number): this {
-        this.p += length;
+    skip(len: number): this {
+        this.p += len;
         return this;
     }
 
-    get size(): number {
+    size(): number {
         return this.v.byteLength;
     }
 
     eof(): boolean {
-        return this.p >= this.size;
+        return this.p >= this.size();
     }
 
     bytes(size: number): Uint8Array {
@@ -81,7 +113,7 @@ export class BinaryStream {
     }
 
     fixedString(size: number): string {
-        return size > 0 ? BinaryStream.d.decode(this.bytes(size)) : "";
+        return size > 0 ? decode(this.bytes(size)) : "";
     }
 
     // Обычная строка вида:
@@ -95,10 +127,11 @@ export class BinaryStream {
      * Нуль-терминированная строка.
      * Максимальный размер строки будет составлять `limit - 1` байт.
      */
-    nulltString(limit: number): string {
+    nulltString(limit?: number): string {
+        const l = limit ?? this.size() - this.p;
         const strStart = this.p;
         let size = 0;
-        while (size < limit - 1 && this.v.getUint8(strStart + ++size) !== 0);
+        while (size < l - 1 && this.v.getUint8(strStart + ++size) !== 0);
 
         const value = this.fixedString(size);
         this.p += 1; //нуль-терминатор
@@ -130,11 +163,14 @@ export class BinaryStream {
             y: this.int16(),
         };
     }
+    close() {
+        if (this.onflush) this.onflush(this.v.buffer);
+    }
 }
 
 export class FileReadingError extends Error {
     constructor(stream: BinaryStream, message: string) {
-        super(`Ошибка чтения ${stream.meta.filepathDos || ""}:\n${message}`);
+        super(`Ошибка чтения ${stream.name || ""}:\n${message}`);
     }
 }
 

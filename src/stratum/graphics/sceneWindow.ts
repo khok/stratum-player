@@ -1,19 +1,16 @@
 import { WindowHost, WindowHostWindow } from "stratum/api";
-import { Constant, EventSubscriber, NumBool } from "stratum/env";
-import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { InputWrapper, InputWrapperOptions, Scene } from "./scene";
-import { HTMLFactory } from "./scene/scene";
+import { SmoothComputer } from "stratum/common/computers";
+import { Constant, Env, EventSubscriber, NumBool } from "stratum/env";
+import { HTMLFactory, InputWrapper, InputWrapperOptions, Scene } from "./scene";
 
-export interface SceneWindowArgs {
-    handle: number;
-    attribute: string;
-    host: WindowHost;
-    wname: string;
-    vdr?: VectorDrawing;
-    disableResize?: boolean;
-}
+export class SceneWindow implements Env.Window, HTMLFactory {
+    private static updater = new SmoothComputer();
+    private static wins = new Set<SceneWindow>();
+    private static redrawAll(): boolean {
+        SceneWindow.wins.forEach((w) => w.redraw());
+        return SceneWindow.wins.size > 0;
+    }
 
-export class SceneWindow implements HTMLFactory {
     private readonly classname: string = "";
     private readonly filename: string = "";
     private resizible: boolean;
@@ -24,15 +21,22 @@ export class SceneWindow implements HTMLFactory {
     readonly scene: Scene;
     readonly view: HTMLDivElement;
     private readonly cnv: HTMLCanvasElement;
+    private _title: string;
+    private ctx: CanvasRenderingContext2D;
 
-    constructor({ handle, wname, attribute, vdr, host, disableResize }: SceneWindowArgs) {
-        this.ignoreSetSize = disableResize ?? false;
-        this.resizible = vdr?.otDATAITEMS?.some((d) => d.id === 11) ? false : true;
+    private noCaption: boolean;
 
-        if (vdr?.source) {
-            const { name, origin } = vdr.source;
+    constructor(host: WindowHost, args: Env.WindowArgs) {
+        this.ignoreSetSize = args.disableResize ?? false;
+        this.noCaption = !!args.noCaption;
+
+        if (args.vdr) {
+            this.resizible = !args.vdr.otDATAITEMS?.some((d) => d.id === 11);
+            const { name, origin } = args.vdr.source;
             if (origin === "class") this.classname = name;
             else if (origin === "file") this.filename = name;
+        } else {
+            this.resizible = true;
         }
 
         // ширину нужно задавать в зависимости от attrib
@@ -50,68 +54,66 @@ export class SceneWindow implements HTMLFactory {
         cnv.style.setProperty("position", "absolute");
         // cnv.style.setProperty("touch-action", "pan-x pan-y");
         cnv.style.setProperty("touch-action", "pinch-zoom");
-
         view.appendChild(cnv);
 
-        this.wnd = host.window({ title: attribute.toUpperCase().includes("WS_NOCAPTION") ? undefined : wname, view });
+        this.wnd = host.window({ title: args.noCaption ? undefined : args.title, view });
         cnv.width = this.width();
         cnv.height = this.height();
-        this.scene = new Scene(cnv, this, vdr);
+        this._title = args.title;
+
+        const ctx = cnv.getContext("2d", { alpha: false });
+        if (!ctx) throw Error("Не удалось инициализировать контекст рендеринга");
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, this.cnv.width, this.cnv.height);
+        this.ctx = ctx;
+
+        const scene = (this.scene = new Scene(this, args.vdr));
+        const handler = (evt: PointerEvent) => {
+            scene.pointerEventHandler(evt);
+            cnv.style.cursor = scene.cursor;
+        };
+        cnv.addEventListener("pointerdown", handler);
+        cnv.addEventListener("pointerup", handler);
+        cnv.addEventListener("pointerleave", handler);
+        cnv.addEventListener("pointermove", handler);
+
+        SceneWindow.wins.add(this);
+        SceneWindow.updater.run(SceneWindow.redrawAll);
+
+        const cl = args.onClosed;
+        this.wnd.on("closed", () => {
+            SceneWindow.wins.delete(this);
+            this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
+            cl && cl();
+        });
     }
 
     textInput(options: InputWrapperOptions) {
         return new InputWrapper(this.view, options);
     }
 
-    private closeSubs = new Set<EventSubscriber>();
-    onSpaceDone(sub: EventSubscriber) {
-        this.closeSubs.add(sub);
-    }
-    offClose(sub: EventSubscriber) {
-        this.closeSubs.delete(sub);
-    }
-    dispatchClose() {
-        for (const c of this.closeSubs) c.receive(Constant.WM_SPACEDONE);
-    }
-
-    private sizeSubs = new Set<EventSubscriber>();
-    onResize(sub: EventSubscriber) {
-        this.sizeSubs.add(sub);
-    }
-    offResize(sub: EventSubscriber) {
-        this.sizeSubs.delete(sub);
-    }
-
-    onControlNotifty(sub: EventSubscriber, handle: number) {
-        this.scene.onControlNotify(sub, handle);
-    }
-    offControlNotify(sub: EventSubscriber) {
-        this.scene.offControlNotify(sub);
-    }
-
-    onMouse(sub: EventSubscriber, code: Constant, handle: number) {
-        this.scene.onMouse(sub, code, handle);
-    }
-    offMouse(sub: EventSubscriber, code: Constant) {
-        this.scene.offMouse(sub, code);
-    }
-
     redraw() {
-        const { view, scene } = this;
-        const nw = view.clientWidth;
-        const nh = view.clientHeight;
+        const nw = this.view.clientWidth;
+        const nh = this.view.clientHeight;
 
-        if (nw !== this.cnv.width || nh !== this.cnv.height) {
+        const sizeChanged = nw !== this.cnv.width || nh !== this.cnv.height;
+
+        if (sizeChanged) {
             this.cnv.width = nw;
             this.cnv.height = nh;
             for (const c of this.sizeSubs) c.receive(Constant.WM_SIZE, nw, nh);
-            scene.dirty = true;
         }
-        scene.render();
+
+        if (sizeChanged || this.scene.dirty) {
+            this.scene.render(this.ctx);
+            this.scene.dirty = false;
+        }
     }
 
-    close() {
+    close(): void {
+        SceneWindow.wins.delete(this);
         this.wnd.close();
+        this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
     }
 
     getProp(prop: string): string {
@@ -123,22 +125,20 @@ export class SceneWindow implements HTMLFactory {
 
     width() {
         const wd = this.view.clientWidth;
-        return wd > 0 ? wd : window.innerWidth;
+        return wd > 0 ? wd : 300;
     }
 
     height() {
         const wh = this.view.clientHeight;
-        return wh > 0 ? wh : window.innerHeight;
+        return wh > 0 ? wh : 200;
     }
 
     setSize(width: number, height: number): NumBool {
         if (this.ignoreSetSize === true) return 1;
         this.wnd.setSize(width, height);
         if (this.resizible === true) return 1;
-        // prettier-ignore
-        const { view: { style } } = this;
-        style.setProperty("width", width + "px");
-        style.setProperty("height", height + "px");
+        this.view.style.setProperty("width", width + "px");
+        this.view.style.setProperty("height", height + "px");
         return 1;
     }
 
@@ -148,6 +148,16 @@ export class SceneWindow implements HTMLFactory {
     }
 
     setAttrib(flag: number): NumBool {
+        return 1;
+    }
+
+    title(): string {
+        return this._title;
+    }
+
+    setTitle(title: string): NumBool {
+        this._title = title;
+        if (!this.noCaption) this.wnd.setTitle(title);
         return 1;
     }
 
@@ -163,5 +173,47 @@ export class SceneWindow implements HTMLFactory {
         this._originX = x;
         this._originY = y;
         return 1;
+    }
+
+    setTransparent(level: number): NumBool {
+        return 1;
+    }
+    setTransparentColor(cref: number): NumBool {
+        return 1;
+    }
+
+    private spaceDoneSubs = new Set<EventSubscriber>();
+    private closeSubs = new Set<EventSubscriber>();
+    private sizeSubs = new Set<EventSubscriber>();
+
+    onSpaceDone(sub: EventSubscriber) {
+        this.spaceDoneSubs.add(sub);
+    }
+    offSpaceDone(sub: EventSubscriber) {
+        this.spaceDoneSubs.delete(sub);
+    }
+    onDestroy(sub: EventSubscriber): void {
+        this.closeSubs.add(sub);
+    }
+    offDestroy(sub: EventSubscriber): void {
+        this.closeSubs.delete(sub);
+    }
+    onResize(sub: EventSubscriber) {
+        this.sizeSubs.add(sub);
+    }
+    offResize(sub: EventSubscriber) {
+        this.sizeSubs.delete(sub);
+    }
+    onControlNotifty(sub: EventSubscriber, handle: number) {
+        this.scene.onControlNotify(sub, handle);
+    }
+    offControlNotify(sub: EventSubscriber) {
+        this.scene.offControlNotify(sub);
+    }
+    onMouse(sub: EventSubscriber, code: Constant, handle: number) {
+        this.scene.onMouse(sub, code, handle);
+    }
+    offMouse(sub: EventSubscriber, code: Constant) {
+        this.scene.offMouse(sub, code);
     }
 }

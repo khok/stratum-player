@@ -1,6 +1,7 @@
 import { ClassInfoBody, readClsFileBody, readClsFileHeader } from "stratum/fileFormats/cls";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { ClassModel, ClassVars, translate } from "stratum/translator";
+import { Schema } from "stratum/project";
+import { translate } from "stratum/translator";
 import { parseVarValue } from "./parseVarValue";
 import { VarType } from "./varType";
 
@@ -13,6 +14,17 @@ type LazyBody =
           loaded: false;
           stream: BinaryStream;
       };
+
+export interface ClassVars {
+    count: number;
+    nameUCToId: Map<string, number>;
+    types: VarType[];
+    defaultValues: (string | number | undefined)[];
+}
+
+export interface ClassModel {
+    (schema: Schema): void;
+}
 
 /*
  * Прототип имиджа, обертка над более низкоуровневыми функциями чтения содержимого имиджа.
@@ -32,12 +44,12 @@ export class ClassProto {
     readonly byteSize: number;
 
     constructor(stream: BinaryStream) {
-        const path = (this.filepathDos = stream.meta.filepathDos || "");
+        const path = (this.filepathDos = stream.name);
         this.directoryDos = path.substring(0, path.lastIndexOf("\\") + 1);
-        this.byteSize = stream.size;
+        this.byteSize = stream.size();
         const header = readClsFileHeader(stream);
         this.name = header.name;
-        stream.meta.fileversion = header.version;
+        stream.version = header.version;
         this.__body = { loaded: false, stream };
     }
 
@@ -178,7 +190,7 @@ export class ClassProto {
         const { __body } = this;
         if (__body.loaded) return __body.data;
 
-        console.log(`Читаем ${this.name} (${__body.stream.meta.filepathDos})`);
+        console.log(`Читаем ${this.name} (${__body.stream.name})`);
         const body = readClsFileBody(__body.stream, this.name, ClassProto.blocks);
         this.__body = {
             loaded: true,

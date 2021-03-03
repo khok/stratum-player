@@ -1,10 +1,10 @@
 export class DataChunk {
     constructor(stream) {
         this.stream = stream;
-        this.start = stream.position;
+        this.start = stream.pos();
 
         this.code = stream.int16();
-        if (stream.meta.fileversion >= 0x300) {
+        if (stream.version >= 0x300) {
             this.size = stream.int32();
         }
         if (this.size < 0) throw Error("chunk size < 0");
@@ -15,11 +15,11 @@ export class DataChunk {
     }
 
     readedBytes() {
-        return this.stream.position - this.start;
+        return this.stream.pos() - this.start;
     }
 
     readNextSubChunk() {
-        if (this.start + this.size <= this.stream.position) return 0;
+        if (this.start + this.size <= this.stream.pos()) return 0;
         return new DataChunk(this.stream);
     }
 

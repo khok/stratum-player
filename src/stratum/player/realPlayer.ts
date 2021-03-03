@@ -1,44 +1,29 @@
-import { Project, ProjectOptions, SmoothExecutor, WindowHost } from "stratum/api";
-import { ClassLibrary } from "stratum/common/classLibrary";
+import { Player, PlayerOptions, SmoothExecutor, WindowHost } from "stratum/api";
 import { Enviroment } from "stratum/env";
-import { ProjectInfo } from "stratum/fileFormats/prj";
-import { VariableSet } from "stratum/fileFormats/stt";
-import { Schema } from "stratum/schema";
-import { unreleasedFunctions } from "stratum/translator/translator";
-import { VFSDir } from "stratum/vfs";
+import { ProjectResources } from "stratum/project";
 import { SimpleWs } from "./ws";
 
-export interface ProjectResources {
-    dir: VFSDir;
-    prjInfo: ProjectInfo;
-    classes: ClassLibrary;
-    stt?: VariableSet;
-    options?: ProjectOptions;
-}
-
-export class Player implements Project {
-    private _state: Project["state"] = "closed";
+export class RealPlayer implements Player {
+    private _state: Player["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
     private _computer = new SmoothExecutor();
     private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
 
-    private readonly prjInfo: ProjectInfo;
-    private readonly classes: ClassLibrary;
-    private readonly stt?: VariableSet | undefined;
-
-    private host = new SimpleWs();
     private loop: (() => boolean) | undefined;
 
-    readonly options: ProjectOptions;
-    readonly dir: VFSDir;
-    env: Enviroment | null = null;
+    private host: WindowHost;
 
-    constructor({ dir, prjInfo, classes, stt, options }: ProjectResources) {
-        this.dir = dir;
-        this.prjInfo = prjInfo;
-        this.classes = classes;
-        this.stt = stt;
-        this.options = { ...options };
+    private projectRes: ProjectResources;
+
+    private env: Enviroment | null;
+
+    readonly options: PlayerOptions;
+
+    constructor(res: ProjectResources) {
+        this.projectRes = res;
+        this.host = new SimpleWs();
+        this.env = null;
+        this.options = {};
     }
 
     get state() {
@@ -64,26 +49,19 @@ export class Player implements Project {
 
     play(container?: HTMLElement): this;
     play(host: WindowHost): this;
-    play(ghost?: HTMLElement | null | WindowHost): this {
+    play(newHost?: HTMLElement | null | WindowHost): this {
         if (this.loop) return this;
-        if (ghost) this.host = ghost instanceof HTMLElement ? new SimpleWs(ghost) : ghost;
+        if (newHost) {
+            this.host = newHost instanceof HTMLElement ? new SimpleWs(newHost) : newHost;
+        }
 
-        unreleasedFunctions.clear();
-        const env = (this.env = new Enviroment(this.classes, this.dir, this.host));
-        const schema = Schema.build(this.prjInfo.rootClassName, this.classes, env);
-        if (unreleasedFunctions.size > 0) console.log(`Нереализованные функции:\n${[...unreleasedFunctions.values()].join("\n")}`);
-        env.init(schema.createTLB()); // Инициализируем память
-
-        schema.applyDefaults(); //Заполняем значениями по умолчанию
-        if (this.stt) schema.applyVarSet(this.stt); // Применяем _preload.stt
-
+        const env = (this.env = new Enviroment(this.projectRes, this.host, this.options));
         this._diag.iterations = 0;
         // Main Loop
-        env.shouldClose = false;
         this.loop = () => {
-            env.sync().assertZeroIndexEmpty();
+            let res = false;
             try {
-                schema.compute();
+                res = env.compute();
             } catch (e) {
                 console.error(e);
                 this._state = "error";
@@ -91,12 +69,11 @@ export class Player implements Project {
                 return false;
             }
             ++this._diag.iterations;
-            if (env.shouldClose === true) {
+            if (res === false) {
                 this.close();
                 this.handlers.closed.forEach((h) => h());
-                return false;
             }
-            return true;
+            return res;
         };
 
         this.computer.run(this.loop);
@@ -108,7 +85,7 @@ export class Player implements Project {
         this.computer.stop();
         this.loop = undefined;
         if (this.env) {
-            this.env.closeAllWindows();
+            this.env.closeAllRes();
             this.env = null;
         }
         this._state = "closed";

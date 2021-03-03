@@ -1,27 +1,35 @@
+import { ClassModel, ClassVars } from "stratum/common/classProto";
 import { VarType } from "stratum/common/varType";
 import { Constant, Enviroment } from "stratum/env";
-import { Schema } from "stratum/schema";
-import { ClassModel, ClassVars } from ".";
+import { Project, Schema } from "stratum/project";
 import { normalizeSource } from "./normalizer";
 import { parse } from "./parser";
+import { unreleasedFunctions } from "./unreleasedFunctions";
 
-const prefix = "stratum_";
-const prefLen = prefix.length;
-const envFuncs = (Object.getOwnPropertyNames(Enviroment.prototype) as (keyof Enviroment)[]).filter((c) => {
-    const v = Enviroment.prototype[c];
-    return typeof v === "function" && v.name.startsWith(prefix);
-});
-const schemaFuncs = (Object.getOwnPropertyNames(Schema.prototype) as (keyof Schema)[]).filter((c) => {
-    const v = Schema.prototype[c];
-    return typeof v === "function" && v.name.startsWith(prefix);
-});
+const PREFIX = "stratum_";
+const PREF_LEN = PREFIX.length;
+
+function extract<T extends Function>(f: T, varName: string): [string, string][] {
+    const funcs = (Object.getOwnPropertyNames(f.prototype) as (keyof T)[]).filter((c) => {
+        const v = f.prototype[c];
+        return typeof v === "function" && v.name.startsWith(PREFIX);
+    });
+    return funcs.map((c): [string, string] => [c.toString().substring(PREF_LEN).toUpperCase(), `${varName}.${c}`]);
+}
+
+const schemaVarName = "schema";
+const prjVarName: keyof Schema = "prj";
+const envVarName: keyof Project = "env";
+
 const funcTable = new Map([
     ["ADDSLASH", "addSlash"],
+    ["LN", "ln"],
+    ["POS", "pos"],
     ["RIGHT", "right"],
-    ["ROUND", "roundPrec"],
-    ["NEW", Enviroment.prototype.stratum_newArray.name],
-    ...schemaFuncs.map((c): [string, string] => [c.substring(prefLen).toUpperCase(), `schema.${c}`]),
-    ...envFuncs.map((c): [string, string] => [c.substring(prefLen).toUpperCase(), `env.${c}`]),
+    ["ROUND", "round"],
+    ...extract(Enviroment, envVarName),
+    ...extract(Project, prjVarName),
+    ...extract(Schema, schemaVarName),
 ]);
 
 const arrNames = new Map([
@@ -36,15 +44,30 @@ const header = `
 function addSlash(a) {
     return a[a.length - 1] === "\\\\" ? a : a + "\\\\";
 }
+function ln(a) {
+    return a > 0 ? Math.log(a) : -(10**100)
+}
+function pos(s1, s2, n) {
+    if(s2 === "") return -1
+    let idx = -1;
+    let srch = 0;
+    for(let i = 0; i < n; ++i) {
+        idx = s1.indexOf(s2, srch);
+        if(idx < 0) return -1;
+        srch = idx + s2.length;
+    }
+    return idx;
+}
 function right(a, n) {
     return a.substr(a.length - n);
 }
-function roundPrec(a, b) {
+function round(a, b) {
     const pw = Math.ceil(10 ** b);
     return Math.round(a * pw + Number.EPSILON) / pw;
 }
-const { ${TLBVarName} } = schema;
-const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings } = env;
+const { ${TLBVarName}, ${prjVarName} } = schema;
+const { ${envVarName} } = ${prjVarName};
+const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings } = ${prjVarName};
 `;
 
 let _hasBug = false;
@@ -110,7 +133,7 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetTime: ${nm}`);
                     return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
-                return `env.stratum_getTime(${a.join(",")})`;
+                return `${envVarName}.stratum_getTime(${a.join(",")})`;
             }
 
             if (nameUC === "GETDATE") {
@@ -122,7 +145,7 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetDate: ${nm}`);
                     return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
-                return `env.stratum_getDate(${a.join(",")})`;
+                return `${envVarName}.stratum_getDate(${a.join(",")})`;
             }
 
             if (nameUC === "GETACTUALSIZE2D") {
@@ -136,7 +159,7 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
                     if (id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${nm}`);
                     return `${a.first.isNew ? "new" : "old"}${floatArr},TLB[${id}]`;
                 });
-                return `env.stratum_getActualSize2d(${f1.join(",")},${f2.join(",")})`;
+                return `${envVarName}.stratum_getActualSize2d(${f1.join(",")},${f2.join(",")})`;
             }
 
             const fargs = subop.args.map((a: any) => opToString(a, vars));
@@ -150,6 +173,8 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
             if (nameUC === "SQRT") return `(Math.sqrt(${fargs[0]})||0)`;
             if (nameUC === "SIN") return `(Math.sin(${fargs[0]})||0)`;
             if (nameUC === "COS") return `(Math.cos(${fargs[0]})||0)`;
+            if (nameUC === "EXP") return `(Math.exp(${fargs[0]})||0)`;
+            if (nameUC === "SGN") return `(Math.sign(${fargs[0]})||0)`;
             if (nameUC === "MIN") return `(Math.min(${fargs[0]}, ${fargs[1]})||0)`;
             if (nameUC === "MAX") return `(Math.max(${fargs[0]}, ${fargs[1]})||0)`;
 
@@ -164,11 +189,15 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
             if (nameUC === "LEFT") return `(${fargs[0]}).substr(0,${fargs[1]})`;
             // if (nameUC === "RIGHT") return `right(${fargs[0]}, ${fargs[1]})`;
             if (nameUC === "RND") return `(Math.random() * (${fargs[0]}))`;
+            if (nameUC === "CHANGE") return `(${fargs[0]}).replace(new RegExp(${fargs[1]}, "g"), ${fargs[2]})`;
 
             const fname = funcTable.get(nameUC);
-            if (!fname) funcs.set(nameUC, subop.name);
+            if (!fname) {
+                funcs.set(nameUC, subop.name);
+                fargs.unshift(`"${subop.name}"`);
+            }
             // if (!fname) throw Error(`Функция не реализована: ${subop.name}`);
-            return `${fname || subop.name}(${fargs.join(",")})`;
+            return `${fname || `${schemaVarName}.stubCall`}(${fargs.join(",")})`;
         }
         case "expression":
             return `(${opToString(subop.body, vars)})`;
@@ -234,7 +263,6 @@ function parseCodeline(c: any, vars: ClassVars | undefined): string | undefined 
 }
 
 const funcs = new Map<string, string>();
-export const unreleasedFunctions = new Map<string, string>();
 export function translate(source: string, vars: ClassVars | undefined, objname: string): ClassModel | undefined {
     funcs.clear();
     const norm = normalizeSource(source);
@@ -281,7 +309,7 @@ export function translate(source: string, vars: ClassVars | undefined, objname: 
     if (funcs.size > 0) console.warn(`Функции ${[...funcs.values()].join(", ")} в ${objname} не реализованы.`);
     funcs.forEach((v, k) => unreleasedFunctions.set(k, v));
     try {
-        return new Function("schema", "env", header + body + `//# sourceURL=${objname}`) as ClassModel;
+        return new Function(schemaVarName, header + body + `//# sourceURL=${objname}`) as ClassModel;
     } catch (e) {
         // prettier-ignore
         console.log(norm.split("\n").filter(s => s.trim()).map((s, idx) => `${idx + 1}: ${s}`).join("\n"));

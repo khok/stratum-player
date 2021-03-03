@@ -25,7 +25,7 @@ export class VFSDir implements FileSystemDir {
         }
     }
 
-    private resolve(pp: string[]): VFSDir | VFSFile | undefined {
+    private resolve(pp: string[], createDir = false): VFSDir | VFSFile | undefined {
         if (pp.length === 0) return undefined;
         const isAbsolute = pp[0].length === 2 && pp[0][1] === ":";
 
@@ -39,18 +39,30 @@ export class VFSDir implements FileSystemDir {
             root = this;
         }
 
-        for (let i = isAbsolute ? 1 : 0; i < pp.length - 1; i++) {
+        for (let i = isAbsolute ? 1 : 0; i < pp.length; ++i) {
             if (pp[i] === "..") {
                 root = root.parent;
             } else {
-                const next = root.nodes.get(pp[i].toUpperCase());
-                if (!next?.dir) return undefined;
-                root = next;
+                const localName = pp[i];
+                const localKeyUC = localName.toUpperCase();
+                const next = root.nodes.get(localKeyUC);
+                // Существует директория
+                if (next?.dir) {
+                    root = next;
+                    continue;
+                }
+                // Директории нет, но она автосоздается
+                if (!next && createDir) {
+                    const d = new VFSDir(localName, root);
+                    root.nodes.set(localKeyUC, d);
+                    root = d;
+                    continue;
+                }
+                // Существует файл, и он не последний в пути
+                return i === pp.length - 1 ? next : undefined;
             }
         }
-
-        const last = pp[pp.length - 1];
-        return last === ".." ? root.parent : root.nodes.get(last.toUpperCase());
+        return root;
     }
 
     get(path: string): VFSDir | VFSFile | undefined {
@@ -61,25 +73,30 @@ export class VFSDir implements FileSystemDir {
     create(type: "dir", path: string): VFSDir | undefined;
     create(type: "file" | "dir", path: string, data?: FileSystemFileData): VFSFile | VFSDir | undefined {
         const pp = splitPath(path);
-        const where = this.resolve(pp.slice(0, pp.length - 1));
+        if (type === "dir") {
+            return this.resolve(pp, true);
+        }
+
+        const basePath = pp.slice(0, pp.length - 1);
+        const localName = pp[pp.length - 1];
+
+        const where = this.resolve(basePath);
         if (!where?.dir) return undefined;
 
-        const localName = pp[pp.length - 1];
         const keyUC = localName.toUpperCase();
 
         const existingNode = where.nodes.get(keyUC);
-        if (existingNode) return existingNode.dir && type === "dir" ? existingNode : undefined;
+        if (existingNode?.dir) return undefined;
 
-        const f = type === "file" ? new VFSFile(localName, where, data) : new VFSDir(localName, where);
+        const f = new VFSFile(localName, where, data ?? new ArrayBuffer(0));
         where.nodes.set(keyUC, f);
         return f;
     }
 
     private setLocalSafe(localName: string, fileOrDir: VFSDir | VFSFile) {
-        const { nodes } = this;
-        const prv = nodes.size;
-        nodes.set(localName.toUpperCase(), fileOrDir);
-        if (nodes.size === prv) throw Error(`Конфликт имен: ${fileOrDir.pathDos}`);
+        const prv = this.nodes.size;
+        this.nodes.set(localName.toUpperCase(), fileOrDir);
+        if (this.nodes.size === prv) throw Error(`Конфликт имен: ${fileOrDir.pathDos}`);
     }
 
     createLocalFile(name: string, source: LazyBuffer): void {
@@ -88,16 +105,15 @@ export class VFSDir implements FileSystemDir {
     }
 
     createLocalDir(name: string): VFSDir {
-        const { nodes } = this;
         const keyUC = name.toUpperCase();
 
-        const node = nodes.get(keyUC);
+        const node = this.nodes.get(keyUC);
         if (node) {
             if (node.dir) return node;
             throw pathErr(node.pathDos);
         }
         const d = new VFSDir(name, this);
-        nodes.set(keyUC, d);
+        this.nodes.set(keyUC, d);
         return d;
     }
 

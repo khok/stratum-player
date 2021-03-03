@@ -1,5 +1,10 @@
 import { VarType } from "stratum/common/varType";
-import { MemorySize } from "stratum/env";
+
+export interface MemorySize {
+    floatsCount: number;
+    intsCount: number;
+    stringsCount: number;
+}
 
 export class VarGraphNode {
     private indexWasSet = false;

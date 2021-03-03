@@ -42,7 +42,7 @@ export class FastestComputer implements Executor {
 
     private _loop(cb: () => boolean): number {
         return setTimeout(() => {
-            if (cb()) this.frameId = this._loop(cb);
+            if (cb() && cb() && cb() && cb()) this.frameId = this._loop(cb);
             else this._running = false;
         }, this.timeout);
     }

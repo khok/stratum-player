@@ -25,7 +25,7 @@ function readSubset(stream: BinaryStream): VariableSet {
 
     const childSets: VariableSet[] = [];
 
-    while (stream.position < end) childSets.push(readSubset(stream));
+    while (stream.pos() < end) childSets.push(readSubset(stream));
 
     return { handle, classname, classId, values, childSets };
 }

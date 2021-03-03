@@ -1,6 +1,7 @@
 import { NumBool } from "stratum/env";
 import { BitmapElement, DoubleBitmapElement } from "stratum/fileFormats/vdr";
 import { Scene } from ".";
+import { Hyperbase } from "./hyperbase";
 import { SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { DIBTool } from "./tools/dibTool";
@@ -34,7 +35,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
     private _width: number;
     private _height: number;
     private hardHidden: boolean;
-    private _visible: number;
+    private _visible: boolean;
     private _selectable: number;
     private _layer: number;
     private _parent: SceneGroup | null;
@@ -50,10 +51,12 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
     name: string;
     markDeleted: boolean;
 
+    hyperbase: Hyperbase | null;
     constructor(
         scene: Scene,
         { handle, name, options, hidden, originX, originY, type, dibHandle, width, height, cropX, cropY, cropW, cropH }: SceneBitmapArgs
     ) {
+        this.hyperbase = null;
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";
@@ -81,7 +84,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
 
         const opts = options || 0;
         // this._visible = opts & 1 ? 0 : 1;
-        this._visible = 1;
+        this._visible = true;
         this._selectable = opts & 8 ? 0 : 1;
         const layerNumber = (opts >> 8) & 0b11111;
         this._layer = 1 << layerNumber;
@@ -129,13 +132,13 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         return this._width;
     }
     actualWidth(): number {
-        return this._width;
+        return this.dib?.width() || 0;
     }
     height(): number {
         return this._height;
     }
     actualHeight(): number {
-        return this._height;
+        return this.dib?.height() || 0;
     }
     setSize(width: number, height: number): NumBool {
         if (width < 0 || height < 0) return 0;
@@ -157,7 +160,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         return 1;
     }
 
-    setShow(visible: number): NumBool {
+    setVisibility(visible: boolean): NumBool {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
@@ -240,14 +243,14 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
     }
 
     render(ctx: CanvasRenderingContext2D, sceneX: number, sceneY: number, layers: number) {
-        if (this.hardHidden || !this.dib || this._visible === 0 || (this._layer & layers) !== 0) return;
+        if (this.hardHidden || !this.dib || !this._visible || (this._layer & layers) !== 0) return;
         const x = this._originX - sceneX;
         const y = this._originY - sceneY;
         this.dib.render(ctx, this.cropX, this.cropY, this.cropW, this.cropH, x, y, this._width, this._height);
     }
 
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined {
-        if (this.hardHidden || !this.dib || this._visible === 0 || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
+        if (this.hardHidden || !this.dib || !this._visible || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
 
         const ox = x - this._originX;
         const oy = y - this._originY;
@@ -257,7 +260,6 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         const dy = oy * (this.cropH / this._height) + this.cropY;
 
         if (!this.dib.tryClick(dx, dy)) return undefined;
-        // if (this.ctx2.getImageData(ox, oy, 1, 1).data[3] === 0) return undefined;
 
         return this._parent ? this._parent.root() : this;
     }

@@ -1,11 +1,57 @@
 import { options } from "stratum/api";
+import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
 import { Env, NumBool } from "stratum/env";
 import { readDbmFile } from "stratum/fileFormats/bmp";
 import { ImageToolParams } from "stratum/fileFormats/vdr";
 import { BinaryStream } from "stratum/helpers/binaryStream";
+import { DibToolImage } from "stratum/helpers/types";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export class DIBTool implements Env.DIBTool {
+    private static promises = new Map<string, Promise<DibToolImage>>();
+
+    static loadBitmap(url: string): Promise<DibToolImage> {
+        const r = DIBTool.promises.get(url);
+        if (r) return r;
+
+        const p = new Promise<DibToolImage>((res) => {
+            const img = new Image();
+            img.addEventListener("load", () => {
+                const cnv = document.createElement("canvas");
+                const ctx = cnv.getContext("2d", { alpha: false });
+
+                if (!ctx || img.width === 0 || img.height === 0) {
+                    res(null);
+                    return;
+                }
+
+                cnv.width = img.width;
+                cnv.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                res(ctx);
+            });
+            img.addEventListener("error", () => res(null));
+            img.src = url;
+        });
+
+        this.promises.set(url, p);
+        return p;
+    }
+
+    static loadDBM(url: string): Promise<DibToolImage> {
+        const r = DIBTool.promises.get(url);
+        if (r) return r;
+
+        const p = new Promise<DibToolImage>(async (res) => {
+            const r = await fetch(url, { cache: "force-cache" });
+            const data = await r.arrayBuffer();
+            const cnv = readDbmFile(new BinaryStream({ data, name: url }));
+            res(cnv);
+        });
+
+        DIBTool.promises.set(url, p);
+        return p;
+    }
     // private static stubImg: HTMLCanvasElement;
     // static init() {
     //     this.stubImg = document.createElement("canvas");
@@ -17,7 +63,7 @@ export class DIBTool implements Env.DIBTool {
     //     ctx.fillRect(0, 0, 1, 1);
     // }
     private subs: Set<ToolSubscriber>;
-    private img: CanvasRenderingContext2D | null;
+    private img: DibToolImage;
     private _pattern: CanvasPattern | null;
     handle: number;
     constructor(args: ImageToolParams) {
@@ -25,38 +71,19 @@ export class DIBTool implements Env.DIBTool {
         this._pattern = null;
         this.subs = new Set();
         if (args.type === "ttDIB2D" || args.type === "ttDOUBLEDIB2D") {
-            this.img = args.img.width > 0 && args.img.height > 0 ? args.img.getContext("2d") : null;
+            this.img = args.img;
         } else {
             this.img = null;
             const path = options.iconsLocation;
             if (!path) return;
 
             const url = `${path.endsWith("/") ? path : path + "/"}${args.filename.toUpperCase()}`;
+            const load = args.type === "ttREFTODIB2D" ? DIBTool.loadBitmap : DIBTool.loadDBM;
 
-            if (args.type === "ttREFTODIB2D") {
-                const img = new Image();
-                img.addEventListener("load", () => {
-                    if (img.width === 0 || img.height === 0) return;
-                    const cnv = document.createElement("canvas");
-                    cnv.width = img.width;
-                    cnv.height = img.height;
-                    const ctx = cnv.getContext("2d", { alpha: false });
-                    if (!ctx) throw Error(`Не удалось загрузить изображение ${args.filename}`);
-                    ctx.drawImage(img, 0, 0);
-                    this.img = cnv.getContext("2d") || null;
-                    this.subs.forEach((s) => s.toolChanged());
-                });
-                img.src = url;
-            } else {
-                fetch(url)
-                    .then((r) => r.arrayBuffer())
-                    .then((b) => {
-                        const cnv = readDbmFile(new BinaryStream(b, { filepathDos: url }));
-                        if (cnv.width === 0 || cnv.height === 0) return;
-                        this.img = cnv.getContext("2d") || null;
-                        this.subs.forEach((s) => s.toolChanged());
-                    });
-            }
+            load(url).then((ctx) => {
+                this.img = ctx;
+                this.subs.forEach((s) => s.toolChanged());
+            });
         }
     }
     subscribe(sub: ToolSubscriber) {
@@ -69,22 +96,19 @@ export class DIBTool implements Env.DIBTool {
     getPixel(x: number, y: number): number {
         if (!this.img) return 0;
         const pixel = this.img.getImageData(x, y, 1, 1).data;
-        const r = pixel[0];
-        const g = pixel[1] << 8;
-        const b = pixel[2] << 16;
-        return r | g | b;
+        return rgbToCref(pixel[0], pixel[1], pixel[2], 0);
     }
     setPixel(x: number, y: number, colorref: number): NumBool {
         if (!this.img) return 1;
-        const r = colorref & 255;
-        const g = (colorref >> 8) & 255;
-        const b = (colorref >> 16) & 255;
+
         const imgData = this.img.createImageData(1, 1);
+
         const d = imgData.data;
-        d[0] = r;
-        d[1] = g;
-        d[2] = b;
+        d[0] = crefToR(colorref);
+        d[1] = crefToG(colorref);
+        d[2] = crefToB(colorref);
         d[3] = 255;
+
         this.img.putImageData(imgData, x, y);
         this.subs.forEach((s) => s.toolChanged());
         return 1;
@@ -108,11 +132,11 @@ export class DIBTool implements Env.DIBTool {
     }
 
     width(): number {
-        return this.img?.canvas.width || 0;
+        return this.img?.canvas.width ?? 0;
     }
 
     height(): number {
-        return this.img?.canvas.height || 0;
+        return this.img?.canvas.height ?? 0;
     }
 }
 // DIBTool.init();

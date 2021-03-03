@@ -107,8 +107,8 @@ function readChildren(stream: BinaryStream): ClassChild[] {
         const name = stream.string();
 
         //class.cpp:5952
-        if (!stream.meta.fileversion) throw Error("filversion?");
-        const position = stream.meta.fileversion < 0x3002 ? stream.point2dInt() : stream.point2d();
+        if (!stream.version) throw Error("filversion?");
+        const position = stream.version < 0x3002 ? stream.point2dInt() : stream.point2d();
 
         // const flag =  0 | stream.bytes(1)[0];
         const flags = stream.byte();
@@ -118,35 +118,21 @@ function readChildren(stream: BinaryStream): ClassChild[] {
 }
 
 function readVdr(stream: BinaryStream, classname: string, type: "Схема" | "Изображение") {
+    const fmt = `${type} ${classname} (${stream.name || "?"})`;
     const flags = stream.int32();
     if (flags & EntryCode.SF_EXTERNAL) {
         const filename = stream.string();
-        console.warn(`${type} ${classname} (${stream.meta.filepathDos || "?"}): ошибка чтения.
-Причина: чтение внешних VDR (${filename}) не реализовано.`);
+        console.warn(`${fmt}: ошибка чтения. Причина: чтение внешних VDR (${filename}) не реализовано.`);
         return undefined;
     }
 
-    const bytes = stream.bytes(stream.int32());
-    const st = new BinaryStream(bytes);
-
-    let vdr: VectorDrawing;
+    const data = stream.bytes(stream.int32());
     try {
-        vdr = readVdrFile(st);
+        return readVdrFile(new BinaryStream({ data, name: fmt }), { origin: "class", name: classname });
     } catch (e) {
-        console.warn(`${type} ${classname} (${stream.meta.filepathDos || "?"}): ошибка чтения.\nПричина: ${e.message}`);
+        console.warn(`${fmt}): ошибка чтения.\nПричина: ${e.message}`);
         return undefined;
     }
-
-    vdr.source = { origin: "class", name: classname };
-
-    if (st.position !== st.size) {
-        const readed = st.position;
-        const lost = st.size - readed;
-        const ver = st.meta.fileversion?.toString(16) || "?";
-        const msg = `${type} ${classname} (${stream.meta.filepathDos || "?"}): считано ${readed} байтов, не считано ${lost}. v0x${ver}.`;
-        console.warn(msg);
-    }
-    return vdr;
 }
 
 // const EC_VAR = 16384;
@@ -265,7 +251,7 @@ export function readClsFileBody<VmCode>(
             try {
                 res.code = blocks.parseBytecode(raw);
             } catch (e) {
-                console.warn(`Байткод ${classname} (${stream.meta.filepathDos || "?"}): ошибка чтения.\nПричина: ${e.message}`);
+                console.warn(`Байткод ${classname} (${stream.name || "?"}): ошибка чтения.\nПричина: ${e.message}`);
             }
         } else {
             stream.skip(codesize);
@@ -274,12 +260,12 @@ export function readClsFileBody<VmCode>(
     }
 
     if (next === EntryCode.CR_EQU) {
-        console.warn(`${classname} (${stream.meta.filepathDos || "?"}):\nУравнения не поддерживаются.`);
+        console.warn(`${classname} (${stream.name || "?"}):\nУравнения не поддерживаются.`);
         return res;
     }
 
-    if (next !== EntryCode.CR_CLASSTIME && stream.meta.fileversion === 0x3003) {
-        console.warn(`${classname} (${stream.meta.filepathDos || "?"}: тут что-то не так...`);
+    if (next !== EntryCode.CR_CLASSTIME && stream.version === 0x3003) {
+        console.warn(`${classname} (${stream.name || "?"}: тут что-то не так...`);
     }
 
     // let classId = stream.int32();

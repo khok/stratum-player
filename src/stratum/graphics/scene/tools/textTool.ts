@@ -55,7 +55,9 @@ export class TextTool implements Env.TextTool {
 
         this.scene = scene;
         this.cnv = document.createElement("canvas");
-        this.ctx2 = this.cnv.getContext("2d", { alpha: true })!;
+        const ctx = this.cnv.getContext("2d", { alpha: true });
+        if (!ctx) throw Error("Не удалось инициализировать контекст рендеринга");
+        this.ctx2 = ctx;
         this.needUpdatePrepared = true;
         this.needRedraw = true;
 

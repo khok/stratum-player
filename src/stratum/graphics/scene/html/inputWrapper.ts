@@ -50,11 +50,11 @@ export class InputWrapper {
         this.elem.remove();
     }
 
-    onEdit(handler: () => void) {
+    onEdit(handler: (ev: Event) => void) {
         this.elem.addEventListener("input", handler);
     }
 
-    offEdit(handler: () => void) {
+    offEdit(handler: (ev: Event) => void) {
         this.elem.removeEventListener("input", handler);
     }
 }

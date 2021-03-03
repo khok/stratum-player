@@ -6,10 +6,10 @@ function readObject(stream) {
     return {
         handle: stream.uint16(),
         options: stream.uint16(),
-        name: stream.meta.fileversion >= 0x0102 && stream.meta.fileversion < 0x0300 ? stream.string() : "",
+        name: stream.version >= 0x0102 && stream.version < 0x0300 ? stream.string() : "",
     };
 
-    // if (stream.meta.fileversion >= 0x0102 && stream.meta.fileversion < 0x0300) {
+    // if (stream.version >= 0x0102 && stream.version < 0x0300) {
     //     data.name = stream.string()
     // }
     // return data;
@@ -17,7 +17,7 @@ function readObject(stream) {
 
 function readObject2D(stream) {
     const base = readObject(stream);
-    if (stream.meta.fileversion < 0x200) {
+    if (stream.version < 0x200) {
         return {
             ...base,
             originX: stream.int16(),
@@ -73,7 +73,7 @@ function read_otLINE2D(stream) {
     const coordCount = stream.uint16() * 2;
     data.coords = new Array(coordCount);
     for (let i = 0; i < coordCount; i += 2) {
-        if (stream.meta.fileversion < 0x200) {
+        if (stream.version < 0x200) {
             data.coords[i + 0] = stream.int16();
             data.coords[i + 1] = stream.int16();
         } else {
@@ -82,7 +82,7 @@ function read_otLINE2D(stream) {
         }
     }
 
-    if (stream.meta.fileversion <= 0x0200) {
+    if (stream.version <= 0x0200) {
         return data;
     }
 
@@ -94,7 +94,7 @@ function read_otLINE2D(stream) {
 }
 
 function readBitmap(stream) {
-    const fv = stream.meta.fileversion;
+    const fv = stream.version;
     return {
         ...readObject2D(stream),
         hidden: false,
@@ -111,7 +111,7 @@ function read_otTEXT2D(stream) {
     return {
         ...readObject2D(stream),
         textToolHandle: stream.uint16(),
-        delta: stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d(),
+        delta: stream.version < 0x200 ? stream.point2dInt() : stream.point2d(),
         angle: stream.int16(),
     };
 }

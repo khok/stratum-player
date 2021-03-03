@@ -1,1 +1,1 @@
-export { Player } from "./player";
+export { RealPlayer } from "./realPlayer";

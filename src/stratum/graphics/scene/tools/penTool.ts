@@ -1,5 +1,5 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
-import { Env, NumBool } from "stratum/env";
+import { Constant, Env, NumBool } from "stratum/env";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface PenToolArgs {
@@ -37,9 +37,6 @@ export class PenTool implements Env.PenTool {
     color(): number {
         return this._color;
     }
-    cssColor(): string {
-        return this._cssColor;
-    }
     setColor(color: number): NumBool {
         this._color = color;
         this._cssColor = colorrefToCSSColor(color);
@@ -59,6 +56,7 @@ export class PenTool implements Env.PenTool {
     }
     setStyle(style: number): NumBool {
         this._style = style;
+        this.subs.forEach((s) => s.toolChanged());
         return 1;
     }
     rop(): number {
@@ -67,5 +65,9 @@ export class PenTool implements Env.PenTool {
     setRop(rop: number): NumBool {
         this._rop = rop;
         return 1;
+    }
+
+    strokeStyle(): string | null {
+        return this._style === Constant.PS_NULL ? null : this._cssColor;
     }
 }

@@ -1,5 +1,5 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
-import { Env, NumBool } from "stratum/env";
+import { Constant, Env, NumBool } from "stratum/env";
 import { DIBTool } from "./dibTool";
 import { ToolStorage } from "./toolStorage";
 import { ToolSubscriber } from "./toolSubscriber";
@@ -13,7 +13,8 @@ export interface BrushToolArgs {
     dibHandle: number;
 }
 
-export class BrushTool implements Env.BrushTool {
+export class BrushTool implements Env.BrushTool, ToolSubscriber {
+    private scene: ToolStorage;
     private subs: Set<ToolSubscriber>;
     private _dibTool: DIBTool | null;
     private _color: number;
@@ -32,7 +33,13 @@ export class BrushTool implements Env.BrushTool {
         this._hatch = hatch;
         this._rop = rop2;
         this._dibTool = (dibHandle && scene.dibs.get(dibHandle)) || null;
+        this._dibTool?.subscribe(this);
+        this.scene = scene;
     }
+    toolChanged(): void {
+        this.subs.forEach((s) => s.toolChanged());
+    }
+
     subscribe(sub: ToolSubscriber) {
         this.subs.add(sub);
     }
@@ -44,11 +51,19 @@ export class BrushTool implements Env.BrushTool {
         return this._dibTool;
     }
 
+    setDIB(hdib: number): NumBool {
+        this._dibTool?.unsubscribe(this);
+        this._dibTool = this.scene.dibs.get(hdib) || null;
+        this._dibTool?.subscribe(this);
+        this.subs.forEach((s) => s.toolChanged());
+        return 1;
+    }
+    dibHandle(): number {
+        return this._dibTool?.handle || 0;
+    }
+
     color(): number {
         return this._color;
-    }
-    cssColor(): string {
-        return this._cssColor;
     }
     setColor(color: number): NumBool {
         this._color = color;
@@ -61,6 +76,7 @@ export class BrushTool implements Env.BrushTool {
     }
     setStyle(style: number): NumBool {
         this._style = style;
+        this.subs.forEach((s) => s.toolChanged());
         return 1;
     }
     hatch(): number {
@@ -76,5 +92,18 @@ export class BrushTool implements Env.BrushTool {
     setRop(rop: number): NumBool {
         this._rop = rop;
         return 1;
+    }
+
+    fillStyle(ctx: CanvasRenderingContext2D): string | CanvasPattern | null {
+        switch (this._style) {
+            case Constant.BS_SOLID:
+                return this._cssColor;
+            case Constant.BS_NULL:
+                return null;
+            case Constant.BS_PATTERN:
+                return this.dibTool()?.pattern(ctx) ?? "white";
+            default:
+                return "white";
+        }
     }
 }

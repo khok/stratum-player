@@ -1,7 +1,9 @@
 import { Constant, Env, Enviroment, EventSubscriber, NumBool } from "stratum/env";
 import { VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
+import { DibToolImage } from "stratum/helpers/types";
 import { InputWrapper, InputWrapperOptions } from "./html/inputWrapper";
+import { Hyperbase } from "./hyperbase";
 import { SceneBitmap } from "./sceneBitmap";
 import { SceneControl } from "./sceneControl";
 import { SceneGroup } from "./sceneGroup";
@@ -14,8 +16,10 @@ import { PenTool } from "./tools/penTool";
 import { StringTool } from "./tools/stringTool";
 import { TextTool } from "./tools/textTool";
 import { ToolStorage } from "./tools/toolStorage";
+import { ToolSubscriber } from "./tools/toolSubscriber";
 
 export interface SceneMember extends Env.SceneObject {
+    hyperbase: Hyperbase | null;
     readonly type: SceneVisualMember["type"] | "group";
     readonly markDeleted: boolean;
     handle: number;
@@ -45,7 +49,9 @@ export interface HTMLFactory {
     textInput(options: InputWrapperOptions): InputWrapper;
 }
 
-export class Scene implements Env.Scene, ToolStorage {
+type SceneObj = SceneLine | SceneBitmap | SceneText | SceneControl | SceneGroup;
+
+export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     private static getInversedMatrix(matrix: number[]): number[] {
         const det =
             matrix[0] * (matrix[4] * matrix[8] - matrix[7] * matrix[5]) -
@@ -65,22 +71,23 @@ export class Scene implements Env.Scene, ToolStorage {
         ];
     }
 
-    private cnv: HTMLCanvasElement;
-    private ctx: CanvasRenderingContext2D;
-    private html: HTMLFactory;
+    private hyperTarget: Env.HyperTarget | null;
+
+    private readonly html: HTMLFactory;
 
     private _originX: number;
     private _originY: number;
     private _scale: number;
     private layers: number;
 
-    private fillStyle: string;
+    private primaryObjects: (SceneLine | SceneBitmap | SceneText | SceneControl)[];
+
+    private brush: BrushTool | null;
+
     readonly matrix: number[];
     readonly invMatrix: number[];
 
-    private primaryObjects: (SceneLine | SceneBitmap | SceneText | SceneControl)[];
-
-    objects: Map<number, SceneLine | SceneBitmap | SceneText | SceneControl | SceneGroup>;
+    objects: Map<number, SceneObj>;
     pens: Map<number, PenTool>;
     brushes: Map<number, BrushTool>;
     dibs: Map<number, DIBTool>;
@@ -91,23 +98,14 @@ export class Scene implements Env.Scene, ToolStorage {
 
     dirty: boolean;
 
-    constructor(canvas: HTMLCanvasElement, html: HTMLFactory, vdr?: VectorDrawing) {
-        this.cnv = canvas;
-        const ctx = canvas.getContext("2d", { alpha: false });
-        if (!ctx) throw Error("Не удалось инициализировать контекст рендеринга");
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, this.cnv.width, this.cnv.height);
-        this.ctx = ctx;
+    cursor: "default" | "pointer";
+
+    constructor(html: HTMLFactory, vdr?: VectorDrawing) {
         this.dirty = false;
         this.html = html;
+        this.hyperTarget = null;
+        this.cursor = "default";
 
-        const handler = (evt: PointerEvent) => this.pointerEventHandler(evt);
-        canvas.addEventListener("pointerdown", handler);
-        canvas.addEventListener("pointerup", handler);
-        canvas.addEventListener("pointerleave", handler);
-        canvas.addEventListener("pointermove", handler);
-
-        this.fillStyle = "white";
         if (!vdr) {
             this._originX = 0;
             this._originY = 0;
@@ -124,6 +122,7 @@ export class Scene implements Env.Scene, ToolStorage {
             this.texts = new Map();
             this.matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
             this.invMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+            this.brush = null;
             return;
         }
         // порядок важен - некоторые инструменты зависят от других.
@@ -135,10 +134,8 @@ export class Scene implements Env.Scene, ToolStorage {
         this.fonts = new Map(vdr.fontTools?.map((t) => [t.handle, new FontTool(t)]));
         this.texts = new Map(vdr.textTools?.map((t) => [t.handle, new TextTool(this, t)]));
 
-        if (vdr.brushHandle > 0) {
-            const tool = this.brushes.get(vdr.brushHandle);
-            if (tool) this.fillStyle = tool.cssColor();
-        }
+        this.brush = (vdr.brushHandle > 0 && this.brushes.get(vdr.brushHandle)) || null;
+        this.brush?.subscribe(this);
 
         this.matrix = vdr.crdSystem?.matrix.slice() || [1, 0, 0, 0, 1, 0, 0, 0, 1];
         this.invMatrix = vdr.crdSystem ? Scene.getInversedMatrix(this.matrix) : [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -149,7 +146,7 @@ export class Scene implements Env.Scene, ToolStorage {
         this._scale = 1;
 
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
-        const mapFunc: (e: VectorDrawingElement) => [number, SceneLine | SceneBitmap | SceneText | SceneControl | SceneGroup] = (e) => {
+        const mapFunc: (e: VectorDrawingElement) => [number, SceneObj] = (e) => {
             switch (e.type) {
                 case "otGROUP2D":
                     const g = new SceneGroup(this, e);
@@ -176,13 +173,42 @@ export class Scene implements Env.Scene, ToolStorage {
             this.primaryObjects.push(obj);
         });
     }
+    onHyper(hyperTarget: Env.HyperTarget): void {
+        this.hyperTarget = hyperTarget;
+    }
+    setHyper(hobject: number, mode: number, args: string[]): NumBool {
+        const obj = this.objects.get(hobject);
+        if (!obj) return 0;
+        obj.hyperbase = new Hyperbase(mode, args);
+        return 1;
+    }
 
-    render() {
-        if (!this.dirty) return;
-        this.ctx.fillStyle = this.fillStyle;
-        this.ctx.fillRect(0, 0, this.cnv.width, this.cnv.height);
-        this.primaryObjects.forEach((c) => c.render(this.ctx, this._originX, this._originY, this.layers));
-        this.dirty = false;
+    tryHyper(x: number, y: number, hobject: number): void {
+        const h = hobject || this.getObjectFromPoint2d(x, y);
+        const hyp = this.objects.get(h)?.hyperbase;
+        if (hyp) this.hyperTarget?.hyperCall(hyp.mode, hyp.args);
+    }
+
+    setBrush(hBrush: number): NumBool {
+        this.brush?.unsubscribe(this);
+        this.brush = this.brushes.get(hBrush) || null;
+        this.brush?.subscribe(this);
+        return 1;
+    }
+    brushHandle() {
+        return this.brush?.handle || 0;
+    }
+    clear(): NumBool {
+        throw new Error("Method not implemented.");
+    }
+    toolChanged(): void {
+        this.dirty = true;
+    }
+
+    render(ctx: CanvasRenderingContext2D) {
+        ctx.fillStyle = this.brush?.fillStyle(ctx) || "white";
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        this.primaryObjects.forEach((c) => c.render(ctx, this._originX, this._originY, this.layers));
     }
 
     originX(): number {
@@ -300,7 +326,7 @@ export class Scene implements Env.Scene, ToolStorage {
 
         // Создаем новые объекты
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
-        const mapFunc: (e: VectorDrawingElement) => [number, SceneLine | SceneBitmap | SceneText | SceneControl | SceneGroup] = (e) => {
+        const mapFunc: (e: VectorDrawingElement) => [number, SceneObj] = (e) => {
             switch (e.type) {
                 case "otGROUP2D":
                     const g = new SceneGroup(this, e);
@@ -333,7 +359,7 @@ export class Scene implements Env.Scene, ToolStorage {
 
         if (topChildren.length === 0) throw Error("Ошибка вставки изображения");
 
-        let root: SceneMember;
+        let root: SceneObj;
         if (topChildren.length > 1) {
             const handle = HandleMap.getFreeHandle(this.objects);
             const obj = new SceneGroup(this, { handle }).addChildren(topChildren);
@@ -414,43 +440,86 @@ export class Scene implements Env.Scene, ToolStorage {
         return 1;
     }
 
-    getObjectZOrder(hobject: number): number {
+    topObjectHandle(): number {
+        return this.primaryObjects.length > 0 ? this.primaryObjects[0].handle : 0;
+    }
+    bottomObjectHandle(): number {
+        return this.primaryObjects.length > 0 ? this.primaryObjects[this.primaryObjects.length - 1].handle : 0;
+    }
+    objectFromZOrder(zOrder: number): number {
+        const realZ = zOrder - 1;
+        if (realZ < 0 || realZ >= this.primaryObjects.length) return 0;
+        return this.primaryObjects[realZ].handle;
+    }
+    objectZOrder(hobject: number): number {
         for (let i = 0; i < this.primaryObjects.length; ++i) {
             if (this.primaryObjects[i].handle === hobject) return i + 1;
         }
         return 0;
     }
-    setObjectZOrder(hobject: number, zOrder: number): NumBool {
-        if (zOrder < 1) return 0;
-        const z = Math.floor(zOrder);
-        const obj = this.primaryObjects.find((c) => c.handle === hobject);
-        if (!obj) return 0;
-        const res: typeof Scene.prototype["primaryObjects"] = [];
-        for (let i = 0; i < this.primaryObjects.length; ++i) {
-            if (z === i + 1) res.push(obj);
-            const cur = this.primaryObjects[i];
-            if (cur !== obj) res.push(cur);
-        }
-        if (z > this.primaryObjects.length) res.push(obj);
-        this.primaryObjects = res;
-        this.dirty = true;
-        return 1;
+    lowerObjectHandle(hobject: number): number {
+        const i = this.primaryObjects.findIndex((c) => c.handle === hobject);
+        if (i < 1) return 0;
+        return this.primaryObjects[i - 1].handle;
     }
-    moveObjectToTop(hobject: number): NumBool {
+    upperObjectHandle(hobject: number): number {
+        const i = this.primaryObjects.findIndex((c) => c.handle === hobject);
+        if (i < 0 || i >= this.primaryObjects.length - 1) return 0;
+        return this.primaryObjects[i + 1].handle;
+    }
+    objectToTop(hobject: number): NumBool {
         const obj = this.primaryObjects.find((c) => c.handle === hobject);
         if (!obj) return 0;
         this.primaryObjects = [...this.primaryObjects.filter((c) => c !== obj), obj];
         this.dirty = true;
         return 1;
     }
-    moveObjectToBottom(hobject: number): NumBool {
+    objectToBottom(hobject: number): NumBool {
         const obj = this.primaryObjects.find((c) => c.handle === hobject);
         if (!obj) return 0;
         this.primaryObjects = [obj, ...this.primaryObjects.filter((c) => c !== obj)];
         this.dirty = true;
         return 1;
     }
+    swapObjects(hojb1: number, hojb2: number): NumBool {
+        const i1 = this.primaryObjects.findIndex((c) => c.handle === hojb1);
+        if (i1 < 0) return 0;
+        const i2 = this.primaryObjects.findIndex((c) => c.handle === hojb2);
+        if (i2 < 0) return 0;
+        const c = this.primaryObjects[i1];
+        this.primaryObjects[i1] = this.primaryObjects[i2];
+        this.primaryObjects[i2] = c;
+        this.dirty = true;
+        return 1;
+    }
+    setObjectZOrder(hobject: number, zOrder: number): NumBool {
+        const realZ = zOrder - 1;
+        if (realZ < 0) return 0;
+        const obj = this.primaryObjects.find((c) => c.handle === hobject);
+        if (!obj) return 0;
 
+        const res: typeof Scene.prototype["primaryObjects"] = [];
+        for (let i = 0; i < this.primaryObjects.length; ++i) {
+            if (i === realZ) res.push(obj);
+            const cur = this.primaryObjects[i];
+            if (cur !== obj) res.push(cur);
+        }
+        if (realZ >= this.primaryObjects.length) res.push(obj);
+        this.primaryObjects = res;
+
+        this.dirty = true;
+        return 1;
+    }
+
+    objectName(hobject: number): string {
+        return this.objects.get(hobject)?.name || "";
+    }
+    setObjectName(hobject: number, name: string): NumBool {
+        const obj = this.objects.get(hobject);
+        if (!obj) return 0;
+        obj.name = name;
+        return 1;
+    }
     getObject2dByName(hgroup: number, name: string): number {
         if (name === "") return 0;
         if (hgroup) {
@@ -460,19 +529,13 @@ export class Scene implements Env.Scene, ToolStorage {
         for (const obj of this.objects.values()) if (obj.name === name) return obj.handle;
         return 0;
     }
-    setObjectName(hobject: number, name: string): NumBool {
-        const obj = this.objects.get(hobject);
-        if (!obj) return 0;
-        obj.name = name;
-        return 1;
-    }
 
-    private getObjectInRealCoords(x: number, y: number): number {
+    private getObjectInRealCoords(x: number, y: number) {
         for (let i = this.primaryObjects.length - 1; i >= 0; --i) {
             const res = this.primaryObjects[i].tryClick(x, y, this.layers);
-            if (res) return res.handle;
+            if (res) return res;
         }
-        return 0;
+        return undefined;
     }
 
     getObjectFromPoint2d(x: number, y: number): number {
@@ -482,13 +545,13 @@ export class Scene implements Env.Scene, ToolStorage {
         const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
         const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
-        return this.getObjectInRealCoords(realX, realY);
+        return this.getObjectInRealCoords(realX, realY)?.handle ?? 0;
     }
 
-    isIntersect(obj1: number, obj2: number): NumBool {
-        const o1 = this.objects.get(obj1);
+    isIntersect(hobj1: number, hobj2: number): NumBool {
+        const o1 = this.objects.get(hobj1);
         if (!o1) return 0;
-        const o2 = this.objects.get(obj2);
+        const o2 = this.objects.get(hobj2);
         if (!o2) return 0;
         return o1.maxX() >= o2.minX() && o2.maxX() >= o1.minX() && o1.maxY() >= o2.minY() && o2.maxY() >= o1.minY() ? 1 : 0;
     }
@@ -503,12 +566,12 @@ export class Scene implements Env.Scene, ToolStorage {
         this.brushes.set(handle, new BrushTool(this, { handle, color, hatch, dibHandle, style, rop2 }));
         return handle;
     }
-    createDIBTool(img: HTMLCanvasElement): number {
+    createDIBTool(img: DibToolImage): number {
         const handle = HandleMap.getFreeHandle(this.dibs);
         this.dibs.set(handle, new DIBTool({ handle, type: "ttDIB2D", img }));
         return handle;
     }
-    createDoubleDIBTool(img: HTMLCanvasElement): number {
+    createDoubleDIBTool(img: DibToolImage): number {
         const handle = HandleMap.getFreeHandle(this.doubleDibs);
         this.doubleDibs.set(handle, new DIBTool({ handle, type: "ttDOUBLEDIB2D", img }));
         return handle;
@@ -631,7 +694,7 @@ export class Scene implements Env.Scene, ToolStorage {
     }
 
     private blocked = false;
-    private pointerEventHandler(evt: PointerEvent) {
+    pointerEventHandler(evt: PointerEvent): void {
         const rect = (evt.target as HTMLCanvasElement).getBoundingClientRect();
         const x = evt.clientX - rect.left + this.originX();
         const y = evt.clientY - rect.top + this.originY();
@@ -644,19 +707,26 @@ export class Scene implements Env.Scene, ToolStorage {
         Enviroment.keyState[1] = lmb;
         Enviroment.keyState[2] = rmb;
         Enviroment.keyState[4] = wheel;
+
+        const curObj = this.getObjectInRealCoords(x, y);
+        const objHandle = curObj?.handle ?? 0;
+        const hyp = curObj?.hyperbase;
+        this.cursor = hyp ? "pointer" : "default";
+
         switch (evt.type) {
             // https://developer.mozilla.org/ru/docs/Web/API/MouseEvent/button
             case "pointerdown": {
                 this.blocked = true;
                 switch (evt.button) {
                     case 0: //Левая кнопка
-                        this.dispatchMouseEvent(this.leftButtonDownSubs, Constant.WM_LBUTTONDOWN, x, y, fwkeys);
+                        if (hyp) this.hyperTarget?.hyperCall(hyp.mode, hyp.args);
+                        this.dispatchMouseEvent(this.leftButtonDownSubs, objHandle, Constant.WM_LBUTTONDOWN, x, y, fwkeys);
                         return;
                     case 1: //Колесико
-                        this.dispatchMouseEvent(this.middleButtonDownSubs, Constant.WM_MBUTTONDOWN, x, y, fwkeys);
+                        this.dispatchMouseEvent(this.middleButtonDownSubs, objHandle, Constant.WM_MBUTTONDOWN, x, y, fwkeys);
                         return;
                     case 2: //Правая кнопка
-                        this.dispatchMouseEvent(this.rightButtonDownSubs, Constant.WM_RBUTTONDOWN, x, y, fwkeys);
+                        this.dispatchMouseEvent(this.rightButtonDownSubs, objHandle, Constant.WM_RBUTTONDOWN, x, y, fwkeys);
                         return;
                 }
                 return;
@@ -664,19 +734,19 @@ export class Scene implements Env.Scene, ToolStorage {
             case "pointerup": {
                 switch (evt.button) {
                     case 0:
-                        this.dispatchMouseEvent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, x, y, fwkeys);
+                        this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, fwkeys);
                         return;
                     case 1:
-                        this.dispatchMouseEvent(this.middleButtonUpSubs, Constant.WM_MBUTTONUP, x, y, fwkeys);
+                        this.dispatchMouseEvent(this.middleButtonUpSubs, objHandle, Constant.WM_MBUTTONUP, x, y, fwkeys);
                         return;
                     case 2:
-                        this.dispatchMouseEvent(this.rightButtonUpSubs, Constant.WM_RBUTTONUP, x, y, fwkeys);
+                        this.dispatchMouseEvent(this.rightButtonUpSubs, objHandle, Constant.WM_RBUTTONUP, x, y, fwkeys);
                         return;
                 }
                 return;
             }
             case "pointerleave": {
-                this.dispatchMouseEvent(this.leftButtonUpSubs, Constant.WM_LBUTTONUP, x, y, 0);
+                this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, 0);
                 return;
             }
             case "pointermove":
@@ -684,12 +754,12 @@ export class Scene implements Env.Scene, ToolStorage {
                     this.blocked = false;
                     return;
                 }
-                this.dispatchMouseEvent(this.moveSubs, Constant.WM_MOUSEMOVE, x, y, fwkeys);
+                this.dispatchMouseEvent(this.moveSubs, objHandle, Constant.WM_MOUSEMOVE, x, y, fwkeys);
                 return;
         }
     }
 
-    private dispatchMouseEvent(subs: Map<EventSubscriber, number>, code: Constant, realX: number, realY: number, keys: number) {
+    private dispatchMouseEvent(subs: Map<EventSubscriber, number>, curObj: number, code: Constant, realX: number, realY: number, keys: number) {
         const mat = this.invMatrix;
 
         const w = realX * mat[2] + realY * mat[5] + mat[8];
@@ -701,7 +771,7 @@ export class Scene implements Env.Scene, ToolStorage {
             // return;
         }
         for (const [sub, objHandle] of subs) {
-            if (objHandle === 0 || this.getObjectInRealCoords(realX, realY) === objHandle) sub.receive(code, x, y, keys);
+            if (objHandle === 0 || objHandle === curObj) sub.receive(code, x, y, keys);
         }
     }
 
@@ -712,7 +782,15 @@ export class Scene implements Env.Scene, ToolStorage {
     offControlNotify(sub: EventSubscriber) {
         this.controlNotifySubs.delete(sub);
     }
-    dispatchControlNotifyEvent(ctrlHandle: number, notifyCode: number) {
+    dispatchControlNotifyEvent(ctrlHandle: number, ev: Event) {
+        let notifyCode = 0;
+        switch (ev.type) {
+            case "input":
+                notifyCode = 768;
+                break;
+            default:
+                return;
+        }
         for (const [sub, objHandle] of this.controlNotifySubs) {
             if (objHandle === 0 || objHandle === ctrlHandle) sub.receive(Constant.WM_CONTROLNOTIFY, ctrlHandle, 0, notifyCode);
         }

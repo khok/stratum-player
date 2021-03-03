@@ -1,4 +1,5 @@
 import { NumBool } from "stratum/env";
+import { Hyperbase } from "./hyperbase";
 import { Scene, SceneMember } from "./scene";
 
 export interface GroupArgs {
@@ -21,8 +22,10 @@ export class SceneGroup implements SceneMember {
     handle: number;
     name: string;
     markDeleted: boolean;
+    hyperbase: Hyperbase | null;
 
     constructor(scene: Scene, { handle, name }: GroupArgs) {
+        this.hyperbase = null;
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";
@@ -152,8 +155,8 @@ export class SceneGroup implements SceneMember {
         return 1;
     }
 
-    setShow(visible: number): NumBool {
-        for (const c of this.children.values()) c.setShow(visible);
+    setVisibility(visible: boolean): NumBool {
+        for (const c of this.children.values()) c.setVisibility(visible);
         return 1;
     }
 
@@ -294,6 +297,9 @@ export class SceneGroup implements SceneMember {
         return 0;
     }
     doubleDIBHandle(): number {
+        return 0;
+    }
+    pointCount(): number {
         return 0;
     }
     //#endregion

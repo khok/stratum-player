@@ -1,7 +1,15 @@
 import { VectorDrawing } from "stratum/fileFormats/vdr";
-import { EventSubscriber, NumBool } from ".";
+import { DibToolImage } from "stratum/helpers/types";
+import { VFSDir } from "stratum/vfs";
+import { Constant, EventSubscriber, NumBool } from ".";
 
 export namespace Env {
+    export type Farr = Float64Array;
+
+    export interface HyperTarget {
+        hyperCall(mode: number, args: string[]): Promise<void>;
+    }
+
     export interface Scene {
         readonly objects: ReadonlyMap<number, SceneObject>;
         readonly pens: ReadonlyMap<number, PenTool>;
@@ -11,6 +19,8 @@ export namespace Env {
         readonly texts: ReadonlyMap<number, TextTool>;
         readonly strings: ReadonlyMap<number, StringTool>;
         readonly fonts: ReadonlyMap<number, FontTool>;
+
+        clear(): NumBool;
 
         originX(): number;
         originY(): number;
@@ -26,28 +36,44 @@ export namespace Env {
         insertVectorDrawing(x: number, y: number, flags: number, vdr: VectorDrawing): number;
         deleteObject(hobject: number): NumBool;
 
-        setObjectName(hobject: number, name: string): NumBool;
-        getObjectZOrder(hobject: number): number;
-        setObjectZOrder(hobject: number, zOrder: number): NumBool;
-        moveObjectToTop(hobject: number): NumBool;
-        moveObjectToBottom(hobject: number): NumBool;
+        topObjectHandle(): number;
+        bottomObjectHandle(): number;
+        objectFromZOrder(zOrder: number): number;
+        objectZOrder(hobject: number): number;
+        lowerObjectHandle(hobject: number): number;
+        upperObjectHandle(hobject: number): number;
 
-        getObject2dByName(hgroup: number, name: string): number;
+        objectToBottom(hobject: number): NumBool;
+        objectToTop(hobject: number): NumBool;
+        swapObjects(hojb1: number, hojb2: number): NumBool;
+        setObjectZOrder(hobject: number, zOrder: number): NumBool;
+
         deleteGroup2d(hgroup: number): NumBool;
         getObjectFromPoint2d(x: number, y: number): number;
 
-        isIntersect(obj1: number, obj2: number): NumBool;
+        isIntersect(hobj1: number, hobj2: number): NumBool;
+
+        objectName(hobject: number): string;
+        setObjectName(hobject: number, name: string): NumBool;
+        getObject2dByName(hgroup: number, name: string): number;
 
         createPenTool(style: number, width: number, color: number, rop2: number): number;
         createBrushTool(style: number, hatch: number, color: number, dibHandle: number, rop2: number): number;
-        createDIBTool(img: HTMLCanvasElement): number;
-        createDoubleDIBTool(img: HTMLCanvasElement): number;
+        createDIBTool(img: DibToolImage): number;
+        createDoubleDIBTool(img: DibToolImage): number;
         createStringTool(value: string): number;
         createFontTool(fontName: string, height: number, flags: number): number;
         createTextTool(hfont: number, hstring: number, fgColor: number, bgColor: number): number;
 
         setCapture(sub: EventSubscriber): void;
         releaseCapture(): void;
+
+        onHyper(hyperTarget: HyperTarget): void;
+        setHyper(hobject: number, mode: number, args: string[]): NumBool;
+        tryHyper(x: number, y: number, hobject: number): void;
+
+        brushHandle(): number;
+        setBrush(hBrush: number): NumBool;
     }
 
     export interface SceneObject {
@@ -65,11 +91,12 @@ export namespace Env {
         angle(): number;
         rotate(centerX: number, centerY: number, angle: number): NumBool;
 
-        setShow(visible: number): NumBool;
+        setVisibility(visible: boolean): NumBool;
 
         // Lines
         addPoint(index: number, x: number, y: number): NumBool;
         deletePoint(index: number): NumBool;
+        pointCount(): number;
         pointOriginY(index: number): number;
         pointOriginX(index: number): number;
         setPointOrigin(index: number, x: number, y: number): NumBool;
@@ -104,6 +131,8 @@ export namespace Env {
     }
 
     export interface BrushTool {
+        setDIB(hdib: number): NumBool;
+        dibHandle(): number;
         style(): number;
         setStyle(style: number): NumBool;
         hatch(): number;
@@ -138,5 +167,63 @@ export namespace Env {
         setSize(size: number): NumBool;
         style(): number;
         setStyle(flags: number): NumBool;
+    }
+
+    export interface Window {
+        id?: number;
+        readonly scene: Env.Scene;
+        onSpaceDone(sub: EventSubscriber): void;
+        offSpaceDone(sub: EventSubscriber): void;
+        onDestroy(sub: EventSubscriber): void;
+        offDestroy(sub: EventSubscriber): void;
+        onResize(sub: EventSubscriber): void;
+        offResize(sub: EventSubscriber): void;
+        onControlNotifty(sub: EventSubscriber, handle: number): void;
+        offControlNotify(sub: EventSubscriber): void;
+        onMouse(sub: EventSubscriber, code: Constant, handle: number): void;
+        offMouse(sub: EventSubscriber, code: Constant): void;
+        redraw(): void;
+
+        close(): void;
+
+        getProp(prop: string): string;
+
+        width(): number;
+
+        height(): number;
+
+        setSize(width: number, height: number): NumBool;
+        toTop(): NumBool;
+
+        setAttrib(flag: number): NumBool;
+
+        title(): string;
+
+        setTitle(title: string): NumBool;
+        originX(): number;
+        originY(): number;
+        setOrigin(x: number, y: number): NumBool;
+
+        setTransparent(level: number): NumBool;
+        setTransparentColor(cref: number): NumBool;
+    }
+
+    export interface WindowArgs {
+        title: string;
+        vdr?: VectorDrawing;
+        disableResize?: boolean;
+        noCaption?: boolean;
+        onClosed?: Function;
+    }
+
+    // export interface WindowFactory {
+    //     width(): number;
+    //     height(): number;
+    //     window(args: WindowArgs): Env.Window;
+    // }
+
+    export interface Project extends HyperTarget {
+        readonly dir: VFSDir;
+        compute(): boolean;
     }
 }

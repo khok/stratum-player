@@ -27,7 +27,7 @@ function read2xFormat(stream, res, _pos) {
     const mainpos = stream.int32() + _pos;
     const toolPos = stream.int32() + _pos;
 
-    const readPoint = () => (stream.meta.fileversion < 0x200 ? stream.point2dInt() : stream.point2d());
+    const readPoint = () => (stream.version < 0x200 ? stream.point2dInt() : stream.point2d());
 
     res.origin = readPoint();
     res.scale_div = readPoint();
@@ -49,7 +49,7 @@ function read2xFormat(stream, res, _pos) {
     stream.seek(mainpos);
 
     // console.dir(res);
-    // if(stream.meta.fileversion === 0x103) throw 'stop'
+    // if(stream.version === 0x103) throw 'stop'
 
     res.otPRIMARYCOLLECTION = readNext(stream, true, VdrEntry.otPRIMARYCOLLECTION).data;
     res.otOBJECTCOLLECTION = readNext(stream, true, VdrEntry.otOBJECTCOLLECTION).data;
@@ -63,7 +63,7 @@ function read2xFormat(stream, res, _pos) {
     }
 
     //Здесь еще не доделано, см space2d: 1908
-    if (stream.meta.fileversion > 0x0102) {
+    if (stream.version > 0x0102) {
         res.layers = stream.uint32();
         res.defaultFlags = stream.uint16();
         let code = stream.uint16();
@@ -91,14 +91,14 @@ function _readVectorDrawing(stream) {
     const signature = stream.uint16();
     if (signature !== 0x4432) throw new FileSignatureError(stream, signature, 0x4432);
 
-    const _pos = stream.position;
+    const _pos = stream.pos();
 
     const res = {
         fileversion: stream.uint16(),
         minVersion: stream.uint16(),
     };
 
-    stream.meta.fileversion = res.fileversion;
+    stream.version = res.fileversion;
 
     if (res.fileversion >= 0x0300) read3xFormat(stream, res);
     else read2xFormat(stream, res, _pos);
@@ -129,6 +129,15 @@ function mapNames(vdr) {
     return vdr;
 }
 
-export function readVdrFile(stream) {
-    return mapNames(_readVectorDrawing(stream));
+export function readVdrFile(stream, source, info = true) {
+    const vdr = mapNames(_readVectorDrawing(stream));
+    vdr.source = source;
+    if (!info) return vdr;
+
+    const diff = stream.size() - stream.pos();
+    if (diff !== 0) {
+        const msg = `${stream.name}: считано ${stream.pos()} байтов, не считано ${diff}. v0x${stream.version.toString(16)}.`;
+        console.warn(msg);
+    }
+    return vdr;
 }

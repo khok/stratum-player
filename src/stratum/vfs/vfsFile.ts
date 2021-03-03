@@ -1,10 +1,12 @@
 import { FileSystemFile } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
+import { FloatMatrix, readMatFile } from "stratum/fileFormats/mat";
 import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
 import { BinaryStream } from "stratum/helpers/binaryStream";
+import { DibToolImage } from "stratum/helpers/types";
 import { VFSDir } from ".";
 
 export type LazyBuffer =
@@ -19,8 +21,8 @@ export class VFSFile implements FileSystemFile {
     readonly parent: VFSDir;
     readonly pathDos: string;
 
-    constructor(private localName: string, parent: VFSDir, src?: LazyBuffer) {
-        this.buf = src || new ArrayBuffer(0);
+    constructor(private localName: string, parent: VFSDir, src: LazyBuffer) {
+        this.buf = src;
         this.parent = parent;
         this.pathDos = parent.pathDos + "\\" + localName;
     }
@@ -38,35 +40,41 @@ export class VFSFile implements FileSystemFile {
         await this.arraybuffer();
     }
 
-    private cache?: ReturnType<VFSFile["read"]>;
+    write(data: ArrayBuffer): void {
+        this.buf = data;
+    }
+
+    bufferSync() {
+        if (this.buf instanceof ArrayBuffer) return this.buf;
+        throw Error(`Файл ${this.pathDos} не был предзагружен.`);
+    }
+
+    // streamSync() {
+    //     const buf = this.bufferSync();
+    //     if (!buf) return undefined;
+    //     return new BinaryStream(buf);
+    // }
+
     private read(
         data: ArrayBuffer,
-        type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm"
-    ): ProjectInfo | ClassProto | VariableSet | VectorDrawing | HTMLCanvasElement {
-        if (this.cache) return this.cache;
-        const st = new BinaryStream(data, { filepathDos: this.pathDos });
+        type: "prj" | "cls" | "stt" | "vdr" | "mat" | "bmp" | "dbm"
+    ): ProjectInfo | ClassProto | VariableSet | VectorDrawing | FloatMatrix | DibToolImage {
+        const st = new BinaryStream({ data, name: this.pathDos });
         switch (type) {
             case "prj":
-                return (this.cache = readPrjFile(st));
+                return readPrjFile(st);
             case "cls":
-                return (this.cache = new ClassProto(st));
+                return new ClassProto(st);
             case "stt":
-                return (this.cache = readSttFile(st));
-            case "vdr": {
-                const vdr = (this.cache = readVdrFile(st));
-                vdr.source = { origin: "file", name: this.pathDos };
-                if (st.position !== st.size) {
-                    const msg = `${this.pathDos}: считано ${st.position} байтов, не считано ${st.size - st.position}. v0x${
-                        st.meta.fileversion && st.meta.fileversion.toString(16)
-                    }.`;
-                    console.warn(msg);
-                }
-                return vdr;
-            }
+                return readSttFile(st);
+            case "vdr":
+                return readVdrFile(st, { origin: "file", name: this.pathDos });
+            case "mat":
+                return readMatFile(st);
             case "bmp":
-                return (this.cache = readBmpFile(st));
+                return readBmpFile(st);
             case "dbm":
-                return (this.cache = readDbmFile(st));
+                return readDbmFile(st);
         }
     }
 
@@ -79,23 +87,16 @@ export class VFSFile implements FileSystemFile {
         return this.read(s, type);
     }
 
-    private startLoading = false;
     private warnShowed = false;
     readSyncAs(type: "prj"): ProjectInfo | undefined;
     readSyncAs(type: "cls"): ClassProto | undefined;
     readSyncAs(type: "stt"): VariableSet | undefined;
     readSyncAs(type: "vdr"): VectorDrawing | undefined;
-    readSyncAs(type: "bmp"): HTMLCanvasElement;
-    readSyncAs(type: "dbm"): HTMLCanvasElement;
-    readSyncAs(type: "prj" | "cls" | "stt" | "vdr" | "bmp" | "dbm") {
-        const { buf } = this;
-        if (!(buf instanceof ArrayBuffer)) {
-            if (this.startLoading) return undefined;
-            this.startLoading = true;
-            buf.async("arraybuffer").then((b) => (this.buf = b));
-            console.warn(`${this.pathDos} загружается асинхронно.`);
-            return undefined;
-        }
+    readSyncAs(type: "mat"): FloatMatrix | undefined;
+    readSyncAs(type: "bmp"): DibToolImage;
+    readSyncAs(type: "dbm"): DibToolImage;
+    readSyncAs(type: "prj" | "cls" | "stt" | "vdr" | "mat" | "bmp" | "dbm") {
+        const buf = this.bufferSync();
         try {
             return this.read(buf, type);
         } catch (e) {
