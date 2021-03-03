@@ -116,6 +116,13 @@ export class Enviroment {
     stratum_getTickCount(): number {
         return new Date().getTime() - Enviroment.startupTime;
     }
+    stratum_rgb(r: number, g: number, b: number): number {
+        return r | (g << 8) | (b << 16);
+    }
+    stratum_rgbEx(r: number, g: number, b: number, type: number): number {
+        const flag = type === 1 ? 1 << 24 : type === 2 ? 2 << 24 : 0;
+        return r | (g << 8) | (b << 16) | flag;
+    }
     stratum_newArray() {
         throw Error("Функция New не реализована");
     }
@@ -143,14 +150,37 @@ export class Enviroment {
         if (flag <= 0) return;
         this.shouldClose = true;
     }
-    stratum_openSchemeWindow(wname: string, className: string, attribute: string): number {
+    stratum_openSchemeWindow(wname: string, className: string, attrib: string): number {
         const vdr = this.classes.getComposedScheme(className);
-        return this.openWindow(wname, attribute, vdr);
+        return this.openWindow(wname, attrib, vdr);
     }
-    stratum_loadSpaceWindow(wname: string, fileName: string, attribute: string): number {
+    stratum_loadSpaceWindow(wname: string, fileName: string, attrib: string): number {
         const file = this.dir.get(fileName);
         const vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
-        return this.openWindow(wname, attribute, vdr);
+        return this.openWindow(wname, attrib, vdr);
+    }
+    stratum_createWindowEx(wname: string, parentWname: string, source: string, x: number, y: number, w: number, h: number, attrib: string): number {
+        const existHandle = this.wnameToHspace.get(wname);
+        if (typeof existHandle !== "undefined") return existHandle;
+
+        let vdr = this.classes.getComposedScheme(source);
+        if (!vdr) {
+            const file = this.dir.get(source);
+            vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
+        }
+
+        const p = this.windows.get(parentWname);
+        if (!p) {
+            return this.openWindow(wname, attrib, vdr);
+        }
+
+        const wnd: SceneWindow = p.openEx(wname, vdr);
+        const handle = HandleMap.getFreeHandle(this.scenes);
+        this.hspaceToWname.set(handle, wname);
+        this.wnameToHspace.set(wname, handle);
+        this.scenes.set(handle, wnd.scene);
+        this.windows.set(wname, wnd);
+        return handle;
     }
     stratum_createObjectFromFile2D(hspace: number, fileName: string, x: number, y: number, flags: number): number {
         const scene = this.scenes.get(hspace);
@@ -262,6 +292,10 @@ export class Enviroment {
     stratum_objectToTop2d(hspace: number, hobject: number): NumBool {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.moveObjectToTop(hobject) : 0;
+    }
+    stratum_objectToBottom2d(hspace: number, hobject: number): NumBool {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.moveObjectToBottom(hobject) : 0;
     }
     stratum_deleteObject2d(hspace: number, hobject: number): NumBool {
         const scene = this.scenes.get(hspace);

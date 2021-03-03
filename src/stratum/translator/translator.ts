@@ -16,8 +16,9 @@ const schemaFuncs = (Object.getOwnPropertyNames(Schema.prototype) as (keyof Sche
     return typeof v === "function" && v.name.startsWith(prefix);
 });
 const funcTable = new Map([
-    ["ROUND", "roundPrec"],
     ["ADDSLASH", "addSlash"],
+    ["RIGHT", "right"],
+    ["ROUND", "roundPrec"],
     ["NEW", Enviroment.prototype.stratum_newArray.name],
     ...schemaFuncs.map((c): [string, string] => [c.substring(prefLen).toUpperCase(), `schema.${c}`]),
     ...envFuncs.map((c): [string, string] => [c.substring(prefLen).toUpperCase(), `env.${c}`]),
@@ -32,15 +33,15 @@ const arrNames = new Map([
 const TLBVarName: keyof Schema = "TLB";
 
 const header = `
+function addSlash(a) {
+    return a[a.length - 1] === "\\\\" ? a : a + "\\\\";
+}
 function right(a, n) {
     return a.substr(a.length - n);
 }
 function roundPrec(a, b) {
     const pw = Math.ceil(10 ** b);
     return Math.round(a * pw + Number.EPSILON) / pw;
-}
-function addSlash(a) {
-    return a[a.length - 1] === "\\\\" ? a : a + "\\\\";
 }
 const { ${TLBVarName} } = schema;
 const { newFloats, newStrings, newInts, oldFloats, oldInts, oldStrings } = env;
@@ -161,7 +162,8 @@ function subOpToString(subop: any, vars: ClassVars | undefined) {
             if (nameUC === "LENGTH") return `(${fargs[0]}).length`;
             if (nameUC === "SUBSTR") return `(${fargs[0]}).substr(${fargs[1]},${fargs[2]})`;
             if (nameUC === "LEFT") return `(${fargs[0]}).substr(0,${fargs[1]})`;
-            if (nameUC === "RIGHT") return `right(${fargs[0]}, ${fargs[1]})`;
+            // if (nameUC === "RIGHT") return `right(${fargs[0]}, ${fargs[1]})`;
+            if (nameUC === "RND") return `(Math.random() * (${fargs[0]}))`;
 
             const fname = funcTable.get(nameUC);
             if (!fname) funcs.set(nameUC, subop.name);

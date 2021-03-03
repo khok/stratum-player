@@ -30,6 +30,7 @@ export namespace Env {
         getObjectZOrder(hobject: number): number;
         setObjectZOrder(hobject: number, zOrder: number): NumBool;
         moveObjectToTop(hobject: number): NumBool;
+        moveObjectToBottom(hobject: number): NumBool;
 
         getObject2dByName(hgroup: number, name: string): number;
         deleteGroup2d(hgroup: number): NumBool;
