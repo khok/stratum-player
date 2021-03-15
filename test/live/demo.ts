@@ -1,8 +1,8 @@
-import { options, setLogLevel, unzip } from "stratum/api";
+import { FastestExecutor, options, setLogLevel, unzip } from "stratum/api";
 
 // Запуск одной строкой:
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
-export async function runDemo(name: string, path?: string) {
+export async function runDemo(name: string, strat: "fast" | "normal" = "normal", path?: string) {
     options.iconsLocation = "./data/icons";
     setLogLevel("full");
     //prettier-ignore
@@ -11,12 +11,13 @@ export async function runDemo(name: string, path?: string) {
     const fs = pr.reduce((a, b) => a.merge(b));
     // Предзагружаем файлы vdr и bmp.
     // Открываем проект
-    await Promise.all([...fs.files(/.+\.(bmp|vdr)$/i)].map((f) => f.makeSync()));
+    await Promise.all([...fs.files(/.+\.(bmp|vdr|txt|mat)$/i)].map((f) => f.makeSync()));
     const project = await fs.project({ additionalClassPaths: ["library"], path });
 
     if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));
 
     // Поехали
+    if (strat === "fast") project.computer = new FastestExecutor();
     project.play(document.getElementById("main_window_container")!);
 
     console.log(project);
