@@ -324,4 +324,4 @@ export const FastestExecutor: ExecutorConstructor = FastestComputer;
 /**
  * Версия API.
  */
-export const version: string = "0.8.0";
+export const version: string = "0.9.0";
