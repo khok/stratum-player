@@ -154,7 +154,7 @@ export class Project implements Env.Project, Env.HyperTarget {
         }
     }
 
-    private syncAll(): this {
+    syncAll(): this {
         this.oldFloats.set(this.newFloats);
         this.oldInts.set(this.newInts);
         for (let i = 0; i < this.newStrings.length; ++i) this.oldStrings[i] = this.newStrings[i];

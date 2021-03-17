@@ -105,25 +105,36 @@ export class Schema implements EventSubscriber {
         const { prj, vars, TLB /*cachedNames*/ } = this;
         if (prj.canExecute() === false) return;
 
-        if (objectName !== "") throw Error(`Вызов SendMessage с objectName=${objectName} не реализован`);
-        if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
+        // if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
 
-        const nameUC = className.toUpperCase();
-        const receivers = this.findClasses(nameUC);
-        if (receivers.length === 0) return;
+        let receivers: Schema[] | undefined = undefined;
+        if (objectName !== "") {
+            const res = this.resolve(objectName);
+            if (typeof res !== "undefined") {
+                receivers = [res];
+            }
+        }
+
+        if (className !== "") {
+            const nameUC = className.toUpperCase();
+            receivers = typeof receivers === "undefined" ? this.findClasses(nameUC) : receivers.filter((r) => r.proto.name.toUpperCase() === nameUC);
+        }
+
+        if (typeof receivers === "undefined" || receivers.length === 0) return;
 
         const rec0 = receivers[0];
         const otherVars = rec0.vars;
 
-        if (vars.count === 0 || otherVars.count === 0) {
-            for (const rec of receivers) {
-                if (rec === this) continue;
-                prj.inc();
-                rec.forceCompute();
-                prj.dec();
-            }
-            return;
-        }
+        // if (vars.count === 0 || otherVars.count === 0) {
+        //     for (const rec of receivers) {
+        //         if (rec === this) continue;
+        //         prj.inc();
+        //         rec.forceCompute();
+        //         prj.syncLocal(rec.TLB);
+        //         prj.dec();
+        //     }
+        //     return;
+        // }
 
         // let cached = varNames.length === cachedNames.length;
         // if (cached === true) {
@@ -170,17 +181,16 @@ export class Schema implements EventSubscriber {
                 const myId = TLB[idTypes[i + 0]];
                 const otherId = rec.TLB[idTypes[i + 1]];
 
-                const newA = news[typ];
-                const oldA = olds[typ];
+                const newArr = news[typ];
+                const oldArr = olds[typ];
 
-                const val = newA[myId];
-                newA[otherId] = val;
-                oldA[otherId] = val;
-
-                // olds[typ][otherId] = news[typ][otherId] = news[typ][myId];
+                const val = newArr[myId];
+                newArr[otherId] = val;
+                oldArr[otherId] = val;
             }
             prj.inc();
             rec.forceCompute();
+            prj.syncLocal(rec.TLB);
             prj.dec();
             for (let i = 0; i < idTypes.length; i += 3) {
                 const typ = idTypes[i + 2];
@@ -188,14 +198,12 @@ export class Schema implements EventSubscriber {
                 const myId = TLB[idTypes[i + 0]];
                 const otherId = rec.TLB[idTypes[i + 1]];
 
-                const newA = news[typ];
-                const oldA = olds[typ];
+                const newArr = news[typ];
+                const oldArr = olds[typ];
 
-                const val = newA[otherId];
-                newA[myId] = val;
-                oldA[myId] = val;
-                // news[typ][myId] = news[typ][otherId];
-                // olds[typ][myId] = news[typ][myId] = news[typ][otherId];
+                const val = newArr[otherId];
+                newArr[myId] = val;
+                oldArr[myId] = val;
             }
         }
     }
@@ -252,7 +260,7 @@ export class Schema implements EventSubscriber {
         }
 
         this.model(this);
-        this.prj.syncLocal(this.TLB);
+        this.prj.syncAll();
     }
 
     // Для построения схемы.
