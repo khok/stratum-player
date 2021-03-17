@@ -6,7 +6,7 @@
     stratum.options.iconsLocation = "./data/icons";
 
     // Подзагружает все динамически открываемые файлы bmp и vdr.
-    const preloadDynamicResources = (fs) => Promise.all([[...fs.files(/.+\.(bmp|vdr)$/i)].map((f) => f.makeSync())]);
+    const preloadDynamicResources = (fs) => Promise.all([[...fs.files(/.+\.(bmp|vdr|mat|txt)$/i)].map((f) => f.makeSync())]);
 
     // Начинаем загружать стандартную библиотеку.
     let stdlib;
@@ -21,6 +21,7 @@
         const dropzoneContainerElem = document.getElementById("dropzone_container");
         const dropzoneStatusElem = document.getElementById("dropzone_status");
         const dropzoneStatusOrigText = dropzoneStatusElem.innerHTML;
+        const optionsFastComputing = document.getElementById("options_fast_computing");
         const optionsNolib = document.getElementById("options_nolib");
         const optionsNoResize = document.getElementById("options_noresize");
         const mainWindowContainerElem = document.getElementById("main_window_container");
@@ -43,12 +44,16 @@
             playerPauseElem.disabled = currentProject.state === "closed";
             dropzoneContainerElem.hidden = currentProject.state !== "closed";
         };
+        const updateOptions = () => {
+            currentProject.options.disableWindowResize = optionsNoResize.checked;
+            currentProject.computer = new stratum[optionsFastComputing.checked ? "FastestExecutor" : "SmoothExecutor"]();
+        };
         {
             const handleClick = ({ target }) => {
                 switch (target) {
                     case playerPlayElem: {
                         if (currentProject.state === "closed") {
-                            currentProject.options.disableWindowResize = optionsNoResize.checked;
+                            updateOptions();
                             currentProject.play();
                         } else {
                             currentProject.close();
@@ -108,7 +113,7 @@
                 if (stdlib && !optionsNolib.checked) fs.merge(stdlib);
                 // Открываем проект
                 currentProject = await fs.project({ additionalClassPaths: ["L:"], path });
-                currentProject.options.disableWindowResize = optionsNoResize.checked;
+                updateOptions();
                 // Попытаемся запустить выполнение проекта прямо здесь.
                 // Таким образом перехватываем ошибку на старте.
                 currentProject.play(mainWindowContainerElem);
@@ -123,8 +128,7 @@
 
             currentProject
                 .on("error", (err) => {
-                    console.warn(err);
-                    alert("Возникли ошибки, см. в консоли (F12)");
+                    alert("В ходе выполнения проекта возникла ошибка:\n" + err);
                     updateControls();
                 })
                 .on("closed", () => {
