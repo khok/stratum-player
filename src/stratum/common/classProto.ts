@@ -1,7 +1,9 @@
 import { ClassInfoBody, readClsFileBody, readClsFileHeader } from "stratum/fileFormats/cls";
 import { BinaryStream } from "stratum/helpers/binaryStream";
-import { Schema } from "stratum/project";
+import { Project, Schema } from "stratum/project";
 import { translate } from "stratum/translator";
+import { translateAsFunction } from "stratum/translator/translator";
+import { ClassLibrary } from "./classLibrary";
 import { parseVarValue } from "./parseVarValue";
 import { VarType } from "./varType";
 
@@ -19,11 +21,20 @@ export interface ClassVars {
     count: number;
     nameUCToId: Map<string, number>;
     types: VarType[];
+    flags: number[];
     defaultValues: (string | number | undefined)[];
 }
 
 export interface ClassModel {
     (schema: Schema): void;
+}
+
+type aT = typeof Schema.prototype.TLB;
+type aF = typeof Project.prototype.newFloats;
+type aI = typeof Project.prototype.newInts;
+type aS = typeof Project.prototype.newStrings;
+export interface FunctionModel {
+    (schema: Schema, tlb: aT, floats: aF, ints: aI, strings: aS): void | string | number;
 }
 
 /*
@@ -109,6 +120,7 @@ export class ClassProto {
                 nameUCToId: new Map(),
                 defaultValues: [],
                 types: [],
+                flags: [],
             });
         }
 
@@ -168,22 +180,28 @@ export class ClassProto {
             nameUCToId: new Map(namesUC.map((n, idx) => [n, idx])),
             types,
             defaultValues: raw.map((v, i) => (v.defaultValue !== "" ? parseVarValue(types[i], v.defaultValue) : undefined)),
+            flags: raw.map((v) => v.flags),
         });
     }
 
     private compiled = false;
     private _model?: ClassModel;
-    get model() {
+    model(lib: ClassLibrary): ClassModel | undefined {
         if (this.compiled === true) return this._model;
-
-        const { sourceCode } = this.body;
-        if (sourceCode === undefined) {
-            this.compiled = true;
-            return undefined;
-        }
-        this._model = translate(sourceCode, this.vars, this.name);
         this.compiled = true;
-        return this._model;
+        const src = this.body.sourceCode;
+        if (!src) return undefined;
+        return (this._model = translate(src, this.vars, this.name, lib));
+    }
+
+    private fCompiled = false;
+    private _fModel?: FunctionModel;
+    funcModel(lib: ClassLibrary): FunctionModel | undefined {
+        if (this.fCompiled === true) return this._fModel;
+        this.fCompiled = true;
+        const src = this.body.sourceCode;
+        if (!src) return undefined;
+        return (this._fModel = translateAsFunction(src, this.vars, this.name, lib));
     }
 
     private get body() {

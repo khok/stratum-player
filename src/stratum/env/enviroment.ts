@@ -1,11 +1,12 @@
 import { PlayerOptions, WindowHost } from "stratum/api";
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
+import { VarType } from "stratum/common/varType";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { win1251Table } from "stratum/helpers/win1251";
-import { Project, ProjectResources } from "stratum/project";
+import { Project, ProjectResources, Schema } from "stratum/project";
 import { VFS, VFSDir } from "stratum/vfs";
 import { Constant, Env, EventSubscriber, NumBool } from ".";
 import { EnvStream } from "./envStream";
@@ -72,6 +73,59 @@ export class Enviroment {
         return this.projects.length - 1;
     }
 
+    callFunction(fname: string, schema: Schema, ...args: (string | number)[]): void | string | number {
+        const obj = this.lib.get(fname);
+        const mod = obj?.funcModel(this.lib);
+        if (!mod) return;
+        const vars = obj?.vars;
+        let floats = 0;
+        const f1: number[] = [];
+        let ints = 0;
+        const i1: number[] = [];
+        let strings = 0;
+        const sarr: string[] = [];
+        const tlb = new Uint16Array(vars?.count ?? 0);
+        if (vars && args.length > 0) {
+            if (args.length > vars.count) throw Error("Кол-во аргументов больше кол-ва переменных");
+            let i = 0;
+            for (; i < vars.count; ++i) {
+                const val = (i < args.length ? args : vars.defaultValues)[i];
+                const typ = vars.types[i];
+                switch (typ) {
+                    case VarType.Float:
+                        if (typeof val === "string") throw Error("Несовпадение типов");
+                        tlb[i] = floats;
+                        floats += 1;
+                        f1.push(val ?? 0);
+                        break;
+                    case VarType.Handle:
+                    case VarType.ColorRef:
+                        if (typeof val === "string") throw Error("Несовпадение типов");
+                        tlb[i] = ints;
+                        ints += 1;
+                        i1.push(val ?? 0);
+                        break;
+                    case VarType.String:
+                        if (typeof val === "number") throw Error("Несовпадение типов");
+                        tlb[i] = strings;
+                        strings += 1;
+                        sarr.push(val ?? "");
+                        break;
+                }
+            }
+        }
+        const farr = new Float64Array(f1);
+        const iarr = new Int32Array(i1);
+        mod(schema, tlb, farr, iarr, sarr);
+        if (!vars) return;
+        const ret = vars.flags.findIndex((v) => v & Constant.VF_RETURN);
+        if (ret < 0) return;
+        const t = vars.types[ret];
+        if (t === VarType.String) return sarr[tlb[ret]];
+        if (t === VarType.Float) return farr[tlb[ret]];
+        return iarr[tlb[ret]];
+    }
+
     stratum_setHyperJump2d(hspace: number, hobject: number, mode: number, ...args: string[]): NumBool {
         if (mode !== 2) return 0;
         const scene = this.scenes.get(hspace);
@@ -126,7 +180,7 @@ export class Enviroment {
         return win1251Table[n];
     }
 
-    stratum_getTime(arr1: Env.Farr, hour: number, arr2: Env.Farr, min: number, arr3: Env.Farr, sec: number, arr4: Env.Farr, hund: number): void {
+    getTime(arr1: Env.Farr, hour: number, arr2: Env.Farr, min: number, arr3: Env.Farr, sec: number, arr4: Env.Farr, hund: number): void {
         const time = new Date();
         arr1[hour] = time.getHours();
         arr2[min] = time.getMinutes();
@@ -134,7 +188,7 @@ export class Enviroment {
         arr4[hund] = time.getMilliseconds() * 0.1;
     }
 
-    stratum_getDate(arr1: Env.Farr, year: number, arr2: Env.Farr, mon: number, arr3: Env.Farr, day: number): void {
+    getDate(arr1: Env.Farr, year: number, arr2: Env.Farr, mon: number, arr3: Env.Farr, day: number): void {
         const time = new Date();
         arr1[year] = time.getFullYear();
         arr2[mon] = time.getMonth();
@@ -672,7 +726,7 @@ export class Enviroment {
         const obj = this.getObject(hspace, hobject);
         return typeof obj !== "undefined" ? obj.actualWidth() : 0;
     }
-    stratum_getActualSize2d(hspace: number, hobject: number, xArr: Env.Farr, xId: number, yArr: Env.Farr, yId: number): NumBool {
+    getActualSize2d(hspace: number, hobject: number, xArr: Env.Farr, xId: number, yArr: Env.Farr, yId: number): NumBool {
         const obj = this.getObject(hspace, hobject);
         if (typeof obj === "undefined") return 0;
         xArr[xId] = obj.actualWidth();

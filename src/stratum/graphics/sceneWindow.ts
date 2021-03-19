@@ -148,6 +148,14 @@ export class SceneWindow implements Env.Window, HTMLFactory {
     }
 
     setAttrib(flag: number): NumBool {
+        switch (flag) {
+            case Constant.SW_HIDE:
+                this.view.style.setProperty("visibility", "hidden");
+                break;
+            case Constant.SW_SHOW:
+                this.view.style.removeProperty("visibility");
+                break;
+        }
         return 1;
     }
 

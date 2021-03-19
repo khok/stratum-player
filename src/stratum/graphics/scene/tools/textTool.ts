@@ -131,7 +131,7 @@ export class TextTool implements Env.TextTool {
             const fontStr = font.toCSSString();
             const h = font.size();
 
-            const spl = str.text().split("\r\n");
+            const spl = str.text().split("\n");
 
             ctx2.font = fontStr;
             let nl = false;

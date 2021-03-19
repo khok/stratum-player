@@ -7,7 +7,7 @@ import { PlacementDescription, Schema } from "./schema";
 function applyLinks(node: Schema, links: ClassLink[]) {
     const warn = (msg: string) => console.warn(`Имидж ${node.proto.name}: ${msg}`);
 
-    for (const { handle1, handle2, connectedVars } of links) {
+    for (const { handle1, handle2, flags, connectedVars } of links) {
         // Получаем соединяемые объекты
         const first = handle1 === 0 ? node : node.child(handle1);
         const second = handle2 === 0 ? node : node.child(handle2);
@@ -34,7 +34,7 @@ function applyLinks(node: Schema, links: ClassLink[]) {
             if (varId2 === undefined) warn(`Переменная ${name2} не найдена в ${obj2Name}`);
             if (varId1 === undefined || varId2 === undefined) continue;
 
-            if (!first.connectVar(varId1, second, varId2)) {
+            if (!first.connectVar(varId1, second, varId2, flags)) {
                 const typeFirst = VarType[first.proto.vars.types[varId1]];
                 const typeSecond = VarType[second.proto.vars.types[varId2]];
                 warn(`Не удалось соединить ${name1} (${typeFirst}) в ${obj1Name} и ${name2} (${typeSecond}) в ${obj2Name}`);
@@ -54,7 +54,7 @@ export function buildSchema(protoName: string, lib: ClassLibrary, prj: Project, 
     if (!proto) throw Error(`Имидж "${protoName}" не найден.`);
 
     //Создаем текущий узел дерева.
-    const node = new Schema(proto, prj, placement);
+    const node = new Schema(proto, prj, lib, placement);
 
     //Создаем детей.
     if (proto.children) {

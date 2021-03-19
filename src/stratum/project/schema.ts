@@ -42,8 +42,8 @@ export class Schema implements EventSubscriber {
     readonly proto: ClassProto;
     readonly TLB: Uint16Array;
 
-    constructor(proto: ClassProto, prj: Project, placement?: PlacementDescription) {
-        this.model = proto.model ?? Schema.NoModel;
+    constructor(proto: ClassProto, prj: Project, lib: ClassLibrary, placement?: PlacementDescription) {
+        this.model = proto.model(lib) ?? Schema.NoModel;
         this.proto = proto;
         this.prj = prj;
         if (placement) {
@@ -276,7 +276,8 @@ export class Schema implements EventSubscriber {
         return this.children.find((c) => c.handle === handle);
     }
 
-    connectVar(id: number, second: Schema, secondId: number) {
+    connectVar(id: number, second: Schema, secondId: number, flags: number) {
+        if (flags & 1) return true;
         return VarGraphNode.connect(this.varGraphNodes[id], second.varGraphNodes[secondId]);
     }
 
@@ -371,6 +372,7 @@ export class Schema implements EventSubscriber {
     compute(): void {
         if (this.isDisabled(this) === true) return;
         for (const c of this.children) c.compute();
+        // if (this.proto.name === "BtnAdapter") console.log(this.prj.newFloats[this.TLB[this.proto.vars!.nameUCToId.get("OTV")!]]);
         this.model(this);
     }
 
