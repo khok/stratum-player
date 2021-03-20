@@ -120,7 +120,7 @@ export class VFS implements FileSystem {
     }
 
     *files(regexp?: RegExp): IterableIterator<VFSFile> {
-        for (const disk of this.disks.values()) for (const f of disk.files(regexp)) yield f;
+        for (const disk of this.disks.values()) yield* disk.files(regexp);
     }
 
     async project(options: OpenProjectOptions = {}): Promise<RealPlayer> {

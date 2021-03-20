@@ -136,20 +136,13 @@ export class VFSDir implements FileSystemDir {
         return this;
     }
 
-    private *_files(): IterableIterator<VFSFile> {
-        for (const subnode of this.nodes.values()) {
-            if (!subnode.dir) {
-                yield subnode;
+    *files(regexp?: RegExp): IterableIterator<VFSFile> {
+        for (const node of this.nodes.values()) {
+            if (node.dir) {
+                yield* node.files(regexp);
                 continue;
             }
-            for (const subfile of subnode._files()) {
-                yield subfile;
-            }
+            if (!regexp || regexp.test(node.pathDos)) yield node;
         }
-    }
-
-    *files(regexp?: RegExp): IterableIterator<VFSFile> {
-        if (!regexp) return this._files();
-        for (const f of this._files()) if (regexp.test(f.pathDos)) yield f;
     }
 }
