@@ -31,7 +31,7 @@ export class SceneWindow implements Env.Window, HTMLFactory {
         this.noCaption = !!args.noCaption;
 
         if (args.vdr) {
-            this.resizible = !args.vdr.otDATAITEMS?.some((d) => d.id === 11);
+            this.resizible = !args.vdr.settings?.some((d) => d.id === 11);
             const { name, origin } = args.vdr.source;
             if (origin === "class") this.classname = name;
             else if (origin === "file") this.filename = name;

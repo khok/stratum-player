@@ -5,7 +5,7 @@ interface ToolBase {
 }
 
 export interface BrushToolParams extends ToolBase {
-    type: "ttBRUSH2D";
+    // type: "ttBRUSH2D";
     color: number;
     style: number;
     hatch: number;
@@ -14,7 +14,7 @@ export interface BrushToolParams extends ToolBase {
 }
 
 export interface PenToolParams extends ToolBase {
-    type: "ttPEN2D";
+    // type: "ttPEN2D";
     color: number;
     style: number;
     width: number;
@@ -22,7 +22,7 @@ export interface PenToolParams extends ToolBase {
 }
 
 export interface FontToolParams extends ToolBase {
-    type: "ttFONT2D";
+    // type: "ttFONT2D";
     height: number;
     width: number;
     escapement: number;
@@ -37,12 +37,12 @@ export interface FontToolParams extends ToolBase {
     quality: number;
     pitchAndFamily: number;
     fontName: string;
-    size: number;
-    style: number;
+    size?: number;
+    style?: number;
 }
 
 export interface StringToolParams extends ToolBase {
-    type: "ttSTRING2D";
+    // type: "ttSTRING2D";
     text: string;
 }
 
@@ -54,27 +54,27 @@ export interface TextToolFragment {
 }
 
 export interface TextToolParams extends ToolBase {
-    type: "ttTEXT2D";
+    // type: "ttTEXT2D";
     textCollection: TextToolFragment[];
 }
 
 export interface DibToolParams extends ToolBase {
-    type: "ttDIB2D";
+    type: "image";
     img: DibToolImage;
 }
 
 export interface DoubleDibToolParams extends ToolBase {
-    type: "ttDOUBLEDIB2D";
+    type: "image";
     img: DibToolImage;
 }
 
 export interface ExternalDibToolParams extends ToolBase {
-    type: "ttREFTODIB2D";
+    type: "BMPReference";
     filename: string;
 }
 
 export interface ExternalDoubleDibToolParams extends ToolBase {
-    type: "ttREFTODOUBLEDIB2D";
+    type: "DBMReference";
     filename: string;
 }
 

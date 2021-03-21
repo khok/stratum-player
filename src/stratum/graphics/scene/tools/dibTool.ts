@@ -70,7 +70,7 @@ export class DIBTool implements Env.DIBTool {
         this.handle = args.handle;
         this._pattern = null;
         this.subs = new Set();
-        if (args.type === "ttDIB2D" || args.type === "ttDOUBLEDIB2D") {
+        if (args.type === "image") {
             this.img = args.img;
         } else {
             this.img = null;
@@ -78,7 +78,7 @@ export class DIBTool implements Env.DIBTool {
             if (!path) return;
 
             const url = `${path.endsWith("/") ? path : path + "/"}${args.filename.toUpperCase()}`;
-            const load = args.type === "ttREFTODIB2D" ? DIBTool.loadBitmap : DIBTool.loadDBM;
+            const load = args.type === "BMPReference" ? DIBTool.loadBitmap : DIBTool.loadDBM;
 
             load(url).then((ctx) => {
                 this.img = ctx;

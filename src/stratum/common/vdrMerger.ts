@@ -45,14 +45,14 @@ function deepVdrCopy(vdr: VectorDrawing) {
     dataCopy.fontTools = copyArray(vdr.fontTools);
     dataCopy.stringTools = copyArray(vdr.stringTools);
     dataCopy.textTools = vdr.textTools?.map((t) => ({ ...t, textCollection: t.textCollection.map((c) => ({ ...c })) }));
-    dataCopy.elements = vdr.elements?.map((el) => (el.type === "otGROUP2D" ? { ...el, childHandles: el.childHandles.slice() } : { ...el }));
+    dataCopy.elements = vdr.elements?.map((el) => (el.type === "group" ? { ...el, childHandles: el.childHandles.slice() } : { ...el }));
     dataCopy.elementOrder = vdr.elementOrder && vdr.elementOrder.slice();
     return dataCopy;
 }
 
 function findRootGroup(elements: VectorDrawingElement[], rootGroupHandle: number) {
     const rootGroup = elements.find((el) => el.handle === rootGroupHandle);
-    if (!rootGroup || rootGroup.type !== "otGROUP2D") throw Error(`На схеме нет группы ${rootGroupHandle}`);
+    if (!rootGroup || rootGroup.type !== "group") throw Error(`На схеме нет группы ${rootGroupHandle}`);
     return rootGroup;
 }
 
@@ -60,7 +60,7 @@ function getStubIcon(elements: VectorDrawingElement[], rootGroup: GroupElement) 
     const stubIconHandle = rootGroup.childHandles[0];
 
     const stubIcon = elements.find((el) => el.handle === stubIconHandle);
-    if (!stubIcon || stubIcon.type !== "otDOUBLEBITMAP2D") throw Error(`На схеме нет иконки имиджа #${rootGroup.handle}`);
+    if (!stubIcon || stubIcon.type !== "doubleBitmap") throw Error(`На схеме нет иконки имиджа #${rootGroup.handle}`);
     return stubIcon;
 }
 
@@ -121,23 +121,23 @@ function updateRefsFromToolsToTools(tools: VectorDrawingTools, collectionType: k
 function updateRefsFromElementsToTools(elements: VectorDrawingElement[], collectionType: keyof VectorDrawingTools, map: Map<number, number>) {
     switch (collectionType) {
         case "brushTools":
-            const lines = elements.filter((t): t is LineElement => t.type === "otLINE2D");
+            const lines = elements.filter((t): t is LineElement => t.type === "line");
             updateHandles(lines, "brushHandle", map);
             break;
         case "penTools":
-            const linesAgain = elements.filter((t): t is LineElement => t.type === "otLINE2D");
+            const linesAgain = elements.filter((t): t is LineElement => t.type === "line");
             updateHandles(linesAgain, "penHandle", map);
             break;
         case "dibTools":
-            const bitmaps = elements.filter((t): t is BitmapElement => t.type === "otBITMAP2D");
+            const bitmaps = elements.filter((t): t is BitmapElement => t.type === "bitmap");
             updateHandles(bitmaps, "dibHandle", map);
             break;
         case "doubleDibTools":
-            const doublebitmaps = elements.filter((t): t is DoubleBitmapElement => t.type === "otDOUBLEBITMAP2D");
+            const doublebitmaps = elements.filter((t): t is DoubleBitmapElement => t.type === "doubleBitmap");
             updateHandles(doublebitmaps, "dibHandle", map);
             break;
         case "textTools":
-            const texts = elements.filter((t): t is TextElement => t.type === "otTEXT2D");
+            const texts = elements.filter((t): t is TextElement => t.type === "text");
             updateHandles(texts, "textToolHandle", map);
             break;
     }
@@ -156,7 +156,7 @@ function calcImageOrigin(elements: VectorDrawingElement[]) {
     let minX = undefined;
     let minY = undefined;
     for (const el of elements) {
-        if (el.type === "otGROUP2D") continue;
+        if (el.type === "group") continue;
         if (minX === undefined || el.originX < minX) minX = el.originX;
         if (minY === undefined || el.originY < minY) minY = el.originY;
     }
@@ -164,7 +164,7 @@ function calcImageOrigin(elements: VectorDrawingElement[]) {
 }
 
 function isElementInGroup(elements: VectorDrawingElement[], child: VectorDrawingElement) {
-    return elements.some((e) => e.type === "otGROUP2D" && e.childHandles.includes(child.handle));
+    return elements.some((e) => e.type === "group" && e.childHandles.includes(child.handle));
 }
 
 function mergeElements(schemeElements: VectorDrawingElement[], imageElements: VectorDrawingElement[], offset: Point2D) {
@@ -179,10 +179,10 @@ function mergeElements(schemeElements: VectorDrawingElement[], imageElements: Ve
         child.handle = freeHandle;
         schemeElements.push(child);
 
-        if (child.type === "otGROUP2D") continue;
+        if (child.type === "group") continue;
         child.originX += offset.x;
         child.originY += offset.y;
-        if (child.type === "otLINE2D") {
+        if (child.type === "line") {
             child.coords = child.coords.slice();
             for (let i = 0; i < child.coords.length; i += 2) {
                 child.coords[i + 0] += offset.x;
@@ -194,11 +194,10 @@ function mergeElements(schemeElements: VectorDrawingElement[], imageElements: Ve
     if (newGroupHandles.length === 1) return { map, rootHandle: newGroupHandles[0] };
     while (schemeElements.some((e) => e.handle === freeHandle)) ++freeHandle;
     const newGroup: GroupElement = {
-        type: "otGROUP2D",
+        type: "group",
         handle: freeHandle,
         childHandles: newGroupHandles,
         options: 0,
-        name: "",
     };
     schemeElements.push(newGroup);
     return { map, rootHandle: newGroup.handle };
@@ -206,7 +205,7 @@ function mergeElements(schemeElements: VectorDrawingElement[], imageElements: Ve
 
 function updateRefsFromGroupsToElements(elements: VectorDrawingElement[], map: Map<number, number>) {
     for (const el of elements) {
-        if (el.type !== "otGROUP2D") continue;
+        if (el.type !== "group") continue;
         el.childHandles = el.childHandles.map((elHandle) => map.get(elHandle) || elHandle);
     }
 }
@@ -252,8 +251,7 @@ export class VdrMerger {
 
         const rootGroup = findRootGroup(scheme.elements, rootGroupHandle);
         const stubIcon = getStubIcon(scheme.elements, rootGroup);
-        // stubIcon.options = 0x0001; //прячем иконку-заглушку.
-        stubIcon.hidden = true;
+        stubIcon.options |= 1; //прячем иконку-заглушку.
 
         const imageOrigin = calcImageOrigin(imageCopy.elements);
         const realOffset = { x: stubIcon.originX - imageOrigin.x, y: stubIcon.originY - imageOrigin.y };
@@ -287,7 +285,7 @@ export class VdrMerger {
         const rootGroup = findRootGroup(scheme.elements, rootGroupHandle);
         const stubIcon = getStubIcon(scheme.elements, rootGroup);
 
-        const ddib: ExternalDoubleDibToolParams = { type: "ttREFTODOUBLEDIB2D", handle: 0, filename: iconFile };
+        const ddib: ExternalDoubleDibToolParams = { type: "DBMReference", handle: 0, filename: iconFile };
 
         let freeHandle = 1;
         if (scheme.doubleDibTools) {

@@ -148,18 +148,18 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
         const mapFunc: (e: VectorDrawingElement) => [number, SceneObj] = (e) => {
             switch (e.type) {
-                case "otGROUP2D":
+                case "group":
                     const g = new SceneGroup(this, e);
                     groups.add({ g, h: e.childHandles });
                     return [e.handle, g];
-                case "otLINE2D":
+                case "line":
                     return [e.handle, new SceneLine(this, e)];
-                case "otTEXT2D":
+                case "text":
                     return [e.handle, new SceneText(this, e)];
-                case "otCONTROL2D":
+                case "control":
                     return [e.handle, new SceneControl(this, html, e)];
-                case "otBITMAP2D":
-                case "otDOUBLEBITMAP2D":
+                case "bitmap":
+                case "doubleBitmap":
                     return [e.handle, new SceneBitmap(this, e)];
             }
         };
@@ -257,7 +257,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneBitmap(this, { handle, originX: realX, originY: realY, type: isDouble ? "otDOUBLEBITMAP2D" : "otBITMAP2D", dibHandle });
+        const obj = new SceneBitmap(this, { handle, originX: realX, originY: realY, type: isDouble ? "doubleBitmap" : "bitmap", dibHandle });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
@@ -274,8 +274,9 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         this.primaryObjects.push(obj);
         return handle;
     }
-    createControl(x: number, y: number, width: number, height: number, className: string, text: string, style: number) {
-        if (className !== "EDIT" && className !== "BUTTON" && className !== "COMBOBOX") {
+    createControl(x: number, y: number, width: number, height: number, className: string, text: string, style: number): number {
+        const nm = className.toUpperCase();
+        if (nm !== "EDIT" && nm !== "BUTTON" && nm !== "COMBOBOX") {
             return 0;
         }
 
@@ -328,18 +329,18 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
         const mapFunc: (e: VectorDrawingElement) => [number, SceneObj] = (e) => {
             switch (e.type) {
-                case "otGROUP2D":
+                case "group":
                     const g = new SceneGroup(this, e);
                     groups.add({ g, h: e.childHandles });
                     return [e.handle, g];
-                case "otLINE2D":
+                case "line":
                     return [e.handle, new SceneLine(this, e)];
-                case "otTEXT2D":
+                case "text":
                     return [e.handle, new SceneText(this, e)];
-                case "otCONTROL2D":
+                case "control":
                     return [e.handle, new SceneControl(this, this.html, e)];
-                case "otBITMAP2D":
-                case "otDOUBLEBITMAP2D":
+                case "bitmap":
+                case "doubleBitmap":
                     return [e.handle, new SceneBitmap(this, e)];
             }
         };
@@ -568,12 +569,12 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     }
     createDIBTool(img: DibToolImage): number {
         const handle = HandleMap.getFreeHandle(this.dibs);
-        this.dibs.set(handle, new DIBTool({ handle, type: "ttDIB2D", img }));
+        this.dibs.set(handle, new DIBTool({ handle, type: "image", img }));
         return handle;
     }
     createDoubleDIBTool(img: DibToolImage): number {
         const handle = HandleMap.getFreeHandle(this.doubleDibs);
-        this.doubleDibs.set(handle, new DIBTool({ handle, type: "ttDOUBLEDIB2D", img }));
+        this.doubleDibs.set(handle, new DIBTool({ handle, type: "image", img }));
         return handle;
     }
     createStringTool(text: string): number {

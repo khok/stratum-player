@@ -1,5 +1,4 @@
 import { NumBool } from "stratum/env";
-import { ControlElement } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
 import { InputWrapper } from ".";
 import { Hyperbase } from "./hyperbase";
@@ -14,7 +13,7 @@ export interface SceneControlArgs {
     originY: number;
     width: number;
     height: number;
-    className: ControlElement["className"];
+    className: string;
     text: string;
     dwStyle?: number;
     exStyle?: number;
@@ -49,7 +48,8 @@ export class SceneControl implements SceneVisualMember {
     hyperbase: Hyperbase | null;
 
     constructor(scene: Scene, html: HTMLFactory, { handle, options, name, originX, originY, width, height, className, text }: SceneControlArgs) {
-        if (className !== "EDIT") throw Error(`Элемент ввода ${className} не реализован.`);
+        const nm = className.toUpperCase();
+        if (nm !== "EDIT") throw Error(`Элемент ввода ${className} не реализован.`);
 
         this.hyperbase = null;
 

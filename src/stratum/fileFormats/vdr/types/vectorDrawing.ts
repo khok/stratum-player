@@ -13,8 +13,8 @@ import {
 } from "./vectorDrawingTools";
 
 export interface VectorDrawingTools {
-    brushTools?: BrushToolParams[];
     penTools?: PenToolParams[];
+    brushTools?: BrushToolParams[];
     dibTools?: (DibToolParams | ExternalDibToolParams)[];
     doubleDibTools?: (DoubleDibToolParams | ExternalDoubleDibToolParams)[];
     fontTools?: FontToolParams[];
@@ -39,19 +39,27 @@ export interface VDRSource {
     name: string;
 }
 
-export interface VectorDrawing extends VectorDrawingTools {
-    fileversion: number;
-    minVersion: number;
+export interface VDRSetting {
+    id: number;
+    data: Uint8Array;
+}
+
+export interface VectorDrawingBase extends VectorDrawingTools {
+    version: number;
     origin: Point2D;
+    scaleDiv: Point2D;
+    scaleMul: Point2D;
     state: number;
-    defaultFlags: number;
+    flags: number;
     brushHandle: number;
     layers: number;
-
-    source: VDRSource;
 
     elements?: VectorDrawingElement[];
     elementOrder?: number[];
     crdSystem?: CoordinateSystem;
-    otDATAITEMS?: { id: number; data: unknown }[];
+    settings?: VDRSetting[];
+}
+
+export interface VectorDrawing extends VectorDrawingBase {
+    source: VDRSource;
 }

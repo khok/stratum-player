@@ -20,7 +20,6 @@ export interface SceneBitmapArgs {
     cropW?: number;
     cropH?: number;
     type: BitmapElement["type"] | DoubleBitmapElement["type"];
-    hidden?: boolean;
     dibHandle: number;
 }
 
@@ -52,10 +51,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
     markDeleted: boolean;
 
     hyperbase: Hyperbase | null;
-    constructor(
-        scene: Scene,
-        { handle, name, options, hidden, originX, originY, type, dibHandle, width, height, cropX, cropY, cropW, cropH }: SceneBitmapArgs
-    ) {
+    constructor(scene: Scene, { handle, name, options, originX, originY, type, dibHandle, width, height, cropX, cropY, cropW, cropH }: SceneBitmapArgs) {
         this.hyperbase = null;
         this.scene = scene;
         this.handle = handle;
@@ -64,7 +60,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         this.markDeleted = false;
         scene.dirty = true;
 
-        this.isDouble = type !== "otBITMAP2D";
+        this.isDouble = type === "doubleBitmap";
         const dib = (this.isDouble ? scene.doubleDibs : scene.dibs).get(dibHandle);
         dib?.subscribe(this);
         this.dib = dib || null;
@@ -73,9 +69,9 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         this._originY = originY;
         const dibW = dib?.width() || 0;
         const dibH = dib?.height() || 0;
-        this._width = hidden ? 1 : width || dibW;
-        this._height = hidden ? 1 : height || dibH;
-        this.hardHidden = !!hidden;
+        this.hardHidden = options ? !!(options & 1) : false;
+        this._width = this.hardHidden ? 1 : width || dibW;
+        this._height = this.hardHidden ? 1 : height || dibH;
 
         this.cropX = cropX || 0;
         this.cropY = cropY || 0;

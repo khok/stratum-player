@@ -1,9 +1,21 @@
 import { Point2D } from "stratum/helpers/types";
 
+export interface Hyperbase {
+    target?: string;
+    windowName?: string;
+    objectName?: string;
+    openMode?: number;
+    effect?: string;
+    time?: number;
+    params?: string;
+    disabled?: boolean;
+}
+
 export interface ElementBase {
     handle: number;
     options: number;
-    name: string;
+    name?: string;
+    hyperbase?: Hyperbase;
 }
 
 export interface Element2dBase extends ElementBase {
@@ -14,12 +26,12 @@ export interface Element2dBase extends ElementBase {
 }
 
 export interface GroupElement extends ElementBase {
-    type: "otGROUP2D";
+    type: "group";
     childHandles: number[];
 }
 
 export interface LineElement extends Element2dBase {
-    type: "otLINE2D";
+    type: "line";
     penHandle: number;
     brushHandle: number;
     coords: number[];
@@ -27,7 +39,6 @@ export interface LineElement extends Element2dBase {
 }
 
 interface BitmapBase extends Element2dBase {
-    hidden: boolean;
     cropX: number;
     cropY: number;
     cropW: number;
@@ -37,23 +48,23 @@ interface BitmapBase extends Element2dBase {
 }
 
 export interface BitmapElement extends BitmapBase {
-    type: "otBITMAP2D";
+    type: "bitmap";
 }
 
 export interface DoubleBitmapElement extends BitmapBase {
-    type: "otDOUBLEBITMAP2D";
+    type: "doubleBitmap";
 }
 
 export interface TextElement extends Element2dBase {
-    type: "otTEXT2D";
+    type: "text";
     textToolHandle: number;
-    delta: number;
+    delta: Point2D;
     angle: number;
 }
 
 export interface ControlElement extends Element2dBase {
-    type: "otCONTROL2D";
-    className: "EDIT" | "BUTTON" | "COMBOBOX";
+    type: "control";
+    className: string; // "EDIT" | "BUTTON" | "COMBOBOX";
     text: string;
     dwStyle: number;
     exStyle: number;
