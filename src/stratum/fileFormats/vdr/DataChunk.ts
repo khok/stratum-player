@@ -1,4 +1,4 @@
-import { BinaryStream } from "stratum/helpers/binaryStream";
+import { BinaryReader } from "stratum/helpers/binaryReader";
 import { VectorDrawingElement } from ".";
 import {
     readBitmap,
@@ -21,67 +21,67 @@ import {
 import { VectorDrawingBase } from "./types/vectorDrawing";
 import { VdrEntry } from "./vdrEntry";
 
-export type CollectionItemReader<T> = (code: number, stream: BinaryStream, version: number) => T;
+export type CollectionItemReader<T> = (code: number, reader: BinaryReader, version: number) => T;
 
 export class DataChunk {
-    private stream: BinaryStream;
+    private reader: BinaryReader;
     private start: number;
     private size: number;
     readonly code: number;
     readonly version: number;
-    constructor(stream: BinaryStream, version: number, private name: string) {
-        this.stream = stream;
+    constructor(reader: BinaryReader, version: number, private name: string) {
+        this.reader = reader;
         this.version = version;
-        this.start = stream.pos();
-        this.code = stream.int16();
-        this.size = version >= 0x300 ? stream.int32() : 0;
+        this.start = reader.pos();
+        this.code = reader.int16();
+        this.size = version >= 0x300 ? reader.int32() : 0;
     }
 
     goEnd() {
-        this.stream.seek(this.start + this.size);
+        this.reader.seek(this.start + this.size);
     }
 
     // _collect.cpp:240
     readToolCollection<T>(itemReader: CollectionItemReader<T>): T[] {
-        const length = this.stream.uint16();
-        this.stream.skip(7); //limit,delta,dupl,current
+        const length = this.reader.uint16();
+        this.reader.skip(7); //limit,delta,dupl,current
 
         return Array.from({ length }, () => {
-            const chunk = new DataChunk(this.stream, this.version, "Инструмент");
-            this.stream.skip(2); //refCount
-            const res = itemReader(chunk.code, this.stream, this.version);
+            const chunk = new DataChunk(this.reader, this.version, "Инструмент");
+            this.reader.skip(2); //refCount
+            const res = itemReader(chunk.code, this.reader, this.version);
             chunk.checkReaded();
             return res;
         });
     }
 
     readElementCollection(): VectorDrawingElement[] {
-        const length = this.stream.uint16();
-        this.stream.skip(7); //limit,delta,dupl,current
+        const length = this.reader.uint16();
+        this.reader.skip(7); //limit,delta,dupl,current
 
         return Array.from({ length }, () => {
-            const { stream, version } = this;
-            const chunk = new DataChunk(stream, version, "Граф. объект");
+            const { reader, version } = this;
+            const chunk = new DataChunk(reader, version, "Граф. объект");
 
             let element: VectorDrawingElement;
             switch (chunk.code) {
                 case VdrEntry.otGROUP2D:
-                    element = readGroup(stream, version);
+                    element = readGroup(reader, version);
                     break;
                 case VdrEntry.otLINE2D:
-                    element = readLine(stream, version);
+                    element = readLine(reader, version);
                     break;
                 case VdrEntry.otBITMAP2D:
-                    element = readBitmap(stream, version, "bitmap");
+                    element = readBitmap(reader, version, "bitmap");
                     break;
                 case VdrEntry.otDOUBLEBITMAP2D:
-                    element = readBitmap(stream, version, "doubleBitmap");
+                    element = readBitmap(reader, version, "doubleBitmap");
                     break;
                 case VdrEntry.otTEXT2D:
-                    element = readText(stream, version);
+                    element = readText(reader, version);
                     break;
                 case VdrEntry.otCONTROL2D:
-                    element = readControl(stream, version);
+                    element = readControl(reader, version);
                     break;
                 default:
                     throw Error(`Неизвестный объект: ${VdrEntry[chunk.code]}`);
@@ -89,7 +89,7 @@ export class DataChunk {
             if (version < 0x300) return element;
 
             while (chunk.hasData()) {
-                const chunk = new DataChunk(this.stream, this.version, "Дополнительные данные");
+                const chunk = new DataChunk(this.reader, this.version, "Дополнительные данные");
                 chunk.readElementData(element);
                 chunk.checkReaded();
             }
@@ -101,26 +101,26 @@ export class DataChunk {
     readElementData(element: VectorDrawingElement) {
         switch (this.code) {
             case VdrEntry.otDATAITEMS:
-                readSettingCollection(this.stream, (id, size, stream) => {
+                readSettingCollection(this.reader, (id, size, reader) => {
                     if (id === 10) {
-                        element.hyperbase = readHyper(stream, size);
+                        element.hyperbase = readHyper(reader, size);
                         return;
                     }
                     console.warn(`Неизвестные данные в объекте ${element.handle}: id ${id}, ${size} байтов`);
-                    stream.skip(size);
+                    reader.skip(size);
                     return;
                 });
                 break;
             case VdrEntry.stOBJNAME:
-                element.name = this.stream.fixedString(this.size - 6);
+                element.name = this.reader.fixedString(this.size - 6);
                 break;
         }
     }
 
-    readCollection<T>(reader: (stream: BinaryStream) => T): T[] {
-        const length = this.stream.uint16();
-        this.stream.skip(4); //limit,delta
-        return Array.from({ length }, () => reader(this.stream));
+    readCollection<T>(reader: (reader: BinaryReader) => T): T[] {
+        const length = this.reader.uint16();
+        this.reader.skip(4); //limit,delta
+        return Array.from({ length }, () => reader(this.reader));
     }
 
     readObject(res: VectorDrawingBase) {
@@ -158,9 +158,9 @@ export class DataChunk {
                 res.elements = this.readElementCollection();
                 break;
             case VdrEntry.otDATAITEMS:
-                res.settings = readSettingCollection(this.stream, (id, size, stream) => ({
+                res.settings = readSettingCollection(this.reader, (id, size, reader) => ({
                     id,
-                    data: stream.bytes(size),
+                    data: reader.bytes(size),
                 }));
                 break;
 
@@ -177,7 +177,7 @@ export class DataChunk {
                 this.goEnd();
                 break;
             case VdrEntry.ctCRDSYSTEM:
-                res.crdSystem = readCrdSystem(this.stream);
+                res.crdSystem = readCrdSystem(this.reader);
                 break;
             default:
                 console.warn(`${VdrEntry[this.code]} игнорируется`);
@@ -190,7 +190,7 @@ export class DataChunk {
     }
 
     readedBytes() {
-        return this.stream.pos() - this.start;
+        return this.reader.pos() - this.start;
     }
 
     checkReaded() {

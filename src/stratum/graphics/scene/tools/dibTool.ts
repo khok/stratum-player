@@ -3,7 +3,7 @@ import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefPar
 import { Env, NumBool } from "stratum/env";
 import { readDbmFile } from "stratum/fileFormats/bmp";
 import { ImageToolParams } from "stratum/fileFormats/vdr";
-import { BinaryStream } from "stratum/helpers/binaryStream";
+import { BinaryReader } from "stratum/helpers/binaryReader";
 import { DibToolImage } from "stratum/helpers/types";
 import { ToolSubscriber } from "./toolSubscriber";
 
@@ -45,7 +45,7 @@ export class DIBTool implements Env.DIBTool {
         const p = new Promise<DibToolImage>(async (res) => {
             const r = await fetch(url, { cache: "force-cache" });
             const data = await r.arrayBuffer();
-            const cnv = readDbmFile(new BinaryStream({ data, name: url }));
+            const cnv = readDbmFile(new BinaryReader(data, url));
             res(cnv);
         });
 

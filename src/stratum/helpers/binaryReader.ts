@@ -1,51 +1,19 @@
 import { Point2D } from "./types";
 import { decode } from "./win1251";
 
-export interface FlushCallback {
-    (data: ArrayBuffer): void;
-}
-
-export interface BinaryStreamOptions {
-    data?: ArrayBuffer | ArrayBufferView;
-    canWrite?: boolean;
-    canRead?: boolean;
-    onflush?: FlushCallback;
-    name?: string;
-    version?: number;
-}
-
-export class BinaryStream {
-    // private static d = new TextDecoder("windows-1251");
-
+export class BinaryReader {
     private v: DataView;
     private p: number;
-    private canWrite: boolean;
-    private canRead: boolean;
-    private onflush: FlushCallback | null;
-
     readonly name: string;
-    version: number;
 
-    constructor(opts: BinaryStreamOptions = {}) {
-        const d = opts.data;
-        const cw = opts.canWrite ?? false;
-        if (!d) {
-            this.v = new DataView(new ArrayBuffer(0));
-        } else if (d instanceof ArrayBuffer) {
-            this.v = new DataView(cw ? d.slice(0) : d);
-        } else if (cw) {
-            const copy = d.buffer.slice(d.byteOffset, d.byteOffset + d.byteLength);
-            this.v = new DataView(copy);
+    constructor(data: ArrayBuffer | ArrayBufferView, name?: string) {
+        if (data instanceof ArrayBuffer) {
+            this.v = new DataView(data);
         } else {
-            this.v = new DataView(d.buffer, d.byteOffset, d.byteLength);
+            this.v = new DataView(data.buffer, data.byteOffset, data.byteLength);
         }
         this.p = 0;
-
-        this.canWrite = cw;
-        this.canRead = opts.canRead ?? true;
-        this.onflush = opts.onflush ?? null;
-        this.name = opts.name ?? "";
-        this.version = opts.version ?? 0;
+        this.name = name ?? "";
     }
 
     pos(): number {
@@ -163,19 +131,16 @@ export class BinaryStream {
             y: this.int16(),
         };
     }
-    close() {
-        if (this.onflush) this.onflush(this.v.buffer);
-    }
 }
 
 export class FileReadingError extends Error {
-    constructor(stream: BinaryStream, message: string) {
-        super(`Ошибка чтения ${stream.name || ""}:\n${message}`);
+    constructor(reader: BinaryReader, message: string) {
+        super(`Ошибка чтения ${reader.name || ""}:\n${message}`);
     }
 }
 
 export class FileSignatureError extends FileReadingError {
-    constructor(stream: BinaryStream, signature: number, expected: number) {
-        super(stream, `Сигнатура: 0x${signature.toString(16)}, ожидалось 0x${expected.toString(16)}.`);
+    constructor(reader: BinaryReader, signature: number, expected: number) {
+        super(reader, `Сигнатура: 0x${signature.toString(16)}, ожидалось 0x${expected.toString(16)}.`);
     }
 }

@@ -1,5 +1,5 @@
 //project.cpp:592
-import { BinaryStream, FileReadingError, FileSignatureError } from "stratum/helpers/binaryStream";
+import { BinaryReader, FileReadingError, FileSignatureError } from "stratum/helpers/binaryReader";
 import { EntryCode } from "./entryCode";
 
 const settingEntryNameMap: { [index: string]: keyof ProjectSettings } = {
@@ -40,31 +40,31 @@ export interface ProjectInfo {
     watchedVariables?: WatchedVariable[];
 }
 
-function readSettings(stream: BinaryStream): ProjectSettings {
+function readSettings(reader: BinaryReader): ProjectSettings {
     const res: ProjectSettings = {};
 
-    const varCount = stream.uint16();
+    const varCount = reader.uint16();
     for (let i = 0; i < varCount; i++) {
-        const bufSize = stream.uint16();
+        const bufSize = reader.uint16();
         //vars_m.h:21
-        const valueCode = stream.byte();
-        const nameLength = stream.byte();
-        const entryName = stream.fixedString(nameLength - 1);
-        stream.byte(); //нуль-терминатор
+        const valueCode = reader.byte();
+        const nameLength = reader.byte();
+        const entryName = reader.fixedString(nameLength - 1);
+        reader.byte(); //нуль-терминатор
         let entryValue;
         switch (valueCode) {
             case 0:
-                entryValue = stream.int32();
+                entryValue = reader.int32();
                 break;
             case 1:
-                entryValue = stream.float64();
+                entryValue = reader.float64();
                 break;
             case 2:
-                entryValue = stream.fixedString(bufSize - nameLength - 3);
-                stream.byte();
+                entryValue = reader.fixedString(bufSize - nameLength - 3);
+                reader.byte();
                 break;
             default:
-                throw new FileReadingError(stream, `Ошибка в чтении настроек проекта: неизвестный код значения ${valueCode}`);
+                throw new FileReadingError(reader, `Ошибка в чтении настроек проекта: неизвестный код значения ${valueCode}`);
         }
         const t = settingEntryNameMap[entryName];
         if (t) res[t] = entryValue as any;
@@ -74,41 +74,41 @@ function readSettings(stream: BinaryStream): ProjectSettings {
     return res;
 }
 
-function readWatchedVars(stream: BinaryStream): WatchedVariable[] {
-    const varCount = stream.uint16();
+function readWatchedVars(reader: BinaryReader): WatchedVariable[] {
+    const varCount = reader.uint16();
     const res = new Array<WatchedVariable>(varCount);
     for (let i = 0; i < varCount; i++) {
-        const path = Array.from({ length: stream.uint16() }, () => stream.uint16());
-        const name = stream.string();
-        const info = stream.string();
+        const path = Array.from({ length: reader.uint16() }, () => reader.uint16());
+        const name = reader.string();
+        const info = reader.string();
         res[i] = { path, name, info };
     }
     return res;
 }
 
-export function readPrjFile(stream: BinaryStream): ProjectInfo {
-    const sign = stream.uint16();
-    if (sign !== 0x6849) throw new FileSignatureError(stream, sign, 0x6849);
+export function readPrjFile(reader: BinaryReader): ProjectInfo {
+    const sign = reader.uint16();
+    if (sign !== 0x6849) throw new FileSignatureError(reader, sign, 0x6849);
 
     const res: ProjectInfo = { rootClassName: "" };
     let code = 0;
-    while ((code = stream.uint16()) !== 0) {
+    while ((code = reader.uint16()) !== 0) {
         switch (code) {
             case EntryCode.PR_PASSWORD:
-                stream.string();
+                reader.string();
                 console.warn("Проект имеет пароль");
                 break;
             case EntryCode.PR_MAINCLASS:
-                res.rootClassName = stream.string();
+                res.rootClassName = reader.string();
                 break;
             case EntryCode.PR_VARS:
-                res.settings = readSettings(stream);
+                res.settings = readSettings(reader);
                 break;
             case EntryCode.PR_WATCH:
-                res.watchedVariables = readWatchedVars(stream);
+                res.watchedVariables = readWatchedVars(reader);
                 break;
         }
     }
-    if (!res.rootClassName) throw new FileReadingError(stream, "Имя корневого имиджа не считано.");
+    if (!res.rootClassName) throw new FileReadingError(reader, "Имя корневого имиджа не считано.");
     return res;
 }

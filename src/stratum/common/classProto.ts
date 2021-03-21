@@ -1,5 +1,5 @@
 import { ClassInfoBody, readClsFileBody, readClsFileHeader } from "stratum/fileFormats/cls";
-import { BinaryStream } from "stratum/helpers/binaryStream";
+import { BinaryReader } from "stratum/helpers/binaryReader";
 import { Project, Schema } from "stratum/project";
 import { translate } from "stratum/translator";
 import { translateAsFunction } from "stratum/translator/translator";
@@ -14,7 +14,7 @@ type LazyBody =
       }
     | {
           loaded: false;
-          stream: BinaryStream;
+          reader: BinaryReader;
       };
 
 export interface ClassVars {
@@ -48,20 +48,21 @@ export class ClassProto {
     };
 
     private __body: LazyBody;
+    private version: number;
 
     readonly name: string;
     readonly filepathDos: string;
     readonly directoryDos: string;
     readonly byteSize: number;
 
-    constructor(stream: BinaryStream) {
-        const path = (this.filepathDos = stream.name);
+    constructor(reader: BinaryReader) {
+        const path = (this.filepathDos = reader.name);
         this.directoryDos = path.substring(0, path.lastIndexOf("\\") + 1);
-        this.byteSize = stream.size();
-        const header = readClsFileHeader(stream);
+        this.byteSize = reader.size();
+        const header = readClsFileHeader(reader);
         this.name = header.name;
-        stream.version = header.version;
-        this.__body = { loaded: false, stream };
+        this.version = header.version;
+        this.__body = { loaded: false, reader: reader };
     }
 
     get children() {
@@ -208,8 +209,8 @@ export class ClassProto {
         const { __body } = this;
         if (__body.loaded) return __body.data;
 
-        console.log(`Читаем ${this.name} (${__body.stream.name})`);
-        const body = readClsFileBody(__body.stream, this.name, ClassProto.blocks);
+        console.log(`Читаем ${this.name} (${__body.reader.name})`);
+        const body = readClsFileBody(__body.reader, this.name, this.version, ClassProto.blocks);
         this.__body = {
             loaded: true,
             data: body,

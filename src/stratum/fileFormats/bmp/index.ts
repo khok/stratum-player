@@ -1,16 +1,16 @@
 /*
  * Код для чтения размерностей битовых карт, объединения двойных битовых карт в изображение с прозрачностью.
  */
-import { BinaryStream, FileSignatureError } from "stratum/helpers/binaryStream";
+import { BinaryReader, FileSignatureError } from "stratum/helpers/binaryReader";
 import { DibToolImage } from "stratum/helpers/types";
 import { decodeBmp, readBMPSize } from "./bmpDecoder";
 
-function readBitmapSize(stream: BinaryStream) {
-    const _pos = stream.pos();
-    const sign = stream.uint16();
-    if (sign !== 0x4d42) throw new FileSignatureError(stream, sign, 0x4d42);
-    const size = stream.int32();
-    stream.seek(_pos);
+function readBitmapSize(reader: BinaryReader) {
+    const _pos = reader.pos();
+    const sign = reader.uint16();
+    if (sign !== 0x4d42) throw new FileSignatureError(reader, sign, 0x4d42);
+    const size = reader.int32();
+    reader.seek(_pos);
     return size;
 }
 
@@ -18,8 +18,8 @@ function u8toView(arr: Uint8Array) {
     return new DataView(arr.buffer, arr.byteOffset);
 }
 
-export function readBmpFile(stream: BinaryStream): DibToolImage {
-    const bmpRaw = stream.bytes(readBitmapSize(stream));
+export function readBmpFile(reader: BinaryReader): DibToolImage {
+    const bmpRaw = reader.bytes(readBitmapSize(reader));
 
     const v = u8toView(bmpRaw);
     const { width, height } = readBMPSize(v);
@@ -29,7 +29,7 @@ export function readBmpFile(stream: BinaryStream): DibToolImage {
     cnv.width = width;
     cnv.height = height;
     const ctx = cnv.getContext("2d", { alpha: false });
-    if (!ctx) throw Error(`Не удалось создать изображение ${stream.name}`);
+    if (!ctx) throw Error(`Не удалось создать изображение ${reader.name}`);
 
     const imageData = ctx.createImageData(width, height);
     decodeBmp(v, imageData.data);
@@ -37,9 +37,9 @@ export function readBmpFile(stream: BinaryStream): DibToolImage {
     return ctx;
 }
 
-export function readDbmFile(stream: BinaryStream): DibToolImage {
-    const bmpRaw1 = stream.bytes(readBitmapSize(stream));
-    const bmpRaw2 = stream.bytes(readBitmapSize(stream));
+export function readDbmFile(reader: BinaryReader): DibToolImage {
+    const bmpRaw1 = reader.bytes(readBitmapSize(reader));
+    const bmpRaw2 = reader.bytes(readBitmapSize(reader));
 
     const v = u8toView(bmpRaw1);
     const { width, height } = readBMPSize(v);
@@ -49,7 +49,7 @@ export function readDbmFile(stream: BinaryStream): DibToolImage {
     cnv.width = width;
     cnv.height = height;
     const ctx = cnv.getContext("2d", { alpha: true });
-    if (!ctx) throw Error(`Не удалось создать изображение ${stream.name}`);
+    if (!ctx) throw Error(`Не удалось создать изображение ${reader.name}`);
 
     const imageData = ctx.createImageData(width, height);
     const imageDataData = imageData.data;

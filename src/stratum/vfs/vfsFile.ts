@@ -5,7 +5,7 @@ import { FloatMatrix, readMatFile } from "stratum/fileFormats/mat";
 import { ProjectInfo, readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { readVdrFile, VectorDrawing } from "stratum/fileFormats/vdr";
-import { BinaryStream } from "stratum/helpers/binaryStream";
+import { BinaryReader } from "stratum/helpers/binaryReader";
 import { DibToolImage } from "stratum/helpers/types";
 import { VFSDir } from ".";
 
@@ -49,32 +49,26 @@ export class VFSFile implements FileSystemFile {
         throw Error(`Файл ${this.pathDos} не был предзагружен.`);
     }
 
-    // streamSync() {
-    //     const buf = this.bufferSync();
-    //     if (!buf) return undefined;
-    //     return new BinaryStream(buf);
-    // }
-
     private read(
         data: ArrayBuffer,
         type: "prj" | "cls" | "stt" | "vdr" | "mat" | "bmp" | "dbm"
     ): ProjectInfo | ClassProto | VariableSet | VectorDrawing | FloatMatrix | DibToolImage {
-        const st = new BinaryStream({ data, name: this.pathDos });
+        const r = new BinaryReader(data, this.pathDos);
         switch (type) {
             case "prj":
-                return readPrjFile(st);
+                return readPrjFile(r);
             case "cls":
-                return new ClassProto(st);
+                return new ClassProto(r);
             case "stt":
-                return readSttFile(st);
+                return readSttFile(r);
             case "vdr":
-                return readVdrFile(st, { origin: "file", name: this.pathDos });
+                return readVdrFile(r, { origin: "file", name: this.pathDos });
             case "mat":
-                return readMatFile(st);
+                return readMatFile(r);
             case "bmp":
-                return readBmpFile(st);
+                return readBmpFile(r);
             case "dbm":
-                return readDbmFile(st);
+                return readDbmFile(r);
         }
     }
 

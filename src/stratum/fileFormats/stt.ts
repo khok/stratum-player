@@ -1,5 +1,5 @@
 //class.cpp:3623
-import { BinaryStream, FileReadingError, FileSignatureError } from "stratum/helpers/binaryStream";
+import { BinaryReader, FileReadingError, FileSignatureError } from "stratum/helpers/binaryReader";
 import { EntryCode } from "./entryCode";
 
 export interface VariableSet {
@@ -11,39 +11,39 @@ export interface VariableSet {
     childSets: VariableSet[];
 }
 
-function readSubset(stream: BinaryStream): VariableSet {
-    const end = stream.int32();
+function readSubset(reader: BinaryReader): VariableSet {
+    const end = reader.int32();
 
-    const handle = stream.uint16();
-    const classname = stream.string();
-    const classId = stream.int32();
+    const handle = reader.uint16();
+    const classname = reader.string();
+    const classId = reader.int32();
 
-    const values = Array.from({ length: stream.uint16() }, () => ({
-        name: stream.string(),
-        value: stream.string(),
+    const values = Array.from({ length: reader.uint16() }, () => ({
+        name: reader.string(),
+        value: reader.string(),
     }));
 
     const childSets: VariableSet[] = [];
 
-    while (stream.pos() < end) childSets.push(readSubset(stream));
+    while (reader.pos() < end) childSets.push(readSubset(reader));
 
     return { handle, classname, classId, values, childSets };
 }
 
-export function readSttFile(stream: BinaryStream): VariableSet {
-    const sign = stream.uint16();
-    if (sign !== 0x13) throw new FileSignatureError(stream, sign, 0x13);
-    stream.seek(21); //..SC Scheme Variables
+export function readSttFile(reader: BinaryReader): VariableSet {
+    const sign = reader.uint16();
+    if (sign !== 0x13) throw new FileSignatureError(reader, sign, 0x13);
+    reader.seek(21); //..SC Scheme Variables
 
-    stream.string(); //имя корневого имиджа
-    stream.uint16(); //rr_version
-    stream.uint16(); //всегда равно 2
+    reader.string(); //имя корневого имиджа
+    reader.uint16(); //rr_version
+    reader.uint16(); //всегда равно 2
 
-    switch (stream.uint16()) {
+    switch (reader.uint16()) {
         case EntryCode.VR_CLASSES:
-            throw new FileReadingError(stream, "Блок VR_CLASSES не реализован.");
+            throw new FileReadingError(reader, "Блок VR_CLASSES не реализован.");
         case EntryCode.VR_SETVAR:
-            return readSubset(stream);
+            return readSubset(reader);
     }
     return { values: [], childSets: [], handle: 0, classname: "", classId: 0 };
 }
