@@ -1,10 +1,11 @@
 import { NumBool } from "stratum/env";
-import { Hyperbase } from "./hyperbase";
+import { Hyperbase } from "stratum/fileFormats/vdr";
 import { Scene, SceneMember } from "./scene";
 
 export interface GroupArgs {
     handle: number;
     name?: string;
+    hyperbase?: Hyperbase;
 }
 
 export class SceneGroup implements SceneMember {
@@ -24,8 +25,8 @@ export class SceneGroup implements SceneMember {
     markDeleted: boolean;
     hyperbase: Hyperbase | null;
 
-    constructor(scene: Scene, { handle, name }: GroupArgs) {
-        this.hyperbase = null;
+    constructor(scene: Scene, { hyperbase, handle, name }: GroupArgs) {
+        this.hyperbase = hyperbase ?? null;
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";

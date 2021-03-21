@@ -1,4 +1,4 @@
-import { VectorDrawing } from "stratum/fileFormats/vdr";
+import { Hyperbase, VectorDrawing } from "stratum/fileFormats/vdr";
 import { DibToolImage } from "stratum/helpers/types";
 import { VFSDir } from "stratum/vfs";
 import { Constant, EventSubscriber, NumBool } from ".";
@@ -7,7 +7,7 @@ export namespace Env {
     export type Farr = Float64Array;
 
     export interface HyperTarget {
-        hyperCall(mode: number, args: string[]): Promise<void>;
+        hyperCall(hyper: Hyperbase): Promise<void>;
     }
 
     export interface Scene {
@@ -19,6 +19,8 @@ export namespace Env {
         readonly texts: ReadonlyMap<number, TextTool>;
         readonly strings: ReadonlyMap<number, StringTool>;
         readonly fonts: ReadonlyMap<number, FontTool>;
+
+        hyperTarget: Env.HyperTarget | null;
 
         clear(): NumBool;
 
@@ -68,8 +70,7 @@ export namespace Env {
         setCapture(sub: EventSubscriber): void;
         releaseCapture(): void;
 
-        onHyper(hyperTarget: HyperTarget): void;
-        setHyper(hobject: number, mode: number, args: string[]): NumBool;
+        setHyper(hobject: number, hyper: Hyperbase): NumBool;
         tryHyper(x: number, y: number, hobject: number): void;
 
         brushHandle(): number;

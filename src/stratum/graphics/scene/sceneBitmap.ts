@@ -1,7 +1,6 @@
 import { NumBool } from "stratum/env";
-import { BitmapElement, DoubleBitmapElement } from "stratum/fileFormats/vdr";
+import { BitmapElement, DoubleBitmapElement, Hyperbase } from "stratum/fileFormats/vdr";
 import { Scene } from ".";
-import { Hyperbase } from "./hyperbase";
 import { SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { DIBTool } from "./tools/dibTool";
@@ -11,6 +10,7 @@ export interface SceneBitmapArgs {
     handle: number;
     options?: number;
     name?: string;
+    hyperbase?: Hyperbase;
     originX: number;
     originY: number;
     width?: number;
@@ -51,8 +51,11 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
     markDeleted: boolean;
 
     hyperbase: Hyperbase | null;
-    constructor(scene: Scene, { handle, name, options, originX, originY, type, dibHandle, width, height, cropX, cropY, cropW, cropH }: SceneBitmapArgs) {
-        this.hyperbase = null;
+    constructor(
+        scene: Scene,
+        { hyperbase, handle, name, options, originX, originY, type, dibHandle, width, height, cropX, cropY, cropW, cropH }: SceneBitmapArgs
+    ) {
+        this.hyperbase = hyperbase ?? null;
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";

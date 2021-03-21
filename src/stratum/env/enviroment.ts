@@ -2,7 +2,7 @@ import { PlayerOptions, WindowHost } from "stratum/api";
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
 import { VarType } from "stratum/common/varType";
-import { VectorDrawing } from "stratum/fileFormats/vdr";
+import { Hyperbase, VectorDrawing } from "stratum/fileFormats/vdr";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { win1251Table } from "stratum/helpers/win1251";
@@ -131,7 +131,14 @@ export class Enviroment {
         const scene = this.scenes.get(hspace);
         if (typeof scene === "undefined") return 0;
 
-        return scene.setHyper(hobject, mode, args);
+        return scene.setHyper(hobject, {
+            openMode: mode,
+            target: args[0],
+            objectName: args[1],
+            effect: args[2],
+            windowName: args[3],
+            params: args[4],
+        });
         // const path = args[0];
         // const objName = args[1];
         // const wname = args[3];
@@ -147,14 +154,14 @@ export class Enviroment {
         this.scenes.get(hspace)?.tryHyper(x, y, hobject);
     }
 
-    async hyperCall(dir: VFSDir, mode: number, args: string[]): Promise<void> {
+    async hyperCall(dir: VFSDir, hyp: Hyperbase): Promise<void> {
         if (this.inHyperCall) return;
         this.inHyperCall = true;
+        const mode = hyp.openMode ?? 0;
         switch (mode) {
             case 2: {
-                const path = args[0];
-                const params = args[4];
-                const file = dir.get(path);
+                if (!hyp.target) return;
+                const file = dir.get(hyp.target);
                 if (!file || file.dir) return;
 
                 const c = document.body.style.cursor;
@@ -170,7 +177,10 @@ export class Enviroment {
                 } finally {
                     document.body.style.cursor = c;
                 }
+                break;
             }
+            default:
+                console.log(hyp);
         }
         this.inHyperCall = false;
     }
@@ -1052,7 +1062,7 @@ export class Enviroment {
         this.wnameToHspace.set(wname, handle);
         this.hspaceToWname.set(handle, wname);
         this.scenes.set(handle, wnd.scene);
-        wnd.scene.onHyper(prj);
+        wnd.scene.hyperTarget = prj;
         return handle;
     }
 

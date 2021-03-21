@@ -1,9 +1,8 @@
 import { Constant, Env, Enviroment, EventSubscriber, NumBool } from "stratum/env";
-import { VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
+import { Hyperbase, VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { DibToolImage } from "stratum/helpers/types";
 import { InputWrapper, InputWrapperOptions } from "./html/inputWrapper";
-import { Hyperbase } from "./hyperbase";
 import { SceneBitmap } from "./sceneBitmap";
 import { SceneControl } from "./sceneControl";
 import { SceneGroup } from "./sceneGroup";
@@ -71,7 +70,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         ];
     }
 
-    private hyperTarget: Env.HyperTarget | null;
+    hyperTarget: Env.HyperTarget | null;
 
     private readonly html: HTMLFactory;
 
@@ -173,20 +172,17 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
             this.primaryObjects.push(obj);
         });
     }
-    onHyper(hyperTarget: Env.HyperTarget): void {
-        this.hyperTarget = hyperTarget;
-    }
-    setHyper(hobject: number, mode: number, args: string[]): NumBool {
+    setHyper(hobject: number, hyper: Hyperbase): NumBool {
         const obj = this.objects.get(hobject);
         if (!obj) return 0;
-        obj.hyperbase = new Hyperbase(mode, args);
+        obj.hyperbase = hyper;
         return 1;
     }
 
     tryHyper(x: number, y: number, hobject: number): void {
         const h = hobject || this.getObjectFromPoint2d(x, y);
         const hyp = this.objects.get(h)?.hyperbase;
-        if (hyp) this.hyperTarget?.hyperCall(hyp.mode, hyp.args);
+        if (hyp) this.hyperTarget?.hyperCall(hyp);
     }
 
     setBrush(hBrush: number): NumBool {
@@ -720,7 +716,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 this.blocked = true;
                 switch (evt.button) {
                     case 0: //Левая кнопка
-                        if (hyp) this.hyperTarget?.hyperCall(hyp.mode, hyp.args);
+                        if (hyp) this.hyperTarget?.hyperCall(hyp);
                         this.dispatchMouseEvent(this.leftButtonDownSubs, objHandle, Constant.WM_LBUTTONDOWN, x, y, fwkeys);
                         return;
                     case 1: //Колесико

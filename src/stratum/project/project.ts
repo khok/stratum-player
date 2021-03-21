@@ -3,6 +3,7 @@ import { VarType } from "stratum/common/varType";
 import { Env, Enviroment, NumBool } from "stratum/env";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
+import { Hyperbase } from "stratum/fileFormats/vdr";
 import { unreleasedFunctions } from "stratum/translator/unreleasedFunctions";
 import { VFSDir } from "stratum/vfs";
 import { Schema } from "./schema";
@@ -74,8 +75,8 @@ export class Project implements Env.Project, Env.HyperTarget {
         this.shouldClose = true;
     }
 
-    hyperCall(mode: number, args: string[]): Promise<void> {
-        return this.env.hyperCall(this.dir, mode, args);
+    hyperCall(hyp: Hyperbase): Promise<void> {
+        return this.env.hyperCall(this.dir, hyp);
     }
 
     stratum_openSchemeWindow(wname: string, className: string, attrib: string): number {

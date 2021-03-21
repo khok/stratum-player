@@ -1,6 +1,6 @@
 import { NumBool } from "stratum/env";
+import { Hyperbase } from "stratum/fileFormats/vdr";
 import { Scene } from ".";
-import { Hyperbase } from "./hyperbase";
 import { SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { BrushTool } from "./tools/brushTool";
@@ -11,6 +11,7 @@ export interface SceneLineArgs {
     handle: number;
     options?: number;
     name?: string;
+    hyperbase?: Hyperbase;
     coords: number[];
     penHandle: number;
     brushHandle: number;
@@ -42,9 +43,9 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
     markDeleted: boolean;
     hyperbase: Hyperbase | null;
 
-    constructor(scene: Scene, { handle, name, options, coords, penHandle, brushHandle }: SceneLineArgs) {
+    constructor(scene: Scene, { hyperbase, handle, name, options, coords, penHandle, brushHandle }: SceneLineArgs) {
         if (coords.length < 2) throw Error("Линия не имеет точек");
-        this.hyperbase = null;
+        this.hyperbase = hyperbase ?? null;
 
         this.scene = scene;
         this.handle = handle;

@@ -1,5 +1,5 @@
 import { NumBool } from "stratum/env";
-import { Hyperbase } from "./hyperbase";
+import { Hyperbase } from "stratum/fileFormats/vdr";
 import { Scene, SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { TextTool } from "./tools/textTool";
@@ -9,6 +9,7 @@ export interface SceneTextArgs {
     handle: number;
     options?: number;
     name?: string;
+    hyperbase?: Hyperbase;
     originX: number;
     originY: number;
     width?: number;
@@ -38,8 +39,8 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
     markDeleted: boolean;
     hyperbase: Hyperbase | null;
 
-    constructor(scene: Scene, { handle, name, options, originX, originY, width, height, angle, textToolHandle }: SceneTextArgs) {
-        this.hyperbase = null;
+    constructor(scene: Scene, { hyperbase, handle, name, options, originX, originY, width, height, angle, textToolHandle }: SceneTextArgs) {
+        this.hyperbase = hyperbase ?? null;
         this.scene = scene;
         this.handle = handle;
         this.name = name || "";
