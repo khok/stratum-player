@@ -1,10 +1,10 @@
-import { FileSystemDir, FileSystemFileData } from "stratum/api";
+import { FileSystemFileData, FSDir } from "stratum/api";
 import { assertDiskPrefix, splitPath } from "stratum/helpers/pathOperations";
 import { VFS, VFSFile } from ".";
 import { LazyBuffer } from "./vfsFile";
 
 const pathErr = (path: string) => Error(`Невозможно создать каталог ${path} - по этому пути уже существует файл.`);
-export class VFSDir implements FileSystemDir {
+export class VFSDir implements FSDir {
     private readonly nodes = new Map<string, VFSDir | VFSFile>();
     private readonly fs: VFS;
 

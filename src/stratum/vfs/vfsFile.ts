@@ -1,4 +1,4 @@
-import { FileSystemFile } from "stratum/api";
+import { FSFile } from "stratum/api";
 import { ClassProto } from "stratum/common/classProto";
 import { readBmpFile, readDbmFile } from "stratum/fileFormats/bmp";
 import { FloatMatrix, readMatFile } from "stratum/fileFormats/mat";
@@ -15,7 +15,7 @@ export type LazyBuffer =
       }
     | ArrayBuffer;
 
-export class VFSFile implements FileSystemFile {
+export class VFSFile implements FSFile {
     private buf: LazyBuffer;
     readonly dir = false;
     readonly parent: VFSDir;

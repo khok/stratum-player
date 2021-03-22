@@ -1,5 +1,5 @@
 import { loadAsync } from "jszip";
-import { FileSystem, OpenProjectOptions, OpenZipOptions, ZipSource } from "stratum/api";
+import { FS, OpenProjectOptions, OpenZipOptions, ZipSource } from "stratum/api";
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { ClassProto } from "stratum/common/classProto";
 import { VariableSet } from "stratum/fileFormats/stt";
@@ -8,7 +8,7 @@ import { RealPlayer } from "stratum/player";
 import { ProjectResources } from "stratum/project";
 import { VFSDir, VFSFile } from ".";
 
-export class VFS implements FileSystem {
+export class VFS implements FS {
     private static defaultPrefix = "C";
     static async fromZip(source: ZipSource, options: OpenZipOptions = {}): Promise<VFS> {
         const decoder = new TextDecoder(options.encoding || "cp866");
@@ -109,7 +109,7 @@ export class VFS implements FileSystem {
         return this.disks.get(name.toUpperCase());
     }
 
-    merge(fs: FileSystem): this {
+    merge(fs: FS): this {
         if (!(fs instanceof VFS)) throw Error("fs is not instanceof VFS");
         const { disks: otherDisks } = fs;
         const { disks: myDisks } = this;

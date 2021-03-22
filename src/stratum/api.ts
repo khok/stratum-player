@@ -2,7 +2,7 @@ import { FastestComputer, SmoothComputer } from "stratum/common/computers";
 import { createZipFS } from "stratum/vfs";
 
 export interface FileSystemConstructor {
-    (): FileSystem;
+    (): FS;
 }
 
 export interface OpenZipOptions {
@@ -28,22 +28,22 @@ export interface ZipFSConstructor {
      * @param source Источник ZIP-архива.
      * @param options Опции распаковки ZIP-архива.
      */
-    (source: ZipSource, options?: OpenZipOptions): Promise<FileSystem>;
+    (source: ZipSource, options?: OpenZipOptions): Promise<FS>;
 }
 
 /**
  * Файловая система.
  */
-export interface FileSystem {
+export interface FS {
     /**
      * Объединяет содержимое двух файловых систем.
      */
-    merge(fs: FileSystem): this;
+    merge(fs: FS): this;
     /**
      * Возвращает список файлов в системе.
      * @param regexp - условия поиска файлов.
      */
-    files(regexp?: RegExp): IterableIterator<FileSystemFile>;
+    files(regexp?: RegExp): IterableIterator<FSFile>;
     /**
      * Открывает проект.
      */
@@ -56,13 +56,13 @@ export type FileSystemFileData = ArrayBuffer;
 /**
  * Представляет каталог в файловой системе.
  */
-export interface FileSystemDir {
+export interface FSDir {
     readonly dir: true;
     /**
      * Родительский каталог.
      * Корневой каталог (корень диска) является родительским самому себе.
      */
-    readonly parent: FileSystemDir;
+    readonly parent: FSDir;
     /**
      * Абсолютный путь в DOS-формате, включая префикс диска.
      */
@@ -73,37 +73,37 @@ export interface FileSystemDir {
      * путь к создаваемому файлу.
      * Если файл с указанным именем не удалось создать, возвращает undefined.
      */
-    create(type: "file", path: string, data?: FileSystemFileData): FileSystemFile | undefined;
+    create(type: "file", path: string, data?: FileSystemFileData): FSFile | undefined;
     /**
      * Пытается создать каталог.
      * @param path - нечувствительный к регистру относительный или абсолютный
      * путь к создаваемому каталогу.
      * Если каталог с указанным именем не удалось создать, возвращает undefined.
      */
-    create(type: "dir", path: string): FileSystemDir | undefined;
+    create(type: "dir", path: string): FSDir | undefined;
     /**
      * Возвращает файл или каталог относительно текущего каталога.
      * @param path - нечувствительный к регистру относительный или абсолютный
      * путь к искомому файлу или каталогу.
      */
-    get(path: string): FileSystemDir | FileSystemFile | undefined;
+    get(path: string): FSDir | FSFile | undefined;
     /**
      * Возвращает список файлов в каталоге и его подкаталогах.
      * @param regexp - условия поиска файлов.
      */
-    files(regexp?: RegExp): IterableIterator<FileSystemFile>;
+    files(regexp?: RegExp): IterableIterator<FSFile>;
 }
 
 /**
  * Представляет файл в файловой системе.
  */
-export interface FileSystemFile {
+export interface FSFile {
     readonly dir: false;
     /**
      * Родительский каталог.
      * Корневой каталог (корень диска) является родительским самому себе.
      */
-    readonly parent: FileSystemDir;
+    readonly parent: FSDir;
     /**
      * Абсолютный путь в DOS-формате, включая префикс диска.
      */
