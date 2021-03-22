@@ -185,6 +185,18 @@ export class Enviroment {
         this.inHyperCall = false;
     }
 
+    stratum_isDlgButtonChecked2d(hspace: number, hobject: number): number {
+        return 0;
+    }
+
+    stratum_checkDlgButton2d(hspace: number, hobject: number, state: number): NumBool {
+        return 1;
+    }
+
+    stratum_setObjectAttribute2d(hspace: number, hobject: number, attr: number, flag: number): NumBool {
+        return 1;
+    }
+
     stratum_chr(n: number): string {
         if (n < 0 || n > 255) return "";
         return win1251Table[n];

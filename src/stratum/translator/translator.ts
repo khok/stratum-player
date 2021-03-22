@@ -26,6 +26,8 @@ const getActualSize2dFunc: keyof Enviroment = "getActualSize2d";
 
 const funcTable = new Map([
     ["ADDSLASH", "addSlash"],
+    ["ARCCOS", "arccos"],
+    ["ARCSIN", "arcsin"],
     ["LN", "ln"],
     ["POS", "pos"],
     ["RIGHT", "right"],
@@ -47,8 +49,18 @@ const header = `
 function addSlash(a) {
     return a[a.length - 1] === "\\\\" ? a : a + "\\\\";
 }
+function arccos(a) {
+    if(a > 1) return 0;
+    if(a < -1) return Math.PI;
+    return Math.acos(a)||0;
+}
+function arcsin(a) {
+    if(a > 1) return Math.PI / 2;
+    if(a < -1) return -Math.PI / 2;
+    return Math.asin(a)||0;
+}
 function ln(a) {
-    return a > 0 ? Math.log(a) : -(10**100)
+    return a > 0 ? (Math.log(a)||0) : -(10**100)
 }
 function pos(s1, s2, n) {
     if(s2 === "") return -1
@@ -66,7 +78,7 @@ function right(a, n) {
 }
 function round(a, b) {
     const pw = Math.ceil(10 ** b);
-    return Math.round(a * pw + Number.EPSILON) / pw;
+    return (Math.round(a * pw + Number.EPSILON) / pw)||0;
 }
 var ${prjVarName} = ${schemaVarName}.${prjVarName};
 var ${envVarName} = ${prjVarName}.${envVarName};
@@ -202,6 +214,7 @@ function subOpToString(subop: OP, vars: ClassVars | undefined, lib: ClassLibrary
             if (nameUC === "COS") return `(Math.cos(${fargs[0]})||0)`;
             if (nameUC === "EXP") return `(Math.exp(${fargs[0]})||0)`;
             if (nameUC === "SGN") return `(Math.sign(${fargs[0]})||0)`;
+            if (nameUC === "ARCTAN") return `(Math.atan(${fargs[0]})||0)`;
             if (nameUC === "MIN") return `(Math.min(${fargs[0]}, ${fargs[1]})||0)`;
             if (nameUC === "MAX") return `(Math.max(${fargs[0]}, ${fargs[1]})||0)`;
 
@@ -228,8 +241,7 @@ function subOpToString(subop: OP, vars: ClassVars | undefined, lib: ClassLibrary
                 return `${envVarName}.callFunction("${nameUC}", ${schemaVarName}${fargs.length > 0 ? "," + fargs : ""})`;
             }
             funcs.set(nameUC, subop.name);
-            fargs.unshift(`"${subop.name}"`);
-            return `${schemaVarName}.stubCall(${strArg})`;
+            return `${schemaVarName}.stubCall("${subop.name}", ${strArg})`;
         }
         case "expression":
             return `(${opToString(subop.body, vars, lib)})`;
