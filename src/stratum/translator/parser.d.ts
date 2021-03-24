@@ -1,7 +1,130 @@
-type CodeLine = (
+export type VarType = "HANDLE" | "STRING" | "FLOAT" | "COLORREF" | "INTEGER";
+export type VarModifier = "LOCAL" | "NOSAVE" | "PARAMETER";
+
+// ----------Описание структуры выражений----------
+export interface ConstOperand {
+    type: "const";
+    value: string;
+}
+export interface VarOperand {
+    type: "var";
+    name: string;
+}
+export interface CallOperand {
+    type: "call";
+    name: string;
+    args: Expression[];
+    isNew: undefined; //hack
+}
+export type UnaryOperator = "-" | "!";
+export interface UnaryOperand {
+    type: UnaryOperator;
+    expr: Expression;
+}
+export interface SubExpressionOperand {
+    type: "subexpr";
+    expr: Expression;
+}
+//isNew должна быть только у VarOP - здесь обход бага.
+export type Operand = (UnaryOperand | ConstOperand | CallOperand | VarOperand | SubExpressionOperand) & {
+    isNew: boolean | undefined; //hack
+};
+export type BinaryOperator = "**" | "*" | "/" | "%" | "+" | "-" | ">=" | ">" | "<=" | "<" | "==" | "!=" | "&&" | "&" | "||" | "|";
+export interface Expression {
+    first: Operand;
+    rest: {
+        action: BinaryOperator;
+        operand: Operand;
+    }[];
+}
+
+// ----------Блок объявления переменных----------
+export interface VarsDecl {
+    type: "varsDec";
+    datatype: VarType;
+    modifiers: VarModifier[];
+    names: string[];
+}
+
+// ----------Присваивание(a := (2 + 5))----------
+export interface AssigmentDecl {
+    type: ":=" | "::=";
+    to: string;
+    expr: Expression;
+}
+
+// ----------Уравнение(c + 5 = d + 4)----------
+export interface EqualityDecl {
+    type: "=";
+    first: Expression;
+    second: Expression;
+}
+
+// ----------Вызов функции(test(),best(2, 3))----------
+export interface CallChainDecl {
+    type: "callChain";
+    functions: CallOperand[];
+}
+
+// ----------Условные операторы, циклы и свитч----------
+export interface IfDecl {
+    type: "if";
+    expr: Expression;
+}
+export interface WhileDecl {
+    type: "while";
+    expr: Expression;
+}
+export interface UntilDecl {
+    type: "until";
+    expr: Expression;
+}
+export interface CaseDecl {
+    type: "case";
+    expr: Expression;
+    then?: CodeLine;
+}
+
+export interface ElseDecl {
+    type: "else";
+    then?: CodeLine;
+}
+export interface EndifDecl {
+    type: "endif";
+    then?: CodeLine;
+}
+export interface BreakDecl {
+    type: "break";
+}
+export interface EndwhileDecl {
+    type: "endwhile";
+}
+export interface DoDecl {
+    type: "do";
+}
+export interface EndSwitchDecl {
+    type: "endswitch";
+}
+export interface SwitchDecl {
+    type: "switch";
+}
+export interface DefaultDecl {
+    type: "default";
+    then?: CodeLine;
+}
+
+export interface FunctionDecl {
+    type: "function";
+}
+export interface ReturnDecl {
+    type: "return";
+    to: string;
+}
+
+export type CodeLine = (
     | VarsDecl
-    | AssigmentOperator
-    | EqualityOpereator
+    | AssigmentDecl
+    | EqualityDecl
     | IfDecl
     | ElseDecl
     | EndifDecl
@@ -14,155 +137,9 @@ type CodeLine = (
     | SwitchDecl
     | CaseDecl
     | DefaultDecl
-    | CallOperatorChain
+    | CallChainDecl
     | FunctionDecl
     | ReturnDecl
 ) & { then?: CodeLine };
-
-type IfDecl = NormalIfDecl | BuggedIfDecl;
-interface NormalIfDecl {
-    type: "if";
-    expr: Expression;
-}
-
-interface ElseDecl {
-    type: "else";
-    then?: CodeLine;
-}
-interface EndifDecl {
-    type: "endif";
-    then?: CodeLine;
-}
-interface BreakDecl {
-    type: "break";
-}
-interface WhileDecl {
-    type: "while";
-    expr: Expression;
-}
-interface EndwhileDecl {
-    type: "endwhile";
-}
-interface DoDecl {
-    type: "do";
-}
-interface UntilDecl {
-    type: "until";
-    expr: Expression;
-}
-
-interface EndSwitchDecl {
-    type: "endswitch";
-}
-interface SwitchDecl {
-    type: "switch";
-}
-interface CaseDecl {
-    type: "case";
-    expr: Expression;
-    then?: CodeLine;
-}
-interface DefaultDecl {
-    type: "default";
-    then?: CodeLine;
-}
-
-interface FunctionDecl {
-    type: "function";
-}
-interface ReturnDecl {
-    type: "return";
-    to: ValidVarName;
-}
-
-interface VarsDecl {
-    type: "varsDec";
-    datatype: VarType;
-    modifiers: VarModifier[];
-    names: VarNames;
-}
-
-interface AssigmentOperator {
-    type: ":=" | "::=";
-    to: ValidVarName;
-    operand: Operand;
-}
-
-interface EqualityOpereator {
-    type: "=";
-    first: Operand;
-    second: Operand;
-}
-
-interface CallOperator {
-    type: "call";
-    name: ValidFunctionName;
-    args: CallOperatorArg[];
-    isNew: undefined;
-}
-
-interface CallOperatorChain {
-    type: "callChain";
-    functions: CallOperator[];
-}
-
-interface UnaryOperator {
-    type: UnaryAction;
-    operand: Operand;
-}
-
-interface Expression {
-    type: "expression";
-    body: Operand;
-}
-
-interface Const {
-    type: "const";
-    value: string;
-}
-
-interface VarValueOperator {
-    type: "var";
-    name: ValidVarName;
-}
-
-type ValidFunctionName = ValidVarName;
-
-type UnaryAction = "-" | "+" | "!";
-
-type BinaryAction = "**" | "*" | "/" | "%" | "+" | "-" | ">>" | ">=" | ">" | "<<" | "<=" | "<" | "==" | "!=" | "&&" | "&" | "||" | "|";
-
-interface Operand {
-    first: OP;
-    rest: {
-        action: BinaryAction;
-        op: OP;
-    }[];
-}
-type OP = (UnaryOperator | Const | CallOperator | VarValueOperator | Expression) & {
-    isNew?: boolean;
-};
-
-//Все что касается блока объявления переменных
-type VarType = string; //'HANDLE'i / "STRING"i / "FLOAT"i / "COLORREF"i / "INTEGER"i
-type VarModifier = string; //'LOCAL'i / 'NOSAVE'i / 'PARAMETER'i
-
-type VarNames = ValidVarName[];
-
-type CallOperatorArg = Operand;
-
-type ValidVarName = string;
-
-type Space = string;
-type NewLine = string;
-
-interface BuggedIfDecl {
-    type: "if";
-    expr: ExpressionForBuggedIf;
-}
-interface ExpressionForBuggedIf {
-    type: "expression";
-    body: Operand;
-}
 
 export function parse(code: string): CodeLine[];

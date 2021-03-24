@@ -9,127 +9,134 @@ Code =
  val:(Space* op:CodeLine? Space* NewLine { return op })*
  { return val.filter(v => v) }
 
-CodeLine =
- VarsDecl / // блок объявления переменных
- AssigmentOperator / // Оператор присваивания
- EqualityOpereator / // Уравнения
- //IfDecl / IfNotDecl / ElseThen / ElseDecl / EndifDecl / //if-ы
- IfDecl / ElseDecl / EndifDecl / //if-ы
- BreakDecl / WhileDecl / EndwhileDecl /  DoDecl / UntilDecl / //циклы-ы (do, while)
- EndSwitchDecl / SwitchDecl /  CaseDecl / DefaultDecl / //switch-case-default
- CallOperatorChain / //Вызов функции
- FunctionDecl / ReturnDecl //function и return
-
-IfDecl = NormalIfDecl / BuggedIfDecl
-NormalIfDecl 'if(<condition>)' = 'if'i _ expr:Expression { return { type: "if", expr } }
-//ElseThen 'else <operator>' = ElseDecl Space+ then:CodeLine { return { type: "else", then } }
-//ElseDecl = 'else'i { return { type: "else" } }
-ElseDecl 
- = 'else'i then:(Space+ val:CodeLine { return val })?
- { return { type: "else", then } }
-EndifDecl 
- = 'endif'i then:(Space+ val:CodeLine { return val })?
- { return { type: "endif", then } }
-
-BreakDecl = 'break'i { return { type: "break" } }
-WhileDecl 'while(<condition>)' = 'while'i _ expr:Expression { return { type: "while", expr } }
-EndwhileDecl = 'endwhile'i { return { type: "endwhile" } }
-DoDecl = 'do'i { return { type: "do" } }
-UntilDecl 'until(<condition>)' = 'until'i _ expr:Expression { return { type: "until", expr } }
-
-EndSwitchDecl = 'endswitch'i { return { type: "endswitch" } }
-SwitchDecl = 'switch'i { return { type: "switch" } }
-CaseDecl 'case(<condition>)' 
- = 'case'i _ expr:Expression then:(Space+ val:CodeLine { return val })?
- { return { type: "case", expr, then } } 
-DefaultDecl 
- = 'default'i then:(Space+ val:CodeLine { return val })?
- { return { type: "default", then } }
-
-FunctionDecl = 'function'i { return { type: "function" } }
-ReturnDecl 'return <var name>' = 'return'i _ to:ValidVarName { return { type: "return", to } }
-
-VarsDecl
- = datatype:VarType Space+ _ modifiers:(mod:VarModifier Space+ { return mod })* names:VarNames
- { return { type: "varsDec", datatype, modifiers, names } }
-
-AssigmentOperator 'assigment operator'
-  =  to:ValidVarName _ type:(':=' / '::=') Space* operand:Operand
-  { return { type, to, operand } }
-
-EqualityOpereator 'equality operator'
-  =  first:Operand _ type:'=' Space* second:Operand
-  { return { type, first, second } }
-
-CallOperator 'function call'
- = name:ValidFunctionName Space* "(" Space* args:CallOperatorArg* Space* ")"
+// ----------Описание структуры выражений----------
+//Получение значения константы
+ConstOperand 'constant'
+ = value:ConstValue
+ { return { type: "const", value } }
+//Получение значения переменной
+VarOperand 'variable name'
+ = name:VarName
+ { return { type: "var", name } } 
+//Результат вызова функции
+CallArg
+ = Space* val:Expression Space* ","?
+ { return val }
+CallOperand 'function call'
+ = name:FunctionName Space* "(" Space* args:CallArg* Space* ")"
  { return { type: "call", name, args } }
 
-CallOperatorChain 'function call chain'
- = first:CallOperator rest:(Space+ val:CallOperator { return val } )*
- { return { type: "callChain", functions:[first].concat(rest) } }
+UnaryOperator
+ = '-' / '!'
+UnaryOperand '!<operand> or -<operand>'
+ = type:UnaryOperator Space* expr:Expression
+ { return { type, expr } }
+SubExpressionOperand '(<expression>)'
+ = '(' Space* expr:Expression Space* ')'
+ { return { type: "subexpr", expr } }
 
-UnaryOperator 'unary operator'
- = type:UnaryAction Space* operand:Operand
- { return { type, operand } }
+//isNew должна быть только у VarOP - здесь обход бага.
+Operand 'operand'
+ = isNew:'~'? Space* val:(UnaryOperand / ConstOperand / CallOperand / VarOperand / SubExpressionOperand)
+ { return {...val, isNew: !!isNew } }
 
-Expression 'expression'
- = '(' Space* body:Operand Space* ')'
- { return {type: "expression",  body } }
-
-Const 'constant'
- = value:$("\"" [^\"]* "\"" / "'" [^']* "'" / [-+]?[0-9\.][0-9\.e]* / "#"[0-9]*)
- { return { type: "const", value } }
-
-VarValueOperator
- = name:ValidVarName
- { return { type: "var", name } } 
-
-ValidFunctionName 'valid function name'
- = ValidVarName
-
-UnaryAction
- = '-' / '+' / '!'
-
-BinaryAction
+BinaryOperator
  = '^' { return "**" } /
  '*' / '/' / '%' / 
  '+' / '-' /
  '>>' / '>=' / '>' / '<<' / '<=' / "<" /
  '==' / '!=' /
  '&&' / '&' /'||' /  '|'
-
-Operand 'operand'
- = first:OP rest:(Space* action:BinaryAction Space* op:OP { return { action, op } })*
+// a + b / c - d
+// first:ExpressionPart rest:[+ ExpressionPart, / ExpressionPart, - ExpressionPart]
+Expression 'expression'
+ = first:Operand rest:(Space* action:BinaryOperator Space* operand:Operand { return { action, operand } })*
  { return { first, rest } }
-//Ибо левая рекурсия
 
-OP 'operator'
- = isNew:'~'? Space* val:(UnaryOperator / Const / CallOperator / VarValueOperator / Expression)
- { return {...val, isNew: !!isNew } }
-
-//Все что касается блока объявления переменных
-VarType = 'HANDLE'i / "STRING"i / "FLOAT"i / "COLORREF"i / "INTEGER"i
-VarModifier = 'LOCAL'i / 'NOSAVE'i / 'PARAMETER'i
-
-VarNames
- = first:ValidVarName rest:(_ ',' _ value:ValidVarName { return value })*
+// ----------Блок объявления переменных----------
+VarsDeclNames
+ = first:VarName rest:(_ ',' _ value:VarName { return value })*
  { return [first].concat(rest) }
+VarsDecl
+ = datatype:VarType Space+ _ modifiers:(mod:VarModifier Space+ { return mod })* names:VarsDeclNames
+ { return { type: "varsDec", datatype, modifiers, names } }
 
-CallOperatorArg
- = Space* val:Operand Space* ","?
+// ----------Присваивание(a := (2 + 5))----------
+AssigmentDecl 'assigment operator'
+  =  to:VarName _ type:(':=' / '::=') Space* expr:Expression
+  { return { type, to, expr } }
+
+// ----------Уравнение(c + 5 = d + 4)----------
+EqualityDecl 'equality operator'
+  =  first:Expression _ type:'=' Space* second:Expression
+  { return { type, first, second } }
+
+// ----------Вызов функции(test(),best(2, 3))----------
+CallChainDecl 'function call chain'
+ = first:CallOperand rest:(Space+ val:CallOperand { return val } )*
+ { return { type: "callChain", functions:[first].concat(rest) } }
+
+// ----------Условные операторы, циклы и свитч----------
+NormCond '( <expression> )'
+ = '(' Space* expr:Expression Space* ')'
+ { return expr }
+// if a> 5) см. Ogre_OverlayElement
+BuggedCond '( <expression> )'
+ = Space* expr:Expression Space* ')'
+ { return expr }
+ConditionExpr = NormCond / BuggedCond
+
+// else <code> (без новой линии)
+ThenCodeline
+ = Space+ val:CodeLine 
  { return val }
 
-ValidVarName "variable name"
- //= $ ([a-zа-я_]i[_a-zа-я0-9]i*)
- = $ ([_a-zа-я0-9]i+)
+IfDecl 'if(<condition>)'
+ = 'if'i _ expr:ConditionExpr
+ { return { type: "if", expr } }
+WhileDecl 'while(<condition>)' 
+ = 'while'i _ expr:ConditionExpr 
+ { return { type: "while", expr } }
+UntilDecl 'until(<condition>)' 
+ = 'until'i _ expr:ConditionExpr 
+ { return { type: "until", expr } }
+CaseDecl 'case(<condition>)' 
+ = 'case'i _ expr:ConditionExpr then:ThenCodeline?
+ { return { type: "case", expr, then } } 
 
-Space "space or tab"
- = [ \t]
-NewLine "new line"
- = [\n]
-_ "whitespace"
- = [ \t\n\r]*
+ElseDecl 
+ = 'else'i then:ThenCodeline?
+ { return { type: "else", then } }
+EndifDecl
+ = 'endif'i then:ThenCodeline?
+ { return { type: "endif", then } }
+BreakDecl 
+ = 'break'i 
+ { return { type: "break" } }
+EndwhileDecl 
+ = 'endwhile'i 
+ { return { type: "endwhile" } }
+DoDecl 
+ = 'do'i 
+ { return { type: "do" } }
+EndSwitchDecl 
+ = 'endswitch'i 
+ { return { type: "endswitch" } }
+SwitchDecl 
+ = 'switch'i 
+ { return { type: "switch" } }
+
+DefaultDecl 
+ = 'default'i then:ThenCodeline?
+ { return { type: "default", then } }
+
+//
+FunctionDecl 
+ = 'function'i 
+ { return { type: "function" } }
+ReturnDecl 'return <var name>' 
+ = 'return'i _ to:VarName 
+ { return { type: "return", to } }
 
 // Баги
 //BuggedVarValueOperator = BuggedVarValueOperatorOgre / BuggedVarValueOperatorGst
@@ -143,8 +150,40 @@ _ "whitespace"
  //= '~' Space* val:Const
  //{ return val }
 
-// Ogre_OverlayElement
-BuggedIfDecl 'if !<condition>)' = 'if'i _ expr:ExpressionForBuggedIf { return { type: "if", expr } }
-ExpressionForBuggedIf 'expression'
- = Space* body:Operand Space* ')'
- { return {type: "expression",  body } }
+//----------Строка кода----------
+CodeLine =
+ VarsDecl / // блок объявления переменных
+ AssigmentDecl / // Оператор присваивания
+ EqualityDecl / // Уравнения
+ IfDecl / ElseDecl / EndifDecl / //if-ы
+ BreakDecl / WhileDecl / EndwhileDecl /  DoDecl / UntilDecl / //циклы-ы (do, while)
+ EndSwitchDecl / SwitchDecl /  CaseDecl / DefaultDecl / //switch-case-default
+ CallChainDecl / //Вызов нескольких (или одной) функций через запятую
+ FunctionDecl / ReturnDecl //function и return
+
+//----------Примитивные типы----------
+VarType = 
+ 'HANDLE'i { return "HANDLE" } / 
+ "STRING"i { return "STRING" } / 
+ "FLOAT"i { return "FLOAT" } / 
+ "COLORREF"i {return "COLORREF" } / 
+ "INTEGER"i { return "INTEGER" }
+VarModifier = 
+ 'LOCAL'i { return "LOCAL" } / 
+ 'NOSAVE'i { return "NOSAVE" } / 
+ 'PARAMETER'i { return "PARAMETER" }
+VarName "variable name"
+ //= $ ([a-zа-я_]i[_a-zа-я0-9]i*)
+ = $ ([_a-zа-я0-9]i+)
+FunctionName 'function name'
+ = VarName
+ConstValue
+ = $("\"" [^\"]* "\"" / "'" [^']* "'" / [-+]?[0-9\.][0-9\.e]* / "#"[0-9]*)
+
+// ----------Макросы----------
+Space "space or tab"
+ = [ \t]
+NewLine "new line"
+ = [\n]
+_ "whitespace"
+ = [ \t\n\r]*

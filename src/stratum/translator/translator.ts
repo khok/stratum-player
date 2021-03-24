@@ -4,7 +4,7 @@ import { VarType } from "stratum/common/varType";
 import { Constant, Enviroment } from "stratum/env";
 import { Project, Schema } from "stratum/project";
 import { normalizeSource } from "./normalizer";
-import { CodeLine, OP, Operand, parse } from "./parser";
+import { CodeLine, Expression, Operand, parse } from "./parser";
 import { unreleasedFunctions } from "./unreleasedFunctions";
 
 function extract<T extends Function>(f: T, varName: string): [string, string][] {
@@ -106,106 +106,91 @@ var newS = strings;
 const funcParams = [TLBVarName, "floats", "ints", "strings"];
 
 let _hasBug = false;
-function subOpToString(subop: OP, vars: ClassVars | undefined, lib: ClassLibrary) {
-    if (subop.isNew && subop.type !== "var") _hasBug = true;
-    switch (subop.type) {
-        case "const": {
-            const val = subop.value;
-            if (val[0] === "#") return val.length > 1 ? val.substring(1, val.length) : "0";
-            if (val[0] === '"' || val[0] === "'") {
-                const r = val
-                    .substring(1, val.length - 1)
-                    .split("\\")
-                    .join("\\\\")
-                    .split("`")
-                    .join("\\`");
-                return "`" + r + "`";
-            }
-            return val;
-        }
-        case "-":
-            return "-" + opToString(subop.operand, vars, lib);
-        case "!":
-            return "!" + opToString(subop.operand, vars, lib);
+
+function parseConst(val: string) {
+    if (val.length === 0) throw Error("Не удалось распарсить значение константы");
+    //handle
+    if (val[0] === "#") return val.length > 1 ? val.substring(1, val.length) : "0";
+    //string
+    if (val[0] === '"' || val[0] === "'") {
+        const r = val
+            .substring(1, val.length - 1)
+            .split("\\")
+            .join("\\\\")
+            .split("`")
+            .join("\\`");
+        return "`" + r + "`";
+    }
+    //float
+    return val;
+}
+
+function dereferCallArgs(args: Expression[], vars: ClassVars | undefined): [string, string][] {
+    if (!vars) throw Error("Имидж не имеет переменных");
+    const floatArr = arrNames.get(VarType.Float);
+    return args.map((a) => {
+        if (a.first.type !== "var" /*||a.rest.length > 0 */) throw Error("Должно быть имя переменной");
+
+        const nm = a.first.name;
+        const id = vars.nameUCToId.get(nm.toUpperCase());
+        if (id === undefined) throw Error(`Неопределенная переменная: ${nm}`);
+        const typ = vars.types[id];
+        if (typ !== VarType.Float) throw Error("Должна быть переменная типа float");
+        return [`${a.first.isNew ? "new" : "old"}${floatArr}`, `${TLBVarName}[${id}]`];
+    });
+}
+
+function parseOperand(op: Operand, vars: ClassVars | undefined, lib: ClassLibrary): string {
+    if (op.isNew && op.type !== "var") _hasBug = true;
+
+    switch (op.type) {
+        case "const":
+            return parseConst(op.value);
         case "var": {
             if (!vars) throw Error("Имидж не имеет переменных");
-            const nameUC: string = subop.name.toUpperCase();
+            const nameUC: string = op.name.toUpperCase();
             const id = vars.nameUCToId.get(nameUC);
             if (id === undefined) {
                 const constValue = Constant[nameUC as keyof typeof Constant];
-                if (constValue === undefined) throw Error(`Неопределенная переменная или константа: ${subop.name}`);
-                return constValue;
+                if (typeof constValue === "undefined") throw Error(`Неопределенная переменная или константа: ${op.name}`);
+                return constValue.toString();
             }
             const typ = arrNames.get(vars.types[id]);
-            if (!typ) throw Error(`Неизвестный тип переменной ${subop.name}`);
+            if (!typ) throw Error(`Неизвестный тип переменной ${op.name}`);
 
-            return `${subop.isNew ? "new" : "old"}${typ}[${TLBVarName}[${id}]]`;
+            return `${op.isNew ? "new" : "old"}${typ}[${TLBVarName}[${id}]]`;
         }
         case "call": {
-            const nameUC = subop.name.toUpperCase();
+            const nameUC = op.name.toUpperCase();
             if (nameUC === "EXIT") return "return";
 
             if (nameUC === "INC") {
-                const floatArr = arrNames.get(VarType.Float);
-                if (!vars) throw Error("Имидж не имеет переменных");
-                const a = subop.args[0];
-                if (a.first.type !== "var") throw Error("Должно быть имя переменной");
-                const nm = a.first.name;
-                const id = vars.nameUCToId.get(nm.toUpperCase());
-                if (id === undefined) throw Error(`Неопределенная переменная в функции Inc: ${nm}`);
-                const arg = subop.args.length < 2 ? 1 : opToString(subop.args[1], vars, lib);
-                return `${a.first.isNew ? "new" : "old"}${floatArr}[${TLBVarName}[${id}]] += ${arg}`;
+                const to = dereferCallArgs([op.args[0]], vars)[0];
+                const arg = op.args.length < 2 ? 1 : parseExpr(op.args[1], vars, lib);
+                return `${to[0]}[${to[1]}] += ${arg}`;
             }
 
             if (nameUC === "GETTIME") {
-                const floatArr = arrNames.get(VarType.Float);
-                if (!vars) throw Error("Имидж не имеет переменных");
-                const a = subop.args.map((a) => {
-                    if (a.first.type !== "var") throw Error("Должно быть имя переменной");
-
-                    const nm = a.first.name;
-                    const id = vars.nameUCToId.get(nm.toUpperCase());
-                    if (id === undefined) throw Error(`Неопределенная переменная в функции GetTime: ${nm}`);
-                    return `${a.first.isNew ? "new" : "old"}${floatArr},${TLBVarName}[${id}]`;
-                });
-                return `${envVarName}.${getTimeFunc}(${a.join(",")})`;
+                const a = dereferCallArgs(op.args, vars);
+                return `${envVarName}.${getTimeFunc}(${a})`;
             }
 
             if (nameUC === "GETDATE") {
-                const floatArr = arrNames.get(VarType.Float);
-                if (!vars) throw Error("Имидж не имеет переменных");
-                const a = subop.args.map((a) => {
-                    if (a.first.type !== "var") throw Error("Должно быть имя переменной");
-
-                    const nm = a.first.name;
-                    const id = vars.nameUCToId.get(nm.toUpperCase());
-                    if (id === undefined) throw Error(`Неопределенная переменная в функции GetDate: ${nm}`);
-                    return `${a.first.isNew ? "new" : "old"}${floatArr},${TLBVarName}[${id}]`;
-                });
-                return `${envVarName}.${getDateFunc}(${a.join(",")})`;
+                const a = dereferCallArgs(op.args, vars);
+                return `${envVarName}.${getDateFunc}(${a})`;
             }
 
             if (nameUC === "GETACTUALSIZE2D") {
-                const floatArr = arrNames.get(VarType.Float);
-                if (!vars) throw Error("Имидж не имеет переменных");
-
-                const f1 = subop.args.slice(0, 2).map((a) => opToString(a, vars, lib));
-                const f2 = subop.args.slice(2, 4).map((a) => {
-                    if (a.first.type !== "var") throw Error("Должно быть имя переменной");
-
-                    const nm = a.first.name;
-                    const id = vars.nameUCToId.get(nm.toUpperCase());
-                    if (id === undefined) throw Error(`Неопределенная переменная в функции GetActualSize2d: ${nm}`);
-                    return `${a.first.isNew ? "new" : "old"}${floatArr},${TLBVarName}[${id}]`;
-                });
-                return `${envVarName}.${getActualSize2dFunc}(${f1.join(",")},${f2.join(",")})`;
+                const f1 = op.args.slice(0, 2).map((a) => parseExpr(a, vars, lib));
+                const f2 = dereferCallArgs(op.args.slice(2, 4), vars);
+                return `${envVarName}.${getActualSize2dFunc}(${f1},${f2})`;
             }
 
-            const fargs = subop.args.map((a) => opToString(a, vars, lib));
-            if (nameUC === "NOT") return `((${fargs[0]})>0===true?0:1)`;
-            if (nameUC === "AND") return `(((${fargs[0]})>0&&(${fargs[1]})>0)===true?1:0)`;
+            const fargs = op.args.map((a) => parseExpr(a, vars, lib));
+            if (nameUC === "NOT") return `(!(${fargs[0]}))`;
+            if (nameUC === "AND") return `((${fargs[0]}) && (${fargs[1]}))`;
 
-            if (nameUC === "SQR") return `(${fargs[0]})**2`;
+            if (nameUC === "SQR") return `((${fargs[0]})**2)`;
 
             if (nameUC === "ABS") return `(Math.abs(${fargs[0]})||0)`;
             if (nameUC === "TRUNC") return `(Math.trunc(${fargs[0]})||0)`;
@@ -227,35 +212,36 @@ function subOpToString(subop: OP, vars: ClassVars | undefined, lib: ClassLibrary
             if (nameUC === "LENGTH") return `(${fargs[0]}).length`;
             if (nameUC === "SUBSTR") return `(${fargs[0]}).substr(${fargs[1]},${fargs[2]})`;
             if (nameUC === "LEFT") return `(${fargs[0]}).substr(0,${fargs[1]})`;
-            // if (nameUC === "RIGHT") return `right(${fargs[0]}, ${fargs[1]})`;
             if (nameUC === "RND") return `(Math.random() * (${fargs[0]}))`;
             if (nameUC === "CHANGE") return `(${fargs[0]}).replace(new RegExp(${fargs[1]}, "g"), ${fargs[2]})`;
 
-            const strArg = fargs.join(",");
             const fname = funcTable.get(nameUC);
             if (fname) {
-                return `${fname}(${strArg})`;
+                return `${fname}(${fargs})`;
             }
             const cl = lib.get(nameUC)?.funcModel(lib);
             if (cl) {
                 return `${envVarName}.callFunction("${nameUC}", ${schemaVarName}${fargs.length > 0 ? "," + fargs : ""})`;
             }
-            funcs.set(nameUC, subop.name);
-            return `${schemaVarName}.stubCall("${subop.name}", ${strArg})`;
+            funcs.set(nameUC, op.name);
+            return `${schemaVarName}.stubCall("${op.name}", ${fargs})`;
         }
-        case "expression":
-            return `(${opToString(subop.body, vars, lib)})`;
-        default:
-            console.log(subop);
-            throw Error(`Неизвестный операнд: ${subop.type}`);
+        case "-":
+            return "-" + parseExpr(op.expr, vars, lib);
+        case "!":
+            return "!" + parseExpr(op.expr, vars, lib);
+        case "subexpr":
+            return `(${parseExpr(op.expr, vars, lib)})`;
     }
 }
 
-function opToString(op: Operand, vars: ClassVars | undefined, lib: ClassLibrary): string {
-    const f = subOpToString(op.first, vars, lib);
-    const r = op.rest.map((exp) => {
-        if (exp.action === "/") return `/(${subOpToString(exp.op, vars, lib)} || Infinity)`;
-        return exp.action + subOpToString(exp.op, vars, lib);
+function parseExpr(expr: Expression, vars: ClassVars | undefined, lib: ClassLibrary): string {
+    const f = parseOperand(expr.first, vars, lib);
+    const r = expr.rest.map((exp) => {
+        if (exp.action === "/") {
+            return `/(${parseOperand(exp.operand, vars, lib)} || Infinity)`;
+        }
+        return exp.action + parseOperand(exp.operand, vars, lib);
     });
     return f + r.join("");
 }
@@ -269,7 +255,7 @@ function parseCodeline(c: CodeLine, vars: ClassVars | undefined, lib: ClassLibra
             if (id === undefined) throw Error(`Неизвестная переменная: ${c.to}`);
             const typ = arrNames.get(vars.types[id]);
             if (!typ) throw Error(`Неизвестный тип переменной: ${vars.types[id]} ${c.to}`);
-            return `new${typ}[TLB[${id}]] = ${opToString(c.operand, vars, lib)};`;
+            return `new${typ}[TLB[${id}]] = ${parseExpr(c.expr, vars, lib)};`;
         }
         case "varsDec":
             return undefined;
@@ -292,14 +278,14 @@ function parseCodeline(c: CodeLine, vars: ClassVars | undefined, lib: ClassLibra
         case "switch":
             return "do{let exc=false;{";
         case "case":
-            return `}if ((${opToString(c.expr.body, vars, lib)})&&exc===false) {exc=true;`;
+            return `}if ((${parseExpr(c.expr, vars, lib)})&&exc===false) {exc=true;`;
         case "default":
             return `}if (exc===false) {exc=true;`;
         case "endswitch":
             return `}}while(false);`;
         case "if":
         case "while":
-            return `${c.type} (${opToString(c.expr.body, vars, lib)}) {`;
+            return `${c.type} (${parseExpr(c.expr, vars, lib)}) {`;
         case "endif":
         case "endwhile":
             return `}`;
@@ -308,11 +294,11 @@ function parseCodeline(c: CodeLine, vars: ClassVars | undefined, lib: ClassLibra
         case "do":
             return "do {";
         case "until":
-            return `}\nwhile(${opToString(c.expr.body, vars, lib)});`;
+            return `}\nwhile(${parseExpr(c.expr, vars, lib)});`;
         case "break":
             return "break;";
         case "callChain":
-            return c.functions.map((f) => `${subOpToString(f, vars, lib)}`).join("; ") + ";";
+            return c.functions.map((f) => `${parseOperand(f, vars, lib)}`).join("; ") + ";";
         default:
             throw Error(`Неизвестный оператор: ${c.type}`);
     }

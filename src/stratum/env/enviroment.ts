@@ -750,7 +750,11 @@ export class Enviroment {
     }
     getActualSize2d(hspace: number, hobject: number, xArr: Env.Farr, xId: number, yArr: Env.Farr, yId: number): NumBool {
         const obj = this.getObject(hspace, hobject);
-        if (typeof obj === "undefined") return 0;
+        if (typeof obj === "undefined") {
+            xArr[xId] = 0;
+            yArr[yId] = 0;
+            return 0;
+        }
         xArr[xId] = obj.actualWidth();
         yArr[yId] = obj.actualHeight();
         return 1;
