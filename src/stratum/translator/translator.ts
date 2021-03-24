@@ -28,7 +28,11 @@ const funcTable = new Map([
     ["ADDSLASH", "addSlash"],
     ["ARCCOS", "arccos"],
     ["ARCSIN", "arcsin"],
+    ["COMPAREI", "compareI"],
+    ["GETANGLEBYXY", "getAngleByXY"],
+    ["LG", "lg"],
     ["LN", "ln"],
+    ["LOG", "log"],
     ["POS", "pos"],
     ["RIGHT", "right"],
     ["ROUND", "round"],
@@ -59,14 +63,29 @@ function arcsin(a) {
     if(a < -1) return -Math.PI / 2;
     return Math.asin(a)||0;
 }
+function compareI(s1, s2, n) {
+    return s1.substring(0, n) === s2.substring(0, n);
+}
+function getAngleByXY(x, y)
+{
+    if (y === 0) return x >= 0 ? 0 : Math.PI;
+    if (y > 0) return -Math.atan(x / y) + Math.PI / 2;
+    return -Math.atan(x / y) + Math.PI * 1.5;
+}
+function lg(a) {
+    return a > 0 ? (Math.log(a)||0)/Math.LN10 : -(10**100)
+}
 function ln(a) {
-    return a > 0 ? (Math.log(a)||0) : -(10**100)
+    return a > 0 ? Math.log(a)||0 : -(10**100)
+}
+function log(a, b) {
+    return a > 0 && b > 0 ? (Math.log(b)/Math.log(a))||0 : -(10**100)
 }
 function pos(s1, s2, n) {
     if(s2 === "") return -1
-    let idx = -1;
-    let srch = 0;
-    for(let i = 0; i < n; ++i) {
+    var idx = -1;
+    var srch = 0;
+    for(var i = 0; i < n; ++i) {
         idx = s1.indexOf(s2, srch);
         if(idx < 0) return -1;
         srch = idx + s2.length;
@@ -74,10 +93,10 @@ function pos(s1, s2, n) {
     return idx;
 }
 function right(a, n) {
-    return a.substr(a.length - n);
+    return a.substring(a.length - n);
 }
 function round(a, b) {
-    const pw = Math.ceil(10 ** b);
+    var pw = Math.ceil(10 ** b);
     return (Math.round(a * pw + Number.EPSILON) / pw)||0;
 }
 var ${prjVarName} = ${schemaVarName}.${prjVarName};
@@ -164,22 +183,20 @@ function parseOperand(op: Operand, vars: ClassVars | undefined, lib: ClassLibrar
             const nameUC = op.name.toUpperCase();
             if (nameUC === "EXIT") return "return";
 
-            if (nameUC === "INC") {
+            // Функции, возвращающие значение "по ссылке".
+            if (nameUC === "INC" || nameUC === "DEC") {
                 const to = dereferCallArgs([op.args[0]], vars)[0];
                 const arg = op.args.length < 2 ? 1 : parseExpr(op.args[1], vars, lib);
-                return `${to[0]}[${to[1]}] += ${arg}`;
+                return `${to[0]}[${to[1]}]${nameUC === "INC" ? "+" : "-"}=${arg}`;
             }
-
             if (nameUC === "GETTIME") {
                 const a = dereferCallArgs(op.args, vars);
                 return `${envVarName}.${getTimeFunc}(${a})`;
             }
-
             if (nameUC === "GETDATE") {
                 const a = dereferCallArgs(op.args, vars);
                 return `${envVarName}.${getDateFunc}(${a})`;
             }
-
             if (nameUC === "GETACTUALSIZE2D") {
                 const f1 = op.args.slice(0, 2).map((a) => parseExpr(a, vars, lib));
                 const f2 = dereferCallArgs(op.args.slice(2, 4), vars);
@@ -187,33 +204,50 @@ function parseOperand(op: Operand, vars: ClassVars | undefined, lib: ClassLibrar
             }
 
             const fargs = op.args.map((a) => parseExpr(a, vars, lib));
-            if (nameUC === "NOT") return `(!(${fargs[0]}))`;
-            if (nameUC === "AND") return `((${fargs[0]}) && (${fargs[1]}))`;
-
-            if (nameUC === "SQR") return `((${fargs[0]})**2)`;
-
-            if (nameUC === "ABS") return `(Math.abs(${fargs[0]})||0)`;
-            if (nameUC === "TRUNC") return `(Math.trunc(${fargs[0]})||0)`;
-            if (nameUC === "SQRT") return `(Math.sqrt(${fargs[0]})||0)`;
-            if (nameUC === "SIN") return `(Math.sin(${fargs[0]})||0)`;
-            if (nameUC === "COS") return `(Math.cos(${fargs[0]})||0)`;
-            if (nameUC === "EXP") return `(Math.exp(${fargs[0]})||0)`;
-            if (nameUC === "SGN") return `(Math.sign(${fargs[0]})||0)`;
-            if (nameUC === "ARCTAN") return `(Math.atan(${fargs[0]})||0)`;
-            if (nameUC === "MIN") return `(Math.min(${fargs[0]}, ${fargs[1]})||0)`;
-            if (nameUC === "MAX") return `(Math.max(${fargs[0]}, ${fargs[1]})||0)`;
-
-            if (nameUC === "AVERAGE") return `((${fargs[0]})/2+(${fargs[1]})/2)`;
-
-            if (nameUC === "HANDLE") return `(parseInt(${fargs[0]})||0)`;
             if (nameUC === "FLOAT") return `(parseFloat(${fargs[0]})||0)`;
+            if (nameUC === "HANDLE") return `(parseInt(${fargs[0]})||0)`;
             if (nameUC === "STRING") return `(Math.round((${fargs[0]})*100000)/100000).toString()`;
 
-            if (nameUC === "LENGTH") return `(${fargs[0]}).length`;
-            if (nameUC === "SUBSTR") return `(${fargs[0]}).substr(${fargs[1]},${fargs[2]})`;
-            if (nameUC === "LEFT") return `(${fargs[0]}).substr(0,${fargs[1]})`;
+            if (nameUC === "ABS") return `(Math.abs(${fargs[0]})||0)`;
+            if (nameUC === "AVERAGE") return `((${fargs[0]})/2+(${fargs[1]})/2)`;
+            if (nameUC === "EXP") return `(Math.exp(${fargs[0]})||0)`;
+            if (nameUC === "MAX") return `(Math.max(${fargs[0]}, ${fargs[1]})||0)`;
+            if (nameUC === "MIN") return `(Math.min(${fargs[0]}, ${fargs[1]})||0)`;
+            if (nameUC === "LIMIT") return `(Math.max(${fargs[1]}, Math.min(${fargs[2]}, ${fargs[0]}))||0)`; //порядок аргументов?
+            if (nameUC === "SQR") return `((${fargs[0]})**2)`;
+            if (nameUC === "SQRT") return `(Math.sqrt(${fargs[0]})||0)`;
+            if (nameUC === "TRUNC") return `(Math.trunc(${fargs[0]})||0)`; //FIXME: нет в IE
             if (nameUC === "RND") return `(Math.random() * (${fargs[0]}))`;
+
+            if (nameUC === "ARCTAN") return `(Math.atan(${fargs[0]})||0)`;
+            if (nameUC === "COS") return `(Math.cos(${fargs[0]})||0)`;
+            if (nameUC === "SIN") return `(Math.sin(${fargs[0]})||0)`;
+            if (nameUC === "TAN") return `(Math.tan(${fargs[0]})||0)`;
+            if (nameUC === "DEG") return `(180*(${fargs[0]})/Math.PI||0)`;
+            if (nameUC === "RAD") return `(Math.PI*(${fargs[0]})/180||0)`;
+
+            if (nameUC === "AND") return `((${fargs[0]})&&(${fargs[1]}))`;
+            if (nameUC === "DELTA") return `((${fargs[0]})?0:1)`;
+            if (nameUC === "ED") return `((${fargs[0]})>0?1:0)`;
+            if (nameUC === "NOT") return `(!(${fargs[0]}))`;
+            // NOTBIN - возвращает то же число из-за бага (VMACHINE.CPP:631)
+            // if (nameUC === "NOTBIN") return `(${fargs[0]})`;
+            if (nameUC === "OR") return `((${fargs[0]})||(${fargs[1]}))`;
+            if (nameUC === "SGN") return `(Math.sign(${fargs[0]})||0)`; //FIXME: нет в IE
+            if (nameUC === "XOR") return `((${fargs[0]})!==0^(${fargs[1]})!==0)`;
+            if (nameUC === "XORBIN") return `((${fargs[0]})^(${fargs[1]}))`;
+
+            if (nameUC === "ALLTRIM") return `(${fargs[0]}).trim()`;
             if (nameUC === "CHANGE") return `(${fargs[0]}).replace(new RegExp(${fargs[1]}, "g"), ${fargs[2]})`;
+            if (nameUC === "COMPARE") return `((${fargs[0]})===(${fargs[1]}))`;
+            if (nameUC === "LEFT") return `(${fargs[0]}).substring(0,${fargs[1]})`;
+            if (nameUC === "LENGTH") return `(${fargs[0]}).length`;
+            if (nameUC === "LOWER") return `(${fargs[0]}).toLowerCase()`;
+            if (nameUC === "LTRIM") return `(${fargs[0]}).replace(/^\\s+/,"")`;
+            if (nameUC === "REPLICATE") return `(${fargs[0]}).repeat(${fargs[1]})`; //FIXME: нет в IE
+            if (nameUC === "SUBSTR") return `(${fargs[0]}).substr(${fargs[1]},${fargs[2]})`; //FIXME: substr лучше не использовать.
+            if (nameUC === "RTRIM") return `(${fargs[0]}).replace(/\\s+$/,"")`;
+            if (nameUC === "UPPER") return `(${fargs[0]}).toUpperCase()`;
 
             const fname = funcTable.get(nameUC);
             if (fname) {

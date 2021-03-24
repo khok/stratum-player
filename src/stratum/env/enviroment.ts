@@ -197,6 +197,12 @@ export class Enviroment {
         return 1;
     }
 
+    stratum_ascii(str: string): number {
+        if (str.length === 0) return 0;
+        const idx = win1251Table.indexOf(str[0]);
+        return idx < 0 ? 0 : idx;
+    }
+
     stratum_chr(n: number): string {
         if (n < 0 || n > 255) return "";
         return win1251Table[n];
