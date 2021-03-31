@@ -6,6 +6,7 @@ import { VariableSet } from "stratum/fileFormats/stt";
 import { Hyperbase } from "stratum/fileFormats/vdr";
 import { unreleasedFunctions } from "stratum/translator/unreleasedFunctions";
 import { VFSDir } from "stratum/vfs";
+import { ProjectMemory } from "./projectMemory";
 import { Schema } from "./schema";
 
 export interface ProjectResources {
@@ -15,7 +16,7 @@ export interface ProjectResources {
     stt?: VariableSet;
 }
 
-export class Project implements Env.Project, Env.HyperTarget {
+export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
     private level: number;
     private shouldClose: boolean;
     private schema: Schema;

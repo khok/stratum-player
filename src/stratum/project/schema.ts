@@ -30,7 +30,7 @@ export class Schema implements EventSubscriber {
     private readonly name: string = "";
     private readonly position: Point2D = { x: 0, y: 0 };
     private readonly parent: Schema = this;
-    private readonly model: ClassModel;
+    private readonly model: ClassModel["model"];
     private readonly vars: ClassVars;
     private readonly varGraphNodes: VarGraphNode[] = [];
     private readonly isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
@@ -43,7 +43,7 @@ export class Schema implements EventSubscriber {
     readonly TLB: Uint16Array;
 
     constructor(proto: ClassProto, prj: Project, lib: ClassLibrary, placement?: PlacementDescription) {
-        this.model = proto.model(lib) ?? Schema.NoModel;
+        this.model = proto.model(lib)?.model ?? Schema.NoModel;
         this.proto = proto;
         this.prj = prj;
         if (placement) {
@@ -259,7 +259,7 @@ export class Schema implements EventSubscriber {
                 break;
         }
 
-        this.model(this);
+        this.forceCompute();
         this.prj.syncAll();
     }
 
@@ -364,16 +364,20 @@ export class Schema implements EventSubscriber {
 
     private forceCompute(): void {
         for (const c of this.children) c.compute();
-        this.model(this);
+
+        let code = 0;
+        while ((code = this.model(this, this.TLB, this.prj, code)) > 0);
+        // if (this.proto.name === "GrafWnd") console.log(this.prj.newFloats[this.TLB[this.proto.vars!.nameUCToId.get("CLOSEUP")!]]);
     }
     /**
      * Рекурсивно вычисляет схему имиджа.
      */
     compute(): void {
         if (this.isDisabled(this) === true) return;
-        for (const c of this.children) c.compute();
-        // if (this.proto.name === "BtnAdapter") console.log(this.prj.newFloats[this.TLB[this.proto.vars!.nameUCToId.get("OTV")!]]);
-        this.model(this);
+
+        this.forceCompute();
+        // for (const c of this.children) c.compute();
+        // this.model(this);
     }
 
     private resolve(path: string): Schema | undefined {
@@ -455,5 +459,7 @@ export class Schema implements EventSubscriber {
     private static disabledByDisable(schema: Schema) {
         return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] > 0;
     }
-    private static NoModel() {}
+    private static NoModel() {
+        return 0;
+    }
 }

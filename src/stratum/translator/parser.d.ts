@@ -14,12 +14,11 @@ export interface CallOperand {
     type: "call";
     name: string;
     args: Expression[];
-    isNew: undefined; //hack
 }
 export type UnaryOperator = "-" | "!";
 export interface UnaryOperand {
     type: UnaryOperator;
-    expr: Expression;
+    op: Operand;
 }
 export interface SubExpressionOperand {
     type: "subexpr";
@@ -27,7 +26,7 @@ export interface SubExpressionOperand {
 }
 //isNew должна быть только у VarOP - здесь обход бага.
 export type Operand = (UnaryOperand | ConstOperand | CallOperand | VarOperand | SubExpressionOperand) & {
-    isNew: boolean | undefined; //hack
+    isNew: boolean;
 };
 export type BinaryOperator = "**" | "*" | "/" | "%" | "+" | "-" | ">=" | ">" | "<=" | "<" | "==" | "!=" | "&&" | "&" | "||" | "|";
 export interface Expression {

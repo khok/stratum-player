@@ -6,7 +6,7 @@ import { Hyperbase, VectorDrawing } from "stratum/fileFormats/vdr";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { win1251Table } from "stratum/helpers/win1251";
-import { Project, ProjectResources, Schema } from "stratum/project";
+import { Project, ProjectMemory, ProjectResources, Schema } from "stratum/project";
 import { VFS, VFSDir } from "stratum/vfs";
 import { Constant, Env, EventSubscriber, NumBool } from ".";
 import { EnvStream } from "./envStream";
@@ -75,8 +75,8 @@ export class Enviroment {
 
     callFunction(fname: string, schema: Schema, ...args: (string | number)[]): void | string | number {
         const obj = this.lib.get(fname);
-        const mod = obj?.funcModel(this.lib);
-        if (!mod) return;
+        const mod = obj?.model(this.lib);
+        if (!mod?.isFunction) throw Error();
         const vars = obj?.vars;
         let floats = 0;
         const f1: number[] = [];
@@ -116,7 +116,18 @@ export class Enviroment {
         }
         const farr = new Float64Array(f1);
         const iarr = new Int32Array(i1);
-        mod(schema, tlb, farr, iarr, sarr);
+
+        const mem: ProjectMemory = {
+            newFloats: farr,
+            oldFloats: farr,
+            newInts: iarr,
+            oldInts: iarr,
+            newStrings: sarr,
+            oldStrings: sarr,
+        };
+
+        let code = 0;
+        while ((code = mod.model(schema, tlb, mem, code)) > 0);
         if (!vars) return;
         const ret = vars.flags.findIndex((v) => v & Constant.VF_RETURN);
         if (ret < 0) return;
@@ -230,7 +241,7 @@ export class Enviroment {
     }
     stratum_logMessage(msg: string): void {}
     stratum_MCISendString(): number {
-        return 263;
+        return Constant.MCIERR_INVALID_DEVICE_NAME;
     }
 
     stratum_MCISendStringStr(): string {

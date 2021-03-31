@@ -1,8 +1,7 @@
 import { ClassInfoBody, readClsFileBody, readClsFileHeader } from "stratum/fileFormats/cls";
 import { BinaryReader } from "stratum/helpers/binaryReader";
-import { Project, Schema } from "stratum/project";
+import { ProjectMemory, Schema } from "stratum/project";
 import { translate } from "stratum/translator";
-import { translateAsFunction } from "stratum/translator/translator";
 import { ClassLibrary } from "./classLibrary";
 import { parseVarValue } from "./parseVarValue";
 import { VarType } from "./varType";
@@ -26,15 +25,8 @@ export interface ClassVars {
 }
 
 export interface ClassModel {
-    (schema: Schema): void;
-}
-
-type aT = typeof Schema.prototype.TLB;
-type aF = typeof Project.prototype.newFloats;
-type aI = typeof Project.prototype.newInts;
-type aS = typeof Project.prototype.newStrings;
-export interface FunctionModel {
-    (schema: Schema, tlb: aT, floats: aF, ints: aI, strings: aS): void | string | number;
+    model: (schema: Schema, TLB: ArrayLike<number>, mem: ProjectMemory, retCode: number) => number;
+    isFunction: boolean;
 }
 
 /*
@@ -111,6 +103,10 @@ export class ClassProto {
     orgyVarId: number = -1;
     _objnameVarId: number = -1;
     _classnameVarId: number = -1;
+
+    flags(): number {
+        return this.body.flags ?? 0;
+    }
 
     get vars(): ClassVars {
         if (typeof this._vars !== "undefined") return this._vars;
@@ -193,16 +189,6 @@ export class ClassProto {
         const src = this.body.sourceCode;
         if (!src) return undefined;
         return (this._model = translate(src, this.vars, this.name, lib));
-    }
-
-    private fCompiled = false;
-    private _fModel?: FunctionModel;
-    funcModel(lib: ClassLibrary): FunctionModel | undefined {
-        if (this.fCompiled === true) return this._fModel;
-        this.fCompiled = true;
-        const src = this.body.sourceCode;
-        if (!src) return undefined;
-        return (this._fModel = translateAsFunction(src, this.vars, this.name, lib));
     }
 
     private get body() {
