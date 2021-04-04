@@ -218,6 +218,14 @@ export interface Player {
     off(event: "error", handler?: (err: string) => void): this;
 }
 
+export interface ExecutorCallback {
+    (): boolean;
+}
+
+export interface ExecutorAsyncCallback {
+    (): Promise<boolean>;
+}
+
 /**
  * Планировщик цикличного выполнения функции.
  */
@@ -231,7 +239,8 @@ export interface Executor {
      * @param callback Функция, которая должна вызываться циклично.
      * Если она возвращает false, цикл выполнения прерывается.
      */
-    run(callback: () => boolean): void;
+    run(callback: ExecutorCallback): void;
+    runAsync(callback: ExecutorAsyncCallback): void;
     /**
      * Прерывает цикл выполнения.
      */

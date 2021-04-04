@@ -1,5 +1,5 @@
 import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassModel, ClassProto, ClassVars } from "stratum/common/classProto";
+import { ClassModel, ClassProto } from "stratum/common/classProto";
 import { parseVarValue } from "stratum/common/parseVarValue";
 import { VarType } from "stratum/common/varType";
 import { Constant, EventSubscriber } from "stratum/env";
@@ -7,6 +7,7 @@ import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
 import { buildSchema } from "./buildSchema";
 import { Project } from "./project";
+import { ProjectMemory } from "./projectMemory";
 import { MemorySize, VarGraphNode } from "./varGraphNode";
 
 /**
@@ -19,6 +20,22 @@ export interface PlacementDescription {
     name: string;
 }
 
+// interface SendMsgData {
+//     receivers: ArrayLike<Schema>;
+//     syncVars: ArrayLike<number>;
+// }
+
+// interface FuncData {
+//     model: ClassModel["model"];
+//     memory: ProjectMemory;
+//     tlb: ArrayLike<number>;
+//     vars?: ClassVars;
+// }
+
+type PossibleValue = string | number | void;
+type ComputeResult = IterableIterator<Promise<PossibleValue>>;
+type WaitingTarget = ComputeResult | PossibleValue | Promise<PossibleValue>;
+
 export class Schema implements EventSubscriber {
     static build(root: string, lib: ClassLibrary, prj: Project) {
         return buildSchema(root, lib, prj);
@@ -30,10 +47,9 @@ export class Schema implements EventSubscriber {
     private readonly name: string = "";
     private readonly position: Point2D = { x: 0, y: 0 };
     private readonly parent: Schema = this;
-    private readonly model: ClassModel["model"];
-    private readonly vars: ClassVars;
+    readonly model: ClassModel["model"];
     private readonly varGraphNodes: VarGraphNode[] = [];
-    private readonly isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
+    readonly isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
     private readonly disOrEnVarId: number = -1;
 
     private children: Schema[] = [];
@@ -41,6 +57,9 @@ export class Schema implements EventSubscriber {
     readonly prj: Project;
     readonly proto: ClassProto;
     readonly TLB: Uint16Array;
+
+    // private sendMsgData: SendMsgData | null = null;
+    // private funcData: FuncData | null = null;
 
     constructor(proto: ClassProto, prj: Project, lib: ClassLibrary, placement?: PlacementDescription) {
         this.model = proto.model(lib)?.model ?? Schema.NoModel;
@@ -53,7 +72,7 @@ export class Schema implements EventSubscriber {
             this.parent = placement.parent;
         }
         {
-            const vars = (this.vars = proto.vars);
+            const vars = proto.vars;
             this.varGraphNodes = vars.types.map((t) => new VarGraphNode(t));
             this.TLB = new Uint16Array(vars.count);
 
@@ -80,6 +99,31 @@ export class Schema implements EventSubscriber {
         }
     }
 
+    private ctx: PossibleValue[] | null = null;
+    saveContext(ctx: PossibleValue[]): void {
+        if (this.ctx !== null) throw Error("Попытка перезаписи контекстных переменных");
+        this.ctx = ctx;
+    }
+    loadContext(): PossibleValue[] {
+        const c = this.ctx;
+        if (c === null) throw Error("Нет контекстных переменных");
+        this.ctx = null;
+        return c;
+    }
+
+    private target: WaitingTarget | null = null;
+    waitFor(target: WaitingTarget): void {
+        if (this.target !== null) throw Error("Цель ожидания назначена");
+        this.target = target;
+    }
+
+    getWaitResult(): WaitingTarget {
+        const r = this.target;
+        if (r === null) throw Error("Нет результата ожидания");
+        this.target = null;
+        return r;
+    }
+
     stratum_getHObject(): number {
         return this.handle;
     }
@@ -99,10 +143,101 @@ export class Schema implements EventSubscriber {
         if (typeof id !== "undefined") target.setVarValue(id, vars.types[id], value);
     }
 
+    *call(fname: string, ...args: (string | number)[]): ComputeResult {
+        const lib = this.prj.env.lib;
+        const obj = lib.get(fname);
+        if (!obj) throw Error();
+        const mod = obj.model(lib);
+        if (!mod?.isFunction) throw Error();
+        const memSize: MemorySize = {
+            floatsCount: 0,
+            intsCount: 0,
+            stringsCount: 0,
+        };
+        const vars = obj.vars;
+
+        const tlb = vars.types.map((t) => new VarGraphNode(t).getIndex(memSize));
+        const floats = new Float64Array(memSize.floatsCount);
+        const ints = new Int32Array(memSize.intsCount);
+        const strings = new Array(memSize.stringsCount).fill("");
+
+        if (args.length > vars.count) throw Error("Кол-во аргументов больше кол-ва переменных");
+        for (let i = 0; i < args.length; ++i) {
+            const val = args[i];
+            const typ = vars.types[i];
+            switch (typ) {
+                case VarType.Float:
+                    if (typeof val === "string") throw Error("Несовпадение типов");
+                    floats[tlb[i]] = val;
+                    break;
+                case VarType.Handle:
+                case VarType.ColorRef:
+                    if (typeof val === "string") throw Error("Несовпадение типов");
+                    ints[tlb[i]] = val;
+                    break;
+                case VarType.String:
+                    if (typeof val === "number") throw Error("Несовпадение типов");
+                    strings[tlb[i]] = val;
+                    break;
+            }
+        }
+
+        const mem: ProjectMemory = {
+            newFloats: floats,
+            oldFloats: floats,
+            newInts: ints,
+            oldInts: ints,
+            newStrings: strings,
+            oldStrings: strings,
+        };
+        const model = mod.model;
+
+        let code = 0;
+        while (true) {
+            while ((code = model(this, tlb, mem, code)) > 0);
+            if (code === 0) break;
+
+            const r = this.getWaitResult();
+            // Если это примитив, ничего не делаем, продолжаем выполнение.
+            if (typeof r !== "object") {
+                this.waitFor(r);
+                continue;
+            }
+            // Если это промиз, то отдаем его наверх.
+            if (r instanceof Promise) {
+                yield r.then((res) => this.waitFor(res));
+            } else {
+                // Если это итератор (SendMessage или вызов функции), то выполняем его.
+                yield* r;
+            }
+        }
+
+        if (!vars) {
+            this.waitFor();
+            return;
+        }
+        const ret = vars.flags.findIndex((v) => v & Constant.VF_RETURN);
+        if (ret < 0) {
+            this.waitFor();
+            return;
+        }
+        const t = vars.types[ret];
+        switch (t) {
+            case VarType.String:
+                this.waitFor(mem.oldStrings[tlb[ret]]);
+                break;
+            case VarType.Float:
+                this.waitFor(mem.oldFloats[tlb[ret]]);
+                break;
+            default:
+                this.waitFor(mem.oldInts[tlb[ret]]);
+        }
+    }
+
     // private idTypes: number[] = [];
     // private cachedNames: string[] = [];
-    stratum_sendMessage(objectName: string, className: string, ...varNames: string[]): void {
-        const { prj, vars, TLB /*cachedNames*/ } = this;
+    *stratum_sendMessage(objectName: string, className: string, ...varNames: string[]): ComputeResult {
+        const { prj, TLB /*cachedNames*/ } = this;
         if (prj.canExecute() === false) return;
 
         // if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
@@ -123,9 +258,11 @@ export class Schema implements EventSubscriber {
         if (typeof receivers === "undefined" || receivers.length === 0) return;
 
         const rec0 = receivers[0];
-        const otherVars = rec0.vars;
 
-        // if (vars.count === 0 || otherVars.count === 0) {
+        const myVars = this.proto.vars;
+        const otherVars = rec0.proto.vars;
+
+        // if (myVars.count === 0 || otherVars.count === 0) {
         //     for (const rec of receivers) {
         //         if (rec === this) continue;
         //         prj.inc();
@@ -149,18 +286,18 @@ export class Schema implements EventSubscriber {
         // if (cached === false) {
         // this.cachedNames = varNames;
         // const idTypes = (this.idTypes = new Array<number>(varNames.length + varNames.length / 2));
-        const idTypes = new Array<number>(varNames.length + varNames.length / 2);
+        const idTypes = new Array<number>(varNames.length * 1.5);
         let idx = 0;
         for (let i = 0; i < varNames.length; i += 2) {
             const myVarName = varNames[i].toUpperCase();
-            const myId = vars.nameUCToId.get(myVarName);
+            const myId = myVars.nameUCToId.get(myVarName);
             if (typeof myId === "undefined") continue;
 
             const otherVarName = varNames[i + 1].toUpperCase();
             const otherId = otherVars.nameUCToId.get(otherVarName);
             if (typeof otherId === "undefined") continue;
 
-            const typ = vars.types[myId];
+            const typ = myVars.types[myId];
             const otherTyp = otherVars.types[otherId];
             if (typ !== otherTyp) continue;
 
@@ -189,7 +326,7 @@ export class Schema implements EventSubscriber {
                 oldArr[otherId] = val;
             }
             prj.inc();
-            rec.forceCompute();
+            yield* rec.compute(true);
             prj.syncLocal(rec.TLB);
             prj.dec();
             for (let i = 0; i < idTypes.length; i += 3) {
@@ -206,6 +343,7 @@ export class Schema implements EventSubscriber {
                 oldArr[myId] = val;
             }
         }
+        this.waitFor();
     }
 
     stratum_setCapture(hspace: number, path: string, flags: number): void {
@@ -229,9 +367,10 @@ export class Schema implements EventSubscriber {
     }
 
     receive(code: Constant, ...args: (string | number)[]) {
+        const env = this.prj.env;
+        if (env.isWaiting()) return;
         const { proto } = this;
-        if (proto.msgVarId < 0) return;
-        this.setVarValue(proto.msgVarId, VarType.Float, code);
+        if (this.setVarValue(proto.msgVarId, VarType.Float, code) === false) return;
 
         switch (code) {
             case Constant.WM_CONTROLNOTIFY:
@@ -259,8 +398,7 @@ export class Schema implements EventSubscriber {
                 break;
         }
 
-        this.forceCompute();
-        this.prj.syncAll();
+        env.computeSchema(this);
     }
 
     // Для построения схемы.
@@ -362,25 +500,39 @@ export class Schema implements EventSubscriber {
         return this;
     }
 
-    private forceCompute(): void {
-        for (const c of this.children) c.compute();
-
-        let code = 0;
-        while ((code = this.model(this, this.TLB, this.prj, code)) > 0);
-        // if (this.proto.name === "GrafWnd") console.log(this.prj.newFloats[this.TLB[this.proto.vars!.nameUCToId.get("CLOSEUP")!]]);
-    }
     /**
      * Рекурсивно вычисляет схему имиджа.
      */
-    compute(): void {
-        if (this.isDisabled(this) === true) return;
+    *compute(force = false): ComputeResult {
+        if (!force && this.isDisabled(this)) return;
 
-        this.forceCompute();
-        // for (const c of this.children) c.compute();
-        // this.model(this);
+        for (let i = 0; i < this.children.length; ++i) yield* this.children[i].compute();
+
+        let code = 0;
+        const tlb = this.TLB;
+        const mem = this.prj;
+        const model = this.model;
+        while (true) {
+            while ((code = model(this, tlb, mem, code)) > 0);
+            if (code === 0) break;
+
+            const r = this.getWaitResult();
+            // Если это примитив, ничего не делаем, продолжаем выполнение.
+            if (typeof r !== "object") {
+                this.waitFor(r);
+                continue;
+            }
+            // Если это промиз, то отдаем его наверх.
+            if (r instanceof Promise) {
+                yield r.then((res) => this.waitFor(res));
+            } else {
+                // Если это итератор (SendMessage или вызов функции), то выполняем его.
+                yield* r;
+            }
+        }
     }
 
-    private resolve(path: string): Schema | undefined {
+    resolve(path: string): Schema | undefined {
         if (path === "") return this;
         const filter = path.split("\\");
         let root = path[0] === "\\" ? this.root : this;
@@ -392,19 +544,16 @@ export class Schema implements EventSubscriber {
         return root;
     }
 
-    // private setVarValue(id: number, type: VarType, value: number | string) {
-    //     if (id < 0) return;
-    //     this.prj.news[type][this.TLB[id]] = value;
-    // }
-    private setVarValue(id: number, type: VarType, value: number | string): void {
-        if (id < 0) return;
+    private setVarValue(id: number, type: VarType, value: number | string): boolean {
+        if (id < 0) return false;
         const realId = this.TLB[id];
         this.prj.olds[type][realId] = value;
         this.prj.news[type][realId] = value;
+        return true;
     }
 
     private classNodeCache = new Map<string, Schema[]>();
-    private findClasses(classNameUC: string): Schema[] {
+    findClasses(classNameUC: string): Schema[] {
         const { root } = this;
         const nodes = root.classNodeCache.get(classNameUC);
         if (typeof nodes !== "undefined") return nodes;
@@ -429,26 +578,6 @@ export class Schema implements EventSubscriber {
         path = root.proto.name + path;
         throw Error(`Вызов нереализованной функции ${name}(${args.map((a) => typeof a).join(",")})\nв ${path}`);
     }
-
-    /*
-    private static computeModel(model: ClassModel, schema: Schema, env: Enviroment) {
-        env.inc();
-        try {
-            model(schema, env);
-        } catch (e) {
-            if (e instanceof SchemaError) throw e;
-            console.error(e);
-            let root: Schema = schema;
-            let path = "";
-            while (root.parent !== root) {
-                path = ` -> ${root.proto.name} #${root.handle}` + path;
-                root = root.parent;
-            }
-            throw new SchemaError("Ошибка выполнения " + root.proto.name + path);
-        }
-        env.dec();
-    }
-    */
 
     private static alwaysEnabled() {
         return false;

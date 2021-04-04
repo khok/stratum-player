@@ -24,32 +24,47 @@ const getTimeFunc: keyof Enviroment = "getTime";
 const getDateFunc: keyof Enviroment = "getDate";
 const getActualSize2dFunc: keyof Enviroment = "getActualSize2d";
 
-function extract<T extends Function>(f: T, varName: string): [string, string][] {
+interface FuncInfo {
+    f: string;
+    blocking?: boolean;
+}
+
+function extract<T extends Function>(f: T, varName: string): [string, FuncInfo][] {
     const PREFIX = "stratum_";
     const PREF_LEN = PREFIX.length;
+    const ASYNC_PREF = "async_";
+    const ASYNC_PREF_LEN = ASYNC_PREF.length;
     const funcs = (Object.getOwnPropertyNames(f.prototype) as (keyof T)[]).filter((c) => {
         const v = f.prototype[c];
         return typeof v === "function" && v.name.startsWith(PREFIX);
     });
-    return funcs.map((c) => [c.toString().substring(PREF_LEN).toUpperCase(), `${varName}.${c}`]);
+    return funcs.map((c) => {
+        let realName = c.toString().substring(PREF_LEN);
+        const blocking = realName.startsWith(ASYNC_PREF);
+        if (blocking) realName = realName.substring(ASYNC_PREF_LEN);
+        const key = realName.toUpperCase();
+        const r = { f: `${varName}.${c}`, blocking };
+        return [key, r];
+    });
 }
 
-const funcTable = new Map([
-    ["ADDSLASH", "addSlash"],
-    ["ARCCOS", "arccos"],
-    ["ARCSIN", "arcsin"],
-    ["COMPAREI", "compareI"],
-    ["GETANGLEBYXY", "getAngleByXY"],
-    ["LG", "lg"],
-    ["LN", "ln"],
-    ["LOG", "log"],
-    ["POS", "pos"],
-    ["RIGHT", "right"],
-    ["ROUND", "round"],
+const funcTable: Map<string, FuncInfo> = new Map([
+    ["ADDSLASH", { f: "addSlash" }],
+    ["ARCCOS", { f: "arccos" }],
+    ["ARCSIN", { f: "arcsin" }],
+    ["COMPAREI", { f: "compareI" }],
+    ["GETANGLEBYXY", { f: "getAngleByXY" }],
+    ["LG", { f: "lg" }],
+    ["LN", { f: "ln" }],
+    ["LOG", { f: "log" }],
+    ["POS", { f: "pos" }],
+    ["RIGHT", { f: "right" }],
+    ["ROUND", { f: "round" }],
     ...extract(Enviroment, envVar),
     ...extract(Project, prjVar),
     ...extract(Schema, schemaArg),
 ]);
+funcTable.get("SENDMESSAGE")!.blocking = true;
 
 const arrNames = new Map([
     [VarType.Float, "F"],
@@ -118,14 +133,20 @@ var oldS = ${memArg}.oldStrings;
 var newS = ${memArg}.newStrings;
 `;
 
+function insertBreak(res: string[], v: string, popResult: boolean) {
+    const cnt = res.length;
+    const r = `${schemaArg}.getWaitResult();`;
+    res.push(`${schemaArg}.waitFor(${v});`, `return -${cnt};`, `case -${cnt}:`, popResult ? `var ${v} = ${r}` : r);
+}
+
 class ExprParser {
-    private varCounter = 0;
+    private varCount = 0;
     private _hasBug = false;
 
     constructor(private res: string[], private vars: ClassVars, private lib: ClassLibrary, readonly missingFuncs: Map<string, string>) {}
 
     reset(): this {
-        this.varCounter = 0;
+        this.varCount = 0;
         return this;
     }
 
@@ -184,8 +205,24 @@ class ExprParser {
 
                 return `${op.isNew ? "new" : "old"}${typ}[${TLBArg}[${id}]]`;
             }
-            case "call":
-                return this.put(this.parseCall(op));
+            case "call": {
+                const r = this.parseCall(op);
+
+                const v = this.put(r.f);
+                if (r.blocking) {
+                    const savedVars: string[] = Array.from({ length: this.varCount - 1 }, (_, i) => `t${i}`);
+                    if (savedVars.length > 0) {
+                        this.res.push(`${schemaArg}.saveContext([${savedVars.join(",")}]);`);
+                    }
+                    insertBreak(this.res, v, true);
+                    if (savedVars.length > 0) {
+                        const unblock = `var ctx = ${schemaArg}.loadContext();`;
+                        const load = savedVars.map((n, i) => `var ${n}=ctx[${i}];`).join("");
+                        this.res.push(unblock, load);
+                    }
+                }
+                return v;
+            }
             case "-":
                 return `(-${this.parseOperand(op.op)})`;
             case "!":
@@ -196,93 +233,93 @@ class ExprParser {
     }
 
     private put(arg: string): string {
-        const name = `t${++this.varCounter}`;
+        const name = `t${this.varCount++}`;
         this.res.push(`var ${name}=${arg};`);
         return name;
     }
 
-    parseCall(op: CallOperand): string {
+    parseCall(op: CallOperand): FuncInfo {
         const nameUC = op.name.toUpperCase();
-        if (nameUC === "EXIT") return `return ${EXIT_CODE}`;
+        if (nameUC === "EXIT") return { f: `return ${EXIT_CODE}` };
 
         // Функции, возвращающие значение "по ссылке".
         if (nameUC === "INC" || nameUC === "DEC") {
             const to = this.dereferCallArgs([op.args[0]])[0];
             const arg = op.args.length < 2 ? 1 : this.parseExpr(op.args[1]);
-            return `${to[0]}[${to[1]}]${nameUC === "INC" ? "+" : "-"}=${arg}`;
+            return { f: `${to[0]}[${to[1]}]${nameUC === "INC" ? "+" : "-"}=${arg}` };
         }
         if (nameUC === "GETTIME") {
             const a = this.dereferCallArgs(op.args);
-            return `${envVar}.${getTimeFunc}(${a})`;
+            return { f: `${envVar}.${getTimeFunc}(${a})` };
         }
         if (nameUC === "GETDATE") {
             const a = this.dereferCallArgs(op.args);
-            return `${envVar}.${getDateFunc}(${a})`;
+            return { f: `${envVar}.${getDateFunc}(${a})` };
         }
         if (nameUC === "GETACTUALSIZE2D") {
             const f1 = op.args.slice(0, 2).map((a) => this.parseExpr(a));
             const f2 = this.dereferCallArgs(op.args.slice(2, 4));
-            return `${envVar}.${getActualSize2dFunc}(${f1},${f2})`;
+            return { f: `${envVar}.${getActualSize2dFunc}(${f1},${f2})` };
         }
 
         const fargs = op.args.map((a) => this.parseExpr(a));
         // Функции нельзя инлайнить т.к. Short-circuit evaluation не работает.
-        if (nameUC === "FLOAT") return `parseFloat(${fargs[0]})||0`;
-        if (nameUC === "HANDLE") return `parseInt(${fargs[0]})||0`;
-        if (nameUC === "STRING") return `(Math.round((${fargs[0]})*100000)/100000).toString()`;
+        if (nameUC === "FLOAT") return { f: `parseFloat(${fargs[0]})||0` };
+        if (nameUC === "HANDLE") return { f: `parseInt(${fargs[0]})||0` };
+        if (nameUC === "STRING") return { f: `(Math.round((${fargs[0]})*100000)/100000).toString()` };
 
-        if (nameUC === "ABS") return `Math.abs(${fargs[0]})||0`;
-        if (nameUC === "AVERAGE") return `(${fargs[0]})/2+(${fargs[1]})/2`;
-        if (nameUC === "EXP") return `Math.exp(${fargs[0]})||0`;
-        if (nameUC === "MAX") return `Math.max(${fargs[0]}, ${fargs[1]})||0`;
-        if (nameUC === "MIN") return `Math.min(${fargs[0]}, ${fargs[1]})||0`;
-        if (nameUC === "LIMIT") return `Math.max(${fargs[1]}, Math.min(${fargs[2]}, ${fargs[0]}))||0`; //порядок аргументов?
-        if (nameUC === "SQR") return `(${fargs[0]})**2`;
-        if (nameUC === "SQRT") return `Math.sqrt(${fargs[0]})||0`;
-        if (nameUC === "TRUNC") return `Math.trunc(${fargs[0]})||0`; //FIXME: нет в IE
-        if (nameUC === "RND") return `(${fargs[0]})*Math.random()`;
+        if (nameUC === "ABS") return { f: `Math.abs(${fargs[0]})||0` };
+        if (nameUC === "AVERAGE") return { f: `(${fargs[0]})/2+(${fargs[1]})/2` };
+        if (nameUC === "EXP") return { f: `Math.exp(${fargs[0]})||0` };
+        if (nameUC === "MAX") return { f: `Math.max(${fargs[0]}, ${fargs[1]})||0` };
+        if (nameUC === "MIN") return { f: `Math.min(${fargs[0]}, ${fargs[1]})||0` };
+        if (nameUC === "LIMIT") return { f: `Math.max(${fargs[1]}, Math.min(${fargs[2]}, ${fargs[0]}))||0` }; //порядок аргументов?
+        if (nameUC === "SQR") return { f: `(${fargs[0]})**2` };
+        if (nameUC === "SQRT") return { f: `Math.sqrt(${fargs[0]})||0` };
+        if (nameUC === "TRUNC") return { f: `Math.trunc(${fargs[0]})||0` }; //FIXME: нет в IE
+        if (nameUC === "RND") return { f: `(${fargs[0]})*Math.random()` };
 
-        if (nameUC === "ARCTAN") return `Math.atan(${fargs[0]})||0`;
-        if (nameUC === "COS") return `Math.cos(${fargs[0]})||0`;
-        if (nameUC === "SIN") return `Math.sin(${fargs[0]})||0`;
-        if (nameUC === "TAN") return `Math.tan(${fargs[0]})||0`;
-        if (nameUC === "DEG") return `180*(${fargs[0]})/Math.PI||0`;
-        if (nameUC === "RAD") return `Math.PI*(${fargs[0]})/180||0`;
+        if (nameUC === "ARCTAN") return { f: `Math.atan(${fargs[0]})||0` };
+        if (nameUC === "COS") return { f: `Math.cos(${fargs[0]})||0` };
+        if (nameUC === "SIN") return { f: `Math.sin(${fargs[0]})||0` };
+        if (nameUC === "TAN") return { f: `Math.tan(${fargs[0]})||0` };
+        if (nameUC === "DEG") return { f: `180*(${fargs[0]})/Math.PI||0` };
+        if (nameUC === "RAD") return { f: `Math.PI*(${fargs[0]})/180||0` };
 
-        if (nameUC === "AND") return `(${fargs[0]})&&(${fargs[1]})`;
-        if (nameUC === "DELTA") return `(${fargs[0]})?0:1`;
-        if (nameUC === "ED") return `(${fargs[0]})>0?1:0`;
-        if (nameUC === "NOT") return `!(${fargs[0]})`;
+        if (nameUC === "AND") return { f: `(${fargs[0]})&&(${fargs[1]})` };
+        if (nameUC === "DELTA") return { f: `(${fargs[0]})?0:1` };
+        if (nameUC === "ED") return { f: `(${fargs[0]})>0?1:0` };
+        if (nameUC === "NOT") return { f: `!(${fargs[0]})` };
         if (nameUC === "NOTBIN") {
             console.warn("NOTBIN возвращает то же число из-за бага"); // VMACHINE.CPP:631
-            return fargs[0];
+            return { f: fargs[0] };
         }
-        if (nameUC === "OR") return `(${fargs[0]})||(${fargs[1]})`;
-        if (nameUC === "SGN") return `Math.sign(${fargs[0]})||0`; //FIXME: нет в IE
-        if (nameUC === "XOR") return `(${fargs[0]})!==0^(${fargs[1]})!==0`;
-        if (nameUC === "XORBIN") return `(${fargs[0]})^(${fargs[1]})`;
+        if (nameUC === "OR") return { f: `(${fargs[0]})||(${fargs[1]})` };
+        if (nameUC === "SGN") return { f: `Math.sign(${fargs[0]})||0` }; //FIXME: нет в IE
+        if (nameUC === "XOR") return { f: `(${fargs[0]})!==0^(${fargs[1]})!==0` };
+        if (nameUC === "XORBIN") return { f: `(${fargs[0]})^(${fargs[1]})` };
 
-        if (nameUC === "ALLTRIM") return `(${fargs[0]}).trim()`;
-        if (nameUC === "CHANGE") return `(${fargs[0]}).replace(new RegExp(${fargs[1]}, "g"), ${fargs[2]})`;
-        if (nameUC === "COMPARE") return `(${fargs[0]})===(${fargs[1]})`;
-        if (nameUC === "LEFT") return `(${fargs[0]}).substring(0,${fargs[1]})`;
-        if (nameUC === "LENGTH") return `(${fargs[0]}).length`;
-        if (nameUC === "LOWER") return `(${fargs[0]}).toLowerCase()`;
-        if (nameUC === "LTRIM") return `(${fargs[0]}).replace(/^\\s+/,"")`;
-        if (nameUC === "REPLICATE") return `(${fargs[0]}).repeat(${fargs[1]})`; //FIXME: нет в IE
-        if (nameUC === "SUBSTR") return `(${fargs[0]}).substr(${fargs[1]},${fargs[2]})`; //FIXME: substr лучше не использовать.
-        if (nameUC === "RTRIM") return `(${fargs[0]}).replace(/\\s+$/,"")`;
-        if (nameUC === "UPPER") return `(${fargs[0]}).toUpperCase()`;
+        if (nameUC === "ALLTRIM") return { f: `(${fargs[0]}).trim()` };
+        if (nameUC === "CHANGE") return { f: `(${fargs[0]}).replace(new RegExp(${fargs[1]}, "g"), ${fargs[2]})` };
+        if (nameUC === "COMPARE") return { f: `(${fargs[0]})===(${fargs[1]})` };
+        if (nameUC === "LEFT") return { f: `(${fargs[0]}).substring(0,${fargs[1]})` };
+        if (nameUC === "LENGTH") return { f: `(${fargs[0]}).length` };
+        if (nameUC === "LOWER") return { f: `(${fargs[0]}).toLowerCase()` };
+        if (nameUC === "LTRIM") return { f: `(${fargs[0]}).replace(/^\\s+/,"")` };
+        if (nameUC === "REPLICATE") return { f: `(${fargs[0]}).repeat(${fargs[1]})` }; //FIXME: нет в IE
+        if (nameUC === "SUBSTR") return { f: `(${fargs[0]}).substr(${fargs[1]},${fargs[2]})` }; //FIXME: substr лучше не использовать.
+        if (nameUC === "RTRIM") return { f: `(${fargs[0]}).replace(/\\s+$/,"")` };
+        if (nameUC === "UPPER") return { f: `(${fargs[0]}).toUpperCase()` };
 
-        const fname = funcTable.get(nameUC);
-        if (fname) {
-            return `${fname}(${fargs})`;
+        const data = funcTable.get(nameUC);
+        if (data) {
+            return { ...data, f: `${data.f}(${fargs})` };
         }
         if ((this.lib.get(nameUC)?.flags() ?? 0) & 1024) {
-            return `${envVar}.callFunction("${nameUC}", ${schemaArg}${fargs.length > 0 ? "," + fargs : ""});`;
+            return { f: `${schemaArg}.call(${[`"${nameUC}"`, ...fargs].join(",")})`, blocking: true };
         }
         this.missingFuncs.set(nameUC, op.name);
-        return `${schemaArg}.stubCall("${op.name}", ${fargs})`;
+        return { f: `${schemaArg}.stubCall("${op.name}", ${fargs})` };
     }
 
     parseExpr(expr: Expression): string {
@@ -380,8 +417,15 @@ class Translator {
                 break;
             }
             case "callChain": {
-                const p = new ExprParser(this.res, this.vars, this.lib, this.missingFuncs);
-                this.res.push(c.functions.map((f) => p.parseCall(f)).join(";") + ";");
+                for (let i = 0; i < c.functions.length; ++i) {
+                    const f = c.functions[i];
+                    const r = p.reset().parseCall(f);
+                    if (r.blocking) {
+                        insertBreak(this.res, r.f, false);
+                    } else {
+                        this.res.push(`${r.f};`);
+                    }
+                }
                 break;
             }
 
@@ -582,6 +626,7 @@ export function translate(source: string, vars: ClassVars, objname: string, lib:
     funcs.forEach((v, k) => unreleasedFunctions.set(k, v));
 
     const body = res.join("\n");
+    // console.log(body);
     console.log(`Компилируем ${objname}`);
 
     let model: ClassModel["model"];

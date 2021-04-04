@@ -225,6 +225,6 @@ export namespace Env {
 
     export interface Project extends HyperTarget {
         readonly dir: VFSDir;
-        compute(): boolean;
+        // compute(): IterableIterator<void>;
     }
 }

@@ -1,68 +1,61 @@
-import { Executor } from "stratum/api";
+import { Executor, ExecutorAsyncCallback, ExecutorCallback } from "stratum/api";
 
 export class SmoothComputer implements Executor {
     private frameId = 0;
-    private _running = false;
-
-    private _loop(cb: () => boolean): number {
-        return requestAnimationFrame(() => {
-            if (cb()) this.frameId = this._loop(cb);
-            else this._running = false;
-        });
-    }
-    private _unloop() {
-        cancelAnimationFrame(this.frameId);
-    }
 
     get running() {
-        return this._running;
+        return this.frameId !== 0;
     }
 
-    run(callback: () => boolean): void {
-        if (this._running) return;
-        this._running = true;
-        this.frameId = this._loop(callback);
+    run(cb: ExecutorCallback) {
+        if (this.running) return;
+        const res = () => (this.frameId = cb() ? requestAnimationFrame(res) : 0);
+        this.frameId = requestAnimationFrame(res);
+    }
+
+    runAsync(cb: ExecutorAsyncCallback): void {
+        if (this.running) return;
+        const res = () => cb().then((cont) => (this.frameId = cont ? requestAnimationFrame(res) : 0));
+        this.frameId = requestAnimationFrame(res);
     }
 
     stop(): void {
-        if (!this._running) return;
-        this._running = false;
-        this._unloop();
+        if (!this.running) return;
+        cancelAnimationFrame(this.frameId);
+        this.frameId = 0;
     }
 }
 
 export class FastestComputer implements Executor {
     private frameId = 0;
-    private _running = false;
     private timeout: number;
-
     constructor(args: any) {
         this.timeout = typeof args === "number" ? args : 0;
     }
 
-    private _loop(cb: () => boolean): number {
-        return setTimeout(() => {
-            if (cb() && cb() && cb() && cb()) this.frameId = this._loop(cb);
-            else this._running = false;
-        }, this.timeout);
-    }
-    private _unloop() {
-        clearTimeout(this.frameId);
-    }
-
     get running() {
-        return this._running;
+        return this.frameId !== 0;
     }
 
-    run(callback: () => boolean): void {
-        if (this._running) return;
-        this._running = true;
-        this.frameId = this._loop(callback);
+    run(cb: ExecutorCallback) {
+        if (this.running) return;
+        const res = () => (this.frameId = cb() && cb() && cb() && cb() ? setTimeout(res, this.timeout) : 0);
+        this.frameId = setTimeout(res, this.timeout);
+    }
+
+    runAsync(cb: ExecutorAsyncCallback): void {
+        if (this.running) return;
+        // const res = () => cb().then((cont) => (this.frameId = cont ? setTimeout(res, this.timeout) : 0));
+        // this.frameId = setTimeout(res, this.timeout);
+        const res = async () => {
+            this.frameId = (await cb()) && (await cb()) && (await cb()) && (await cb()) ? setTimeout(res, this.timeout) : 0;
+        };
+        this.frameId = setTimeout(res, this.timeout);
     }
 
     stop(): void {
-        if (!this._running) return;
-        this._running = false;
-        this._unloop();
+        if (!this.running) return;
+        clearTimeout(this.frameId);
+        this.frameId = 0;
     }
 }

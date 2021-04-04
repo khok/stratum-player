@@ -18,8 +18,7 @@ export interface ProjectResources {
 
 export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
     private level: number;
-    private shouldClose: boolean;
-    private schema: Schema;
+    private _shouldClose: boolean;
 
     readonly env: Enviroment;
     readonly dir: VFSDir;
@@ -36,9 +35,11 @@ export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
     readonly olds: { [index: number]: Env.Farr | Int32Array | string[] };
     readonly news: { [index: number]: Env.Farr | Int32Array | string[] };
 
+    readonly schema: Schema;
+
     constructor(env: Enviroment, args: ProjectResources) {
         this.level = 0;
-        this.shouldClose = false;
+        this._shouldClose = false;
         this.env = env;
         this.dir = args.dir;
 
@@ -73,7 +74,7 @@ export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
     }
 
     stratum_closeAll(): void {
-        this.shouldClose = true;
+        this._shouldClose = true;
     }
 
     hyperCall(hyp: Hyperbase): Promise<void> {
@@ -129,7 +130,7 @@ export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
     }
 
     stop(): void {
-        this.shouldClose = true;
+        this._shouldClose = true;
     }
 
     canExecute(): boolean {
@@ -160,13 +161,13 @@ export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
         this.oldFloats.set(this.newFloats);
         this.oldInts.set(this.newInts);
         for (let i = 0; i < this.newStrings.length; ++i) this.oldStrings[i] = this.newStrings[i];
-        return this;
+        return this.assertZeroIndexEmpty();
     }
 
     /**
      * Проверка, не было ли изменено (в результате багов) зарезервированное значение.
      */
-    private assertZeroIndexEmpty(): void {
+    private assertZeroIndexEmpty(): this {
         if (
             this.oldFloats[0] !== 0 ||
             "undefined" in this.oldFloats ||
@@ -182,11 +183,10 @@ export class Project implements Env.Project, Env.HyperTarget, ProjectMemory {
             "undefined" in this.newStrings
         )
             throw Error("Было изменено зарезервированное значение переменной");
+        return this;
     }
 
-    compute(): boolean {
-        this.schema.compute();
-        this.syncAll().assertZeroIndexEmpty();
-        return !this.shouldClose;
+    shouldClose(): boolean {
+        return this._shouldClose;
     }
 }

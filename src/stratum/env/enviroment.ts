@@ -1,12 +1,11 @@
 import { PlayerOptions, WindowHost } from "stratum/api";
 import { ClassLibrary } from "stratum/common/classLibrary";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
-import { VarType } from "stratum/common/varType";
 import { Hyperbase, VectorDrawing } from "stratum/fileFormats/vdr";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { HandleMap } from "stratum/helpers/handleMap";
 import { win1251Table } from "stratum/helpers/win1251";
-import { Project, ProjectMemory, ProjectResources, Schema } from "stratum/project";
+import { Project, ProjectResources, Schema } from "stratum/project";
 import { VFS, VFSDir } from "stratum/vfs";
 import { Constant, Env, EventSubscriber, NumBool } from ".";
 import { EnvStream } from "./envStream";
@@ -28,12 +27,14 @@ export class Enviroment {
     private host: WindowHost;
 
     private _shouldQuit: boolean = false;
-    private lib: ClassLibrary;
+    readonly lib: ClassLibrary;
 
-    private projects: Project[];
+    private readonly projects: Project[];
     private inHyperCall: boolean;
 
     private options: PlayerOptions;
+
+    private _isWaiting: boolean;
 
     constructor(res: ProjectResources, host: WindowHost, options: PlayerOptions = {}) {
         this.projects = [new Project(this, res)];
@@ -41,100 +42,62 @@ export class Enviroment {
         this.host = host;
         this.inHyperCall = false;
         this.options = options;
+        this._isWaiting = false;
     }
 
-    compute(): boolean {
-        const res = this.projects[this.projects.length - 1].compute();
+    isWaiting(): boolean {
+        return this._isWaiting;
+    }
 
+    async computeSchema(schema: Schema): Promise<void> {
+        const prj = schema.prj;
+        const gen = schema.compute(true);
+        while (true) {
+            const r = gen.next();
+            if (r.done) break;
+            this._isWaiting = true;
+            await r.value;
+            this._isWaiting = false;
+        }
+        prj.syncAll();
+    }
+
+    async compute(): Promise<boolean> {
         // Среда остановлена
         if (this._shouldQuit) {
             this.closeAllRes();
             return false;
         }
 
-        // Проект работает
-        if (res === true) return true;
+        const prjIdx = this.projects.length - 1;
+        let prj = this.projects[prjIdx];
 
-        // Проект не работает и это не последний проект
-        if (this.projects.length > 1) {
-            // Это не последний проект
+        // Проект работает
+        if (prj.shouldClose() === true) {
             const id = this.sessionId();
             this.closeProjectRes(id);
             this.projects.pop();
-            return true;
+            if (this.projects.length === 0) {
+                this.closeAllRes();
+                return false;
+            }
+            prj = this.projects[prjIdx - 1];
         }
 
-        // Проект не работает и это последний проект
-        this.closeAllRes();
-        return false;
+        const gen = prj.schema.compute();
+        while (true) {
+            const r = gen.next();
+            if (r.done) break;
+            this._isWaiting = true;
+            await r.value;
+            this._isWaiting = false;
+        }
+        prj.syncAll();
+        return true;
     }
 
     private sessionId(): number {
         return this.projects.length - 1;
-    }
-
-    callFunction(fname: string, schema: Schema, ...args: (string | number)[]): void | string | number {
-        const obj = this.lib.get(fname);
-        const mod = obj?.model(this.lib);
-        if (!mod?.isFunction) throw Error();
-        const vars = obj?.vars;
-        let floats = 0;
-        const f1: number[] = [];
-        let ints = 0;
-        const i1: number[] = [];
-        let strings = 0;
-        const sarr: string[] = [];
-        const tlb = new Uint16Array(vars?.count ?? 0);
-        if (vars && args.length > 0) {
-            if (args.length > vars.count) throw Error("Кол-во аргументов больше кол-ва переменных");
-            let i = 0;
-            for (; i < vars.count; ++i) {
-                const val = (i < args.length ? args : vars.defaultValues)[i];
-                const typ = vars.types[i];
-                switch (typ) {
-                    case VarType.Float:
-                        if (typeof val === "string") throw Error("Несовпадение типов");
-                        tlb[i] = floats;
-                        floats += 1;
-                        f1.push(val ?? 0);
-                        break;
-                    case VarType.Handle:
-                    case VarType.ColorRef:
-                        if (typeof val === "string") throw Error("Несовпадение типов");
-                        tlb[i] = ints;
-                        ints += 1;
-                        i1.push(val ?? 0);
-                        break;
-                    case VarType.String:
-                        if (typeof val === "number") throw Error("Несовпадение типов");
-                        tlb[i] = strings;
-                        strings += 1;
-                        sarr.push(val ?? "");
-                        break;
-                }
-            }
-        }
-        const farr = new Float64Array(f1);
-        const iarr = new Int32Array(i1);
-
-        const mem: ProjectMemory = {
-            newFloats: farr,
-            oldFloats: farr,
-            newInts: iarr,
-            oldInts: iarr,
-            newStrings: sarr,
-            oldStrings: sarr,
-        };
-
-        let code = 0;
-        while ((code = mod.model(schema, tlb, mem, code)) > 0);
-        if (!vars) return;
-        const ret = vars.flags.findIndex((v) => v & Constant.VF_RETURN);
-        if (ret < 0) return;
-        const t = vars.types[ret];
-        if (t === VarType.String) return sarr[tlb[ret]];
-        if (t === VarType.Float) return farr[tlb[ret]];
-        return iarr[tlb[ret]];
     }
 
     stratum_setHyperJump2d(hspace: number, hobject: number, mode: number, ...args: string[]): NumBool {
@@ -373,8 +336,8 @@ export class Enviroment {
     stratum_closeWindow(wname: string): NumBool {
         const wnd = this.windows.get(wname);
         if (typeof wnd === "undefined") return 0;
-        wnd.close();
         this.removeWindow(wname);
+        wnd.close();
         return 1;
     }
     stratum_setWindowTransparent(wname: string, level: number): NumBool;
@@ -1118,10 +1081,15 @@ export class Enviroment {
     private closeProjectRes(id: number): void {
         const prjWindows = [...this.windows].filter((w) => w[1].id === id);
         prjWindows.forEach((w) => {
-            w[1].close();
             this.removeWindow(w[0]);
+            w[1].close();
         });
         this.lib.remove(id);
+    }
+
+    stopForever(): void {
+        this._isWaiting = false;
+        this._shouldQuit = true;
     }
 
     closeAllRes(): void {
@@ -1139,6 +1107,7 @@ export class Enviroment {
         for (let i = 1; i < this.projects.length; ++i) {
             this.lib.remove(i);
         }
+        while (this.projects.pop());
     }
 
     private getObject(hspace: number, hobject: number) {
