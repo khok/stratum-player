@@ -1,4 +1,31 @@
-import { Executor, ExecutorAsyncCallback, ExecutorCallback } from "stratum/api";
+export interface ExecutorCallback {
+    (): boolean;
+}
+
+export interface ExecutorAsyncCallback {
+    (): Promise<boolean>;
+}
+
+/**
+ * Планировщик цикличного выполнения функции.
+ */
+export interface Executor {
+    /**
+     * Цикл выполнения запущен?
+     */
+    readonly running: boolean;
+    /**
+     * Планирует цикличный вызов функции.
+     * @param callback Функция, которая должна вызываться циклично.
+     * Если она возвращает false, цикл выполнения прерывается.
+     */
+    run(callback: ExecutorCallback): void;
+    runAsync(callback: ExecutorAsyncCallback): void;
+    /**
+     * Прерывает цикл выполнения.
+     */
+    stop(): void;
+}
 
 export class SmoothComputer implements Executor {
     private frameId = 0;

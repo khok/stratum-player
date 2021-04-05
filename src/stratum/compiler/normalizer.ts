@@ -2,11 +2,11 @@ const qt = "'";
 const dqt = '"';
 export function normalizeSource(text: string) {
     let res: string = "";
-    let escMode = undefined;
+    let escMode = null;
     for (let i = 0; i < text.length; ++i) {
         const c = text[i];
-        if (c === qt && escMode !== dqt) escMode = escMode ? undefined : qt;
-        else if (c === dqt && escMode !== qt) escMode = escMode ? undefined : dqt;
+        if (c === qt && escMode !== dqt) escMode = escMode ? null : qt;
+        else if (c === dqt && escMode !== qt) escMode = escMode ? null : dqt;
 
         if (escMode) {
             res += c;

@@ -1,9 +1,4 @@
-import { FastestComputer, SmoothComputer } from "stratum/common/computers";
-import { createZipFS } from "stratum/vfs";
-
-export interface FileSystemConstructor {
-    (): FS;
-}
+import { RealPlayer } from "./player";
 
 export interface OpenZipOptions {
     /**
@@ -28,99 +23,7 @@ export interface ZipFSConstructor {
      * @param source Источник ZIP-архива.
      * @param options Опции распаковки ZIP-архива.
      */
-    (source: ZipSource, options?: OpenZipOptions): Promise<FS>;
-}
-
-/**
- * Файловая система.
- */
-export interface FS {
-    /**
-     * Объединяет содержимое двух файловых систем.
-     */
-    merge(fs: FS): this;
-    /**
-     * Возвращает список файлов в системе.
-     * @param regexp - условия поиска файлов.
-     */
-    files(regexp?: RegExp): IterableIterator<FSFile>;
-    /**
-     * Открывает проект.
-     */
-    project(options?: OpenProjectOptions): Promise<Player>;
-}
-
-// export type FileSystemFileData = ZipSource | string;
-export type FileSystemFileData = ArrayBuffer;
-
-/**
- * Представляет каталог в файловой системе.
- */
-export interface FSDir {
-    readonly dir: true;
-    /**
-     * Родительский каталог.
-     * Корневой каталог (корень диска) является родительским самому себе.
-     */
-    readonly parent: FSDir;
-    /**
-     * Абсолютный путь в DOS-формате, включая префикс диска.
-     */
-    readonly pathDos: string;
-    /**
-     * Пытается создать файл.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к создаваемому файлу.
-     * Если файл с указанным именем не удалось создать, возвращает undefined.
-     */
-    create(type: "file", path: string, data?: FileSystemFileData): FSFile | undefined;
-    /**
-     * Пытается создать каталог.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к создаваемому каталогу.
-     * Если каталог с указанным именем не удалось создать, возвращает undefined.
-     */
-    create(type: "dir", path: string): FSDir | undefined;
-    /**
-     * Возвращает файл или каталог относительно текущего каталога.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к искомому файлу или каталогу.
-     */
-    get(path: string): FSDir | FSFile | undefined;
-    /**
-     * Возвращает список файлов в каталоге и его подкаталогах.
-     * @param regexp - условия поиска файлов.
-     */
-    files(regexp?: RegExp): IterableIterator<FSFile>;
-}
-
-/**
- * Представляет файл в файловой системе.
- */
-export interface FSFile {
-    readonly dir: false;
-    /**
-     * Родительский каталог.
-     * Корневой каталог (корень диска) является родительским самому себе.
-     */
-    readonly parent: FSDir;
-    /**
-     * Абсолютный путь в DOS-формате, включая префикс диска.
-     */
-    readonly pathDos: string;
-    /**
-     * Явно предзагружает содержимое файла.
-     * Только явно предзагруженные файлы могут быть прочитаны в процессе
-     * исполнения проекта.
-     * В противном случае будет создано исключение.
-     */
-    makeSync(): Promise<void>;
-    /**
-     * Возвращает содержимое файла.
-     * Не делает файл явно предзагруженным.
-     * Для этого явно используется @method makeSync.
-     */
-    arraybuffer(): Promise<ArrayBuffer>;
+    (source: ZipSource, options?: OpenZipOptions): Promise<DirInfo>;
 }
 
 export interface PlayerOptions {
@@ -130,15 +33,90 @@ export interface PlayerOptions {
     disableWindowResize?: boolean;
 }
 
-export interface OpenProjectOptions {
+interface BaseInfo {
+    dirs(dirs: DirInfo[]): DirsInfo;
+    files(files: FileInfo[]): FileArrayInfo;
+}
+
+/**
+ * Представляет информацию о каталоге.
+ */
+export interface DirInfo extends BaseInfo {
     /**
-     * Часть пути к файлу проекта.
+     * Абсолютный путь в DOS-формате, включая префикс диска.
      */
-    path?: string;
+    readonly path: string;
     /**
-     * Дополнительные пути поиска файлов имиджей.
+     * Возвращает информацию о файле относительно текущего каталога.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к искомому файлу или каталогу.
      */
-    additionalClassPaths?: string[];
+    file(path: string): FileInfo;
+    /**
+     * Возвращает информацию о каталоге относительно текущего каталога.
+     * @param path - нечувствительный к регистру относительный или абсолютный
+     * путь к искомому файлу или каталогу.
+     */
+    dir(path: string): DirInfo;
+
+    /**
+     * Создает каталог.
+     * @returns Был ли создан каталог?
+     */
+    create(): Promise<boolean>;
+}
+
+/**
+ * Представляет информацию о группе каталогов.
+ */
+export interface DirsInfo extends ArrayLike<DirInfo>, BaseInfo {
+    /**
+     * Возвращает информацию о `.cls` файлах в каталогах.
+     * @param recursive - рекурсивный поиск (по умолчанию - да)
+     */
+    searchClsFiles(recursive: boolean): Promise<FileArrayInfo>;
+}
+
+/**
+ * Представляет информацию о файле.
+ */
+export interface FileInfo extends BaseInfo {
+    /**
+     * Абсолютный путь в DOS-формате, включая префикс диска.
+     */
+    readonly path: string;
+    /**
+     * Информация о родительском каталоге.
+     */
+    parent(): DirInfo;
+    /**
+     * Файл существует?
+     */
+    exist(): Promise<boolean>;
+    /**
+     * Возвращает содержимое файла или `null` если он не существует.
+     */
+    arraybuffer(): Promise<ArrayBuffer | null>;
+    /**
+     * Создает файл.
+     * @returns Был ли создан файл?
+     */
+    create(): Promise<boolean>;
+    /**
+     * Заполняет существуюший файл содержимым.
+     * @returns - удалось ли записать данные в файл?
+     */
+    write(data: ArrayBuffer): Promise<boolean>;
+}
+
+/**
+ * Представляет информацию о группе файлов.
+ */
+export interface FileArrayInfo extends ArrayLike<FileInfo>, BaseInfo {
+    /**
+     * Для каждого файла возвращает его содержимое или `null` если он не существует.
+     */
+    arraybuffers(): Promise<(ArrayBufferView | null)[]>;
 }
 
 /**
@@ -152,7 +130,7 @@ export interface Player {
     /**
      * Диагностические данные.
      */
-    readonly diag: ProjectDiag;
+    readonly diag: PlayerDiag;
 
     /**
      * Проект запущен? / Проект приостановлен? / Проект закрыт? / Проект
@@ -163,10 +141,10 @@ export interface Player {
     /**
      * Планировщик цикла выполнения вычислений виртуальной машины.
      */
-    computer: Executor;
+    // computer: Executor;
 
     /**
-     * Запускает выполнение проекта.
+     * Запускает выполнение п роекта.
      * @param container - HTML элемент, в котором будут размещаться
      * открываемые в проекте окна.
      * Если он не указан, окна будут всплывающими.
@@ -218,42 +196,11 @@ export interface Player {
     off(event: "error", handler?: (err: string) => void): this;
 }
 
-export interface ExecutorCallback {
-    (): boolean;
-}
-
-export interface ExecutorAsyncCallback {
-    (): Promise<boolean>;
-}
-
-/**
- * Планировщик цикличного выполнения функции.
- */
-export interface Executor {
-    /**
-     * Цикл выполнения запущен?
-     */
-    readonly running: boolean;
-    /**
-     * Планирует цикличный вызов функции.
-     * @param callback Функция, которая должна вызываться циклично.
-     * Если она возвращает false, цикл выполнения прерывается.
-     */
-    run(callback: ExecutorCallback): void;
-    runAsync(callback: ExecutorAsyncCallback): void;
-    /**
-     * Прерывает цикл выполнения.
-     */
-    stop(): void;
-}
-
-export interface ProjectDiag {
+export interface PlayerDiag {
     readonly iterations: number;
-    readonly missingCommands: { name: string; classNames: string[] }[];
 }
 
 export interface WindowOptions {
-    view: HTMLDivElement;
     /**
      * Название открываемого окна.
      */
@@ -267,14 +214,14 @@ export interface WindowHost {
     /**
      * Параметры рабочей области.
      */
-    readonly width: number;
-    readonly height: number;
-    window(options: WindowOptions): WindowHostWindow;
+    readonly width?: number;
+    readonly height?: number;
+    window(view: HTMLDivElement, options: WindowOptions): WindowHostWindow;
 }
 
 export interface WindowHostWindow {
-    setTitle(title: string): void;
-    setSize(width: number, height: number): void;
+    setTitle?(title: string): void;
+    setSize?(width: number, height: number): void;
     /**
      * Регистрирует обработчик события изменения размера окна пользователем.
      */
@@ -288,23 +235,39 @@ export interface WindowHostWindow {
     /**
      * Регистрирует обработчик события изменения закрытия окна пользователем.
      */
-    on(event: "closed", handler: () => void): void;
+    on?(event: "closed", handler: () => void): void;
     /**
      * Разрегистрирует обработчик события изменения закрытия окна пользователем.
      * @param handler Если обработчик не указан, разрегистрируются все
      * обработчики данного события.
      */
-    off(event: "closed", handler?: () => void): void;
+    off?(event: "closed", handler?: () => void): void;
 
-    toTop(): void;
+    toTop?(): void;
     /**
      * Закрывает окно.
+     * @remarks При этом не должно вызываться событие closed.
      */
     close(): void;
 }
+
+export interface AddDirInfo {
+    dir: DirInfo;
+    loadClasses: boolean;
+    type?: "library" | "temp";
+}
+
+/**
+ * Создает новый проект из файла.
+ * @param dirInfo - настройки директорий проекта, дополнительные пути поиска имиджей.
+ */
+export function project(prjFile: FileInfo, dirInfo?: AddDirInfo[]): Promise<Player> {
+    return RealPlayer.create(prjFile, dirInfo);
+}
+
 // export const fs: FileSystemConstructor;
 
-export const unzip: ZipFSConstructor = createZipFS;
+// export const unzip: ZipFSConstructor = createZipFS;
 
 // export interface Logger {
 //     info(msg: string): void;
@@ -323,14 +286,14 @@ export function setLogLevel(logLevel: "err" | "full") {
     // console.log = logLevel === "err" ? function () {} : origL;
 }
 
-export interface ExecutorConstructor {
-    new (args?: any): Executor;
-}
+// export interface ExecutorConstructor {
+//     new (args?: any): Executor;
+// }
 
-export const SmoothExecutor: ExecutorConstructor = SmoothComputer;
-export const FastestExecutor: ExecutorConstructor = FastestComputer;
+// export const SmoothExecutor: ExecutorConstructor = SmoothComputer;
+// export const FastestExecutor: ExecutorConstructor = FastestComputer;
 
 /**
  * Версия API.
  */
-export const version: string = "0.9.1";
+export const version: string = "0.10.0";

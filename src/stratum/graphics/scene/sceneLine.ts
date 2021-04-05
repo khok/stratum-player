@@ -1,7 +1,6 @@
-import { NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Scene } from ".";
-import { SceneVisualMember } from "./scene";
+import { Scene, SceneVisualMember } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { BrushTool } from "./tools/brushTool";
 import { PenTool } from "./tools/penTool";

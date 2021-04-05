@@ -1,26 +1,32 @@
-import { ExecutorAsyncCallback, Player, PlayerOptions, SmoothExecutor, WindowHost } from "stratum/api";
-import { Enviroment } from "stratum/env";
-import { ProjectResources } from "stratum/project";
+import { AddDirInfo, FileInfo, Player, PlayerOptions, WindowHost } from "stratum/api";
+import { ExecutorAsyncCallback, SmoothComputer } from "stratum/common/computers";
+import { Enviroment } from "stratum/enviroment";
+import { ProjectResources } from "stratum/enviroment/enviroment";
 import { SimpleWs } from "./ws";
 
 export class RealPlayer implements Player {
+    static async create(prjFile: FileInfo, dirInfo?: AddDirInfo[]): Promise<Player> {
+        const res = await Enviroment.loadProject(prjFile, dirInfo);
+        return new RealPlayer(res);
+    }
+
     private _state: Player["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
-    private _computer = new SmoothExecutor();
+    private _computer = new SmoothComputer();
     private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
 
     private loop: ExecutorAsyncCallback | null;
 
     private host: WindowHost;
 
-    private projectRes: ProjectResources;
+    private envArgs: ProjectResources;
 
     private env: Enviroment | null;
 
     readonly options: PlayerOptions;
 
     constructor(res: ProjectResources) {
-        this.projectRes = res;
+        this.envArgs = res;
         this.host = new SimpleWs();
         this.env = null;
         this.options = {};
@@ -56,7 +62,7 @@ export class RealPlayer implements Player {
             this.host = newHost instanceof HTMLElement ? new SimpleWs(newHost) : newHost;
         }
 
-        const env = (this.env = new Enviroment(this.projectRes, this.host, this.options));
+        const env = (this.env = new Enviroment(this.envArgs, this.host));
         this._diag.iterations = 0;
         // Main Loop
         this.loop = async () => {

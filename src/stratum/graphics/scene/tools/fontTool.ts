@@ -1,4 +1,4 @@
-import { Env, NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface FontToolArgs {
@@ -13,7 +13,7 @@ export interface FontToolArgs {
     strikeOut?: number;
 }
 
-export class FontTool implements Env.FontTool {
+export class FontTool {
     private subs: Set<ToolSubscriber>;
     private _name: string;
     private _size: number;

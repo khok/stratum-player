@@ -6,12 +6,14 @@ import {
     BitmapElement,
     ControlElement,
     DoubleBitmapElement,
+    EditFrame,
     Element2dBase,
     ElementBase,
     GroupElement,
     Hyperbase,
     LineElement,
     TextElement,
+    View3D,
 } from "./types/vectorDrawingElements";
 import {
     BrushToolParams,
@@ -258,7 +260,7 @@ export function readText(reader: BinaryReader, version: number): TextElement {
         type: "text",
         ...readElement2d(reader, version),
         textToolHandle: reader.uint16(),
-        delta: version < 0x200 ? reader.point2dInt() : reader.point2d(),
+        delta: reader.point2d(version < 0x200),
         angle: reader.int16(),
     };
 }
@@ -272,21 +274,55 @@ export function readText(reader: BinaryReader, version: number): TextElement {
 
 //WINOBJ2D.cpp -> 29
 export function readControl(reader: BinaryReader, version: number): ControlElement {
+    const base = readElement2d(reader, version);
+    const t = reader.string();
+    const inputType = t.toUpperCase();
+
+    if (inputType !== "EDIT" && inputType !== "BUTTON" && inputType !== "COMBOBOX") {
+        throw Error(`Неизвестный тип элемента Control #${base.handle}: ${t}`);
+    }
+
     const res: ControlElement = {
         type: "control",
-        ...readElement2d(reader, version),
-        className: reader.string().toUpperCase(),
+        ...base,
+        inputType,
         text: reader.string(),
         dwStyle: reader.int32(),
         exStyle: reader.int32(),
         id: reader.uint16(),
-        controlSize: reader.point2dInt(),
+        controlSize: reader.point2d(true),
     };
-    // if (!["EDIT", "BUTTON", "COMBOBOX"].includes(res.className)) throw Error(`Неизвестный тип контрола: ${res.className}`);
     reader.uint16(); //unused
     return res;
 }
 
+export function readView3D(reader: BinaryReader, version: number): View3D {
+    return {
+        type: "view3D",
+        ...readElement2d(reader, version),
+        spaceHandle: reader.uint16(),
+        cameraHandle: reader.uint16(),
+    };
+}
+
+export function readEditFrame(reader: BinaryReader, version: number): EditFrame {
+    return {
+        type: "editFrame",
+        ...readElement2d(reader, version),
+        objectHandle: reader.uint16(),
+        size: reader.point2d(version < 0x200),
+    };
+}
+
+// WINMAP.CPP:3079
+// const UINT H_TARGET  = 1;
+// const UINT H_WINNAME = 2;
+// const UINT H_OBJECT  = 3;
+// const UINT H_MODE    = 4;
+// const UINT H_EFFECT  = 5;
+// const UINT H_TIME    = 6;
+// const UINT H_DISABLED =7;
+// const UINT H_ADD      =8;
 export function readHyper(reader: BinaryReader, size: number): Hyperbase {
     const res: Hyperbase = {};
     let code = 0;
@@ -312,10 +348,10 @@ export function readHyper(reader: BinaryReader, size: number): Hyperbase {
                 res.time = reader.uint16();
                 break;
             case 7:
-                res.params = reader.string();
+                res.disabled = true;
                 break;
             case 8:
-                res.disabled = true;
+                res.params = reader.string();
                 break;
         }
     }
@@ -334,11 +370,11 @@ export function readSettingCollection<T>(reader: BinaryReader, itemReader: Setti
     });
 }
 
-export function readCrdSystem(reader: BinaryReader): CoordinateSystem {
+export function readCrdSystem(reader: BinaryReader, version: number): CoordinateSystem {
     return {
         type: reader.uint16(),
         objectHandle: reader.int16(),
-        center: reader.point2d(),
+        center: reader.point2d(version < 0x200),
         matrix: Array.from({ length: 9 }, () => reader.float64()),
     };
 }

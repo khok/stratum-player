@@ -3,6 +3,10 @@
  */
 export const SLASHES = /[/\\]/;
 
+export function getDirectory(path: string) {
+    return path.substring(0, path.lastIndexOf("\\") + 1);
+}
+
 // console.log(getPathParts("c:\\ Pgra m \\  \\  \\ Files kek  ///// \\..\\ / lol.prj").join("\\"));
 export function splitPath(path: string) {
     return path

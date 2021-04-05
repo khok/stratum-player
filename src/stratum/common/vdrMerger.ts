@@ -219,7 +219,7 @@ function schemeHasElements(scheme: VectorDrawing): scheme is Require<VectorDrawi
 }
 
 export class VdrMerger {
-    scheme: Require<VectorDrawing, "elements">; //Сделаем свойство "elements" обязательным.
+    private readonly scheme: Require<VectorDrawing, "elements">; //Сделаем свойство "elements" обязательным.
     /**
      * Создает вспомогательный класс для вставки изображений и иконок дочерних имиджей в схему родительского имиджа.
      * @param scheme - схема родительского имиджа.
@@ -230,7 +230,7 @@ export class VdrMerger {
         this.scheme = schemeCopy;
     }
 
-    get result() {
+    result(): VectorDrawing {
         return this.scheme;
     }
 
@@ -240,7 +240,7 @@ export class VdrMerger {
      * @param image - Изображение подимиджа.
      * @param offset - смещение изображения подимиджа.
      */
-    insertChildImage(rootGroupHandle: number, image: VectorDrawing) {
+    insertChildImage(rootGroupHandle: number, image: VectorDrawing): void {
         const { scheme } = this;
         const imageCopy = deepVdrCopy(image);
 
@@ -279,7 +279,7 @@ export class VdrMerger {
      * @param rootGroupHandle - Дескриптор подимиджа, совпадает с дескриптором группы, в которой находится иконка.
      * @param iconFile - Имя файла иконки.
      */
-    replaceIcon(rootGroupHandle: number, iconFile: string, iconIndex: number) {
+    replaceIcon(rootGroupHandle: number, iconFile: string, iconIndex: number): void {
         const { scheme } = this;
 
         const rootGroup = findRootGroup(scheme.elements, rootGroupHandle);
@@ -296,6 +296,7 @@ export class VdrMerger {
         }
         stubIcon.dibHandle = ddib.handle = freeHandle;
 
+        // Количество иконок по горизонтали
         let rowLen = 0;
         switch (iconFile.toUpperCase()) {
             case "SYSTEM.DBM":

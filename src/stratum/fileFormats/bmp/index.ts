@@ -2,8 +2,8 @@
  * Код для чтения размерностей битовых карт, объединения двойных битовых карт в изображение с прозрачностью.
  */
 import { BinaryReader, FileSignatureError } from "stratum/helpers/binaryReader";
-import { DibToolImage } from "stratum/helpers/types";
 import { decodeBmp, readBMPSize } from "./bmpDecoder";
+import { DibToolImage } from "./dibToolImage";
 
 function readBitmapSize(reader: BinaryReader) {
     const _pos = reader.pos();

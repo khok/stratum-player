@@ -1,4 +1,4 @@
-import { NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
 import { Scene, SceneMember } from "./scene";
 

@@ -19,9 +19,6 @@ export class SimpleWindow implements WindowHostWindow {
         this.view.remove();
         document.title = this.origTitle;
     }
-    on() {}
-    off() {}
-    toTop() {}
 }
 
 export class PopupWrapper implements WindowHostWindow {
@@ -48,7 +45,7 @@ export class PopupWrapper implements WindowHostWindow {
     setTitle(title: string) {
         this.wnd.document.title = title;
     }
-    sizedOnce = false;
+    private sizedOnce = false;
     setSize(width: number, height: number) {
         if (this.sizedOnce === true) return;
         const { wnd } = this;
@@ -57,8 +54,6 @@ export class PopupWrapper implements WindowHostWindow {
         });
         this.sizedOnce = true;
     }
-
-    toTop() {}
 
     close() {
         this.off("closed");
@@ -75,7 +70,7 @@ export class SimpleWs implements WindowHost {
     get height() {
         return window.innerHeight;
     }
-    window({ title, view }: WindowOptions): WindowHostWindow {
+    window(view: HTMLDivElement, { title }: WindowOptions): WindowHostWindow {
         if (this.root) {
             this.root.appendChild(view);
             return new SimpleWindow(view, title);

@@ -1,5 +1,6 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
-import { Constant, Env, NumBool } from "stratum/env";
+import { Constant } from "stratum/common/constant";
+import { NumBool } from "stratum/common/types";
 import { DIBTool } from "./dibTool";
 import { ToolStorage } from "./toolStorage";
 import { ToolSubscriber } from "./toolSubscriber";
@@ -13,7 +14,7 @@ export interface BrushToolArgs {
     dibHandle: number;
 }
 
-export class BrushTool implements Env.BrushTool, ToolSubscriber {
+export class BrushTool implements ToolSubscriber {
     private scene: ToolStorage;
     private subs: Set<ToolSubscriber>;
     private _dibTool: DIBTool | null;

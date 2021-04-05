@@ -1,4 +1,4 @@
-import { VarType } from "stratum/common/varType";
+import { VarType } from "./varType";
 
 export interface MemorySize {
     floatsCount: number;

@@ -1,13 +1,13 @@
 import { options } from "stratum/api";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
-import { Env, NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { readDbmFile } from "stratum/fileFormats/bmp";
+import { DibToolImage } from "stratum/fileFormats/bmp/dibToolImage";
 import { ImageToolParams } from "stratum/fileFormats/vdr";
 import { BinaryReader } from "stratum/helpers/binaryReader";
-import { DibToolImage } from "stratum/helpers/types";
 import { ToolSubscriber } from "./toolSubscriber";
 
-export class DIBTool implements Env.DIBTool {
+export class DIBTool {
     private static promises = new Map<string, Promise<DibToolImage>>();
 
     static loadBitmap(url: string): Promise<DibToolImage> {

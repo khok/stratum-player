@@ -4,6 +4,7 @@ import {
     readBitmap,
     readControl,
     readCrdSystem,
+    readEditFrame,
     readGroup,
     readHyper,
     readLine,
@@ -17,6 +18,7 @@ import {
     readTPen,
     readTString,
     readTText,
+    readView3D,
 } from "./readers";
 import { VectorDrawingBase } from "./types/vectorDrawing";
 import { VdrEntry } from "./vdrEntry";
@@ -55,6 +57,7 @@ export class DataChunk {
         });
     }
 
+    // _system.cpp:2807
     readElementCollection(): VectorDrawingElement[] {
         const length = this.reader.uint16();
         this.reader.skip(7); //limit,delta,dupl,current
@@ -83,6 +86,10 @@ export class DataChunk {
                 case VdrEntry.otCONTROL2D:
                     element = readControl(reader, version);
                     break;
+                case VdrEntry.otVIEW3D2D:
+                    element = readView3D(reader, this.version);
+                    // console.warn(`${reader.name}: проекция 3D пространства #${data.handle} не поддерживается.`);
+                    break;
                 default:
                     throw Error(`Неизвестный объект: ${VdrEntry[chunk.code]}`);
             }
@@ -101,14 +108,36 @@ export class DataChunk {
     readElementData(element: VectorDrawingElement) {
         switch (this.code) {
             case VdrEntry.otDATAITEMS:
-                readSettingCollection(this.reader, (id, size, reader) => {
-                    if (id === 10) {
-                        element.hyperbase = readHyper(reader, size);
-                        return;
+                readSettingCollection(this.reader, function (id, size, reader) {
+                    // HYPER.H
+                    // SetObjectData2d
+                    // SetSpaceParam2d
+                    // UD_HYPERKEY   10
+                    // UD_HYPERSPACE 11
+                    // UD_ANIMATE    12
+                    // UD_VARS       13 // связываемые переменные
+                    // UD_OBJINFO    14 // описание объекта
+                    switch (id) {
+                        case 10:
+                            element.hyperbase = readHyper(reader, size);
+                            break;
+                        case 13:
+                            reader.nulltString(size);
+                            break;
+                        // {
+                        //     const connected = reader.nulltString(size);
+                        //     if (connected.length > 0) {
+                        //         console.warn(`${reader.name}: игнорируется связка переменных (${connected}) в ${element.type} #${element.handle}`);
+                        //     }
+                        //     break;
+                        // }
+                        case 14:
+                            reader.nulltString(size);
+                            break;
+                        default:
+                            console.warn(`${reader.name}: неизвестные данные в ${element.type} #${element.handle}: id ${id}, ${size} байтов`);
+                            reader.skip(size);
                     }
-                    console.warn(`Неизвестные данные в объекте ${element.handle}: id ${id}, ${size} байтов`);
-                    reader.skip(size);
-                    return;
                 });
                 break;
             case VdrEntry.stOBJNAME:
@@ -150,6 +179,7 @@ export class DataChunk {
                 break;
             case 1012:
                 // space2d.cpp:1772
+                // _system.cpp:2796
                 throw Error("Чтение 3D-фреймов не реализовано"); // this.goEnd();
             case VdrEntry.otPRIMARYCOLLECTION:
                 res.elementOrder = this.readCollection(readNumber);
@@ -165,22 +195,29 @@ export class DataChunk {
                 break;
 
             case VdrEntry.ctINFONAME:
-                // res.info = this.stream.string();
-                this.goEnd();
+                // res.info = this.reader.string();
+                this.reader.skip(this.reader.uint16());
+                // this.goEnd();
                 break;
             case VdrEntry.ctINFOAUTOR:
-                // res.author = this.stream.string();
-                this.goEnd();
+                // res.author = this.reader.string();
+                this.reader.skip(this.reader.uint16());
+                // this.goEnd();
                 break;
             case VdrEntry.ctINFOINFO:
-                // res.description = this.stream.string();
-                this.goEnd();
+                // res.description = this.reader.string();
+                this.reader.skip(this.reader.uint16());
+                // this.goEnd();
                 break;
             case VdrEntry.ctCRDSYSTEM:
-                res.crdSystem = readCrdSystem(this.reader);
+                res.crdSystem = readCrdSystem(this.reader, this.version);
+                break;
+            case VdrEntry.otEDITFRAME2D:
+                const data = readEditFrame(this.reader, this.version);
+                console.warn(`${this.reader.name}: фрейм редактирования #${data.objectHandle} игнорируется`);
                 break;
             default:
-                console.warn(`${VdrEntry[this.code]} игнорируется`);
+                console.warn(`${this.reader.name}: ${VdrEntry[this.code]} игнорируется`);
                 this.goEnd();
         }
     }

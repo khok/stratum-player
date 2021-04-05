@@ -10,10 +10,6 @@ Code =
  { return val.filter(v => v) }
 
 // ----------Описание структуры выражений----------
-//Получение значения константы
-ConstOperand 'constant'
- = value:ConstValue
- { return { type: "const", value } }
 //Получение значения переменной
 VarOperand 'variable name'
  = name:VarName
@@ -29,22 +25,22 @@ CallOperand 'function call'
 UnaryOperator
  = '-' / '!'
 UnaryOperand '!<operand> or -<operand>'
- = type:UnaryOperator Space* expr:Expression
- { return { type, expr } }
+ = type:UnaryOperator Space* op:Operand
+ { return { type, op } }
 SubExpressionOperand '(<expression>)'
  = '(' Space* expr:Expression Space* ')'
  { return { type: "subexpr", expr } }
 
 //isNew должна быть только у VarOP - здесь обход бага.
 Operand 'operand'
- = isNew:'~'? Space* val:(UnaryOperand / ConstOperand / CallOperand / VarOperand / SubExpressionOperand)
+ = isNew:'~'? Space* val:(UnaryOperand / Float / Handle / String / CallOperand / VarOperand / SubExpressionOperand)
  { return {...val, isNew: !!isNew } }
 
 BinaryOperator
  = '^' { return "**" } /
  '*' / '/' / '%' / 
  '+' / '-' /
- '>>' / '>=' / '>' / '<<' / '<=' / "<" /
+ '>=' / '>' / '<=' / "<" /
  '==' / '!=' /
  '&&' / '&' /'||' /  '|'
 // a + b / c - d
@@ -177,13 +173,24 @@ VarName "variable name"
  = $ ([_a-zа-я0-9]i+)
 FunctionName 'function name'
  = VarName
-ConstValue
- = $("\"" [^\"]* "\"" / "'" [^']* "'" / [-+]?[0-9\.][0-9\.e]* / "#"[0-9]*)
+
+Int = [0-9]+
+Fraction = "."Int
+Exp = [eE][+-]?Int
+Float 'float'
+ = v:$(Int Fraction? Exp?)
+ { return { type: "float", value:parseFloat(v) } }
+Handle 'handle'
+ = "#"value:$([0-9]*)
+ { return { type: "handle", value: value.length > 0 ? parseInt(value) : 0 }}
+String 
+ = v:("'" $([^']*) "'" / '"' $([^"]*) '"')
+ { return { type: "string", value:v[1] } }
 
 // ----------Макросы----------
 Space "space or tab"
  = [ \t]
 NewLine "new line"
- = [\n]
+ = "\n"
 _ "whitespace"
- = [ \t\n\r]*
+ = [ \t\n\r]*	

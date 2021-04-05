@@ -2,8 +2,16 @@ export type VarType = "HANDLE" | "STRING" | "FLOAT" | "COLORREF" | "INTEGER";
 export type VarModifier = "LOCAL" | "NOSAVE" | "PARAMETER";
 
 // ----------Описание структуры выражений----------
-export interface ConstOperand {
-    type: "const";
+export interface FloatOperand {
+    type: "float";
+    value: number;
+}
+export interface HandleOperand {
+    type: "handle";
+    value: number;
+}
+export interface StringOperand {
+    type: "string";
     value: string;
 }
 export interface VarOperand {
@@ -25,7 +33,7 @@ export interface SubExpressionOperand {
     expr: Expression;
 }
 //isNew должна быть только у VarOP - здесь обход бага.
-export type Operand = (UnaryOperand | ConstOperand | CallOperand | VarOperand | SubExpressionOperand) & {
+export type Operand = (UnaryOperand | FloatOperand | HandleOperand | StringOperand | CallOperand | VarOperand | SubExpressionOperand) & {
     isNew: boolean;
 };
 export type BinaryOperator = "**" | "*" | "/" | "%" | "+" | "-" | ">=" | ">" | "<=" | "<" | "==" | "!=" | "&&" | "&" | "||" | "|";

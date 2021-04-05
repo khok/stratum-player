@@ -64,7 +64,7 @@ export interface TextElement extends Element2dBase {
 
 export interface ControlElement extends Element2dBase {
     type: "control";
-    className: string; // "EDIT" | "BUTTON" | "COMBOBOX";
+    inputType: "EDIT" | "BUTTON" | "COMBOBOX";
     text: string;
     dwStyle: number;
     exStyle: number;
@@ -72,5 +72,17 @@ export interface ControlElement extends Element2dBase {
     controlSize: Point2D;
 }
 
-export type VectorDrawingElement2d = LineElement | BitmapElement | DoubleBitmapElement | TextElement | ControlElement;
+export interface View3D extends Element2dBase {
+    type: "view3D";
+    spaceHandle: number;
+    cameraHandle: number;
+}
+
+export interface EditFrame extends Element2dBase {
+    type: "editFrame";
+    objectHandle: number;
+    size: Point2D;
+}
+
+export type VectorDrawingElement2d = LineElement | BitmapElement | DoubleBitmapElement | TextElement | ControlElement | View3D;
 export type VectorDrawingElement = VectorDrawingElement2d | GroupElement;

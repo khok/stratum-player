@@ -1,72 +1,113 @@
-import { PlayerOptions, WindowHost } from "stratum/api";
-import { ClassLibrary } from "stratum/common/classLibrary";
+import { AddDirInfo, DirInfo, FileInfo, PlayerOptions, WindowHost } from "stratum/api";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
+import { Constant } from "stratum/common/constant";
+import { EventSubscriber, NumBool } from "stratum/common/types";
+import { readPrjFile } from "stratum/fileFormats/prj";
+import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { Hyperbase, VectorDrawing } from "stratum/fileFormats/vdr";
+import { Scene } from "stratum/graphics/scene";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
+import { BinaryReader } from "stratum/helpers/binaryReader";
 import { HandleMap } from "stratum/helpers/handleMap";
+import { MutableArrayLike } from "stratum/helpers/utilityTypes";
 import { win1251Table } from "stratum/helpers/win1251";
-import { Project, ProjectResources, Schema } from "stratum/project";
-import { VFS, VFSDir } from "stratum/vfs";
-import { Constant, Env, EventSubscriber, NumBool } from ".";
+import { Project } from "stratum/project";
+import { EnviromentFunctions } from "stratum/project/enviromentFunctions";
+import { ProjectArgs } from "stratum/project/project";
+import { readFile } from "stratum/vfs/helpers";
 import { EnvStream } from "./envStream";
+import { LazyLibrary } from "./lazyLibrary";
 import { NeoMatrix } from "./neoMatrix";
 
-export class Enviroment {
+export interface ProjectResources extends ProjectArgs {
+    classes: LazyLibrary<number>;
+}
+
+interface LoadArgs<T> {
+    lib: LazyLibrary<T>;
+    id?: T;
+}
+
+export class Enviroment implements EnviromentFunctions {
     private static readonly startupTime = new Date().getTime();
-    static readonly keyState = new Uint8Array(256);
+    static async loadProject(prjFile: FileInfo, dirInfo?: AddDirInfo[]): Promise<ProjectResources> {
+        const addDirs = dirInfo?.filter((d) => d.loadClasses).map((d) => d.dir);
+        const lib = new LazyLibrary<number>();
+        return Enviroment.loadProjectResources(prjFile, { lib }, addDirs);
+    }
+    private static async loadProjectResources<T extends number = number>(prjFile: FileInfo, args: LoadArgs<T>, addDirs?: DirInfo[]): Promise<ProjectResources> {
+        const workDir = prjFile.parent();
+        const sttFile = workDir.file("_preload.stt");
+        const [prjBuf, sttBuf] = await workDir.files([prjFile, sttFile]).arraybuffers();
+        if (!prjBuf) throw Error(`Файл проекта ${prjFile.path} не найден`);
 
-    private windows = new Map<string, Env.Window>();
-    private scenes = new Map<number, Env.Scene>();
-    private hspaceToWname = new Map<number, string>();
-    private wnameToHspace = new Map<string, number>();
-    private targetScene: Env.Scene | null = null;
+        // Файл проекта.
+        const prjInfo = readPrjFile(new BinaryReader(prjBuf, prjFile.path));
 
-    private matrices = new Map<number, NeoMatrix>();
-    private streams = new Map<number, EnvStream>();
+        // Файл состояния.
+        let stt: VariableSet | null = null;
+        if (sttBuf) {
+            try {
+                stt = readSttFile(new BinaryReader(sttBuf, sttFile.path));
+            } catch (e) {
+                console.warn(e);
+            }
+        }
 
-    private host: WindowHost;
+        // Пути поиска имиджей, которые через запятую прописаны в настройках проекта.
+        const classDirs: DirInfo[] = [];
+        const settingsPaths = prjInfo.settings?.classSearchPaths;
+        if (settingsPaths) {
+            //prettier-ignore
+            const pathsSeparated = settingsPaths.split(",").map((s) => s.trim()).filter((s) => s);
+            for (const localPath of pathsSeparated) {
+                classDirs.push(workDir.dir(localPath));
+            }
+        }
+        const dirs = workDir.dirs(addDirs ? classDirs.concat(addDirs) : classDirs);
 
-    private _shouldQuit: boolean = false;
-    readonly lib: ClassLibrary;
+        // Классы.
+        const classes = args.lib;
+        await classes.add(dirs, true, args.id);
+        return { classes: classes, dir: workDir, prjInfo, stt };
+    }
 
     private readonly projects: Project[];
-    private inHyperCall: boolean;
 
+    private _shouldQuit: boolean = false;
+    private _isWaiting: boolean = false;
+    private inHyperCall: boolean = false;
+
+    private windows = new Map<string, SceneWindow<number>>();
+    private scenes = new Map<number, Scene>();
+    private hspaceToWname = new Map<number, string>();
+    private wnameToHspace = new Map<string, number>();
+    private matrices = new Map<number, NeoMatrix>();
+    private streams = new Map<number, EnvStream>();
+    private targetScene: Scene | null = null;
+
+    private classes: LazyLibrary<number>;
+    private host: WindowHost;
     private options: PlayerOptions;
 
-    private _isWaiting: boolean;
-
-    constructor(res: ProjectResources, host: WindowHost, options: PlayerOptions = {}) {
-        this.projects = [new Project(this, res)];
-        this.lib = res.classes;
+    constructor(args: ProjectResources, host: WindowHost, options?: PlayerOptions) {
+        this.projects = [new Project(this, args)];
+        this.classes = args.classes;
         this.host = host;
-        this.inHyperCall = false;
-        this.options = options;
-        this._isWaiting = false;
+        this.options = options || {};
     }
 
-    isWaiting(): boolean {
-        return this._isWaiting;
+    private sessionId(): number {
+        return this.projects.length;
+    }
+    private nextSessionId(): number {
+        return this.projects.length + 1;
     }
 
-    async computeSchema(schema: Schema): Promise<void> {
-        const prj = schema.prj;
-        const gen = schema.compute(true);
-        while (true) {
-            const r = gen.next();
-            if (r.done) break;
-            this._isWaiting = true;
-            await r.value;
-            this._isWaiting = false;
-        }
-        prj.syncAll();
-    }
-
-    async compute(): Promise<boolean> {
+    compute(): Promise<boolean> {
         // Среда остановлена
         if (this._shouldQuit) {
-            this.closeAllRes();
-            return false;
+            return this.closeAllRes();
         }
 
         const prjIdx = this.projects.length - 1;
@@ -74,32 +115,431 @@ export class Enviroment {
 
         // Проект работает
         if (prj.shouldClose() === true) {
-            const id = this.sessionId();
-            this.closeProjectRes(id);
+            this.closeProject(this.sessionId());
             this.projects.pop();
             if (this.projects.length === 0) {
                 this.closeAllRes();
-                return false;
+                return Promise.resolve(false);
             }
             prj = this.projects[prjIdx - 1];
         }
 
-        const gen = prj.schema.compute();
-        while (true) {
-            const r = gen.next();
-            if (r.done) break;
-            this._isWaiting = true;
-            await r.value;
-            this._isWaiting = false;
+        return prj.root.compute().then(() => true);
+    }
+
+    private closeProject(id: number): void {
+        [...this.windows.values()].forEach((w) => w.clear(id));
+        this.classes.clear(id);
+    }
+
+    stopForever(): void {
+        this._isWaiting = false;
+        this._shouldQuit = true;
+    }
+
+    async closeAllRes(): Promise<boolean> {
+        this._shouldQuit = true;
+        this.windows.forEach((w) => {
+            w.clearAll();
+        });
+        this.hspaceToWname.clear();
+        this.wnameToHspace.clear();
+        this.scenes.clear();
+        this.windows.clear();
+        this.targetScene?.releaseCapture();
+        this.targetScene = null;
+        const p: Promise<boolean>[] = [];
+        for (const v of this.streams.values()) {
+            const r = v.close();
+            if (r instanceof Promise) p.push(r);
         }
-        prj.syncAll();
-        return true;
+        await Promise.all(p);
+        this.classes.clearAll();
+        while (this.projects.pop());
+        return false;
     }
 
-    private sessionId(): number {
-        return this.projects.length - 1;
+    isWaiting(): boolean {
+        return this._isWaiting;
+    }
+    setWaiting(): void {
+        this._isWaiting = true;
+    }
+    resetWaiting(): void {
+        this._isWaiting = false;
     }
 
+    getTime(
+        arr1: MutableArrayLike<number>,
+        hour: number,
+        arr2: MutableArrayLike<number>,
+        min: number,
+        arr3: MutableArrayLike<number>,
+        sec: number,
+        arr4: MutableArrayLike<number>,
+        hund: number
+    ): void {
+        const time = new Date();
+        arr1[hour] = time.getHours();
+        arr2[min] = time.getMinutes();
+        arr3[sec] = time.getSeconds();
+        arr4[hund] = time.getMilliseconds() * 0.1;
+    }
+    getDate(arr1: MutableArrayLike<number>, year: number, arr2: MutableArrayLike<number>, mon: number, arr3: MutableArrayLike<number>, day: number): void {
+        const time = new Date();
+        arr1[year] = time.getFullYear();
+        arr2[mon] = time.getMonth();
+        arr3[day] = time.getDate();
+    }
+    getActualSize2d(hspace: number, hobject: number, xArr: MutableArrayLike<number>, xId: number, yArr: MutableArrayLike<number>, yId: number): NumBool {
+        const obj = this.getObject(hspace, hobject);
+        if (typeof obj === "undefined") {
+            xArr[xId] = 0;
+            yArr[yId] = 0;
+            return 0;
+        }
+        xArr[xId] = obj.actualWidth();
+        yArr[yId] = obj.actualHeight();
+        return 1;
+    }
+
+    openSchemeWindow(prj: Project, wname: string, className: string, attrib: string): number {
+        const existHandle = this.wnameToHspace.get(wname);
+        if (typeof existHandle !== "undefined") return existHandle;
+
+        const vdr = this.classes.get(className)?.scheme();
+        return this.openWindow(prj, wname, attrib, vdr);
+    }
+    loadSpaceWindow(prj: Project, dir: DirInfo, wname: string, fileName: string, attrib: string): number | Promise<number> {
+        const existHandle = this.wnameToHspace.get(wname);
+        if (typeof existHandle !== "undefined") return existHandle;
+
+        return readFile(dir.file(fileName), "vdr")
+            .then((vdr) => this.openWindow(prj, wname, attrib, vdr))
+            .catch(() => this.openWindow(prj, wname, attrib));
+    }
+    createWindowEx(
+        prj: Project,
+        dir: DirInfo,
+        wname: string,
+        parentWname: string,
+        source: string,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        attrib: string
+    ): number | Promise<number> {
+        const existHandle = this.wnameToHspace.get(wname);
+        if (typeof existHandle !== "undefined") return existHandle;
+
+        const cb = (vdr?: VectorDrawing | null): number => {
+            const p = this.windows.get(parentWname);
+            if (!p) {
+                return this.openWindow(prj, wname, attrib, vdr);
+            }
+            return this.openWindow(prj, wname, attrib, vdr);
+        };
+
+        const vdr = this.classes.get(source)?.scheme();
+        if (vdr) return cb(vdr);
+        return readFile(dir.file(source), "vdr")
+            .then((vdr) => cb(vdr))
+            .catch(() => cb());
+        // .catch(err => {
+        //     return 0;
+        // })
+
+        // const wnd: SceneWindow = p.openEx(wname, vdr);
+        // const handle = HandleMap.getFreeHandle(this.scenes);
+        // this.hspaceToWname.set(handle, wname);
+        // this.wnameToHspace.set(wname, handle);
+        // this.scenes.set(handle, wnd.scene);
+        // this.windows.set(wname, wnd);
+        // return handle;
+    }
+    createDIB2d(dir: DirInfo, hspace: number, fileName: string): number | Promise<number> {
+        const scene = this.scenes.get(hspace);
+        if (typeof scene === "undefined") return 0;
+
+        return readFile(dir.file(fileName), "bmp")
+            .then((img) => scene.createDIBTool(img))
+            .catch(() => 0);
+    }
+    createDoubleDib2D(dir: DirInfo, hspace: number, fileName: string): number | Promise<number> {
+        const scene = this.scenes.get(hspace);
+        if (typeof scene === "undefined") return 0;
+
+        return readFile(dir.file(fileName), "dbm")
+            .then((img) => scene.createDoubleDIBTool(img))
+            .catch(() => 0);
+    }
+    createObjectFromFile2D(dir: DirInfo, hspace: number, fileName: string, x: number, y: number, flags: number): number | Promise<number> {
+        const scene = this.scenes.get(hspace);
+        if (typeof scene === "undefined") return 0;
+
+        return readFile(dir.file(fileName), "vdr")
+            .then((vdr) => scene.insertVectorDrawing(x, y, flags, vdr))
+            .catch(() => 0);
+    }
+    createStream(dir: DirInfo, type: string, name: string, flags: string): number | Promise<number> {
+        const t = type.toUpperCase();
+
+        const needCreate = flags.toUpperCase().includes("CREATE");
+
+        const handle = HandleMap.getFreeHandle(this.streams);
+        if (t === "FILE") {
+            const f = dir.file(name);
+            return (async () => {
+                let stream: EnvStream;
+                if (needCreate) {
+                    const r = await f.create();
+                    if (!r) throw Error(`Не удалось создать файл ${f.path}.`);
+                    stream = new EnvStream({ onFlush: (d) => f.write(d) });
+                } else {
+                    const buf = await f.arraybuffer();
+                    if (!buf) throw Error(`Файл ${f.path} не существует.`);
+                    stream = new EnvStream({
+                        data: buf,
+                        onFlush: (d) => f.write(d),
+                    });
+                }
+                this.streams.set(handle, stream);
+                return handle;
+            })();
+        }
+        if (t === "MEMORY") {
+            this.streams.set(handle, new EnvStream());
+            return handle;
+        }
+        throw Error(`Поток типа ${t} не поддерживается`);
+    }
+    mSaveAs(dir: DirInfo, q: number, fileName: string, flag: number): NumBool | Promise<NumBool> {
+        if (flag <= 0) return 0;
+        throw Error("не реализовано");
+    }
+    mLoad(dir: DirInfo, q: number, fileName: string, flag: number): number | Promise<number> {
+        if (flag <= 0) return 0;
+
+        return readFile(dir.file(fileName), "mat")
+            .then((mat) => {
+                const handle = q === 0 ? HandleMap.getFreeNegativeHandle(this.matrices) : q;
+                this.matrices.set(handle, new NeoMatrix(mat));
+                return handle;
+            })
+            .catch(() => 0);
+    }
+
+    setCapture(target: EventSubscriber, hspace: number): void {
+        const scene = this.scenes.get(hspace);
+        if (typeof scene !== "undefined") (this.targetScene = scene).setCapture(target);
+    }
+    private _unsub = new Set<string>();
+    private _unsubS = 0;
+    subscribe(target: EventSubscriber, wnameOrHspace: string | number, obj2d: number, message: number): void {
+        const nm = typeof wnameOrHspace === "string" ? wnameOrHspace : this.hspaceToWname.get(wnameOrHspace);
+        if (!nm) return;
+        const wnd = this.windows.get(nm);
+        if (typeof wnd === "undefined") return;
+
+        switch (message) {
+            case Constant.WM_CONTROLNOTIFY:
+                wnd.onControlNotifty(target, obj2d);
+                break;
+            case Constant.WM_MOVE:
+                break;
+            case Constant.WM_SIZE:
+                wnd.onResize(target);
+                break;
+            case Constant.WM_SPACEDONE:
+                wnd.onSpaceDone(target);
+                break;
+            // case Constant.WM_DESTROY:
+            //     wnd.onDestroy(sub);
+            //     break;
+            case Constant.WM_MOUSEMOVE:
+            case Constant.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONDBLCLK:
+            case Constant.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONDBLCLK:
+            case Constant.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONDBLCLK:
+            case Constant.WM_ALLMOUSEMESSAGE: {
+                wnd.onMouse(target, message, obj2d);
+                break;
+            }
+            default:
+                this._unsub.add(Constant[message]);
+                if (this._unsub.size > this._unsubS) {
+                    this._unsubS = this._unsub.size;
+                    console.warn(`Подписка на ${Constant[message]} не реализована`);
+                }
+                break;
+        }
+    }
+    unsubscribe(target: EventSubscriber, wnameOrHspace: string | number, message: number): void {
+        const nm = typeof wnameOrHspace === "string" ? wnameOrHspace : this.hspaceToWname.get(wnameOrHspace);
+        if (!nm) return;
+        const wnd = this.windows.get(nm);
+        if (typeof wnd === "undefined") return;
+
+        switch (message) {
+            case Constant.WM_CONTROLNOTIFY:
+                wnd.offControlNotify(target);
+                break;
+            case Constant.WM_SIZE:
+                wnd.offResize(target);
+                break;
+            case Constant.WM_SPACEDONE:
+                wnd.offSpaceDone(target);
+                break;
+            // case Constant.WM_DESTROY:
+            //     wnd.offDestroy(sub);
+            //     break;
+            case Constant.WM_MOUSEMOVE:
+            case Constant.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONDBLCLK:
+            case Constant.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONDBLCLK:
+            case Constant.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONDBLCLK:
+            case Constant.WM_ALLMOUSEMESSAGE: {
+                wnd.offMouse(target, message);
+                break;
+            }
+        }
+    }
+
+    async hyperCall(dir: DirInfo, hyp: Hyperbase): Promise<void> {
+        if (this.inHyperCall) return;
+        this.inHyperCall = true;
+        const mode = hyp.openMode ?? 0;
+        switch (mode) {
+            case 2: {
+                if (!hyp.target) return;
+                const prjFile = dir.file(hyp.target);
+                const c = document.body.style.cursor;
+                document.body.style.cursor = "wait";
+                try {
+                    const data = await Enviroment.loadProjectResources(prjFile, { id: this.nextSessionId(), lib: this.classes });
+                    this.inHyperCall = false;
+                    if (this._shouldQuit) return;
+                    this.projects.push(new Project(this, data));
+                } catch (e) {
+                    console.error(e);
+                    this._shouldQuit = true;
+                } finally {
+                    document.body.style.cursor = c;
+                }
+                break;
+            }
+            default:
+                console.log(hyp);
+        }
+        this.inHyperCall = false;
+    }
+
+    // Эти методы вызываются из Player, т.к. он отвечает за загрузку файлов.
+    private openWindow(prj: Project, wname: string, attribute: string, vdr?: VectorDrawing | null): number {
+        const a = attribute.toUpperCase();
+        const noCaption = a.includes("WS_NOCAPTION");
+
+        const wnd = new SceneWindow<number>(this.host, {
+            id: this.sessionId(),
+            title: wname,
+            vdr,
+            noCaption,
+            disableResize: this.options.disableWindowResize,
+            onClosed: () => this.removeWindow(wname),
+        });
+        this.windows.set(wname, wnd);
+
+        const handle = HandleMap.getFreeHandle(this.scenes);
+        this.wnameToHspace.set(wname, handle);
+        this.hspaceToWname.set(handle, wname);
+        this.scenes.set(handle, wnd.scene);
+        wnd.scene.hyperTarget = prj;
+        return handle;
+    }
+
+    private removeWindow(wname: string): void {
+        this.windows.delete(wname);
+
+        const handle = this.wnameToHspace.get(wname);
+        if (typeof handle === "undefined") return;
+
+        this.wnameToHspace.delete(wname);
+        this.hspaceToWname.delete(handle);
+        const scene = this.scenes.get(handle);
+        this.scenes.delete(handle);
+        if (scene === this.targetScene) {
+            this.targetScene?.releaseCapture();
+            this.targetScene = null;
+        }
+    }
+
+    private getObject(hspace: number, hobject: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objects.get(hobject) : undefined;
+    }
+    private getTPen(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.pens.get(htool) : undefined;
+    }
+    private getTBrush(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.brushes.get(htool) : undefined;
+    }
+    private getTDIB(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.dibs.get(htool) : undefined;
+    }
+    private getTText(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.texts.get(htool) : undefined;
+    }
+    private getTString(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.strings.get(htool) : undefined;
+    }
+    private getTFont(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.fonts.get(htool) : undefined;
+    }
+
+    //#region Реализации функций.
+    stratum_isDlgButtonChecked2d(hspace: number, hobject: number): number {
+        return 0;
+    }
+
+    stratum_checkDlgButton2d(hspace: number, hobject: number, state: number): NumBool {
+        return 1;
+    }
+
+    stratum_setObjectAttribute2d(hspace: number, hobject: number, attr: number, flag: number): NumBool {
+        return 1;
+    }
+    stratum_new(): number {
+        throw Error("Функция New не реализована");
+    }
+    stratum_logMessage(msg: string): void {}
+    stratum_system(command: number, ...params: number[]): number {
+        return 0;
+    }
+    //#region Сообщения
+    stratum_releaseCapture(): void {
+        if (this.targetScene === null) return;
+        this.targetScene.releaseCapture();
+        this.targetScene = null;
+    }
+    //#endregion
+    //#region Гипербаза
     stratum_setHyperJump2d(hspace: number, hobject: number, mode: number, ...args: string[]): NumBool {
         if (mode !== 2) return 0;
         const scene = this.scenes.get(hspace);
@@ -124,52 +564,10 @@ export class Enviroment {
         // return 1;
     }
 
-    stratum_stdHyperJump(hspace: number, x: number, y: number, hobject: number, flags: number) {
+    stratum_stdHyperJump(hspace: number, x: number, y: number, hobject: number, flags: number): void {
         this.scenes.get(hspace)?.tryHyper(x, y, hobject);
     }
-
-    async hyperCall(dir: VFSDir, hyp: Hyperbase): Promise<void> {
-        if (this.inHyperCall) return;
-        this.inHyperCall = true;
-        const mode = hyp.openMode ?? 0;
-        switch (mode) {
-            case 2: {
-                if (!hyp.target) return;
-                const file = dir.get(hyp.target);
-                if (!file || file.dir) return;
-
-                const c = document.body.style.cursor;
-                document.body.style.cursor = "wait";
-                try {
-                    const data = await VFS.project(file, this.lib, this.sessionId() + 1);
-                    this.inHyperCall = false;
-                    if (this._shouldQuit) return;
-                    this.projects.push(new Project(this, data));
-                } catch (e) {
-                    console.error(e);
-                    this._shouldQuit = true;
-                } finally {
-                    document.body.style.cursor = c;
-                }
-                break;
-            }
-            default:
-                console.log(hyp);
-        }
-        this.inHyperCall = false;
-    }
-
-    stratum_isDlgButtonChecked2d(hspace: number, hobject: number): number {
-        return 0;
-    }
-
-    stratum_checkDlgButton2d(hspace: number, hobject: number, state: number): NumBool {
-        return 1;
-    }
-
-    stratum_setObjectAttribute2d(hspace: number, hobject: number, attr: number, flag: number): NumBool {
-        return 1;
-    }
+    //#endregion
 
     stratum_ascii(str: string): number {
         if (str.length === 0) return 0;
@@ -182,27 +580,12 @@ export class Enviroment {
         return win1251Table[n];
     }
 
-    getTime(arr1: Env.Farr, hour: number, arr2: Env.Farr, min: number, arr3: Env.Farr, sec: number, arr4: Env.Farr, hund: number): void {
-        const time = new Date();
-        arr1[hour] = time.getHours();
-        arr2[min] = time.getMinutes();
-        arr3[sec] = time.getSeconds();
-        arr4[hund] = time.getMilliseconds() * 0.1;
-    }
-
-    getDate(arr1: Env.Farr, year: number, arr2: Env.Farr, mon: number, arr3: Env.Farr, day: number): void {
-        const time = new Date();
-        arr1[year] = time.getFullYear();
-        arr2[mon] = time.getMonth();
-        arr3[day] = time.getDate();
-    }
     stratum_getTickCount(): number {
         return new Date().getTime() - Enviroment.startupTime;
     }
-    stratum_new() {
-        throw Error("Функция New не реализована");
+    stratum_addSlash(a: string): string {
+        return a.length === 0 || a[a.length - 1] === "\\" ? a : a + "\\";
     }
-    stratum_logMessage(msg: string): void {}
     stratum_MCISendString(): number {
         return Constant.MCIERR_INVALID_DEVICE_NAME;
     }
@@ -211,59 +594,13 @@ export class Enviroment {
         return "";
     }
 
-    stratum_system(command: number, ...params: number[]): number {
-        return 0;
-    }
-
     stratum_getAsyncKeyState(vkey: number): number {
-        return Enviroment.keyState[vkey] > 0 ? 1 : 0;
+        return Scene.keyState[vkey] > 0 ? 1 : 0;
     }
 
     stratum_quit(flag: number): void {
         if (flag <= 0) return;
         this._shouldQuit = true;
-    }
-    openSchemeWindow(prj: Env.Project, wname: string, className: string, attrib: string): number {
-        const existHandle = this.wnameToHspace.get(wname);
-        if (typeof existHandle !== "undefined") return existHandle;
-
-        const vdr = this.lib.getComposedScheme(className);
-        return this.openWindow(prj, wname, attrib, vdr);
-    }
-    loadSpaceWindow(prj: Env.Project, wname: string, fileName: string, attrib: string): number {
-        const existHandle = this.wnameToHspace.get(wname);
-        if (typeof existHandle !== "undefined") return existHandle;
-
-        const file = prj.dir.get(fileName);
-        const vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
-        return this.openWindow(prj, wname, attrib, vdr);
-    }
-
-    createWindowEx(prj: Env.Project, wname: string, parentWname: string, source: string, x: number, y: number, w: number, h: number, attrib: string): number {
-        const existHandle = this.wnameToHspace.get(wname);
-        if (typeof existHandle !== "undefined") return existHandle;
-
-        let vdr = this.lib.getComposedScheme(source);
-        if (!vdr) {
-            const file = prj.dir.get(source);
-            vdr = file && !file.dir ? file.readSyncAs("vdr") : undefined;
-        }
-
-        const p = this.windows.get(parentWname);
-        if (!p) {
-            return this.openWindow(prj, wname, attrib, vdr);
-        }
-        return this.openWindow(prj, wname, attrib, vdr);
-
-        return 0;
-
-        // const wnd: SceneWindow = p.openEx(wname, vdr);
-        // const handle = HandleMap.getFreeHandle(this.scenes);
-        // this.hspaceToWname.set(handle, wname);
-        // this.wnameToHspace.set(wname, handle);
-        // this.scenes.set(handle, wnd.scene);
-        // this.windows.set(wname, wnd);
-        // return handle;
     }
 
     //#region Окна
@@ -336,8 +673,7 @@ export class Enviroment {
     stratum_closeWindow(wname: string): NumBool {
         const wnd = this.windows.get(wname);
         if (typeof wnd === "undefined") return 0;
-        this.removeWindow(wname);
-        wnd.close();
+        wnd.clearAll();
         return 1;
     }
     stratum_setWindowTransparent(wname: string, level: number): NumBool;
@@ -597,14 +933,6 @@ export class Enviroment {
 
     // Инструмент Битовая карта
     //
-    createDIB2d(dir: VFSDir, hspace: number, fileName: string): number {
-        const scene = this.scenes.get(hspace);
-        if (typeof scene === "undefined") return 0;
-
-        const file = dir.get(fileName);
-        const dib = file && !file.dir && file.readSyncAs("bmp");
-        return dib ? scene.createDIBTool(dib) : 0;
-    }
 
     stratum_getDibPixel2D(hspace: number, hdib: number, x: number, y: number): number {
         const d = this.getTDIB(hspace, hdib);
@@ -617,14 +945,6 @@ export class Enviroment {
 
     // Двойная битовая карта
     //
-    createDoubleDib2D(dir: VFSDir, hspace: number, fileName: string): number {
-        const scene = this.scenes.get(hspace);
-        if (typeof scene === "undefined") return 0;
-
-        const file = dir.get(fileName);
-        const ddib = file && !file.dir && file.readSyncAs("dbm");
-        return ddib ? scene.createDoubleDIBTool(ddib) : 0;
-    }
 
     // Объект Битмап
     //
@@ -669,14 +989,6 @@ export class Enviroment {
 
     // Функции для работы с графическими объектами
     //
-    createObjectFromFile2D(dir: VFSDir, hspace: number, fileName: string, x: number, y: number, flags: number): number {
-        const scene = this.scenes.get(hspace);
-        if (typeof scene === "undefined") return 0;
-
-        const file = dir.get(fileName);
-        const vdr = file && !file.dir && file.readSyncAs("vdr");
-        return vdr ? scene.insertVectorDrawing(x, y, flags, vdr) : 0;
-    }
     stratum_deleteObject2d(hspace: number, hobject: number): NumBool {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.deleteObject(hobject) : 0;
@@ -727,17 +1039,6 @@ export class Enviroment {
     stratum_getActualWidth2d(hspace: number, hobject: number): number {
         const obj = this.getObject(hspace, hobject);
         return typeof obj !== "undefined" ? obj.actualWidth() : 0;
-    }
-    getActualSize2d(hspace: number, hobject: number, xArr: Env.Farr, xId: number, yArr: Env.Farr, yId: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        if (typeof obj === "undefined") {
-            xArr[xId] = 0;
-            yArr[yId] = 0;
-            return 0;
-        }
-        xArr[xId] = obj.actualWidth();
-        yArr[yId] = obj.actualHeight();
-        return 1;
     }
 
     stratum_getObjectAngle2d(hspace: number, hobject: number): number {
@@ -912,17 +1213,15 @@ export class Enviroment {
         const obj = this.getObject(hspace, hcontrol);
         return typeof obj !== "undefined" ? obj.setControlText(text) : 0;
     }
-
+    //#endregion
     //#region ФУНКЦИИ РАБОТЫ С ФАЙЛАМИ
     stratum_getClassDirectory(className: string): string {
-        const proto = this.lib.get(className);
-        return typeof proto !== "undefined" ? proto.directoryDos : "";
+        return this.classes.getDirectory(className) ?? "";
     }
     stratum_closeClassScheme(className: string): NumBool {
         return 1;
     }
     //#endregion
-
     //#region СИСТЕМНЫЕ ФУНКЦИИ
     stratum_getScreenWidth(): number {
         return screen.width;
@@ -937,212 +1236,12 @@ export class Enviroment {
         return 0;
     }
     stratum_getWorkAreaWidth(): number {
-        return this.host.width;
+        return this.host.width || window.innerWidth;
     }
     stratum_getWorkAreaHeight(): number {
-        return this.host.height;
+        return this.host.height || window.innerHeight;
     }
     //#endregion
-
-    // Методы EventDispatcher
-    subscribe(sub: EventSubscriber, wnameOrHspace: string | number, obj2d: number, code: Constant) {
-        const nm = typeof wnameOrHspace === "string" ? wnameOrHspace : this.hspaceToWname.get(wnameOrHspace);
-        if (!nm) return;
-        const wnd = this.windows.get(nm);
-        if (typeof wnd === "undefined") return;
-
-        switch (code) {
-            case Constant.WM_CONTROLNOTIFY:
-                wnd.onControlNotifty(sub, obj2d);
-                break;
-            case Constant.WM_MOVE:
-                break;
-            case Constant.WM_SIZE:
-                wnd.onResize(sub);
-                break;
-            case Constant.WM_SPACEDONE:
-                wnd.onSpaceDone(sub);
-                break;
-            // case Constant.WM_DESTROY:
-            //     wnd.onDestroy(sub);
-            //     break;
-            case Constant.WM_MOUSEMOVE:
-            case Constant.WM_LBUTTONDOWN:
-            case Constant.WM_LBUTTONUP:
-            case Constant.WM_LBUTTONDBLCLK:
-            case Constant.WM_RBUTTONDOWN:
-            case Constant.WM_RBUTTONUP:
-            case Constant.WM_RBUTTONDBLCLK:
-            case Constant.WM_MBUTTONDOWN:
-            case Constant.WM_MBUTTONUP:
-            case Constant.WM_MBUTTONDBLCLK:
-            case Constant.WM_ALLMOUSEMESSAGE: {
-                wnd.onMouse(sub, code, obj2d);
-                break;
-            }
-            default:
-                this._unsub.add(Constant[code]);
-                if (this._unsub.size > this._unsubS) {
-                    this._unsubS = this._unsub.size;
-                    console.warn(`Подписка на ${Constant[code]} не реализована`);
-                }
-                break;
-        }
-    }
-    private _unsub = new Set<string>();
-    private _unsubS = 0;
-
-    unsubscribe(sub: EventSubscriber, wnameOrHspace: string | number, code: Constant) {
-        const nm = typeof wnameOrHspace === "string" ? wnameOrHspace : this.hspaceToWname.get(wnameOrHspace);
-        if (!nm) return;
-        const wnd = this.windows.get(nm);
-        if (typeof wnd === "undefined") return;
-
-        switch (code) {
-            case Constant.WM_CONTROLNOTIFY:
-                wnd.offControlNotify(sub);
-                break;
-            case Constant.WM_SIZE:
-                wnd.offResize(sub);
-                break;
-            case Constant.WM_SPACEDONE:
-                wnd.offSpaceDone(sub);
-                break;
-            // case Constant.WM_DESTROY:
-            //     wnd.offDestroy(sub);
-            //     break;
-            case Constant.WM_MOUSEMOVE:
-            case Constant.WM_LBUTTONDOWN:
-            case Constant.WM_LBUTTONUP:
-            case Constant.WM_LBUTTONDBLCLK:
-            case Constant.WM_RBUTTONDOWN:
-            case Constant.WM_RBUTTONUP:
-            case Constant.WM_RBUTTONDBLCLK:
-            case Constant.WM_MBUTTONDOWN:
-            case Constant.WM_MBUTTONUP:
-            case Constant.WM_MBUTTONDBLCLK:
-            case Constant.WM_ALLMOUSEMESSAGE: {
-                wnd.offMouse(sub, code);
-                break;
-            }
-        }
-    }
-
-    setCapture(hspace: number, sub: EventSubscriber) {
-        const scene = this.scenes.get(hspace);
-        if (typeof scene !== "undefined") (this.targetScene = scene).setCapture(sub);
-    }
-    stratum_releaseCapture(): void {
-        if (this.targetScene === null) return;
-        this.targetScene.releaseCapture();
-        this.targetScene = null;
-    }
-    //#endregion
-
-    // Эти методы вызываются из Player, т.к. он отвечает за загрузку файлов.
-    private openWindow(prj: Env.Project, wname: string, attribute: string, vdr?: VectorDrawing): number {
-        const a = attribute.toUpperCase();
-        const noCaption = a.includes("WS_NOCAPTION");
-
-        const wnd: Env.Window = new SceneWindow(this.host, {
-            title: wname,
-            vdr,
-            noCaption,
-            disableResize: this.options.disableWindowResize,
-            onClosed: () => this.removeWindow(wname),
-        });
-        wnd.id = this.sessionId();
-        this.windows.set(wname, wnd);
-
-        const handle = HandleMap.getFreeHandle(this.scenes);
-        this.wnameToHspace.set(wname, handle);
-        this.hspaceToWname.set(handle, wname);
-        this.scenes.set(handle, wnd.scene);
-        wnd.scene.hyperTarget = prj;
-        return handle;
-    }
-
-    private removeWindow(wname: string): void {
-        this.windows.delete(wname);
-
-        const handle = this.wnameToHspace.get(wname);
-        if (typeof handle === "undefined") return;
-
-        this.wnameToHspace.delete(wname);
-        this.hspaceToWname.delete(handle);
-        const scene = this.scenes.get(handle);
-        this.scenes.delete(handle);
-        if (scene === this.targetScene) {
-            this.targetScene?.releaseCapture();
-            this.targetScene = null;
-        }
-    }
-
-    private closeProjectRes(id: number): void {
-        const prjWindows = [...this.windows].filter((w) => w[1].id === id);
-        prjWindows.forEach((w) => {
-            this.removeWindow(w[0]);
-            w[1].close();
-        });
-        this.lib.remove(id);
-    }
-
-    stopForever(): void {
-        this._isWaiting = false;
-        this._shouldQuit = true;
-    }
-
-    closeAllRes(): void {
-        this._shouldQuit = true;
-        this.windows.forEach((w) => {
-            w.close();
-        });
-        this.hspaceToWname.clear();
-        this.wnameToHspace.clear();
-        this.scenes.clear();
-        this.windows.clear();
-        this.targetScene?.releaseCapture();
-        this.targetScene = null;
-        this.streams.forEach((s) => s.close());
-        for (let i = 1; i < this.projects.length; ++i) {
-            this.lib.remove(i);
-        }
-        while (this.projects.pop());
-    }
-
-    private getObject(hspace: number, hobject: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.objects.get(hobject) : undefined;
-    }
-    private getTPen(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.pens.get(htool) : undefined;
-    }
-    private getTBrush(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.brushes.get(htool) : undefined;
-    }
-    private getTDIB(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.dibs.get(htool) : undefined;
-    }
-    // private getTDoubleDIB(hspace: number, htool: number) {
-    //     const scene = this.scenes.get(hspace);
-    //     return typeof scene !== "undefined" ? scene.doubleDibs.get(htool) : undefined;
-    // }
-    private getTText(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.texts.get(htool) : undefined;
-    }
-    private getTString(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.strings.get(htool) : undefined;
-    }
-    private getTFont(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.fonts.get(htool) : undefined;
-    }
-
     //#region МАТРИЦЫ
     stratum_mCreate(q: number, minX: number, maxX: number, minY: number, maxY: number, flag: number): number {
         if (flag <= 0) return 0;
@@ -1171,98 +1270,50 @@ export class Enviroment {
         if (flag <= 0) return 0;
         return this.matrices.get(q)?.set(i, j, value) ?? 0;
     }
-    stratum_mEditor(q: number, flag: number): NumBool {
+    stratum_async_mEditor(q: number, flag: number): NumBool | Promise<NumBool> {
         if (flag <= 0) return 0;
         throw Error("MEditor: редактор матриц не реализован");
     }
     // stratum_mDiag
-
-    mSaveAs(dir: VFSDir, q: number, fileName: string, flag: number): NumBool {
-        if (flag <= 0) return 0;
-        throw Error("не реализовано");
-    }
-    mLoad(dir: VFSDir, q: number, fileName: string, flag: number): number {
-        if (flag <= 0) return 0;
-
-        const f = dir.get(fileName);
-        if (!f || f.dir) return 0;
-        const data = f.readSyncAs("mat");
-        if (!data) return 0;
-
-        const handle = q === 0 ? HandleMap.getFreeNegativeHandle(this.matrices) : q;
-        this.matrices.set(handle, new NeoMatrix(data));
-        return handle;
-    }
     //#endregion
-
     //#region ПОТОКИ
-    createStream(dir: VFSDir, type: string, name: string, flags: string): number {
-        const t = type.toUpperCase();
-
-        const needCreate = flags.toUpperCase().includes("CREATE");
-
-        const handle = HandleMap.getFreeHandle(this.streams);
-        let stream: EnvStream;
-
-        if (t === "FILE") {
-            const f = needCreate ? dir.create("file", name) : dir.get(name);
-            if (!f || f.dir) return 0;
-            stream = new EnvStream({
-                data: needCreate ? undefined : f.bufferSync(),
-                onFlush: (d) => f.write(d),
-            });
-        } else if (t === "MEMORY") {
-            stream = new EnvStream();
-        } else {
-            throw Error(`Поток типа ${t} не поддерживается`);
-        }
-
-        this.streams.set(handle, stream);
-        return handle;
+    stratum_async_closeStream(hstream: number): NumBool | Promise<NumBool> {
+        const st = this.streams.get(hstream);
+        if (!st) return 0;
+        const r = st.close();
+        if (r instanceof Promise) return r.then((res) => (res ? 1 : 0));
+        return r ? 1 : 0;
     }
-
-    stratum_closeStream(hstream: number): NumBool {
-        return this.streams.get(hstream)?.close() ?? 0;
-    }
-
     stratum_seek(hstream: number, pos: number): number {
         return this.streams.get(hstream)?.seek(pos) ?? 0;
     }
-
     // stratum_streamStatus(hstream: number): number {
     //     return 0;
     // }
-
     stratum_eof(hstream: number): NumBool {
         return this.streams.get(hstream)?.eof() ?? 0;
     }
-
     stratum_getPos(hstream: number): number {
         return this.streams.get(hstream)?.pos() ?? 0;
     }
-
     stratum_getSize(hstream: number): number {
         return this.streams.get(hstream)?.size() ?? 0;
     }
-
     stratum_setWidth(hstream: number, width: number): NumBool {
         return this.streams.get(hstream)?.setWidth(width) ?? 0;
     }
-
     stratum_read(hstream: number): number {
         return this.streams.get(hstream)?.widthNumber() ?? 0;
     }
-
     stratum_readLn(hstream: number): string {
         return this.streams.get(hstream)?.line() ?? "";
     }
-
     stratum_write(hstream: number, val: number): number {
         return this.streams.get(hstream)?.writeWidthNumber(val) ?? 0;
     }
-
     stratum_writeLn(hstream: number, val: string): number {
         return this.streams.get(hstream)?.writeLine(val) ?? 0;
     }
+    //#endregion
     //#endregion
 }

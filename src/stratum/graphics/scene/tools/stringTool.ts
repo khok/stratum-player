@@ -1,4 +1,4 @@
-import { Env, NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface StringToolArgs {
@@ -6,7 +6,7 @@ export interface StringToolArgs {
     text: string;
 }
 
-export class StringTool implements Env.StringTool {
+export class StringTool {
     private subs: Set<ToolSubscriber>;
     private _text: string;
 

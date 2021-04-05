@@ -4,7 +4,7 @@ import { decode } from "./win1251";
 export class BinaryReader {
     private v: DataView;
     private p: number;
-    readonly name: string;
+    name: string;
 
     constructor(data: ArrayBuffer | ArrayBufferView, name?: string) {
         if (data instanceof ArrayBuffer) {
@@ -118,18 +118,8 @@ export class BinaryReader {
         return value;
     }
 
-    point2d(): Point2D {
-        return {
-            x: this.float64(),
-            y: this.float64(),
-        };
-    }
-
-    point2dInt(): Point2D {
-        return {
-            x: this.int16(),
-            y: this.int16(),
-        };
+    point2d(useInts?: boolean): Point2D {
+        return { x: useInts ? this.int16() : this.float64(), y: useInts ? this.int16() : this.float64() };
     }
 }
 

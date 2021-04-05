@@ -1,8 +1,8 @@
+import { NumBool } from "stratum/common/types";
 import { decode, encode } from "stratum/helpers/win1251";
-import { NumBool } from ".";
 
 export interface FlushCallback {
-    (data: ArrayBuffer): void;
+    (data: ArrayBuffer): boolean | Promise<boolean>;
 }
 
 export interface EnvStreamArgs {
@@ -176,8 +176,8 @@ export class EnvStream {
         return realVal.length;
     }
 
-    close(): NumBool {
-        if (this.onflush) this.onflush(this.v.buffer);
-        return 1;
+    close(): boolean | Promise<boolean> {
+        if (this.onflush) return this.onflush(this.v.buffer);
+        return true;
     }
 }

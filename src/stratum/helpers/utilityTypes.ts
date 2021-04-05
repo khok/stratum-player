@@ -29,3 +29,8 @@ export type Remove<T, K extends keyof T> = Omit<T, K>;
 export type Mutable<T extends object> = {
     -readonly [K in keyof T]: T[K];
 };
+
+export interface MutableArrayLike<T> {
+    readonly length: number;
+    [n: number]: T;
+}

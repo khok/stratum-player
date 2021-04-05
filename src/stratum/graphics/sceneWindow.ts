@@ -1,22 +1,35 @@
-import { WindowHost, WindowHostWindow } from "stratum/api";
+import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/api";
 import { SmoothComputer } from "stratum/common/computers";
-import { Constant, Env, EventSubscriber, NumBool } from "stratum/env";
+import { Constant } from "stratum/common/constant";
+import { Clearable, EventSubscriber, NumBool } from "stratum/common/types";
+import { VectorDrawing } from "stratum/fileFormats/vdr";
 import { HTMLFactory, InputWrapper, InputWrapperOptions, Scene } from "./scene";
 
-export class SceneWindow implements Env.Window, HTMLFactory {
+export interface WindowArgs<T> {
+    id?: T | null;
+    title: string;
+    vdr?: VectorDrawing | null;
+    disableResize?: boolean;
+    noCaption?: boolean;
+    onClosed?: Function;
+}
+
+export class SceneWindow<T> implements HTMLFactory, Clearable<T> {
     private static updater = new SmoothComputer();
-    private static wins = new Set<SceneWindow>();
+    private static wins = new Set<SceneWindow<unknown>>();
     private static redrawAll(): boolean {
         SceneWindow.wins.forEach((w) => w.redraw());
         return SceneWindow.wins.size > 0;
     }
 
+    private afterClose: (() => void) | null;
+    private id: T | null;
     private readonly classname: string = "";
     private readonly filename: string = "";
     private resizible: boolean;
     private ignoreSetSize: boolean;
 
-    private wnd: WindowHostWindow;
+    private host: WindowHostWindow;
 
     readonly scene: Scene;
     readonly view: HTMLDivElement;
@@ -26,7 +39,8 @@ export class SceneWindow implements Env.Window, HTMLFactory {
 
     private noCaption: boolean;
 
-    constructor(host: WindowHost, args: Env.WindowArgs) {
+    constructor(host: WindowHost, args: WindowArgs<T>) {
+        this.id = args.id ?? null;
         this.ignoreSetSize = args.disableResize ?? false;
         this.noCaption = !!args.noCaption;
 
@@ -56,7 +70,9 @@ export class SceneWindow implements Env.Window, HTMLFactory {
         cnv.style.setProperty("touch-action", "pinch-zoom");
         view.appendChild(cnv);
 
-        this.wnd = host.window({ title: args.noCaption ? undefined : args.title, view });
+        const opts: WindowOptions = {};
+        if (!args.noCaption) opts.title = args.title;
+        this.host = host.window(view, opts);
         cnv.width = this.width();
         cnv.height = this.height();
         this._title = args.title;
@@ -80,19 +96,36 @@ export class SceneWindow implements Env.Window, HTMLFactory {
         SceneWindow.wins.add(this);
         SceneWindow.updater.run(SceneWindow.redrawAll);
 
-        const cl = args.onClosed;
-        this.wnd.on("closed", () => {
+        const onClosed = args.onClosed ?? null;
+        this.afterClose = () => {
+            if (onClosed) onClosed();
             SceneWindow.wins.delete(this);
             this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
-            cl && cl();
-        });
+            this.id = null;
+            this.afterClose = null;
+        };
+
+        if (this.host.on) {
+            this.host.on("closed", this.afterClose);
+        }
     }
 
-    textInput(options: InputWrapperOptions) {
-        return new InputWrapper(this.view, options);
+    /**
+     * Окно закрыто из проекта.
+     */
+    clear(id: T): void {
+        if (this.id === id) this.clearAll();
     }
 
-    redraw() {
+    clearAll(): void {
+        if (!this.afterClose) return;
+
+        if (this.host.off) this.host.off("closed", this.afterClose);
+        this.host.close();
+        this.afterClose();
+    }
+
+    private redraw() {
         const nw = this.view.clientWidth;
         const nh = this.view.clientHeight;
 
@@ -110,10 +143,8 @@ export class SceneWindow implements Env.Window, HTMLFactory {
         }
     }
 
-    close(): void {
-        SceneWindow.wins.delete(this);
-        this.wnd.close();
-        this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
+    textInput(options: InputWrapperOptions) {
+        return new InputWrapper(this.view, options);
     }
 
     getProp(prop: string): string {
@@ -135,7 +166,7 @@ export class SceneWindow implements Env.Window, HTMLFactory {
 
     setSize(width: number, height: number): NumBool {
         if (this.ignoreSetSize === true) return 1;
-        this.wnd.setSize(width, height);
+        if (this.host.setSize) this.host.setSize(width, height);
         if (this.resizible === true) return 1;
         this.view.style.setProperty("width", width + "px");
         this.view.style.setProperty("height", height + "px");
@@ -143,7 +174,7 @@ export class SceneWindow implements Env.Window, HTMLFactory {
     }
 
     toTop(): NumBool {
-        this.wnd.toTop();
+        if (this.host.toTop) this.host.toTop();
         return 1;
     }
 
@@ -165,7 +196,7 @@ export class SceneWindow implements Env.Window, HTMLFactory {
 
     setTitle(title: string): NumBool {
         this._title = title;
-        if (!this.noCaption) this.wnd.setTitle(title);
+        if (!this.noCaption && this.host.setTitle) this.host.setTitle(title);
         return 1;
     }
 

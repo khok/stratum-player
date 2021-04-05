@@ -1,4 +1,4 @@
-import { NumBool } from ".";
+import { NumBool } from "stratum/common/types";
 
 export interface NeoMatrixArgs {
     minX: number;

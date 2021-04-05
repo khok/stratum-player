@@ -1,12 +1,9 @@
 import { loadAsync } from "jszip";
 import { FS, OpenProjectOptions, OpenZipOptions, ZipSource } from "stratum/api";
-import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassProto } from "stratum/common/classProto";
-import { VariableSet } from "stratum/fileFormats/stt";
+import { ProjectClassLibrary } from "stratum/common/classLibrary";
 import { getPrefixAndPathParts, SLASHES, splitPath } from "stratum/helpers/pathOperations";
 import { RealPlayer } from "stratum/player";
-import { ProjectResources } from "stratum/project";
-import { VFSDir, VFSFile } from ".";
+import { loadClasses, loadProject, VFSDir, VFSFile } from ".";
 
 export class VFS implements FS {
     private static defaultPrefix = "C";
@@ -49,61 +46,6 @@ export class VFS implements FS {
         return fs;
     }
 
-    private static async loadClasses(classDirs: Set<VFSDir>): Promise<ClassProto[]> {
-        // 2.3) Исключаем ошибки рекурсивного сканирования имиджей (оригинальный Stratum так, кстати, не умеет)
-        for (let c of classDirs) for (; c !== c.parent; c = c.parent) if (classDirs.has(c.parent)) classDirs.delete(c);
-
-        const dirs = [...classDirs];
-        console.log(`Пути поиска имиджей:\n${dirs.map((d) => d.pathDos).join(";\n")}`);
-
-        // 2.4) Загружаем имиджи из выбранных директорий.
-        const searchRes = dirs.map((c) => [...c.files(/.+\.cls$/i)]);
-        const clsFiles = new Array<VFSFile>().concat(...searchRes);
-        const clsProtos = await Promise.all(clsFiles.map((f) => f.readAs("cls")));
-        console.log(`Загружено ${clsFiles.length} имиджей объемом ${(clsProtos.reduce((a, b) => a + b.byteSize, 0) / 1024).toFixed()} КБ`);
-        return clsProtos;
-    }
-
-    static async project(prjFile: VFSFile, classes: ClassLibrary, id?: number): Promise<ProjectResources> {
-        const workDir = prjFile.parent;
-        console.log(`Открываем проект ${prjFile.pathDos}`);
-        const prjInfo = await prjFile.readAs("prj");
-
-        // 2) Загружаем имиджи
-        {
-            const classDirs = new Set([workDir]);
-            // 2.1) Разбираем пути поиска имиджей, которые через запятую прописаны в настройках проекта.
-            const settingsPaths = prjInfo.settings?.classSearchPaths;
-            if (settingsPaths) {
-                //prettier-ignore
-                const pathsSeparated = settingsPaths.split(",").map((s) => s.trim()).filter((s) => s);
-                for (const path of pathsSeparated) {
-                    const resolved = workDir.get(path);
-                    if (resolved?.dir) classDirs.add(resolved);
-                }
-            }
-
-            const clsProtos = await VFS.loadClasses(classDirs);
-            classes.add(clsProtos, id);
-        }
-
-        // 3) Загружаем STT файл.
-        let stt: VariableSet | undefined;
-        {
-            const sttFile = workDir.get("_preload.stt");
-            if (sttFile && !sttFile.dir) {
-                try {
-                    stt = await sttFile.readAs("stt");
-                } catch (e) {
-                    console.warn(e.message);
-                }
-            }
-        }
-
-        // 4) Из всего этого создаем новый проигрыватель проекта.
-        return { dir: workDir, prjInfo, classes, stt };
-    }
-
     private readonly disks = new Map<string, VFSDir>();
     disk(name: string) {
         return this.disks.get(name.toUpperCase());
@@ -138,20 +80,19 @@ export class VFS implements FS {
             if (!prjFile) throw Error("Не найдено файлов проектов");
         }
 
-        const lib = new ClassLibrary();
-        const res = await VFS.project(prjFile, lib);
+        const res = await loadProject(prjFile);
 
         const addPaths = options.additionalClassPaths;
+        let add: ProjectClassLibrary | undefined;
         if (addPaths) {
             const classDirs = new Set<VFSDir>();
             for (const p of addPaths) {
                 const resolved = (this.disks.get(VFS.defaultPrefix) || res.dir).get(p);
                 if (resolved?.dir) classDirs.add(resolved);
             }
-            const defLib = await VFS.loadClasses(classDirs);
-            lib.add(defLib);
+            add = await loadClasses(classDirs);
         }
 
-        return new RealPlayer(res);
+        return new RealPlayer(res, add);
     }
 }

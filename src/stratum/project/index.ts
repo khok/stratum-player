@@ -1,3 +1,2 @@
-export { Project, ProjectResources } from "./project";
-export { ProjectMemory } from "./projectMemory";
+export { Project } from "./project";
 export { Schema } from "./schema";

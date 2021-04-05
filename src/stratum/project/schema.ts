@@ -1,83 +1,57 @@
-import { ClassLibrary } from "stratum/common/classLibrary";
-import { ClassModel, ClassProto } from "stratum/common/classProto";
+import { ClassProto } from "stratum/classLibrary";
+import { Constant } from "stratum/common/constant";
 import { parseVarValue } from "stratum/common/parseVarValue";
+import { EventSubscriber } from "stratum/common/types";
+import { MemorySize, VarGraphNode } from "stratum/common/varGraphNode";
 import { VarType } from "stratum/common/varType";
-import { Constant, EventSubscriber } from "stratum/env";
+import { ComputeResult, SchemaContextFunctions } from "stratum/compiler";
+import { ClassChildInfo, ClassLinkInfo } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
-import { buildSchema } from "./buildSchema";
+import { applyLinks } from "./applyLinks";
 import { Project } from "./project";
-import { ProjectMemory } from "./projectMemory";
-import { MemorySize, VarGraphNode } from "./varGraphNode";
 
 /**
- * Описание размещения имиджа на схеме.
+ * Вычисляемый узел схемы (объект). Ее прототипом является имидж (`ClassProto`).
  */
-export interface PlacementDescription {
-    parent: Schema;
-    handle: number;
-    position: Point2D;
-    name: string;
-}
-
-// interface SendMsgData {
-//     receivers: ArrayLike<Schema>;
-//     syncVars: ArrayLike<number>;
-// }
-
-// interface FuncData {
-//     model: ClassModel["model"];
-//     memory: ProjectMemory;
-//     tlb: ArrayLike<number>;
-//     vars?: ClassVars;
-// }
-
-type PossibleValue = string | number | void;
-type ComputeResult = IterableIterator<Promise<PossibleValue>>;
-type WaitingTarget = ComputeResult | PossibleValue | Promise<PossibleValue>;
-
-export class Schema implements EventSubscriber {
-    static build(root: string, lib: ClassLibrary, prj: Project) {
-        return buildSchema(root, lib, prj);
+export class Schema implements EventSubscriber, SchemaContextFunctions {
+    private static alwaysEnabled() {
+        return false;
+    }
+    private static disabledByEnable(schema: Schema) {
+        return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] <= 0;
+    }
+    private static disabledByDisable(schema: Schema) {
+        return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] > 0;
     }
 
+    private readonly handle: number;
     private readonly neighMapUC: Map<string, Schema>;
-    private readonly root: Schema;
-    private readonly handle: number = 0;
-    private readonly name: string = "";
-    private readonly position: Point2D = { x: 0, y: 0 };
-    private readonly parent: Schema = this;
-    readonly model: ClassModel["model"];
-    private readonly varGraphNodes: VarGraphNode[] = [];
-    readonly isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
-    private readonly disOrEnVarId: number = -1;
 
+    private parent: Schema | null;
     private children: Schema[] = [];
+
+    private isDisabled: (s: Schema) => boolean = Schema.alwaysEnabled;
+    private disOrEnVarId: number = -1;
+    private varGraphNodes: VarGraphNode[] = [];
+    private schemeName: string;
+    private position: Point2D;
+
+    private TLB: Uint16Array;
 
     readonly prj: Project;
     readonly proto: ClassProto;
-    readonly TLB: Uint16Array;
 
-    // private sendMsgData: SendMsgData | null = null;
-    // private funcData: FuncData | null = null;
-
-    constructor(proto: ClassProto, prj: Project, lib: ClassLibrary, placement?: PlacementDescription) {
-        this.model = proto.model(lib)?.model ?? Schema.NoModel;
+    constructor(prj: Project, proto: ClassProto, children: Schema[], links: ClassLinkInfo[], placement?: ClassChildInfo) {
         this.proto = proto;
         this.prj = prj;
-        if (placement) {
-            this.handle = placement.handle;
-            this.name = placement.name;
-            this.position = placement.position;
-            this.parent = placement.parent;
-        }
         {
-            const vars = proto.vars;
-            this.varGraphNodes = vars.types.map((t) => new VarGraphNode(t));
-            this.TLB = new Uint16Array(vars.count);
+            const vars = proto.vars();
+            this.varGraphNodes = vars.toArray().map((v) => new VarGraphNode(v.type));
+            this.TLB = new Uint16Array(vars.count());
 
-            const enableId = this.proto._enableVarId;
-            const disableId = this.proto._disableVarId;
+            const enableId = vars._enableVarId;
+            const disableId = vars._disableVarId;
             if (enableId > 0 && (disableId < 0 || enableId < disableId)) {
                 this.isDisabled = Schema.disabledByEnable;
                 this.disOrEnVarId = enableId;
@@ -87,43 +61,279 @@ export class Schema implements EventSubscriber {
                 this.disOrEnVarId = disableId;
             }
         }
-        {
-            let root: Schema = this;
-            while (root.parent !== root) root = root.parent;
-            this.root = root;
-            this.neighMapUC = new Map([
-                ["", this],
-                ["\\", root],
-            ]);
-            if (placement) this.neighMapUC.set("..", placement.parent);
+        this.children = children;
+        applyLinks(this, links);
+
+        this.neighMapUC = new Map([["", this]]);
+        this.parent = null;
+        children.forEach((c) => c.setParent(this));
+        if (placement) {
+            this.handle = placement.handle;
+            this.schemeName = placement.schemeName;
+            this.position = placement.position;
+        } else {
+            this.handle = 0;
+            this.schemeName = "";
+            this.position = { x: 0, y: 0 };
         }
     }
 
-    private ctx: PossibleValue[] | null = null;
-    saveContext(ctx: PossibleValue[]): void {
-        if (this.ctx !== null) throw Error("Попытка перезаписи контекстных переменных");
-        this.ctx = ctx;
-    }
-    loadContext(): PossibleValue[] {
-        const c = this.ctx;
-        if (c === null) throw Error("Нет контекстных переменных");
-        this.ctx = null;
-        return c;
+    private setParent(parent: Schema): void {
+        if (parent === this || this.parent !== null) throw Error("Невозможно изменить родительский имидж");
+        this.parent = parent;
+        this.neighMapUC.set("..", parent);
     }
 
-    private target: WaitingTarget | null = null;
-    waitFor(target: WaitingTarget): void {
-        if (this.target !== null) throw Error("Цель ожидания назначена");
-        this.target = target;
+    private resolve(path: string): Schema | undefined {
+        if (path === "") return this;
+        const filter = path.split("\\");
+        let root = path[0] === "\\" ? this.prj.root : this;
+        for (let i = 0; i < filter.length; ++i) {
+            const cl = root.neighMapUC.get(filter[i]);
+            if (typeof cl === "undefined") return undefined;
+            root = cl;
+        }
+        return root;
     }
 
-    getWaitResult(): WaitingTarget {
-        const r = this.target;
-        if (r === null) throw Error("Нет результата ожидания");
-        this.target = null;
-        return r;
+    private classNodeCache = new Map<string, Schema[]>();
+    private findClasses(classNameUC: string): Schema[] {
+        const { root } = this.prj;
+        const nodes = root.classNodeCache.get(classNameUC);
+        if (typeof nodes !== "undefined") return nodes;
+
+        const nodes2 = new Array<Schema>();
+        (function collect(s: Schema) {
+            s.children.forEach(collect);
+            if (s.proto.name.toUpperCase() === classNameUC) nodes2.push(s);
+        })(root);
+
+        root.classNodeCache.set(classNameUC, nodes2);
+        return nodes2;
     }
 
+    private setVarValue(id: number, type: VarType, value: number | string): boolean {
+        if (id < 0) return false;
+        const realId = this.TLB[id];
+        this.prj.setOldValue(realId, type, value);
+        this.prj.setNewValue(realId, type, value);
+        // this.prj.olds[type][realId] = value;
+        // this.prj.news[type][realId] = value;
+        return true;
+    }
+
+    private *computeSchema(): ComputeResult {
+        for (let i = 0; i < this.children.length; ++i) {
+            const c = this.children[i];
+            if (c.isDisabled(c)) continue;
+            yield* c.computeSchema();
+        }
+        const mod = this.proto.model();
+        if (!mod) return;
+        yield* mod.compute(this.TLB, this.prj, this);
+    }
+
+    child(handle: number): Schema | null {
+        return this.children.find((c) => c.handle === handle) ?? null;
+    }
+
+    connectVar(id: number, second: Schema, secondId: number, isDisabled: number): boolean {
+        if (isDisabled) return true;
+        return VarGraphNode.connect(this.varGraphNodes[id], second.varGraphNodes[secondId]);
+    }
+
+    receive(code: Constant, ...args: (string | number)[]): Promise<void> {
+        const env = this.prj.env;
+        if (env.isWaiting()) return Promise.resolve();
+
+        const vars = this.proto.vars();
+        if (this.setVarValue(vars.msgVarId, VarType.Float, code) === false) return Promise.resolve();
+
+        switch (code) {
+            case Constant.WM_CONTROLNOTIFY:
+                this.setVarValue(vars._hobjectVarId, VarType.Handle, args[0]);
+                this.setVarValue(vars.iditemVarId, VarType.Float, args[1]);
+                this.setVarValue(vars.wnotifycodeVarId, VarType.Float, args[2]);
+                break;
+            case Constant.WM_SIZE:
+                this.setVarValue(vars.nwidthVarId, VarType.Float, args[0]);
+                this.setVarValue(vars.nheightVarId, VarType.Float, args[1]);
+                break;
+            case Constant.WM_MOUSEMOVE:
+            case Constant.WM_LBUTTONDOWN:
+            case Constant.WM_LBUTTONUP:
+            case Constant.WM_LBUTTONDBLCLK:
+            case Constant.WM_RBUTTONDOWN:
+            case Constant.WM_RBUTTONUP:
+            case Constant.WM_RBUTTONDBLCLK:
+            case Constant.WM_MBUTTONDOWN:
+            case Constant.WM_MBUTTONUP:
+            case Constant.WM_MBUTTONDBLCLK:
+                this.setVarValue(vars.xposVarId, VarType.Float, args[0]);
+                this.setVarValue(vars.yposVarId, VarType.Float, args[1]);
+                this.setVarValue(vars.fwkeysVarId, VarType.Float, args[2]);
+                break;
+        }
+
+        return this.compute(true);
+    }
+
+    /**
+     * Рекурсивно вычисляет схему имиджа.
+     */
+    async compute(force = false): Promise<void> {
+        if (!force && this.isDisabled(this)) return;
+
+        const gen = this.computeSchema();
+        while (true) {
+            const r = gen.next();
+            if (r.done) break;
+            this.prj.env.setWaiting();
+            await r.value;
+            this.prj.env.resetWaiting();
+        }
+
+        const prj = this.prj;
+        prj.oldFloats.set(prj.newFloats);
+        prj.oldInts.set(prj.newInts);
+        const ns = prj.newStrings;
+        for (let i = 0; i < ns.length; ++i) prj.oldStrings[i] = ns[i];
+        Schema.assertZeroIndexEmpty(prj);
+    }
+
+    /**
+     * Рекурсивно пересоздает TLB и возвращает количество переменных каждого типа.
+     *
+     * Необходимо вызывать после проведения всех связей.
+     */
+    createTLB(): MemorySize {
+        const memSize: MemorySize = {
+            floatsCount: 1,
+            intsCount: 1,
+            stringsCount: 1,
+        };
+
+        (function rebuild({ children, TLB, varGraphNodes }: Schema) {
+            children.forEach(rebuild);
+            TLB.set(varGraphNodes.map((v) => v.getIndex(memSize)));
+        })(this);
+
+        return memSize;
+    }
+    /**
+     * Устанавливает значения переменных по умолчанию для данного и всех дочерних имиджей.
+     *
+     * Замечание: Значения родительского имиджа превыше дочерних, поэтому они применяются последними.
+     */
+    applyDefaults(): this {
+        this.children.forEach((c) => c.applyDefaults());
+
+        const vars = this.proto.vars();
+        const len = vars.count();
+        for (let id = 0; id < len; ++id) {
+            const v = vars.data(id);
+            const type = v.type;
+
+            //Значение по умолчанию
+            const defaultValue = v.defaultValue;
+            if (defaultValue !== null) {
+                this.setVarValue(id, type, defaultValue);
+                continue;
+            }
+
+            //Если знач. по умолчанию нет, пытаемся получить специальное значение переменной.
+            switch (id) {
+                case vars.orgxVarId:
+                    this.setVarValue(id, type, this.position.x);
+                    break;
+                case vars.orgyVarId:
+                    this.setVarValue(id, type, this.position.y);
+                    break;
+                case vars._hobjectVarId:
+                    this.setVarValue(id, type, this.handle);
+                    break;
+                case vars._objnameVarId:
+                    this.setVarValue(id, type, this.schemeName);
+                    break;
+                case vars._classnameVarId:
+                    this.setVarValue(id, type, this.proto.name);
+                    break;
+            }
+        }
+        return this;
+    }
+    /**
+     * Применяет к дереву имиджей набор переменных `varSet`, считанных из .stt файла.
+     *
+     * Замечание: Значения дочерних превыше родительских, поэтому они применяются последними.
+     */
+    applyVarSet(varSet: VariableSet): this {
+        if (this.proto.name.toUpperCase() === varSet.classname.toUpperCase()) {
+            const vars = this.proto.vars();
+
+            const { values } = varSet;
+            for (let i = 0; i < values.length; ++i) {
+                const v = values[i];
+
+                const id = vars.id(v.name);
+                if (id === null) continue;
+
+                const type = vars.data(id).type;
+                this.setVarValue(id, type, parseVarValue(type, v.value));
+            }
+        }
+
+        varSet.childSets.forEach((s) => this.child(s.handle)?.applyVarSet(s));
+        return this;
+    }
+
+    stubCall(name: string, args: (string | number)[]): never {
+        let root: Schema = this;
+        let path = "";
+        while (root.parent) {
+            path = ` -> ${root.proto.name} #${root.handle}${path}`;
+            root = root.parent;
+        }
+        path = this.prj.root.proto.name + path;
+        throw Error(`Вызов нереализованной функции ${name}(${args.map((a) => typeof a).join(",")})\nв ${path}`);
+    }
+
+    copyNewValuesToOld(): void {
+        const ids = this.TLB;
+        const { newFloats, oldFloats, newInts, oldInts, newStrings, oldStrings } = this.prj;
+        for (const id of ids) {
+            oldFloats[id] = newFloats[id];
+            oldInts[id] = newInts[id];
+            oldStrings[id] = newStrings[id];
+        }
+    }
+
+    /**
+     * Проверка, не было ли изменено (в результате багов) зарезервированное значение.
+     */
+    private static assertZeroIndexEmpty(prj: Project) {
+        if (
+            prj.oldFloats[0] !== 0 ||
+            "undefined" in prj.oldFloats ||
+            prj.newFloats[0] !== 0 ||
+            "undefined" in prj.newFloats ||
+            prj.oldInts[0] !== 0 ||
+            "undefined" in prj.oldInts ||
+            prj.newInts[0] !== 0 ||
+            "undefined" in prj.newInts ||
+            prj.oldStrings[0] !== "" ||
+            "undefined" in prj.oldStrings ||
+            prj.newStrings[0] !== "" ||
+            "undefined" in prj.newStrings
+        )
+            throw Error("Было изменено зарезервированное значение переменной");
+    }
+
+    //#region Реализации функций.
+    stratum_async_test_sleep_8210460217466098(data: number): string | Promise<string> {
+        if (data === 0) return "";
+        return new Promise((res) => setTimeout(res, data)).then(() => "wait" + data);
+    }
     stratum_getHObject(): number {
         return this.handle;
     }
@@ -136,131 +346,38 @@ export class Schema implements EventSubscriber {
 
     stratum_setVar(objectName: string, varName: string, value: number | string): void {
         const target = this.resolve(objectName);
-        if (typeof target === "undefined") return;
-        const { vars } = target.proto;
-        if (typeof vars === "undefined") return;
-        const id = vars.nameUCToId.get(varName.toUpperCase());
-        if (typeof id !== "undefined") target.setVarValue(id, vars.types[id], value);
-    }
+        if (!target) return;
 
-    *call(fname: string, ...args: (string | number)[]): ComputeResult {
-        const lib = this.prj.env.lib;
-        const obj = lib.get(fname);
-        if (!obj) throw Error();
-        const mod = obj.model(lib);
-        if (!mod?.isFunction) throw Error();
-        const memSize: MemorySize = {
-            floatsCount: 0,
-            intsCount: 0,
-            stringsCount: 0,
-        };
-        const vars = obj.vars;
-
-        const tlb = vars.types.map((t) => new VarGraphNode(t).getIndex(memSize));
-        const floats = new Float64Array(memSize.floatsCount);
-        const ints = new Int32Array(memSize.intsCount);
-        const strings = new Array(memSize.stringsCount).fill("");
-
-        if (args.length > vars.count) throw Error("Кол-во аргументов больше кол-ва переменных");
-        for (let i = 0; i < args.length; ++i) {
-            const val = args[i];
-            const typ = vars.types[i];
-            switch (typ) {
-                case VarType.Float:
-                    if (typeof val === "string") throw Error("Несовпадение типов");
-                    floats[tlb[i]] = val;
-                    break;
-                case VarType.Handle:
-                case VarType.ColorRef:
-                    if (typeof val === "string") throw Error("Несовпадение типов");
-                    ints[tlb[i]] = val;
-                    break;
-                case VarType.String:
-                    if (typeof val === "number") throw Error("Несовпадение типов");
-                    strings[tlb[i]] = val;
-                    break;
-            }
-        }
-
-        const mem: ProjectMemory = {
-            newFloats: floats,
-            oldFloats: floats,
-            newInts: ints,
-            oldInts: ints,
-            newStrings: strings,
-            oldStrings: strings,
-        };
-        const model = mod.model;
-
-        let code = 0;
-        while (true) {
-            while ((code = model(this, tlb, mem, code)) > 0);
-            if (code === 0) break;
-
-            const r = this.getWaitResult();
-            // Если это примитив, ничего не делаем, продолжаем выполнение.
-            if (typeof r !== "object") {
-                this.waitFor(r);
-                continue;
-            }
-            // Если это промиз, то отдаем его наверх.
-            if (r instanceof Promise) {
-                yield r.then((res) => this.waitFor(res));
-            } else {
-                // Если это итератор (SendMessage или вызов функции), то выполняем его.
-                yield* r;
-            }
-        }
-
-        if (!vars) {
-            this.waitFor();
-            return;
-        }
-        const ret = vars.flags.findIndex((v) => v & Constant.VF_RETURN);
-        if (ret < 0) {
-            this.waitFor();
-            return;
-        }
-        const t = vars.types[ret];
-        switch (t) {
-            case VarType.String:
-                this.waitFor(mem.oldStrings[tlb[ret]]);
-                break;
-            case VarType.Float:
-                this.waitFor(mem.oldFloats[tlb[ret]]);
-                break;
-            default:
-                this.waitFor(mem.oldInts[tlb[ret]]);
-        }
+        const vars = target.proto.vars();
+        const id = vars.id(varName);
+        if (id !== null) target.setVarValue(id, vars.data(id).type, value);
     }
 
     // private idTypes: number[] = [];
     // private cachedNames: string[] = [];
-    *stratum_sendMessage(objectName: string, className: string, ...varNames: string[]): ComputeResult {
+    *stratum_async_sendMessage(objectName: string, className: string, ...varNames: string[]): ComputeResult {
         const { prj, TLB /*cachedNames*/ } = this;
         if (prj.canExecute() === false) return;
 
         // if (varNames.length % 2 !== 0) throw Error(`SendMessage: кол-во переменных должно быть четным`);
 
-        let receivers: Schema[] | undefined = undefined;
+        let receivers: Schema[] | null = null;
         if (objectName !== "") {
             const res = this.resolve(objectName);
-            if (typeof res !== "undefined") {
+            if (res) {
                 receivers = [res];
             }
         }
 
         if (className !== "") {
             const nameUC = className.toUpperCase();
-            receivers = typeof receivers === "undefined" ? this.findClasses(nameUC) : receivers.filter((r) => r.proto.name.toUpperCase() === nameUC);
+            receivers = receivers?.filter((r) => r.proto.name.toUpperCase() === nameUC) ?? this.findClasses(nameUC);
         }
 
-        if (typeof receivers === "undefined" || receivers.length === 0) return;
+        if (!receivers || receivers.length === 0) return;
 
-        const rec0 = receivers[0];
-
-        const myVars = this.proto.vars;
-        const otherVars = rec0.proto.vars;
+        const myVars = this.proto.vars();
+        const otherVars = receivers[0].proto.vars();
 
         // if (myVars.count === 0 || otherVars.count === 0) {
         //     for (const rec of receivers) {
@@ -289,306 +406,84 @@ export class Schema implements EventSubscriber {
         const idTypes = new Array<number>(varNames.length * 1.5);
         let idx = 0;
         for (let i = 0; i < varNames.length; i += 2) {
-            const myVarName = varNames[i].toUpperCase();
-            const myId = myVars.nameUCToId.get(myVarName);
-            if (typeof myId === "undefined") continue;
+            const myId = myVars.id(varNames[i]);
+            if (myId === null) continue;
 
-            const otherVarName = varNames[i + 1].toUpperCase();
-            const otherId = otherVars.nameUCToId.get(otherVarName);
-            if (typeof otherId === "undefined") continue;
+            const otherId = otherVars.id(varNames[i + 1]);
+            if (otherId === null) continue;
 
-            const typ = myVars.types[myId];
-            const otherTyp = otherVars.types[otherId];
+            const typ = myVars.data(i).type;
+            const otherTyp = otherVars.data(i).type;
             if (typ !== otherTyp) continue;
 
-            idTypes[idx + 0] = myId;
-            idTypes[idx + 1] = otherId;
-            idTypes[idx + 2] = typ;
+            idTypes[idx + 0] = typ;
+            idTypes[idx + 1] = myId;
+            idTypes[idx + 2] = otherId;
             idx += 3;
         }
         // }
 
         // const { idTypes } = this;
-        const { news, olds } = prj;
-        for (const rec of receivers) {
+        // const { news, olds } = prj;
+        for (let rid = 0; rid < receivers.length; ++rid) {
+            const rec = receivers[rid];
             if (rec === this) continue;
+
             for (let i = 0; i < idTypes.length; i += 3) {
-                const typ = idTypes[i + 2];
+                const typ = idTypes[i + 0];
                 if (typeof typ === "undefined") continue;
-                const myId = TLB[idTypes[i + 0]];
-                const otherId = rec.TLB[idTypes[i + 1]];
+                const myId = TLB[idTypes[i + 1]];
+                const otherId = rec.TLB[idTypes[i + 2]];
 
-                const newArr = news[typ];
-                const oldArr = olds[typ];
+                // const newArr = news[typ];
+                // const oldArr = olds[typ];
 
-                const val = newArr[myId];
-                newArr[otherId] = val;
-                oldArr[otherId] = val;
+                // const val = newArr[myId];
+                // newArr[otherId] = val;
+                // oldArr[otherId] = val;
+                const val = prj.getNewValue(myId, typ);
+                prj.setNewValue(otherId, typ, val);
+                prj.setOldValue(otherId, typ, val);
             }
+
             prj.inc();
-            yield* rec.compute(true);
-            prj.syncLocal(rec.TLB);
+            yield* rec.computeSchema();
+            rec.copyNewValuesToOld();
             prj.dec();
+
             for (let i = 0; i < idTypes.length; i += 3) {
-                const typ = idTypes[i + 2];
+                const typ = idTypes[i + 0];
                 if (typeof typ === "undefined") continue;
-                const myId = TLB[idTypes[i + 0]];
-                const otherId = rec.TLB[idTypes[i + 1]];
+                const myId = TLB[idTypes[i + 1]];
+                const otherId = rec.TLB[idTypes[i + 2]];
 
-                const newArr = news[typ];
-                const oldArr = olds[typ];
-
-                const val = newArr[otherId];
-                newArr[myId] = val;
-                oldArr[myId] = val;
+                // const newArr = news[typ];
+                // newArr[myId] = newArr[otherId];
+                const val = prj.getNewValue(otherId, typ);
+                prj.setNewValue(myId, typ, val);
             }
         }
-        this.waitFor();
     }
 
     stratum_setCapture(hspace: number, path: string, flags: number): void {
         if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
-        if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.prj.env.setCapture(hspace, target);
+        if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
+        this.prj.env.setCapture(target, hspace);
     }
 
     stratum_registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number): void {
         if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
-        if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
+        if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
         this.prj.env.subscribe(target, wnameOrHspace, obj2d, message);
     }
-    stratum_unregisterObject(wnameOrHspace: number | string, path: string, code: number): void {
+
+    stratum_unregisterObject(wnameOrHspace: number | string, path: string, message: number): void {
         if (path !== "") throw Error(`Вызов UnRegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
-        if (typeof target === "undefined" || target.proto.msgVarId < 0) return;
-        this.prj.env.unsubscribe(target, wnameOrHspace, code);
+        if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
+        this.prj.env.unsubscribe(target, wnameOrHspace, message);
     }
-
-    receive(code: Constant, ...args: (string | number)[]) {
-        const env = this.prj.env;
-        if (env.isWaiting()) return;
-        const { proto } = this;
-        if (this.setVarValue(proto.msgVarId, VarType.Float, code) === false) return;
-
-        switch (code) {
-            case Constant.WM_CONTROLNOTIFY:
-                this.setVarValue(proto._hobjectVarId, VarType.Handle, args[0]);
-                this.setVarValue(proto.iditemVarId, VarType.Float, args[1]);
-                this.setVarValue(proto.wnotifycodeVarId, VarType.Float, args[2]);
-                break;
-            case Constant.WM_SIZE:
-                this.setVarValue(proto.nwidthVarId, VarType.Float, args[0]);
-                this.setVarValue(proto.nheightVarId, VarType.Float, args[1]);
-                break;
-            case Constant.WM_MOUSEMOVE:
-            case Constant.WM_LBUTTONDOWN:
-            case Constant.WM_LBUTTONUP:
-            case Constant.WM_LBUTTONDBLCLK:
-            case Constant.WM_RBUTTONDOWN:
-            case Constant.WM_RBUTTONUP:
-            case Constant.WM_RBUTTONDBLCLK:
-            case Constant.WM_MBUTTONDOWN:
-            case Constant.WM_MBUTTONUP:
-            case Constant.WM_MBUTTONDBLCLK:
-                this.setVarValue(proto.xposVarId, VarType.Float, args[0]);
-                this.setVarValue(proto.yposVarId, VarType.Float, args[1]);
-                this.setVarValue(proto.fwkeysVarId, VarType.Float, args[2]);
-                break;
-        }
-
-        env.computeSchema(this);
-    }
-
-    // Для построения схемы.
-    setChildren(children: Schema[]) {
-        if (this.children.length > 0) throw Error("Изменение подимиджей не реализовано");
-        (this.children = children).forEach((c) => {
-            if (c.name) this.neighMapUC.set(c.name.toUpperCase(), c);
-        });
-        return this;
-    }
-
-    child(handle: number) {
-        return this.children.find((c) => c.handle === handle);
-    }
-
-    connectVar(id: number, second: Schema, secondId: number, flags: number) {
-        if (flags & 1) return true;
-        return VarGraphNode.connect(this.varGraphNodes[id], second.varGraphNodes[secondId]);
-    }
-
-    /**
-     * Рекурсивно пересоздает TLB и возвращает количество переменных каждого типа.
-     *
-     * Необходимо вызывать после проведения всех связей.
-     */
-    createTLB() {
-        const memSize: MemorySize = {
-            floatsCount: 1,
-            intsCount: 1,
-            stringsCount: 1,
-        };
-
-        (function rebuild({ children, TLB, varGraphNodes }: Schema) {
-            children.forEach(rebuild);
-            TLB.set(varGraphNodes.map((v) => v.getIndex(memSize)));
-        })(this);
-
-        return memSize;
-    }
-    /**
-     * Устанавливает значения переменных по умолчанию для данного и всех дочерних имиджей.
-     *
-     * Замечание: Значения родительского имиджа превыше дочерних, поэтому они применяются последними.
-     */
-    applyDefaults() {
-        this.children.forEach((c) => c.applyDefaults());
-
-        const { vars } = this.proto;
-        if (!vars) return this;
-
-        for (let id = 0; id < vars.count; ++id) {
-            const type = vars.types[id];
-
-            //Значение по умолчанию
-            const defaultValue = vars.defaultValues[id];
-            if (typeof defaultValue !== "undefined") {
-                this.setVarValue(id, type, defaultValue);
-                continue;
-            }
-
-            //Если знач. по умолчанию нет, пытаемся получить специальное значение переменной.
-            switch (id) {
-                case this.proto.orgxVarId:
-                    this.setVarValue(id, type, this.position.x);
-                    break;
-                case this.proto.orgyVarId:
-                    this.setVarValue(id, type, this.position.y);
-                    break;
-                case this.proto._hobjectVarId:
-                    this.setVarValue(id, type, this.handle);
-                    break;
-                case this.proto._objnameVarId:
-                    this.setVarValue(id, type, this.name);
-                    break;
-                case this.proto._classnameVarId:
-                    this.setVarValue(id, type, this.proto.name);
-                    break;
-            }
-        }
-        return this;
-    }
-    /**
-     * Применяет к дереву имиджей набор переменных `varSet`, считанных из .stt файла.
-     *
-     * Замечание: Значения дочерних превыше родительских, поэтому они применяются последними.
-     */
-    applyVarSet(varSet: VariableSet) {
-        const { name, vars } = this.proto;
-        if (vars && name.toUpperCase() === varSet.classname.toUpperCase()) {
-            for (const v of varSet.values) {
-                const id = vars.nameUCToId.get(v.name.toUpperCase());
-                if (typeof id === "undefined") continue;
-                const type = vars.types[id];
-                this.setVarValue(id, type, parseVarValue(type, v.value));
-            }
-        }
-
-        varSet.childSets.forEach((s) => this.child(s.handle)?.applyVarSet(s));
-        return this;
-    }
-
-    /**
-     * Рекурсивно вычисляет схему имиджа.
-     */
-    *compute(force = false): ComputeResult {
-        if (!force && this.isDisabled(this)) return;
-
-        for (let i = 0; i < this.children.length; ++i) yield* this.children[i].compute();
-
-        let code = 0;
-        const tlb = this.TLB;
-        const mem = this.prj;
-        const model = this.model;
-        while (true) {
-            while ((code = model(this, tlb, mem, code)) > 0);
-            if (code === 0) break;
-
-            const r = this.getWaitResult();
-            // Если это примитив, ничего не делаем, продолжаем выполнение.
-            if (typeof r !== "object") {
-                this.waitFor(r);
-                continue;
-            }
-            // Если это промиз, то отдаем его наверх.
-            if (r instanceof Promise) {
-                yield r.then((res) => this.waitFor(res));
-            } else {
-                // Если это итератор (SendMessage или вызов функции), то выполняем его.
-                yield* r;
-            }
-        }
-    }
-
-    resolve(path: string): Schema | undefined {
-        if (path === "") return this;
-        const filter = path.split("\\");
-        let root = path[0] === "\\" ? this.root : this;
-        for (let i = 0; i < filter.length; ++i) {
-            const cl = root.neighMapUC.get(filter[i]);
-            if (typeof cl === "undefined") return undefined;
-            root = cl;
-        }
-        return root;
-    }
-
-    private setVarValue(id: number, type: VarType, value: number | string): boolean {
-        if (id < 0) return false;
-        const realId = this.TLB[id];
-        this.prj.olds[type][realId] = value;
-        this.prj.news[type][realId] = value;
-        return true;
-    }
-
-    private classNodeCache = new Map<string, Schema[]>();
-    findClasses(classNameUC: string): Schema[] {
-        const { root } = this;
-        const nodes = root.classNodeCache.get(classNameUC);
-        if (typeof nodes !== "undefined") return nodes;
-
-        const nodes2 = new Array<Schema>();
-        (function collect(s: Schema) {
-            s.children.forEach(collect);
-            if (s.proto.name.toUpperCase() === classNameUC) nodes2.push(s);
-        })(root);
-
-        root.classNodeCache.set(classNameUC, nodes2);
-        return nodes2;
-    }
-
-    stubCall(name: string, ...args: unknown[]) {
-        let root: Schema = this;
-        let path = "";
-        while (root.parent !== root) {
-            path = ` -> ${root.proto.name} #${root.handle}${path}`;
-            root = root.parent;
-        }
-        path = root.proto.name + path;
-        throw Error(`Вызов нереализованной функции ${name}(${args.map((a) => typeof a).join(",")})\nв ${path}`);
-    }
-
-    private static alwaysEnabled() {
-        return false;
-    }
-    private static disabledByEnable(schema: Schema) {
-        return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] <= 0;
-    }
-    private static disabledByDisable(schema: Schema) {
-        return schema.prj.newFloats[schema.TLB[schema.disOrEnVarId]] > 0;
-    }
-    private static NoModel() {
-        return 0;
-    }
+    //#endregion
 }
