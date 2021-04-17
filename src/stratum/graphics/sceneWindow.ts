@@ -1,8 +1,8 @@
-import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/api";
 import { SmoothComputer } from "stratum/common/computers";
 import { Constant } from "stratum/common/constant";
 import { Clearable, EventSubscriber, NumBool } from "stratum/common/types";
 import { VectorDrawing } from "stratum/fileFormats/vdr";
+import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/stratum";
 import { HTMLFactory, InputWrapper, InputWrapperOptions, Scene } from "./scene";
 
 export interface WindowArgs<T> {
@@ -134,7 +134,7 @@ export class SceneWindow<T> implements HTMLFactory, Clearable<T> {
         if (sizeChanged) {
             this.cnv.width = nw;
             this.cnv.height = nh;
-            for (const c of this.sizeSubs) c.receive(Constant.WM_SIZE, nw, nh);
+            this.sizeSubs.forEach((c) => c.receive(Constant.WM_SIZE, nw, nh));
         }
 
         if (sizeChanged || this.scene.dirty) {

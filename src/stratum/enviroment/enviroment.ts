@@ -1,7 +1,7 @@
-import { AddDirInfo, DirInfo, FileInfo, PlayerOptions, WindowHost } from "stratum/api";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
 import { Constant } from "stratum/common/constant";
 import { EventSubscriber, NumBool } from "stratum/common/types";
+import { installContextFunctions } from "stratum/compiler";
 import { readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { Hyperbase, VectorDrawing } from "stratum/fileFormats/vdr";
@@ -9,15 +9,17 @@ import { Scene } from "stratum/graphics/scene";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
 import { BinaryReader } from "stratum/helpers/binaryReader";
 import { HandleMap } from "stratum/helpers/handleMap";
+import { getDirectory } from "stratum/helpers/pathOperations";
 import { MutableArrayLike } from "stratum/helpers/utilityTypes";
 import { win1251Table } from "stratum/helpers/win1251";
 import { Project } from "stratum/project";
 import { EnviromentFunctions } from "stratum/project/enviromentFunctions";
 import { ProjectArgs } from "stratum/project/project";
-import { readFile } from "stratum/vfs/helpers";
+import { AddDirInfo, PathInfo, PlayerOptions, WindowHost } from "stratum/stratum";
 import { EnvStream } from "./envStream";
 import { LazyLibrary } from "./lazyLibrary";
 import { NeoMatrix } from "./neoMatrix";
+import { readFile } from "./readFile";
 
 export interface ProjectResources extends ProjectArgs {
     classes: LazyLibrary<number>;
@@ -30,45 +32,50 @@ interface LoadArgs<T> {
 
 export class Enviroment implements EnviromentFunctions {
     private static readonly startupTime = new Date().getTime();
-    static async loadProject(prjFile: FileInfo, dirInfo?: AddDirInfo[]): Promise<ProjectResources> {
+    /**
+     * Загружает все ресурсы указанного проекта.
+     * @param prjFile - путь к файлу проекта.
+     * @param dirInfo - дополнительная информация (пути к системным библиотекам).
+     */
+    static async loadProject(prjFile: PathInfo, dirInfo?: AddDirInfo[]): Promise<ProjectResources> {
         const addDirs = dirInfo?.filter((d) => d.loadClasses).map((d) => d.dir);
         const lib = new LazyLibrary<number>();
         return Enviroment.loadProjectResources(prjFile, { lib }, addDirs);
     }
-    private static async loadProjectResources<T extends number = number>(prjFile: FileInfo, args: LoadArgs<T>, addDirs?: DirInfo[]): Promise<ProjectResources> {
-        const workDir = prjFile.parent();
-        const sttFile = workDir.file("_preload.stt");
-        const [prjBuf, sttBuf] = await workDir.files([prjFile, sttFile]).arraybuffers();
-        if (!prjBuf) throw Error(`Файл проекта ${prjFile.path} не найден`);
+    private static async loadProjectResources(prjFile: PathInfo, args: LoadArgs<number>, addDirs?: PathInfo[]): Promise<ProjectResources> {
+        const workDir = prjFile.resolve("..");
+        const sttFile = workDir.resolve("_preload.stt");
+        const [prjBuf, sttBuf] = await workDir.fs.arraybuffers([prjFile, sttFile]);
+        if (!prjBuf) throw Error(`Файл проекта ${prjFile} не найден`);
 
         // Файл проекта.
-        const prjInfo = readPrjFile(new BinaryReader(prjBuf, prjFile.path));
+        const prjInfo = readPrjFile(new BinaryReader(prjBuf, prjFile.toString()));
 
         // Файл состояния.
         let stt: VariableSet | null = null;
         if (sttBuf) {
             try {
-                stt = readSttFile(new BinaryReader(sttBuf, sttFile.path));
+                stt = readSttFile(new BinaryReader(sttBuf, sttFile.toString()));
             } catch (e) {
                 console.warn(e);
             }
         }
 
         // Пути поиска имиджей, которые через запятую прописаны в настройках проекта.
-        const classDirs: DirInfo[] = [];
+        const classDirs: PathInfo[] = [workDir];
         const settingsPaths = prjInfo.settings?.classSearchPaths;
         if (settingsPaths) {
             //prettier-ignore
             const pathsSeparated = settingsPaths.split(",").map((s) => s.trim()).filter((s) => s);
             for (const localPath of pathsSeparated) {
-                classDirs.push(workDir.dir(localPath));
+                classDirs.push(workDir.resolve(localPath));
             }
         }
-        const dirs = workDir.dirs(addDirs ? classDirs.concat(addDirs) : classDirs);
+        const dirs = addDirs ? classDirs.concat(addDirs) : classDirs;
 
-        // Классы.
+        // Имиджи.
         const classes = args.lib;
-        await classes.add(dirs, true, args.id);
+        await classes.add(workDir.fs, dirs, true, args.id);
         return { classes: classes, dir: workDir, prjInfo, stt };
     }
 
@@ -210,17 +217,17 @@ export class Enviroment implements EnviromentFunctions {
         const vdr = this.classes.get(className)?.scheme();
         return this.openWindow(prj, wname, attrib, vdr);
     }
-    loadSpaceWindow(prj: Project, dir: DirInfo, wname: string, fileName: string, attrib: string): number | Promise<number> {
+    loadSpaceWindow(prj: Project, dir: PathInfo, wname: string, fileName: string, attrib: string): number | Promise<number> {
         const existHandle = this.wnameToHspace.get(wname);
         if (typeof existHandle !== "undefined") return existHandle;
 
-        return readFile(dir.file(fileName), "vdr")
+        return readFile(dir.resolve(fileName), "vdr")
             .then((vdr) => this.openWindow(prj, wname, attrib, vdr))
             .catch(() => this.openWindow(prj, wname, attrib));
     }
     createWindowEx(
         prj: Project,
-        dir: DirInfo,
+        dir: PathInfo,
         wname: string,
         parentWname: string,
         source: string,
@@ -243,7 +250,7 @@ export class Enviroment implements EnviromentFunctions {
 
         const vdr = this.classes.get(source)?.scheme();
         if (vdr) return cb(vdr);
-        return readFile(dir.file(source), "vdr")
+        return readFile(dir.resolve(source), "vdr")
             .then((vdr) => cb(vdr))
             .catch(() => cb());
         // .catch(err => {
@@ -258,50 +265,50 @@ export class Enviroment implements EnviromentFunctions {
         // this.windows.set(wname, wnd);
         // return handle;
     }
-    createDIB2d(dir: DirInfo, hspace: number, fileName: string): number | Promise<number> {
+    createDIB2d(dir: PathInfo, hspace: number, fileName: string): number | Promise<number> {
         const scene = this.scenes.get(hspace);
         if (typeof scene === "undefined") return 0;
 
-        return readFile(dir.file(fileName), "bmp")
+        return readFile(dir.resolve(fileName), "bmp")
             .then((img) => scene.createDIBTool(img))
             .catch(() => 0);
     }
-    createDoubleDib2D(dir: DirInfo, hspace: number, fileName: string): number | Promise<number> {
+    createDoubleDib2D(dir: PathInfo, hspace: number, fileName: string): number | Promise<number> {
         const scene = this.scenes.get(hspace);
         if (typeof scene === "undefined") return 0;
 
-        return readFile(dir.file(fileName), "dbm")
+        return readFile(dir.resolve(fileName), "dbm")
             .then((img) => scene.createDoubleDIBTool(img))
             .catch(() => 0);
     }
-    createObjectFromFile2D(dir: DirInfo, hspace: number, fileName: string, x: number, y: number, flags: number): number | Promise<number> {
+    createObjectFromFile2D(dir: PathInfo, hspace: number, fileName: string, x: number, y: number, flags: number): number | Promise<number> {
         const scene = this.scenes.get(hspace);
         if (typeof scene === "undefined") return 0;
 
-        return readFile(dir.file(fileName), "vdr")
+        return readFile(dir.resolve(fileName), "vdr")
             .then((vdr) => scene.insertVectorDrawing(x, y, flags, vdr))
             .catch(() => 0);
     }
-    createStream(dir: DirInfo, type: string, name: string, flags: string): number | Promise<number> {
+    createStream(dir: PathInfo, type: string, name: string, flags: string): number | Promise<number> {
         const t = type.toUpperCase();
 
         const needCreate = flags.toUpperCase().includes("CREATE");
 
         const handle = HandleMap.getFreeHandle(this.streams);
         if (t === "FILE") {
-            const f = dir.file(name);
+            const f = dir.resolve(name);
             return (async () => {
                 let stream: EnvStream;
                 if (needCreate) {
-                    const r = await f.create();
-                    if (!r) throw Error(`Не удалось создать файл ${f.path}.`);
-                    stream = new EnvStream({ onFlush: (d) => f.write(d) });
+                    const r = await f.fs.createFile(f);
+                    if (!r) throw Error(`Не удалось создать файл ${f}.`);
+                    stream = new EnvStream({ onFlush: (d) => f.fs.write(f, d) });
                 } else {
-                    const buf = await f.arraybuffer();
-                    if (!buf) throw Error(`Файл ${f.path} не существует.`);
+                    const buf = await f.fs.arraybuffer(f);
+                    if (!buf) throw Error(`Файл ${f} не существует.`);
                     stream = new EnvStream({
                         data: buf,
-                        onFlush: (d) => f.write(d),
+                        onFlush: (d) => f.fs.write(f, d),
                     });
                 }
                 this.streams.set(handle, stream);
@@ -314,14 +321,14 @@ export class Enviroment implements EnviromentFunctions {
         }
         throw Error(`Поток типа ${t} не поддерживается`);
     }
-    mSaveAs(dir: DirInfo, q: number, fileName: string, flag: number): NumBool | Promise<NumBool> {
+    mSaveAs(dir: PathInfo, q: number, fileName: string, flag: number): NumBool | Promise<NumBool> {
         if (flag <= 0) return 0;
         throw Error("не реализовано");
     }
-    mLoad(dir: DirInfo, q: number, fileName: string, flag: number): number | Promise<number> {
+    mLoad(dir: PathInfo, q: number, fileName: string, flag: number): number | Promise<number> {
         if (flag <= 0) return 0;
 
-        return readFile(dir.file(fileName), "mat")
+        return readFile(dir.resolve(fileName), "mat")
             .then((mat) => {
                 const handle = q === 0 ? HandleMap.getFreeNegativeHandle(this.matrices) : q;
                 this.matrices.set(handle, new NeoMatrix(mat));
@@ -416,14 +423,14 @@ export class Enviroment implements EnviromentFunctions {
         }
     }
 
-    async hyperCall(dir: DirInfo, hyp: Hyperbase): Promise<void> {
+    async hyperCall(dir: PathInfo, hyp: Hyperbase): Promise<void> {
         if (this.inHyperCall) return;
         this.inHyperCall = true;
         const mode = hyp.openMode ?? 0;
         switch (mode) {
             case 2: {
                 if (!hyp.target) return;
-                const prjFile = dir.file(hyp.target);
+                const prjFile = dir.resolve(hyp.target);
                 const c = document.body.style.cursor;
                 document.body.style.cursor = "wait";
                 try {
@@ -1216,7 +1223,8 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
     //#region ФУНКЦИИ РАБОТЫ С ФАЙЛАМИ
     stratum_getClassDirectory(className: string): string {
-        return this.classes.getDirectory(className) ?? "";
+        const path = this.classes.getPath(className);
+        return path ? getDirectory(path) : "";
     }
     stratum_closeClassScheme(className: string): NumBool {
         return 1;
@@ -1317,3 +1325,4 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
     //#endregion
 }
+installContextFunctions(Enviroment, "env");

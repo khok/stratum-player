@@ -176,12 +176,13 @@ class ExprGenerator {
             // Шаблонная функция
             let result = data.f;
             let i = 0;
-            for (; i < fargs.length; ++i) {
+            while (i < fargs.length) {
                 const n = result.replace(`#${i}`, fargs[i]);
                 if (result === n) {
                     throw Error(`Слишком много аргументов в функции ${op.name}: ${fargs.length}, максимум - ${i})`);
                 }
                 result = n;
+                ++i;
             }
             let next = result;
             while ((next = result.replace(`#${i}`, "undefined")) !== result) {

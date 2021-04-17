@@ -4,13 +4,14 @@
     "description": "",
     "scripts": {
         "live": "node utils/live live",
-        "unit": "node utils/live unit",
+        "test": "node utils/live unit",
         "player": "cp dist/stratum.min.js player && http-server player",
-        "ts-warns": "tsc -p src/tsconfig.json",
-        "ts-errors": "tsc -p src/tsconfig.check-build.json",
-        "build-types": "tsc -p src/tsconfig.build-types.json && cp dist/types/api.d.ts dist/stratum.d.ts && (echo export as namespace stratum;>> dist/stratum.d.ts)",
-        "build-bundle": "esbuild src/stratum/api.ts --bundle --global-name=stratum --minify --target=es6 --outfile=dist/stratum.min.js",
-        "build": "npm run build-types --silent && npm run build-bundle --silent"
+        "stratum-warns": "tsc -p src/stratum/tsconfig.json",
+        "stratum-errors": "tsc -p src/tsconfig.check-stratum.json",
+        "build-stratum": "esbuild src/stratum/build.ts --bundle --minify --target=es6 --outfile=dist/stratum.min.js",
+        "zipfs-warns": "tsc -p src/zipfs/tsconfig.json",
+        "zipfs-errors": "tsc -p src/tsconfig.check-zipfs.json",
+        "build-zipfs": "esbuild src/zipfs/build.ts --bundle --minify --target=es6 --outfile=dist/zipfs.min.js"
     },
     "author": "",
     "license": "ISC",

@@ -1,18 +1,23 @@
-import { AddDirInfo, FileInfo, Player, PlayerOptions, WindowHost } from "stratum/api";
-import { ExecutorAsyncCallback, SmoothComputer } from "stratum/common/computers";
+import { ExecutorAsyncCallback, FastestComputer, SmoothComputer } from "stratum/common/computers";
 import { Enviroment } from "stratum/enviroment";
 import { ProjectResources } from "stratum/enviroment/enviroment";
+import { AddDirInfo, PathInfo, Player, PlayerOptions, WindowHost } from "stratum/stratum";
 import { SimpleWs } from "./ws";
 
 export class RealPlayer implements Player {
-    static async create(prjFile: FileInfo, dirInfo?: AddDirInfo[]): Promise<Player> {
+    /**
+     * Загружает все ресурсы и создает новый экземпляр плеера.
+     * @param prjFile - путь к файлу проекта.
+     * @param dirInfo - дополнительная информация (пути к системным библиотекам).
+     */
+    static async create(prjFile: PathInfo, dirInfo?: AddDirInfo[]): Promise<Player> {
         const res = await Enviroment.loadProject(prjFile, dirInfo);
         return new RealPlayer(res);
     }
 
     private _state: Player["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
-    private _computer = new SmoothComputer();
+    private computer: SmoothComputer | FastestComputer = new SmoothComputer();
     private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
 
     private loop: ExecutorAsyncCallback | null;
@@ -25,12 +30,23 @@ export class RealPlayer implements Player {
 
     readonly options: PlayerOptions;
 
-    constructor(res: ProjectResources) {
+    private constructor(res: ProjectResources) {
         this.envArgs = res;
         this.host = new SimpleWs();
         this.env = null;
         this.options = {};
         this.loop = null;
+    }
+
+    speed(speed: "smooth" | "fast", cycles?: number): this {
+        const comp = speed === "smooth" ? new SmoothComputer() : new FastestComputer(cycles);
+        const curComp = this.computer;
+        if (curComp.running) {
+            curComp.stop();
+            if (this.loop) comp.runAsync(this.loop);
+        }
+        this.computer = comp;
+        return this;
     }
 
     get state() {
@@ -39,19 +55,6 @@ export class RealPlayer implements Player {
 
     get diag() {
         return this._diag;
-    }
-
-    get computer() {
-        return this._computer;
-    }
-
-    set computer(value) {
-        if (value === this._computer) return;
-        if (this._computer.running) {
-            this._computer.stop();
-            if (this.loop) value.runAsync(this.loop);
-        }
-        this._computer = value;
     }
 
     play(container?: HTMLElement): this;

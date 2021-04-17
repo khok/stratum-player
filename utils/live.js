@@ -49,8 +49,8 @@ const build = () => {
     if (!hasChanges) return;
     hasChanges = false;
     var hrstart = process.hrtime();
-    exec(buildBundle, (e, stdout, stderr) => {
-        if (stderr) {
+    exec(buildBundle, (e, _, stderr) => {
+        if (e) {
             console.log("\x1b[31m", stderr, "\x1b[0m");
             return;
         }

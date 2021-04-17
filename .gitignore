@@ -171,6 +171,7 @@ crashlytics-build.properties
 /.cache/
 /dist/*
 !dist/stratum.min.js
+!dist/zipfs.min.js
 !dist/stratum.d.ts
 /static/scripts/*
 !/static/scripts/autorefresh.js

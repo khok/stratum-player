@@ -56,7 +56,7 @@ function readVars(reader: BinaryReader): ClassVarInfo[] {
     const varCount = reader.uint16();
 
     const vars = new Array<ClassVarInfo>(varCount);
-    for (let i = 0; i < varCount; i++) {
+    for (let i = 0; i < varCount; ++i) {
         const name = reader.string();
         const description = reader.string();
         const defaultValue = reader.string();
@@ -75,7 +75,7 @@ function readLinks(reader: BinaryReader): ClassLinkInfo[] {
     const linkCount = reader.uint16();
 
     const links = new Array<ClassLinkInfo>(linkCount);
-    for (let i = 0; i < linkCount; i++) {
+    for (let i = 0; i < linkCount; ++i) {
         const handle1 = reader.uint16();
         const handle2 = reader.uint16();
         const linkHandle = reader.uint16();
@@ -98,7 +98,7 @@ function readChildren(reader: BinaryReader, version: number): ClassChildInfo[] {
     const childCount = reader.uint16();
 
     const children = new Array<ClassChildInfo>(childCount);
-    for (let i = 0; i < childCount; i++) {
+    for (let i = 0; i < childCount; ++i) {
         const classname = reader.string();
         const handle = reader.uint16();
         const schemeName = reader.string();

@@ -9,5 +9,5 @@ export {
     SchemaMemory,
     VarInfo,
 } from "./compilerTypes";
-export { injectContextFunctions } from "./functionTable";
+export { installContextFunctions } from "./functionTable";
 export { translate } from "./jsModel";

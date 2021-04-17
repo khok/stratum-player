@@ -327,7 +327,7 @@ export function readHyper(reader: BinaryReader, size: number): Hyperbase {
     const res: Hyperbase = {};
     let code = 0;
     const end = reader.pos() + size;
-    while (reader.pos() < end && (code = reader.uint16()) != 0) {
+    while (reader.pos() < end && (code = reader.uint16()) !== 0) {
         switch (code) {
             case 1:
                 res.target = reader.string();

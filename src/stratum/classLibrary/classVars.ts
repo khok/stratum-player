@@ -60,7 +60,7 @@ export class ClassVars {
         const namesUC = raw.map((v) => v.name.toUpperCase());
         this.nameUCToId = new Map(namesUC.map((n, idx) => [n, idx]));
 
-        for (let i = 0; i < raw.length; i++) {
+        for (let i = 0; i < raw.length; ++i) {
             const nameUC = namesUC[i];
             const typ = this.vdata[i].type;
 
@@ -106,9 +106,7 @@ export class ClassVars {
         return this.vdata[id];
     }
     data(id: number): VariableData {
-        const d = this.vdata;
-        if (id < 0 || id >= d.length) throw Error("Попытка получить значение за пределами массива");
-        return d[id];
+        return this.vdata[id];
     }
     count(): number {
         return this.vdata.length;

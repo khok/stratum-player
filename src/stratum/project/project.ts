@@ -1,24 +1,40 @@
-import { DirInfo } from "stratum/api";
 import { ClassLibrary } from "stratum/classLibrary";
 import { HyperCallReceiver, NumBool } from "stratum/common/types";
 import { VarType } from "stratum/common/varType";
-import { ProjectContextFunctions, SchemaMemory } from "stratum/compiler";
+import { installContextFunctions, ProjectContextFunctions, SchemaMemory } from "stratum/compiler";
 import { unreleasedFunctions } from "stratum/compiler/unreleasedFunctions";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { PathInfo } from "stratum/stratum";
 import { EnviromentFunctions } from "./enviromentFunctions";
 import { Schema } from "./schema";
 
+/**
+ * Ресурсы проекта.
+ */
 export interface ProjectArgs {
-    dir: DirInfo;
+    /**
+     * Рабочая директория проекта (т.е. в которой находится файл prj).
+     * Относительно нее будут резолвиться открываемые файлы.
+     */
+    dir: PathInfo;
+    /**
+     * Содержимое prj-файла.
+     */
     prjInfo: ProjectInfo;
+    /**
+     * Библиотека имиджей.
+     */
     classes: ClassLibrary;
+    /**
+     * Содержимое stt-файла.
+     */
     stt?: VariableSet | null;
 }
 
 export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextFunctions {
-    private readonly dir: DirInfo;
+    private readonly dir: PathInfo;
     private readonly olds: { [index: number]: Float64Array | Int32Array | string[] };
     private readonly news: { [index: number]: Float64Array | Int32Array | string[] };
 
@@ -37,6 +53,11 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
     readonly oldStrings: string[];
     readonly newStrings: string[];
 
+    /**
+     * Создает новый экземпляр проекта.
+     * @param env - окружение, в котором работает проект.
+     * @param args - ресурсы проекта.
+     */
     constructor(env: EnviromentFunctions, args: ProjectArgs) {
         this.level = 0;
         this._shouldClose = false;
@@ -44,7 +65,7 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
         this.dir = args.dir;
 
         const rootProto = args.classes.get(args.prjInfo.rootClassName);
-        if (!rootProto) throw Error(`Корневой класс ${args.prjInfo.rootClassName} не найден`);
+        if (!rootProto) throw Error(`Корневой имидж ${args.prjInfo.rootClassName} не найден`);
 
         unreleasedFunctions.clear();
         const schema = rootProto.schema<Schema>((...args) => new Schema(this, ...args));
@@ -158,19 +179,20 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
     }
 
     async stratum_async_createDir(name: string): Promise<NumBool> {
-        const d = this.dir.dir(name);
-        const res = await d.create();
-        return res ? 1 : 0;
+        const dir = this.dir.resolve(name);
+        const r = await dir.fs.createDir(dir);
+        return r ? 1 : 0;
     }
 
     async stratum_async_fileExist(fileName: string): Promise<NumBool> {
-        const f = this.dir.file(fileName);
-        const r = await f.exist();
+        const file = this.dir.resolve(fileName);
+        const r = await file.fs.fileExist(file);
         return r ? 1 : 0;
     }
 
     stratum_getProjectDirectory(): string {
-        return this.dir.path;
+        return this.dir.toString();
     }
     //#endregion
 }
+installContextFunctions(Project, "prj");

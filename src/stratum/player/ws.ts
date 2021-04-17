@@ -1,4 +1,4 @@
-import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/api";
+import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/stratum";
 
 export class SimpleWindow implements WindowHostWindow {
     private origTitle: string;

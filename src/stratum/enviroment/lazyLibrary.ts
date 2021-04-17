@@ -1,10 +1,9 @@
-import { DirsInfo, FileInfo } from "stratum/api";
 import { ClassLibrary, ClassProto } from "stratum/classLibrary";
 import { Clearable } from "stratum/common/types";
 import { ClassModel } from "stratum/compiler";
 import { readClsFile, readClsHeader } from "stratum/fileFormats/cls";
 import { BinaryReader } from "stratum/helpers/binaryReader";
-import { getDirectory } from "stratum/helpers/pathOperations";
+import { FileSystem, PathInfo } from "stratum/stratum";
 
 interface UnloadedClassInfo<T> {
     type: "unloaded";
@@ -20,23 +19,35 @@ interface LoadedClassInfo<T> {
     proto: ClassProto;
 }
 
+/**
+ * "Ленивая" реализация библиотеки имиджей.
+ * Особенность в том, что при открытии проекта (через гиперпереход) она асинхронно подгружает только
+ *  необходимые имиджи, а при закрытии - выгружает их.
+ */
 export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
     private filenames = new Set<string>();
     private lib = new Map<string, UnloadedClassInfo<T> | LoadedClassInfo<T>>();
 
-    async add(dirs: DirsInfo, recursive: boolean, id?: T): Promise<void> {
-        const searchRes = await dirs.searchClsFiles(recursive);
+    async add(fs: FileSystem, dirs: PathInfo[], recursive: boolean, id?: T): Promise<void> {
+        // Получаем список имиджей в указанных директориях.
+        const searchRes = await fs.searchClsFiles(dirs, recursive);
 
-        const files: FileInfo[] = [];
-        for (let i = 0; i < searchRes.length; ++i) {
-            const f = searchRes[i];
+        // Фильтруем список, оставляя только еще не загруженнные имиджи.
+        const paths: string[] = [];
+        const neededFiles = searchRes.filter((p) => {
+            const path = p.toString();
+
             const size = this.filenames.size;
-            this.filenames.add(f.path);
-            if (this.filenames.size !== size) files.push(searchRes[i]);
-        }
-        if (files.length === 0) return;
+            this.filenames.add(path);
+            const changed = this.filenames.size !== size;
 
-        const load = await dirs.files(files).arraybuffers();
+            if (changed) paths.push(path);
+            return changed;
+        });
+        if (neededFiles.length === 0) return;
+
+        // Загружаем недостаяющие имиджи одним запросом.
+        const load = await fs.arraybuffers(neededFiles);
 
         let clsTotalSize = 0;
         let clsCount = 0;
@@ -44,8 +55,8 @@ export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
             const buf = load[i];
             if (!buf) continue;
 
-            const file = files[i];
-            const reader = new BinaryReader(buf, file.path);
+            const clsPath = paths[i];
+            const reader = new BinaryReader(buf, clsPath);
             let classname: string;
             try {
                 classname = readClsHeader(reader).name;
@@ -54,15 +65,15 @@ export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
                 continue;
             }
             reader.seek(0);
-            reader.name = `${classname} (${file.path})`;
+            reader.name = `${classname} (${clsPath})`;
 
             const keyUC = classname.toUpperCase();
             const exist = this.lib.get(keyUC);
             if (exist) {
                 if (typeof id !== "undefined") this.clear(id);
-                throw Error(`Имидж ${classname} обнаружен в файлах: ${exist.path}, ${file.path}`);
+                throw Error(`Имидж ${classname} обнаружен в файлах: ${exist.path}, ${clsPath}`);
             }
-            this.lib.set(keyUC, { type: "unloaded", id: id ?? null, path: file.path, reader });
+            this.lib.set(keyUC, { type: "unloaded", id: id ?? null, path: clsPath, reader });
 
             clsTotalSize += buf.byteLength;
             ++clsCount;
@@ -103,11 +114,7 @@ export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
     getModel(className: string): ClassModel | null {
         return this.get(className)?.model() ?? null;
     }
-    getDirectory(className: string): string | null {
-        const res = this.lib.get(className.toUpperCase());
-        return res ? getDirectory(res.path) : null;
-    }
-    getFileName(className: string): string | null {
+    getPath(className: string): string | null {
         return this.lib.get(className.toUpperCase())?.path ?? null;
     }
 }

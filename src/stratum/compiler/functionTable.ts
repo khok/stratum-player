@@ -69,7 +69,7 @@ export const funcTable: Map<string, FuncInfo> = new Map([
 // Для поиска ошибок async: stratum_.*Promise.*\{
 // Все функции нач с "stratum_" должны быть типизированы.
 type CtxNameType = (typeof schemaArg | typeof prjVar | typeof envVar) & ("prj" | "env" | "schema");
-export function injectContextFunctions<T extends Function>(f: T, contextName: CtxNameType): void {
+export function installContextFunctions<T extends Function>(f: T, contextName: CtxNameType): void {
     const PREFIX = "stratum_";
     const PREF_LEN = PREFIX.length;
     const ASYNC_PREF = "async_";

@@ -4,7 +4,7 @@ import { parseVarValue } from "stratum/common/parseVarValue";
 import { EventSubscriber } from "stratum/common/types";
 import { MemorySize, VarGraphNode } from "stratum/common/varGraphNode";
 import { VarType } from "stratum/common/varType";
-import { ComputeResult, SchemaContextFunctions } from "stratum/compiler";
+import { ComputeResult, installContextFunctions, SchemaContextFunctions } from "stratum/compiler";
 import { ClassChildInfo, ClassLinkInfo } from "stratum/fileFormats/cls";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Point2D } from "stratum/helpers/types";
@@ -392,7 +392,7 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
 
         // let cached = varNames.length === cachedNames.length;
         // if (cached === true) {
-        //     for (let i = 0; i < varNames.length; i++) {
+        //     for (let i = 0; i < varNames.length; ++i) {
         //         if (varNames[i] !== cachedNames[i]) {
         //             cached = false;
         //             break;
@@ -487,3 +487,4 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
     }
     //#endregion
 }
+installContextFunctions(Schema, "schema");

@@ -6,7 +6,7 @@ export interface FlushCallback {
 }
 
 export interface EnvStreamArgs {
-    data?: ArrayBuffer;
+    data?: ArrayBuffer | ArrayBufferView;
     onFlush?: FlushCallback;
 }
 
@@ -27,7 +27,14 @@ export class EnvStream {
     width: number;
 
     constructor(args: EnvStreamArgs = {}) {
-        this.v = new DataView(args.data?.slice(0) ?? new ArrayBuffer(0));
+        const b = args.data;
+        if (!b) {
+            this.v = new DataView(new ArrayBuffer(0));
+        } else if (b instanceof ArrayBuffer) {
+            this.v = new DataView(b.slice(0));
+        } else {
+            this.v = new DataView(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
+        }
         this.p = 0;
         this.width = 8;
         this.onflush = args.onFlush ?? null;
@@ -168,8 +175,9 @@ export class EnvStream {
         if (end > this.size()) this.resize(end);
         this.p = end;
 
-        for (const b of encode(realVal)) {
-            this.v.setUint8(pos, b);
+        const result = encode(realVal);
+        for (let i = 0; i < result.length; ++i) {
+            this.v.setUint8(pos, result[i]);
             pos += 1;
         }
 

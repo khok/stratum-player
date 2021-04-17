@@ -6,7 +6,7 @@
  - common - зав. от helpers,fileFormats. Различные зависимости других модулей.
 
  - compiler - компилятор, зависит от common,fileFormats,helpers.
- - classLibrary - библиотека классов, зависит от вышеперечисленного.
+ - classLibrary - библиотека имиджей, зависит от вышеперечисленного.
  - project - Проект и вычисляемая схема, зависит от вышеперечисленного и api (в плане файловой системы).
 
  - graphics - графика, зависит от common,fileFormats,helpers;

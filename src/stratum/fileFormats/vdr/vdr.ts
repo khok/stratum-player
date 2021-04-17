@@ -73,7 +73,7 @@ function read2xFormat(reader: BinaryReader, version: number, start: number): Vec
     reader.seek(toolPos);
     const cc = reader.uint16();
 
-    for (let i = 0; i < cc; i++) {
+    for (let i = 0; i < cc; ++i) {
         new DataChunk(reader, version, "").readObject(res);
     }
 

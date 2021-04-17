@@ -1,10 +1,10 @@
-import { options } from "stratum/api";
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
 import { NumBool } from "stratum/common/types";
 import { readDbmFile } from "stratum/fileFormats/bmp";
 import { DibToolImage } from "stratum/fileFormats/bmp/dibToolImage";
 import { ImageToolParams } from "stratum/fileFormats/vdr";
 import { BinaryReader } from "stratum/helpers/binaryReader";
+import { options } from "stratum/options";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export class DIBTool {

@@ -1,7 +1,7 @@
 {
-    "extends": "./tsconfig.json",
+    "extends": "./zipfs/tsconfig.json",
     "files": [
-        "./stratum/api.ts"
+        "./zipfs/build.ts",
     ],
     "compilerOptions": {
         "noUnusedLocals": false,

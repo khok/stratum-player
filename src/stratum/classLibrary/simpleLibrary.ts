@@ -51,10 +51,7 @@ export class SimpleLibrary implements ClassLibrary {
     getModel(className: string): ClassModel | null {
         return this.get(className)?.model() ?? null;
     }
-    getDirectory(): string | null {
-        throw new Error("Method not implemented.");
-    }
-    getFileName(): string | null {
+    getPath(): string | null {
         throw new Error("Method not implemented.");
     }
     [Symbol.iterator]() {

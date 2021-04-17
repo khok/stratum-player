@@ -6,10 +6,20 @@ export interface ClassFactory<T> {
     (proto: ClassProto, children: T[], links: ClassLinkInfo[], placement?: ClassChildInfo): T;
 }
 
+/**
+ * Библиотека имиджей.
+ */
 export interface ClassLibrary extends ModelLibrary /* extends Iterable<ClassProto>*/ {
+    /**
+     * Существует ли имидж с указанными именем?
+     */
     has(className: string): boolean;
+    /**
+     * Возвращает имидж с указанными именем.
+     */
     get(className: string): ClassProto | null;
-    getDirectory(className: string): string | null;
-    getFileName(className: string): string | null;
-    // getComposedScheme(className: string): VectorDrawing | null;
+    /**
+     * Возвращает полный путь к файлу имиджа.
+     */
+    getPath(className: string): string | null;
 }

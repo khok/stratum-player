@@ -1,25 +1,60 @@
-import { FastestExecutor, options, setLogLevel, unzip } from "stratum/api";
-
 // Запуск одной строкой:
+
+import { options } from "stratum/options";
+import { RealPlayer } from "stratum/player";
+import { RealZipFS } from "zipfs/realZipfs";
+
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
-export async function runDemo(name: string, strat: "fast" | "normal" = "normal", path?: string) {
+export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth", path?: string) {
     options.iconsLocation = "./data/icons";
-    setLogLevel("full");
+    // setLogLevel("full");
     //prettier-ignore
     //Подгруаем архивчики
-    const pr = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(unzip)));
+    const pr = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(RealZipFS.create)));
+    const first = pr[0].files(/.+\.(prj|spj)$/i).next().value;
+    if (!first) throw Error();
     const fs = pr.reduce((a, b) => a.merge(b));
+    console.log(fs);
+
     // Предзагружаем файлы vdr и bmp.
     // Открываем проект
-    await Promise.all([...fs.files(/.+\.(bmp|vdr|txt|mat)$/i)].map((f) => f.makeSync()));
-    const project = await fs.project({ additionalClassPaths: ["library"], path });
+    // await Promise.all([...fs.files(/.+\.(bmp|vdr|txt|mat)$/i)].map((f) => f.makeSync()));
+    const project = await RealPlayer.create(first, [{ type: "library", loadClasses: true, dir: fs.path("C:/library") }]);
 
-    if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));
+    // const cl = (project as RealPlayer)["lib"]!.get("LGSpace")!;
+    //     let code = `
+    //     float hspace
+    // x := 0
+    // y := 0
+    // switch
+    //   case(~hspace == 1)
+    //     x := 1
+    //  case(~hspace == 3)
+    //     x := 3
+    //    default
+    //      y := 4
+    //     default
+    //      y := x
+    //    case(~hspace == 2)
+    //      x := 4
+    //               default
+    //     x := 3
 
+    // endswitch
+    //     `;
+    //     code = `
+    //     float x
+    //     SendMessage();
+    // do
+    //   x :=  -(1 + 3) ^ 4
+    // until(~x < 10)
+    // ret := ~x < 10
+    //     `;
+    // translate(code, cl.vars, "lgspace", (project as RealPlayer)["projectRes"].classes);
+    // if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));
+    // return;
     // Поехали
-    if (strat === "fast") project.computer = new FastestExecutor();
-    project.play(document.getElementById("main_window_container")!);
-
+    project.speed(strat).play(document.getElementById("main_window_container")!);
     console.log(project);
     {
         const rateElem = document.getElementById("rate") as HTMLInputElement;

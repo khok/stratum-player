@@ -56,8 +56,9 @@ export class SmoothComputer implements Executor {
 export class FastestComputer implements Executor {
     private frameId = 0;
     private timeout: number;
-    constructor(args: any) {
-        this.timeout = typeof args === "number" ? args : 0;
+    constructor(cycles?: number) {
+        // this.timeout = typeof args === "number" ? args : 0;
+        this.timeout = 0;
     }
 
     get running() {
