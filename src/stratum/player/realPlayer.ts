@@ -1,4 +1,4 @@
-import { ExecutorAsyncCallback, FastestComputer, SmoothComputer } from "stratum/common/computers";
+import { ExecutorCallback, FastestComputer, SmoothComputer } from "stratum/common/computers";
 import { Enviroment } from "stratum/enviroment";
 import { ProjectResources } from "stratum/enviroment/enviroment";
 import { AddDirInfo, PathInfo, Player, PlayerOptions, WindowHost } from "stratum/stratum";
@@ -20,7 +20,7 @@ export class RealPlayer implements Player {
     private computer: SmoothComputer | FastestComputer = new SmoothComputer();
     private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
 
-    private loop: ExecutorAsyncCallback | null;
+    private loop: ExecutorCallback | null;
 
     private host: WindowHost;
 
@@ -43,7 +43,7 @@ export class RealPlayer implements Player {
         const curComp = this.computer;
         if (curComp.running) {
             curComp.stop();
-            if (this.loop) comp.runAsync(this.loop);
+            if (this.loop) comp.run(this.loop);
         }
         this.computer = comp;
         return this;
@@ -68,43 +68,48 @@ export class RealPlayer implements Player {
         const env = (this.env = new Enviroment(this.envArgs, this.host));
         this._diag.iterations = 0;
         // Main Loop
-        this.loop = async () => {
-            let res = false;
-            try {
-                res = await env.compute();
-            } catch (e) {
-                env.stopForever();
-                this._state = "error";
-                console.error(e);
-                this.handlers.error.forEach((h) => h(e.message));
+        let _continue = true;
+        // let _exc = false;
+        this.loop = () => {
+            if (env.isWaiting()) {
+                return true;
+            }
+            if (!_continue) {
                 return false;
             }
-            ++this._diag.iterations;
-            if (res === false) {
-                this.loop = null;
-                this.env = null;
-                this._state = "closed";
-                this.handlers.closed.forEach((h) => h());
-            }
-            return res;
+            // _exc = true;
+            env.compute()
+                .then((stop) => {
+                    // _exc = false;
+                    ++this._diag.iterations;
+                    if (stop) {
+                        this.loop = null;
+                        this.env = null;
+                        this._state = "closed";
+                        this.handlers.closed.forEach((h) => h());
+                    }
+                    _continue = !stop;
+                })
+                .catch((e) => {
+                    // _exc = false;
+                    _continue = false;
+                    this._state = "error";
+                    console.error(e);
+                    this.handlers.error.forEach((h) => h(e.message));
+                });
+            return true;
         };
 
-        this.computer.runAsync(this.loop);
+        this.computer.run(this.loop);
         this._state = "playing";
         return this;
     }
 
     close(): this {
-        if (this.env?.isWaiting()) return this;
-        this.computer.stop();
-        this.env?.closeAllRes();
-        this.loop = null;
-        this.env = null;
-        this._state = "closed";
+        this.env?.requestStop();
         return this;
     }
     pause(): this {
-        if (this.env?.isWaiting()) return this;
         if (this.computer.running) {
             this.computer.stop();
             this._state = "paused";
@@ -112,15 +117,13 @@ export class RealPlayer implements Player {
         return this;
     }
     continue(): this {
-        if (this.env?.isWaiting()) return this;
         if (!this.computer.running && this.loop) {
-            this.computer.runAsync(this.loop);
+            this.computer.run(this.loop);
             this._state = "playing";
         }
         return this;
     }
     step(): this {
-        if (this.env?.isWaiting()) return this;
         if (!this.computer.running && this.loop) {
             this.loop();
         }

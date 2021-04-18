@@ -2,6 +2,7 @@
 
 import { options } from "stratum/options";
 import { RealPlayer } from "stratum/player";
+import { PathInfo, ZipFS } from "stratum/stratum";
 import { RealZipFS } from "zipfs/realZipfs";
 
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
@@ -10,15 +11,17 @@ export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth",
     // setLogLevel("full");
     //prettier-ignore
     //Подгруаем архивчики
-    const pr = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(RealZipFS.create)));
-    const first = pr[0].files(/.+\.(prj|spj)$/i).next().value;
+    const pr : ZipFS[] = await Promise.all([`/projects/${name}.zip`, "/data/library.zip"].map(s => fetch(s).then((r) => r.blob()).then(RealZipFS.create)));
+    const files = [...pr[0].files(/.+\.(prj|spj)$/i)];
+    let first: PathInfo | undefined;
+    if (path) {
+        const norm = pr[0].path(path).parts.join("\\").toString().toUpperCase();
+        first = files.find((f) => f.toString().toUpperCase().includes(norm));
+    } else {
+        first = files[0];
+    }
     if (!first) throw Error();
     const fs = pr.reduce((a, b) => a.merge(b));
-    console.log(fs);
-
-    // Предзагружаем файлы vdr и bmp.
-    // Открываем проект
-    // await Promise.all([...fs.files(/.+\.(bmp|vdr|txt|mat)$/i)].map((f) => f.makeSync()));
     const project = await RealPlayer.create(first, [{ type: "library", loadClasses: true, dir: fs.path("C:/library") }]);
 
     // const cl = (project as RealPlayer)["lib"]!.get("LGSpace")!;
@@ -54,7 +57,7 @@ export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth",
     // if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));
     // return;
     // Поехали
-    project.speed(strat).play(document.getElementById("main_window_container")!);
+    project.speed(strat, 4).play(document.getElementById("main_window_container")!);
     console.log(project);
     {
         const rateElem = document.getElementById("rate") as HTMLInputElement;

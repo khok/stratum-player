@@ -4,11 +4,33 @@ import { Hyperbase } from "stratum/fileFormats/vdr";
 import { PathInfo } from "stratum/stratum";
 import { Project } from "./project";
 
+/**
+ * Функции контекста окружения.
+ */
 export interface EnviromentFunctions extends EnviromentContextFunctions {
+    /**
+     * Установлен ли флаг ожидания?
+     * Флаг ожидания используется для предоввращения получения сообщений
+     * до того, как выполнение такта будет завершено.
+     */
     isWaiting(): boolean;
+    /**
+     * Переводит окружение в режим ожидания.
+     * Флаг устанавливается перед выполнением ожидания промиза.
+     */
     setWaiting(): void;
+    /**
+     * Сбрасывает флаг ожидания.
+     * Флаг сбрасывается после получения результата промиза промиза.
+     */
     resetWaiting(): void;
 
+    /**
+     * Создает гипервызов.
+     * @param dir - директория проекта, создавшего гипервызов
+     *  (используется для разрешения имени файла проекта, указанного в гипербазе).
+     * @param hyp - параметры гипервызова.
+     */
     hyperCall(dir: PathInfo, hyp: Hyperbase): Promise<void>;
 
     openSchemeWindow(prj: Project, wname: string, className: string, attrib: string): number;

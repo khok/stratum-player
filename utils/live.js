@@ -25,7 +25,7 @@ if (!fs.existsSync(outDeps)) {
     execSync(buildDeps);
 }
 
-const watchDirs = ["src/stratum", `test/${target}`];
+const watchDirs = ["src", `test/${target}`];
 
 // fileserver
 const server = http.createServer((req, res) => handler(req, res, { public: serveDir }));

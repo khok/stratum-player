@@ -111,7 +111,7 @@ export class Enviroment implements EnviromentFunctions {
         return this.projects.length + 1;
     }
 
-    compute(): Promise<boolean> {
+    compute(): Promise<void | true> {
         // Среда остановлена
         if (this._shouldQuit) {
             return this.closeAllRes();
@@ -126,12 +126,12 @@ export class Enviroment implements EnviromentFunctions {
             this.projects.pop();
             if (this.projects.length === 0) {
                 this.closeAllRes();
-                return Promise.resolve(false);
+                return Promise.resolve(true);
             }
             prj = this.projects[prjIdx - 1];
         }
 
-        return prj.root.compute().then(() => true);
+        return prj.root.compute();
     }
 
     private closeProject(id: number): void {
@@ -139,12 +139,11 @@ export class Enviroment implements EnviromentFunctions {
         this.classes.clear(id);
     }
 
-    stopForever(): void {
-        this._isWaiting = false;
+    requestStop(): void {
         this._shouldQuit = true;
     }
 
-    async closeAllRes(): Promise<boolean> {
+    async closeAllRes(): Promise<true> {
         this._shouldQuit = true;
         this.windows.forEach((w) => {
             w.clearAll();
@@ -163,7 +162,7 @@ export class Enviroment implements EnviromentFunctions {
         await Promise.all(p);
         this.classes.clearAll();
         while (this.projects.pop());
-        return false;
+        return true;
     }
 
     isWaiting(): boolean {
@@ -220,6 +219,10 @@ export class Enviroment implements EnviromentFunctions {
     loadSpaceWindow(prj: Project, dir: PathInfo, wname: string, fileName: string, attrib: string): number | Promise<number> {
         const existHandle = this.wnameToHspace.get(wname);
         if (typeof existHandle !== "undefined") return existHandle;
+
+        if (fileName === "") {
+            return this.openWindow(prj, wname, attrib);
+        }
 
         return readFile(dir.resolve(fileName), "vdr")
             .then((vdr) => this.openWindow(prj, wname, attrib, vdr))
