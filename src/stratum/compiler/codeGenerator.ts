@@ -307,7 +307,7 @@ export class CodeGenerator {
     constructor(ast: CodeLine[], private lib: ModelLibrary, rawVars?: ReadonlyArray<VarInfo> | null) {
         this._vars = new VarSearch(rawVars);
 
-        this.res = [`switch(${retCodeArg}) {`, "case 0:"];
+        this.res = [`var code = ${retCodeArg};`, "while(true) {", "switch(code) {", "case 0:"];
         const p = new ExprGenerator(this.res, this._vars, this.lib, this.missingFuncs, this.innerFuncs);
 
         for (let i = 0; i < ast.length; ++i) {
@@ -328,11 +328,15 @@ export class CodeGenerator {
 
         const b = this.b.lastBlock();
         if (b) throw Error(`Ожидалось ${b.expect}`);
-        this.res.push("}", `return ${EXIT_CODE};`);
+        this.res.push("}", `return ${EXIT_CODE};`, "}");
     }
 
     private comment(comm: string) {
         this.res.push("//" + comm);
+    }
+
+    private makeJump(id: number): string {
+        return `{ code = ${id}; continue; }`;
     }
 
     private parseCodeline(c: CodeLine, p: ExprGenerator): void {
@@ -357,7 +361,7 @@ export class CodeGenerator {
             case "if": {
                 this.comment("if");
                 const b = this.b.pushBlock<LabelIf>({ canBreak: false, end: ++this.labelCnt, expect: "endif", haveElse: false });
-                this.res.push(`if(!(${p.parseExpr(c.expr)})) return ${b.end};`);
+                this.res.push(`if(!(${p.parseExpr(c.expr)})) ${this.makeJump(b.end)}`);
                 break;
             }
             case "else": {
@@ -369,7 +373,7 @@ export class CodeGenerator {
                 const els = b.end;
                 b.end = ++this.labelCnt;
 
-                this.res.push(`return ${b.end};`);
+                this.res.push(this.makeJump(b.end));
                 this.comment("else");
                 this.res.push(`case ${els}:`);
                 break;
@@ -384,12 +388,12 @@ export class CodeGenerator {
                 this.comment("while");
                 const block = this.b.pushBlock<LabelWhile>({ expect: "endwhile", start: ++this.labelCnt, end: ++this.labelCnt, canBreak: true });
                 this.res.push(`case ${block.start}:`);
-                this.res.push(`if(!(${p.parseExpr(c.expr)})) return ${block.end};`);
+                this.res.push(`if(!(${p.parseExpr(c.expr)})) ${this.makeJump(block.end)}`);
                 break;
             }
             case "endwhile": {
                 const b = this.b.popBlock<LabelWhile>("endwhile");
-                this.res.push(`return ${b.start};`);
+                this.res.push(this.makeJump(b.start));
                 this.comment("endwhile");
                 this.res.push(`case ${b.end}:`);
                 break;
@@ -403,7 +407,7 @@ export class CodeGenerator {
             }
             case "until": {
                 const b = this.b.popBlock<LabelDoUntil>("until");
-                this.res.push(`if(${p.parseExpr(c.expr)}) return ${b.start};`);
+                this.res.push(`if(${p.parseExpr(c.expr)}) ${this.makeJump(b.start)}`);
                 this.comment("until");
                 this.res.push(`case ${b.end}:`);
                 break;
@@ -426,14 +430,14 @@ export class CodeGenerator {
                 if (!b || b.expect !== "endswitch") throw Error("case должен находиться внутри блока switch");
                 b.hasCase = true;
                 if (b.next !== null) {
-                    this.res.push(`return ${b.end};`);
+                    this.res.push(this.makeJump(b.end));
                     this.comment("case");
                     this.res.push(`case ${b.next}:`);
                 } else {
                     this.comment("case");
                 }
                 b.next = ++this.labelCnt;
-                this.res.push(`if(!(${p.parseExpr(c.expr)})) return ${b.next};`);
+                this.res.push(`if(!(${p.parseExpr(c.expr)})) ${this.makeJump(b.next)}`);
                 break;
             }
             case "default": {
@@ -441,7 +445,7 @@ export class CodeGenerator {
                 if (!b || b.expect !== "endswitch") throw Error("default должен находиться внутри блока switch");
                 if (!b.hasCase) throw Error("Ожидалось case");
                 if (b.next !== null) {
-                    this.res.push(`return ${b.end};`);
+                    this.res.push(this.makeJump(b.end));
                     this.comment("default");
                     this.res.push(`case ${b.next}:`);
                 } else {
@@ -453,7 +457,8 @@ export class CodeGenerator {
 
             case "break":
                 this.comment("break");
-                this.res.push(`return ${this.b.getBreakID()};`);
+                const id = this.b.getBreakID();
+                this.res.push(id === EXIT_CODE ? `return ${EXIT_CODE};` : this.makeJump(id));
                 break;
             case "varsDec":
                 break;

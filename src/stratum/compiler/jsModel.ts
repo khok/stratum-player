@@ -101,9 +101,7 @@ class JsModel implements InternalClassModel {
         const model = this._func;
         let code = 0;
         while (true) {
-            while ((code = model(code, this, tlb, mem, schema)) > 0);
-            if (code === 0) break;
-
+            if ((code = model(code, this, tlb, mem, schema)) === 0) return;
             const r = this.getWaitResult();
             if (typeof r !== "object") {
                 // Если это примитив, ничего не делаем, продолжаем выполнение.
