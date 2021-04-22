@@ -27,7 +27,7 @@ export class ZipDir {
         }
     }
 
-    get(path: ReadonlyArray<string>): ZipDir | ZipFile | null {
+    getFolder(path: ReadonlyArray<string>): ZipDir | null {
         if (path.length === 0) return this;
         let dir: ZipDir = this;
         for (let i = 0; i < path.length - 1; ++i) {
@@ -35,7 +35,11 @@ export class ZipDir {
             if (!next?.isDir) return null;
             dir = next;
         }
-        return dir.nodes.get(path[path.length - 1].toUpperCase()) ?? null;
+        return dir;
+    }
+
+    get(path: ReadonlyArray<string>): ZipDir | ZipFile | null {
+        return this.getFolder(path)?.nodes.get(path[path.length - 1].toUpperCase()) ?? null;
     }
 
     // create(type: "file", path: string, data?: ArrayBuffer): VFSFile | undefined;
@@ -68,9 +72,10 @@ export class ZipDir {
         if (this.nodes.size === prv) throw Error(`Конфликт имен: ${fileOrDir.pinfo.toString()}`);
     }
 
-    createLocalFile(name: string, source: LazyBuffer): void {
+    createLocalFile(name: string, source: LazyBuffer): ZipFile {
         const f = new ZipFile(name, this, source);
         this.setLocalSafe(name, f);
+        return f;
     }
 
     createLocalDir(name: string): ZipDir {

@@ -1,10 +1,11 @@
 import { JSZipObject } from "jszip";
+import { ReadWriteFile } from "stratum";
 import { PathObject } from "./pathObject";
 import { ZipDir } from "./zipDir";
 
 export type LazyBuffer = JSZipObject | ArrayBuffer;
 
-export class ZipFile {
+export class ZipFile implements ReadWriteFile {
     readonly isDir = false;
     private buf: LazyBuffer;
     // readonly path: string;
@@ -20,7 +21,7 @@ export class ZipFile {
         return new ZipFile(newLocalName || this.localName, parent, this.buf);
     }
 
-    async arraybuffer(): Promise<ArrayBuffer> {
+    async read(): Promise<ArrayBuffer> {
         if (this.buf instanceof ArrayBuffer) return this.buf;
         return (this.buf = await this.buf.async("arraybuffer"));
     }

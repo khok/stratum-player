@@ -12,5 +12,5 @@ export interface EventSubscriber {
 }
 
 export interface HyperCallReceiver {
-    hyperCall(hyper: Hyperbase): Promise<void>;
+    hyperCall(hyper: Hyperbase): void;
 }

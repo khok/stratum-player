@@ -37,12 +37,12 @@ export class SceneWindow<T> implements HTMLFactory, Clearable<T> {
     private _title: string;
     private ctx: CanvasRenderingContext2D;
 
-    private noCaption: boolean;
+    // private noCaption: boolean;
 
     constructor(host: WindowHost, args: WindowArgs<T>) {
         this.id = args.id ?? null;
         this.ignoreSetSize = args.disableResize ?? false;
-        this.noCaption = !!args.noCaption;
+        // this.noCaption = !!args.noCaption;
 
         if (args.vdr) {
             this.resizible = !args.vdr.settings?.some((d) => d.id === 11);
@@ -70,8 +70,10 @@ export class SceneWindow<T> implements HTMLFactory, Clearable<T> {
         cnv.style.setProperty("touch-action", "pinch-zoom");
         view.appendChild(cnv);
 
-        const opts: WindowOptions = {};
-        if (!args.noCaption) opts.title = args.title;
+        const opts: WindowOptions = {
+            title: args.title,
+            noCaption: args.noCaption,
+        };
         this.host = host.window(view, opts);
         cnv.width = this.width();
         cnv.height = this.height();
@@ -196,7 +198,8 @@ export class SceneWindow<T> implements HTMLFactory, Clearable<T> {
 
     setTitle(title: string): NumBool {
         this._title = title;
-        if (!this.noCaption && this.host.setTitle) this.host.setTitle(title);
+        // if (!this.noCaption && this.host.setTitle) this.host.setTitle(title);
+        if (this.host.setTitle) this.host.setTitle(title);
         return 1;
     }
 

@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { decode, encode } from "stratum/helpers/win1251";
+import { ReadWriteFile } from "stratum/stratum";
 
 export interface FlushCallback {
     (data: ArrayBuffer): boolean | Promise<boolean>;
@@ -7,7 +8,7 @@ export interface FlushCallback {
 
 export interface EnvStreamArgs {
     data?: ArrayBuffer | ArrayBufferView;
-    onFlush?: FlushCallback;
+    file?: ReadWriteFile;
 }
 
 export class EnvStream {
@@ -23,7 +24,7 @@ export class EnvStream {
     private v: DataView;
     private p: number;
 
-    private onflush: FlushCallback | null;
+    private onflush: ReadWriteFile | null;
     width: number;
 
     constructor(args: EnvStreamArgs = {}) {
@@ -37,7 +38,7 @@ export class EnvStream {
         }
         this.p = 0;
         this.width = 8;
-        this.onflush = args.onFlush ?? null;
+        this.onflush = args.file ?? null;
     }
 
     seek(pos: number): number {
@@ -185,7 +186,7 @@ export class EnvStream {
     }
 
     close(): boolean | Promise<boolean> {
-        if (this.onflush) return this.onflush(this.v.buffer);
+        if (this.onflush) return this.onflush.write(this.v.buffer);
         return true;
     }
 }

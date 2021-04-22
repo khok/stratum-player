@@ -4,6 +4,13 @@ export interface Hyperbase {
     target?: string;
     windowName?: string;
     objectName?: string;
+    /**
+     * 0 - Открыть окно
+     * 1 - Запустить exe
+     * 2 - грузить проект
+     * 3 - ничего не делать
+     * 4 - системная команда
+     */
     openMode?: number;
     effect?: string;
     time?: number;

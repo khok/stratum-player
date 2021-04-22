@@ -47,6 +47,7 @@ export class Enviroment implements EnviromentFunctions {
         const sttFile = workDir.resolve("_preload.stt");
         const [prjBuf, sttBuf] = await workDir.fs.arraybuffers([prjFile, sttFile]);
         if (!prjBuf) throw Error(`Файл проекта ${prjFile} не найден`);
+        console.log(`Открываем проект ${prjFile.toString()}...`);
 
         // Файл проекта.
         const prjInfo = readPrjFile(new BinaryReader(prjBuf, prjFile.toString()));
@@ -83,7 +84,7 @@ export class Enviroment implements EnviromentFunctions {
 
     private _shouldQuit: boolean = false;
     private _isWaiting: boolean = false;
-    private inHyperCall: boolean = false;
+    private loading: Promise<void> | null = null;
 
     private windows = new Map<string, SceneWindow<number>>();
     private scenes = new Map<number, Scene>();
@@ -117,11 +118,13 @@ export class Enviroment implements EnviromentFunctions {
             return this.closeAllRes();
         }
 
+        if (this.loading) return this.loading;
+
         const prjIdx = this.projects.length - 1;
         let prj = this.projects[prjIdx];
 
-        // Проект работает
-        if (prj.shouldClose() === true) {
+        // Проект не работает и при этом нет ожидающего проекта.
+        if (prj.shouldClose() === true /*&& !this.loading*/) {
             this.closeProject(this.sessionId());
             this.projects.pop();
             if (this.projects.length === 0) {
@@ -303,16 +306,14 @@ export class Enviroment implements EnviromentFunctions {
             return (async () => {
                 let stream: EnvStream;
                 if (needCreate) {
-                    const r = await f.fs.createFile(f);
-                    if (!r) throw Error(`Не удалось создать файл ${f}.`);
-                    stream = new EnvStream({ onFlush: (d) => f.fs.write(f, d) });
+                    const file = await f.fs.createFile(f);
+                    if (!file) throw Error(`Не удалось создать файл ${f}.`);
+                    stream = new EnvStream({ file });
                 } else {
-                    const buf = await f.fs.arraybuffer(f);
-                    if (!buf) throw Error(`Файл ${f} не существует.`);
-                    stream = new EnvStream({
-                        data: buf,
-                        onFlush: (d) => f.fs.write(f, d),
-                    });
+                    const file = f.fs.file(f);
+                    const buf = await file?.read();
+                    if (!file || !buf) throw Error(`Файл ${f} не существует.`);
+                    stream = new EnvStream({ data: buf, file: file });
                 }
                 this.streams.set(handle, stream);
                 return handle;
@@ -426,45 +427,49 @@ export class Enviroment implements EnviromentFunctions {
         }
     }
 
+    private async loadProject(prjFile: PathInfo) {
+        if (this.loading) return;
+
+        const c = document.body.style.cursor;
+        document.body.style.cursor = "wait";
+        try {
+            const data = await Enviroment.loadProjectResources(prjFile, { id: this.nextSessionId(), lib: this.classes });
+            // if (this._shouldQuit) return;
+            this.projects.push(new Project(this, data));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            this.loading = null;
+            document.body.style.cursor = c;
+        }
+    }
+
     async hyperCall(dir: PathInfo, hyp: Hyperbase): Promise<void> {
-        if (this.inHyperCall) return;
-        this.inHyperCall = true;
-        const mode = hyp.openMode ?? 0;
-        switch (mode) {
+        if (this.loading) return;
+
+        switch (hyp.openMode ?? 0) {
+            case 0: {
+                console.log(hyp);
+                break;
+            }
             case 2: {
-                if (!hyp.target) return;
-                const prjFile = dir.resolve(hyp.target);
-                const c = document.body.style.cursor;
-                document.body.style.cursor = "wait";
-                try {
-                    const data = await Enviroment.loadProjectResources(prjFile, { id: this.nextSessionId(), lib: this.classes });
-                    this.inHyperCall = false;
-                    if (this._shouldQuit) return;
-                    this.projects.push(new Project(this, data));
-                } catch (e) {
-                    console.error(e);
-                    this._shouldQuit = true;
-                } finally {
-                    document.body.style.cursor = c;
-                }
+                if (!hyp.target) break;
+                this.loading = this.loadProject(dir.resolve(hyp.target));
                 break;
             }
             default:
                 console.log(hyp);
         }
-        this.inHyperCall = false;
     }
 
     // Эти методы вызываются из Player, т.к. он отвечает за загрузку файлов.
     private openWindow(prj: Project, wname: string, attribute: string, vdr?: VectorDrawing | null): number {
         const a = attribute.toUpperCase();
-        const noCaption = a.includes("WS_NOCAPTION");
-
         const wnd = new SceneWindow<number>(this.host, {
             id: this.sessionId(),
             title: wname,
             vdr,
-            noCaption,
+            noCaption: a.includes("WS_NOCAPTION"),
             disableResize: this.options.disableWindowResize,
             onClosed: () => this.removeWindow(wname),
         });
@@ -1291,6 +1296,7 @@ export class Enviroment implements EnviromentFunctions {
     stratum_async_closeStream(hstream: number): NumBool | Promise<NumBool> {
         const st = this.streams.get(hstream);
         if (!st) return 0;
+        this.streams.delete(hstream);
         const r = st.close();
         if (r instanceof Promise) return r.then((res) => (res ? 1 : 0));
         return r ? 1 : 0;

@@ -71,11 +71,12 @@ export class RealPlayer implements Player {
         let _continue = true;
         // let _exc = false;
         this.loop = () => {
-            if (env.isWaiting()) {
-                return true;
-            }
             if (!_continue) {
                 return false;
+            }
+            // Циклы вхолостую.
+            if (env.isWaiting()) {
+                return true;
             }
             // _exc = true;
             env.compute()
@@ -106,8 +107,17 @@ export class RealPlayer implements Player {
     }
 
     close(): this {
-        this.env?.requestStop();
-        return this;
+        if (this._state === "error") {
+            this.env?.closeAllRes().then((s) => {
+                this.loop = null;
+                this._state = "closed";
+            });
+            this.env = null;
+            return this;
+        } else {
+            this.env?.requestStop();
+            return this.step();
+        }
     }
     pause(): this {
         if (this.computer.running) {

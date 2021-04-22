@@ -1,5 +1,5 @@
 import { loadAsync } from "jszip";
-import { OpenZipOptions, PathInfo, ZipFS, ZipSource } from "stratum";
+import { OpenZipOptions, PathInfo, ReadWriteFile, ZipFS, ZipSource } from "stratum";
 import { PathObject } from "./pathObject";
 import { ZipDir } from "./zipDir";
 
@@ -50,8 +50,16 @@ export class RealZipFS implements ZipFS {
         for (const disk of this.disks.values()) yield* disk.files(regexp, true);
     }
 
+    private disk(vol: string) {
+        return this.disks.get(vol.toUpperCase());
+    }
+
     private get(path: PathInfo) {
-        return this.disks.get(path.vol.toUpperCase())?.get(path.parts);
+        return this.disk(path.vol)?.get(path.parts);
+    }
+
+    private getFileParent(path: PathInfo) {
+        return this.disk(path.vol)?.getFolder(path.parts);
     }
 
     path(path: string): PathInfo {
@@ -75,26 +83,33 @@ export class RealZipFS implements ZipFS {
         for (let i = 0; i < paths.length; ++i) {
             const file = this.get(paths[i]);
             if (!file || file.isDir) continue;
-            result.push(file.arraybuffer());
+            result.push(file.read());
         }
         return Promise.all(result);
     }
     createDir(path: PathInfo): Promise<boolean> {
-        throw new Error("Method not implemented.");
+        let root = this.disk(path.vol);
+        if (!root) return Promise.resolve(false);
+        for (const p of path.parts) root = root.createLocalDir(p);
+        return Promise.resolve(true);
     }
     fileExist(path: PathInfo): Promise<boolean> {
-        throw new Error("Method not implemented.");
+        const file = this.get(path);
+        return Promise.resolve(!!(file && !file?.isDir));
     }
     arraybuffer(path: PathInfo): Promise<ArrayBuffer | ArrayBufferView | null> {
-        // console.log(path.toString());
         const file = this.get(path);
         if (!file || file.isDir) return Promise.resolve(null);
-        return file.arraybuffer();
+        return file.read();
     }
-    createFile(path: PathInfo): Promise<boolean> {
-        throw new Error("Method not implemented.");
+    createFile(path: PathInfo): Promise<ReadWriteFile | null> {
+        const folder = this.getFileParent(path);
+        if (!folder) return Promise.resolve(null);
+        const file = folder.createLocalFile(path.parts[path.parts.length - 1], new ArrayBuffer(0));
+        return Promise.resolve(file);
     }
-    write(path: PathInfo, data: ArrayBuffer): Promise<boolean> {
-        throw new Error("Method not implemented.");
+    file(path: PathInfo): ReadWriteFile | null {
+        const f = this.get(path);
+        return f && !f.isDir ? f : null;
     }
 }

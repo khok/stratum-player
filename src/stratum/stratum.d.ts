@@ -10,6 +10,15 @@ export interface PathInfo {
     toString(): string;
 }
 
+export interface ReadWriteFile {
+    read(): Promise<ArrayBuffer | ArrayBufferView | null>;
+    /**
+     * Заполняет существуюший файл содержимым.
+     * @returns - удалось ли записать данные в файл?
+     */
+    write(data: ArrayBuffer): Promise<boolean>;
+}
+
 export interface FileSystem {
     /**
      * Возвращает информацию о `.cls` файлах в указанных каталогах.
@@ -30,6 +39,12 @@ export interface FileSystem {
      * Файл существует?
      */
     fileExist(path: PathInfo): Promise<boolean>;
+
+    /**
+     * Возвращает содержимое файла или `null` если он не существует.
+     */
+    file(path: PathInfo): ReadWriteFile | null;
+
     /**
      * Возвращает содержимое файла или `null` если он не существует.
      */
@@ -38,12 +53,7 @@ export interface FileSystem {
      * Создает файл.
      * @returns Был ли создан файл?
      */
-    createFile(path: PathInfo): Promise<boolean>;
-    /**
-     * Заполняет существуюший файл содержимым.
-     * @returns - удалось ли записать данные в файл?
-     */
-    write(path: PathInfo, data: ArrayBuffer): Promise<boolean>;
+    createFile(path: PathInfo): Promise<ReadWriteFile | null>;
 }
 
 export interface PlayerOptions {
@@ -135,11 +145,26 @@ export interface PlayerDiag {
     readonly iterations: number;
 }
 
+export interface WindowRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 export interface WindowOptions {
+    /**
+     * Размеры окна.
+     */
+    rect?: WindowRect;
     /**
      * Заголовок открываемого окна.
      */
     title?: string;
+    /**
+     * Спрятать заголовок?
+     */
+    noCaption?: boolean;
 }
 
 /**
@@ -161,6 +186,16 @@ export interface WindowHost {
 }
 
 export interface WindowHostWindow {
+    /**
+     * Закрывает окно.
+     * @remarks При этом не должно вызываться событие closed.
+     */
+    close(): void;
+    /**
+     * Создает подокно.
+     */
+    subwindow(view: HTMLDivElement, options: WindowOptions): WindowHostWindow;
+
     /**
      * Изменяет заголовок окна.
      * @param title
@@ -186,11 +221,6 @@ export interface WindowHostWindow {
      * Перемещает окно наверх.
      */
     toTop?(): void;
-    /**
-     * Закрывает окно.
-     * @remarks При этом не должно вызываться событие closed.
-     */
-    close(): void;
 }
 
 export interface AddDirInfo {

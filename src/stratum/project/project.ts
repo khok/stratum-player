@@ -124,7 +124,7 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
         return this._shouldClose;
     }
 
-    hyperCall(hyp: Hyperbase): Promise<void> {
+    hyperCall(hyp: Hyperbase): void {
         return this.env.hyperCall(this.dir, hyp);
     }
 

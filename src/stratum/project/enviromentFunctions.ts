@@ -10,8 +10,9 @@ import { Project } from "./project";
 export interface EnviromentFunctions extends EnviromentContextFunctions {
     /**
      * Установлен ли флаг ожидания?
-     * Флаг ожидания используется для предоввращения получения сообщений
-     * до того, как выполнение такта будет завершено.
+     *
+     * Флаг ожидания используется для предотвращения выполнения следующего такта
+     * до того, как выполнение предыдущего будет завершено.
      */
     isWaiting(): boolean;
     /**
@@ -21,7 +22,7 @@ export interface EnviromentFunctions extends EnviromentContextFunctions {
     setWaiting(): void;
     /**
      * Сбрасывает флаг ожидания.
-     * Флаг сбрасывается после получения результата промиза промиза.
+     * Флаг сбрасывается после получения результата промиза.
      */
     resetWaiting(): void;
 
@@ -31,7 +32,7 @@ export interface EnviromentFunctions extends EnviromentContextFunctions {
      *  (используется для разрешения имени файла проекта, указанного в гипербазе).
      * @param hyp - параметры гипервызова.
      */
-    hyperCall(dir: PathInfo, hyp: Hyperbase): Promise<void>;
+    hyperCall(dir: PathInfo, hyp: Hyperbase): void;
 
     openSchemeWindow(prj: Project, wname: string, className: string, attrib: string): number;
     loadSpaceWindow(prj: Project, dir: PathInfo, wname: string, fileName: string, attrib: string): number | Promise<number>;
