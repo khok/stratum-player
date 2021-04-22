@@ -1,29 +1,52 @@
-import { Player, PlayerOptions, SmoothExecutor, WindowHost } from "stratum/api";
-import { Enviroment } from "stratum/env";
-import { ProjectResources } from "stratum/project";
+import { ExecutorCallback, FastestComputer, SmoothComputer } from "stratum/common/computers";
+import { Enviroment } from "stratum/enviroment";
+import { ProjectResources } from "stratum/enviroment/enviroment";
+import { AddDirInfo, PathInfo, Player, PlayerOptions, WindowHost } from "stratum/stratum";
 import { SimpleWs } from "./ws";
 
 export class RealPlayer implements Player {
+    /**
+     * Загружает все ресурсы и создает новый экземпляр плеера.
+     * @param prjFile - путь к файлу проекта.
+     * @param dirInfo - дополнительная информация (пути к системным библиотекам).
+     */
+    static async create(prjFile: PathInfo, dirInfo?: AddDirInfo[]): Promise<Player> {
+        const res = await Enviroment.loadProject(prjFile, dirInfo);
+        return new RealPlayer(res);
+    }
+
     private _state: Player["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
-    private _computer = new SmoothExecutor();
+    private computer: SmoothComputer | FastestComputer = new SmoothComputer();
     private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
 
-    private loop: (() => boolean) | undefined;
+    private loop: ExecutorCallback | null;
 
     private host: WindowHost;
 
-    private projectRes: ProjectResources;
+    private envArgs: ProjectResources;
 
     private env: Enviroment | null;
 
     readonly options: PlayerOptions;
 
-    constructor(res: ProjectResources) {
-        this.projectRes = res;
+    private constructor(res: ProjectResources) {
+        this.envArgs = res;
         this.host = new SimpleWs();
         this.env = null;
         this.options = {};
+        this.loop = null;
+    }
+
+    speed(speed: "smooth" | "fast", cycles?: number): this {
+        const comp = speed === "smooth" ? new SmoothComputer() : new FastestComputer(cycles);
+        const curComp = this.computer;
+        if (curComp.running) {
+            curComp.stop();
+            if (this.loop) comp.run(this.loop);
+        }
+        this.computer = comp;
+        return this;
     }
 
     get state() {
@@ -34,19 +57,6 @@ export class RealPlayer implements Player {
         return this._diag;
     }
 
-    get computer() {
-        return this._computer;
-    }
-
-    set computer(value) {
-        if (value === this._computer) return;
-        if (this._computer.running) {
-            this._computer.stop();
-            if (this.loop) value.run(this.loop);
-        }
-        this._computer = value;
-    }
-
     play(container?: HTMLElement): this;
     play(host: WindowHost): this;
     play(newHost?: HTMLElement | null | WindowHost): this {
@@ -55,25 +65,40 @@ export class RealPlayer implements Player {
             this.host = newHost instanceof HTMLElement ? new SimpleWs(newHost) : newHost;
         }
 
-        const env = (this.env = new Enviroment(this.projectRes, this.host, this.options));
+        const env = (this.env = new Enviroment(this.envArgs, this.host));
         this._diag.iterations = 0;
         // Main Loop
+        let _continue = true;
+        // let _exc = false;
         this.loop = () => {
-            let res = false;
-            try {
-                res = env.compute();
-            } catch (e) {
-                console.error(e);
-                this._state = "error";
-                this.handlers.error.forEach((h) => h(e.message));
+            if (!_continue) {
                 return false;
             }
-            ++this._diag.iterations;
-            if (res === false) {
-                this.close();
-                this.handlers.closed.forEach((h) => h());
+            // Циклы вхолостую.
+            if (env.isWaiting()) {
+                return true;
             }
-            return res;
+            // _exc = true;
+            env.compute()
+                .then((stop) => {
+                    // _exc = false;
+                    ++this._diag.iterations;
+                    if (stop) {
+                        this.loop = null;
+                        this.env = null;
+                        this._state = "closed";
+                        this.handlers.closed.forEach((h) => h());
+                    }
+                    _continue = !stop;
+                })
+                .catch((e) => {
+                    // _exc = false;
+                    _continue = false;
+                    this._state = "error";
+                    console.error(e);
+                    this.handlers.error.forEach((h) => h(e.message));
+                });
+            return true;
         };
 
         this.computer.run(this.loop);
@@ -82,14 +107,17 @@ export class RealPlayer implements Player {
     }
 
     close(): this {
-        this.computer.stop();
-        this.loop = undefined;
-        if (this.env) {
-            this.env.closeAllRes();
+        if (this._state === "error") {
+            this.env?.closeAllRes().then((s) => {
+                this.loop = null;
+                this._state = "closed";
+            });
             this.env = null;
+            return this;
+        } else {
+            this.env?.requestStop();
+            return this.step();
         }
-        this._state = "closed";
-        return this;
     }
     pause(): this {
         if (this.computer.running) {

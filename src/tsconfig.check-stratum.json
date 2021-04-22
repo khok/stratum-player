@@ -1,0 +1,11 @@
+{
+    "extends": "./stratum/tsconfig.json",
+    "files": [
+        "./stratum/build.ts",
+    ],
+    "compilerOptions": {
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "allowUnreachableCode": true
+    }
+}

@@ -44,7 +44,7 @@ function readSettings(reader: BinaryReader): ProjectSettings {
     const res: ProjectSettings = {};
 
     const varCount = reader.uint16();
-    for (let i = 0; i < varCount; i++) {
+    for (let i = 0; i < varCount; ++i) {
         const bufSize = reader.uint16();
         //vars_m.h:21
         const valueCode = reader.byte();
@@ -77,7 +77,7 @@ function readSettings(reader: BinaryReader): ProjectSettings {
 function readWatchedVars(reader: BinaryReader): WatchedVariable[] {
     const varCount = reader.uint16();
     const res = new Array<WatchedVariable>(varCount);
-    for (let i = 0; i < varCount; i++) {
+    for (let i = 0; i < varCount; ++i) {
         const path = Array.from({ length: reader.uint16() }, () => reader.uint16());
         const name = reader.string();
         const info = reader.string();

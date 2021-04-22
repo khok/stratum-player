@@ -2,8 +2,14 @@
     "extends": "../tsconfig.base.json",
     "compilerOptions": {
         "baseUrl": ".",
+        "rootDir": ".",
         "paths": {
-            "stratum/*": ["../src/stratum/*"]
-        }
+            "stratum/*": [
+                "../src/stratum/*"
+            ],
+            "zipfs/*": [
+                "../src/zipfs/*"
+            ]
+        },
     }
 }

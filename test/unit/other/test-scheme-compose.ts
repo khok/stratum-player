@@ -1,16 +1,24 @@
-import { unzip } from "stratum/api";
+import { Enviroment } from "stratum/enviroment";
 import { VectorDrawingElement } from "stratum/fileFormats/vdr";
-import { Player } from "stratum/player";
+import { ZipFS } from "stratum/stratum";
+import { RealZipFS } from "zipfs/realZipfs";
 const { strictEqual } = chai.assert;
 
+const find = (fs: ZipFS) => {
+    const res = [...fs.files(/.+\.(prj|spj)$/i)];
+    if (res.length === 0) throw Error("Не найдено несколько файлов проектов");
+    if (res.length > 1) throw Error(`Найдено несколько файлов проектов: ${res.join(";\n")}`);
+    return res[0];
+};
+
 function isElementInGroup(elements: VectorDrawingElement[], handle: number) {
-    return elements.some((el) => el.type === "otGROUP2D" && el.childHandles.includes(handle));
+    return elements.some((el) => el.type === "group" && el.childHandles.includes(handle));
 }
 
 function collect(elements: VectorDrawingElement[], element: VectorDrawingElement): unknown {
     const { handle } = element;
-    const name = `${element.type} #${handle}${element.name && " "}${element.name}`;
-    if (element.type === "otGROUP2D")
+    const name = `${element.type} #${handle}${(element.name ?? "") && " "}${element.name ?? ""}`;
+    if (element.type === "group")
         return {
             name,
             data: element.childHandles.map((h) => collect(elements, elements.find((el) => el.handle === h)!)),
@@ -23,42 +31,44 @@ function toJson(elements: VectorDrawingElement[]) {
     return topLevelElements.map((el) => collect(elements, el));
 }
 
-const test_result = [
-    { name: "otGROUP2D #2", data: ["otDOUBLEBITMAP2D #1"] },
-    { name: "otGROUP2D #5", data: ["otDOUBLEBITMAP2D #3", "otBITMAP2D #4"] },
-    "otLINE2D #7 bkg",
+const test_result = JSON.stringify([
+    { name: "group #2", data: ["doubleBitmap #1"] },
+    { name: "group #5", data: ["doubleBitmap #3", "bitmap #4"] },
+    "line #7 bkg",
     {
-        name: "otGROUP2D #8",
+        name: "group #8",
         data: [
-            "otDOUBLEBITMAP2D #6",
+            "doubleBitmap #6",
             {
-                name: "otGROUP2D #18",
+                name: "group #18",
                 data: [
-                    { name: "otGROUP2D #15", data: ["otLINE2D #11", "otLINE2D #13"] },
-                    "otLINE2D #16",
+                    { name: "group #15", data: ["line #11", "line #13"] },
+                    "line #16",
                     {
-                        name: "otGROUP2D #17",
-                        data: [{ name: "otGROUP2D #12 Nahui", data: ["otLINE2D #10", "otLINE2D #9"] }, "otLINE2D #14"],
+                        name: "group #17",
+                        data: [{ name: "group #12 Nahui", data: ["line #10", "line #9"] }, "line #14"],
                     },
                 ],
             },
         ],
     },
-    "otLINE2D #34",
-    "otLINE2D #35",
-];
+    "line #34",
+    "line #35",
+]);
 
 it("Тестирует правильность считывания и композиции VDR", async () => {
     const [a1, a2] = await Promise.all(
         ["/projects/test_scheme_compose.zip", "/data/library.zip"].map((s) =>
             fetch(s)
                 .then((r) => r.blob())
-                .then(unzip)
+                .then(RealZipFS.create)
         )
     );
-    const prj = (await a1.merge(a2).project({ additionalClassPaths: ["library"] })) as Player;
 
-    const scheme = prj["classes"].getComposedScheme(prj["prjInfo"].rootClassName)!;
-    const elements = toJson(scheme.elements!);
-    strictEqual(JSON.stringify(elements), JSON.stringify(test_result));
+    const f = find(a1);
+    a1.merge(a2);
+    const res = await Enviroment.loadProject(f, [{ dir: a1.path("library"), loadClasses: true }]);
+    const scheme = res.classes.get(res.prjInfo.rootClassName)!.scheme();
+    const elements = toJson(scheme!.elements!);
+    strictEqual(JSON.stringify(elements), test_result);
 });

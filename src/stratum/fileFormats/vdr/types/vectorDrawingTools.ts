@@ -1,4 +1,4 @@
-import { DibToolImage } from "stratum/helpers/types";
+import { DibToolImage } from "../../bmp/dibToolImage";
 
 interface ToolBase {
     handle: number;

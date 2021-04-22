@@ -25,7 +25,7 @@ if (!fs.existsSync(outDeps)) {
     execSync(buildDeps);
 }
 
-const watchDirs = ["src/stratum", `test/${target}`];
+const watchDirs = ["src", `test/${target}`];
 
 // fileserver
 const server = http.createServer((req, res) => handler(req, res, { public: serveDir }));
@@ -49,8 +49,8 @@ const build = () => {
     if (!hasChanges) return;
     hasChanges = false;
     var hrstart = process.hrtime();
-    exec(buildBundle, (e, stdout, stderr) => {
-        if (stderr) {
+    exec(buildBundle, (e, _, stderr) => {
+        if (e) {
             console.log("\x1b[31m", stderr, "\x1b[0m");
             return;
         }

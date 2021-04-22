@@ -1,10 +1,14 @@
-import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/api";
+import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/stratum";
 
 export class SimpleWindow implements WindowHostWindow {
     private origTitle: string;
-    constructor(private view: HTMLDivElement, title?: string) {
+    constructor(private root: HTMLElement, private view: HTMLDivElement, { title }: WindowOptions) {
         this.origTitle = document.title;
         if (title) document.title = this.origTitle ? `${this.origTitle} - ${title}` : title;
+        root.appendChild(view);
+    }
+    subwindow(view: HTMLDivElement, options: WindowOptions): WindowHostWindow {
+        return new SimpleWindow(this.root, view, options);
     }
     setTitle(title: string) {
         document.title = title;
@@ -19,14 +23,18 @@ export class SimpleWindow implements WindowHostWindow {
         this.view.remove();
         document.title = this.origTitle;
     }
-    on() {}
-    off() {}
-    toTop() {}
 }
 
 export class PopupWrapper implements WindowHostWindow {
-    constructor(private wnd: Window, title?: string) {
+    constructor(private wnd: Window, { title }: WindowOptions) {
         if (title) wnd.document.title = title;
+    }
+
+    subwindow(view: HTMLDivElement, options: WindowOptions): WindowHostWindow {
+        const wnd = window.open("about:blank", undefined, `width=${window.innerWidth / 1.5},height=${window.innerHeight / 1.5}`);
+        if (!wnd) throw Error(`Не удалось открыть окно ${options.title}`);
+        wnd.document.body.appendChild(view);
+        return new PopupWrapper(wnd, options);
     }
 
     private handlers = new Set<() => void>();
@@ -48,7 +56,7 @@ export class PopupWrapper implements WindowHostWindow {
     setTitle(title: string) {
         this.wnd.document.title = title;
     }
-    sizedOnce = false;
+    private sizedOnce = false;
     setSize(width: number, height: number) {
         if (this.sizedOnce === true) return;
         const { wnd } = this;
@@ -57,8 +65,6 @@ export class PopupWrapper implements WindowHostWindow {
         });
         this.sizedOnce = true;
     }
-
-    toTop() {}
 
     close() {
         this.off("closed");
@@ -75,14 +81,13 @@ export class SimpleWs implements WindowHost {
     get height() {
         return window.innerHeight;
     }
-    window({ title, view }: WindowOptions): WindowHostWindow {
+    window(view: HTMLDivElement, options: WindowOptions): WindowHostWindow {
         if (this.root) {
-            this.root.appendChild(view);
-            return new SimpleWindow(view, title);
+            return new SimpleWindow(this.root, view, options);
         }
         const wnd = window.open("about:blank", undefined, `width=${this.width / 1.5},height=${this.height / 1.5}`);
-        if (!wnd) throw Error(`Не удалось открыть окно ${title}`);
+        if (!wnd) throw Error(`Не удалось открыть окно ${options.title}`);
         wnd.document.body.appendChild(view);
-        return new PopupWrapper(wnd, title);
+        return new PopupWrapper(wnd, options);
     }
 }

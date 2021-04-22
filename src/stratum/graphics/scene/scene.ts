@@ -1,7 +1,8 @@
-import { Constant, Env, Enviroment, EventSubscriber, NumBool } from "stratum/env";
+import { Constant } from "stratum/common/constant";
+import { EventSubscriber, HyperCallReceiver, NumBool } from "stratum/common/types";
+import { DibToolImage } from "stratum/fileFormats/bmp/dibToolImage";
 import { Hyperbase, VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { DibToolImage } from "stratum/helpers/types";
 import { InputWrapper, InputWrapperOptions } from "./html/inputWrapper";
 import { SceneBitmap } from "./sceneBitmap";
 import { SceneControl } from "./sceneControl";
@@ -17,7 +18,7 @@ import { TextTool } from "./tools/textTool";
 import { ToolStorage } from "./tools/toolStorage";
 import { ToolSubscriber } from "./tools/toolSubscriber";
 
-export interface SceneMember extends Env.SceneObject {
+export interface SceneMember {
     hyperbase: Hyperbase | null;
     readonly type: SceneVisualMember["type"] | "group";
     readonly markDeleted: boolean;
@@ -26,6 +27,7 @@ export interface SceneMember extends Env.SceneObject {
 
     delete(): void;
     getChildByName(name: string): number;
+    setVisibility(visible: boolean): NumBool;
 
     // groups
     minX(): number;
@@ -50,7 +52,8 @@ export interface HTMLFactory {
 
 type SceneObj = SceneLine | SceneBitmap | SceneText | SceneControl | SceneGroup;
 
-export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
+export class Scene implements ToolStorage, ToolSubscriber {
+    static readonly keyState = new Uint8Array(256);
     private static getInversedMatrix(matrix: number[]): number[] {
         const det =
             matrix[0] * (matrix[4] * matrix[8] - matrix[7] * matrix[5]) -
@@ -70,7 +73,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         ];
     }
 
-    hyperTarget: Env.HyperTarget | null;
+    hyperTarget: HyperCallReceiver | null;
 
     private readonly html: HTMLFactory;
 
@@ -99,7 +102,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
 
     cursor: "default" | "pointer";
 
-    constructor(html: HTMLFactory, vdr?: VectorDrawing) {
+    constructor(html: HTMLFactory, vdr?: VectorDrawing | null) {
         this.dirty = false;
         this.html = html;
         this.hyperTarget = null;
@@ -160,6 +163,8 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 case "bitmap":
                 case "doubleBitmap":
                     return [e.handle, new SceneBitmap(this, e)];
+                case "view3D":
+                    throw Error("3D проекции не поддерживаются");
             }
         };
         this.objects = new Map(vdr.elements?.map(mapFunc));
@@ -271,8 +276,8 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         return handle;
     }
     createControl(x: number, y: number, width: number, height: number, className: string, text: string, style: number): number {
-        const nm = className.toUpperCase();
-        if (nm !== "EDIT" && nm !== "BUTTON" && nm !== "COMBOBOX") {
+        const inputType = className.toUpperCase();
+        if (inputType !== "EDIT" && inputType !== "BUTTON" && inputType !== "COMBOBOX") {
             return 0;
         }
 
@@ -282,7 +287,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneControl(this, this.html, { handle, originX: realX, originY: realY, width, height, className, text });
+        const obj = new SceneControl(this, this.html, { handle, originX: realX, originY: realY, width, height, inputType, text });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
@@ -338,6 +343,8 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 case "bitmap":
                 case "doubleBitmap":
                     return [e.handle, new SceneBitmap(this, e)];
+                case "view3D":
+                    throw Error("3D проекции не поддерживаются");
             }
         };
         const obs = vdr.elements.map(mapFunc);
@@ -701,9 +708,9 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         const wheel = evt.buttons & 4 ? 16 : 0;
         const fwkeys = lmb | rmb | wheel;
 
-        Enviroment.keyState[1] = lmb;
-        Enviroment.keyState[2] = rmb;
-        Enviroment.keyState[4] = wheel;
+        Scene.keyState[1] = lmb;
+        Scene.keyState[2] = rmb;
+        Scene.keyState[4] = wheel;
 
         const curObj = this.getObjectInRealCoords(x, y);
         const objHandle = curObj?.handle ?? 0;

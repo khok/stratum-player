@@ -1,11 +1,9 @@
 // class.cpp:6100
 import { BinaryReader, FileReadingError, FileSignatureError } from "stratum/helpers/binaryReader";
+import { Point2D } from "stratum/helpers/types";
 import { EntryCode } from "./entryCode";
-import { readVdrFile, VectorDrawing } from "./vdr";
 
-export type BytecodeParser<TVmCode> = (bytes: Uint8Array) => TVmCode;
-
-export interface ClassVar {
+export interface ClassVarInfo {
     name: string;
     description: string;
     defaultValue: string;
@@ -13,72 +11,71 @@ export interface ClassVar {
     flags: number;
 }
 
-export interface ClassLink {
+export interface ConnectionInfo {
+    name1: string;
+    name2: string;
+}
+
+export interface ClassLinkInfo {
     handle1: number;
     handle2: number;
     contactPadHandle: number;
     linkHandle: number;
-    connectedVars: { name1: string; name2: string }[];
+    connectedVars: ConnectionInfo[];
     flags: number;
 }
 
-export interface ClassChild {
+export interface ClassChildInfo {
     classname: string;
-    schemeInfo: {
-        handle: number;
-        name: string;
-        position: { x: number; y: number };
-    };
-    // flag =  0 | stream.bytes(1)[0];
+    handle: number;
+    schemeName: string;
+    position: Point2D;
     flags: number;
 }
 
-export interface ClassInfoHeader {
+export interface ClassInfo {
     name: string;
     version: number;
-}
-
-export interface ClassInfoBody<VmCode> {
-    vars?: ClassVar[];
-    links?: ClassLink[];
-    children?: ClassChild[];
-    scheme?: VectorDrawing;
-    image?: VectorDrawing;
-    code?: VmCode;
+    vars?: ClassVarInfo[];
+    links?: ClassLinkInfo[];
+    children?: ClassChildInfo[];
+    scheme?: Uint8Array | string;
+    image?: Uint8Array | string;
+    // code?: Uint8Array;
     iconFile?: string;
     iconIndex?: number;
     sourceCode?: string;
-    description?: string;
-    varsize?: number;
+    // description?: string;
+    // varsize?: number;
     flags?: number;
-    classId?: number;
-    date?: Date;
+    // classId?: number;
+    // date?: Date;
 }
 
-function readVars(reader: BinaryReader): ClassVar[] {
+function readVars(reader: BinaryReader): ClassVarInfo[] {
     const varCount = reader.uint16();
 
-    const vars = new Array<ClassVar>(varCount);
-    for (let i = 0; i < varCount; i++) {
+    const vars = new Array<ClassVarInfo>(varCount);
+    for (let i = 0; i < varCount; ++i) {
         const name = reader.string();
         const description = reader.string();
         const defaultValue = reader.string();
-        const readedType = reader.string().toUpperCase();
-        if (readedType !== "STRING" && readedType !== "FLOAT" && readedType !== "INTEGER" && readedType !== "HANDLE" && readedType !== "COLORREF") {
-            throw new FileReadingError(reader, `неизвестный тип переменной: ${readedType}.`);
+        const type = reader.string().toUpperCase();
+        if (type !== "STRING" && type !== "FLOAT" && type !== "INTEGER" && type !== "HANDLE" && type !== "COLORREF") {
+            throw new FileReadingError(reader, `неизвестный тип переменной: ${type}.`);
         }
         const flags = reader.int32();
-        vars[i] = { name, description, defaultValue, type: readedType, flags };
+        vars[i] = { name, description, defaultValue, type, flags };
     }
     //RETURN VALUE - (v.flags & 1024)
     return vars;
 }
 
-function readLinks(reader: BinaryReader): ClassLink[] {
+function readLinks(reader: BinaryReader): ClassLinkInfo[] {
     const linkCount = reader.uint16();
 
-    const links = new Array<ClassLink>(linkCount);
-    for (let i = 0; i < linkCount; i++) {
+    const links = new Array<ClassLinkInfo>(linkCount);
+    for (let i = 0; i < linkCount; ++i) {
         const handle1 = reader.uint16();
         const handle2 = reader.uint16();
         const linkHandle = reader.uint16();
@@ -97,41 +94,31 @@ function readLinks(reader: BinaryReader): ClassLink[] {
     return links;
 }
 
-function readChildren(reader: BinaryReader, version: number): ClassChild[] {
+function readChildren(reader: BinaryReader, version: number): ClassChildInfo[] {
     const childCount = reader.uint16();
 
-    const children = new Array<ClassChild>(childCount);
-    for (let i = 0; i < childCount; i++) {
+    const children = new Array<ClassChildInfo>(childCount);
+    for (let i = 0; i < childCount; ++i) {
         const classname = reader.string();
         const handle = reader.uint16();
-        const name = reader.string();
+        const schemeName = reader.string();
 
         //class.cpp:5952
-        const position = version < 0x3002 ? reader.point2dInt() : reader.point2d();
+        const position = reader.point2d(version < 0x3002);
 
         // const flag =  0 | stream.bytes(1)[0];
         const flags = reader.byte();
-        children[i] = { classname, schemeInfo: { handle, name, position }, flags };
+        children[i] = { classname, handle, schemeName, position, flags };
     }
     return children;
 }
 
-function readVdr(reader: BinaryReader, classname: string, type: "Схема" | "Изображение") {
-    const fmt = `${type} ${classname} (${reader.name || "?"})`;
+function readVdr(reader: BinaryReader): Uint8Array | string {
     const flags = reader.int32();
     if (flags & EntryCode.SF_EXTERNAL) {
-        const filename = reader.string();
-        console.warn(`${fmt}: ошибка чтения. Причина: чтение внешних VDR (${filename}) не реализовано.`);
-        return undefined;
+        return reader.string();
     }
-
-    const data = reader.bytes(reader.int32());
-    try {
-        return readVdrFile(new BinaryReader(data, fmt), { origin: "class", name: classname });
-    } catch (e) {
-        console.warn(`${fmt}): ошибка чтения.\nПричина: ${e.message}`);
-        return undefined;
-    }
+    return reader.bytes(reader.int32());
 }
 
 // const EC_VAR = 16384;
@@ -152,122 +139,88 @@ function readVdr(reader: BinaryReader, classname: string, type: "Схема" | "
 //     while ((byte = stream.bytes(1)[0])) readEquations(stream);
 // }
 
-export function readClsFileHeader(reader: BinaryReader): ClassInfoHeader {
+export function readClsHeader(reader: BinaryReader): ClassInfo {
     const sign = reader.uint16();
     if (sign !== 0x4253) throw new FileSignatureError(reader, sign, 0x4253);
 
     const version = reader.int32();
-    reader.int32(); //magic1
-    reader.int32(); //magic2
+    reader.skip(8); //magic1: in32, magic2 : int32
     const name = reader.string();
 
     return { name, version };
 }
 
-export function readClsFileBody<VmCode>(
-    reader: BinaryReader,
-    classname: string,
-    version: number,
-    blocks: {
-        readScheme?: boolean;
-        readImage?: boolean;
-        parseBytecode?: BytecodeParser<VmCode>;
-    }
-): ClassInfoBody<VmCode> {
-    const res: ClassInfoBody<VmCode> = {};
-
+export function readClsFile(reader: BinaryReader): ClassInfo {
+    const res: ClassInfo = readClsHeader(reader);
     let next = reader.uint16();
+
     if (next === EntryCode.CR_VARS1) {
         res.vars = readVars(reader);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_LINKS) {
         res.links = readLinks(reader);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_CHILDSnameXY || next === EntryCode.CR_CHILDSname || next === EntryCode.CR_CHILDS) {
-        res.children = readChildren(reader, version);
+        res.children = readChildren(reader, res.version);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_ICON) {
         const iconSize = reader.int32();
         reader.skip(iconSize - 4);
         // res.icon = stream.bytes(iconSize - 4);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_SCHEME) {
-        const blockSize = reader.int32();
-        if (!blocks.readScheme) reader.skip(blockSize - 4);
-        else res.scheme = readVdr(reader, classname, "Схема");
+        reader.skip(4); //blockSize int32
+        res.scheme = readVdr(reader);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_IMAGE) {
-        const blockSize = reader.int32();
-        if (!blocks.readImage) reader.skip(blockSize - 4);
-        else res.image = readVdr(reader, classname, "Изображение");
+        reader.skip(4); //blockSize int32
+        res.image = readVdr(reader);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_TEXT) {
         res.sourceCode = reader.string();
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_INFO) {
-        res.description = reader.string();
+        reader.skip(reader.uint16());
+        // res.description = reader.string();
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_VARSIZE) {
-        res.varsize = reader.uint16();
+        reader.skip(2);
+        // res.varsize = reader.uint16();
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_FLAGS) {
         res.flags = reader.int32();
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_DEFICON) {
         res.iconIndex = reader.uint16();
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_ICONFILE) {
         res.iconFile = reader.string();
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_CODE) {
-        const codesize = reader.int32() * 2;
-
-        if (blocks.parseBytecode !== undefined) {
-            const raw = reader.bytes(codesize);
-            try {
-                res.code = blocks.parseBytecode(raw);
-            } catch (e) {
-                console.warn(`Байткод ${classname} (${reader.name || "?"}): ошибка чтения.\nПричина: ${e.message}`);
-            }
-        } else {
-            reader.skip(codesize);
-        }
+        reader.skip(reader.int32() * 2);
+        // const codesize = reader.int32() * 2;
+        // res.code = reader.bytes(codesize);
         next = reader.uint16();
     }
-
     if (next === EntryCode.CR_EQU) {
-        console.warn(`${classname} (${reader.name || "?"}):\nУравнения не поддерживаются.`);
+        // if (false) console.warn(`${res.name} (${reader.name || "?"}):\nУравнения не поддерживаются.`);
         return res;
     }
-
-    if (next !== EntryCode.CR_CLASSTIME && version === 0x3003) {
-        console.warn(`${classname} (${reader.name || "?"}: тут что-то не так...`);
+    if (next !== EntryCode.CR_CLASSTIME && res.version === 0x3003) {
+        console.warn(`${res.name} (${reader.name || "?"}: тут что-то не так...`);
     }
-
     // let classId = stream.int32();
     // res.classId = classId;
 

@@ -1,5 +1,5 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
-import { Env, NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { TextToolFragment } from "stratum/fileFormats/vdr";
 import { FontTool } from "./fontTool";
 import { StringTool } from "./stringTool";
@@ -34,7 +34,7 @@ interface PreparedFragment {
     height: number;
 }
 
-export class TextTool implements Env.TextTool {
+export class TextTool {
     private subs: Set<ToolSubscriber>;
 
     private scene: ToolStorage;
