@@ -1,19 +1,12 @@
 (function () {
-    if (!window.stratum) {
-        alert("Библиотека stratum не подключена!");
-        return;
-    }
     stratum.options.iconsLocation = "./data/icons";
-
-    // Подзагружает все динамически открываемые файлы bmp и vdr.
-    const preloadDynamicResources = (fs) => Promise.all([[...fs.files(/.+\.(bmp|vdr|mat|txt)$/i)].map((f) => f.makeSync())]);
 
     // Начинаем загружать стандартную библиотеку.
     let stdlib;
     fetch("./data/library.zip")
         .then((r) => r.blob())
         .then((b) => stratum.unzip(b, { directory: "L:" }))
-        .then((fs) => preloadDynamicResources((stdlib = fs)))
+        .then((fs) => (stdlib = fs))
         .catch(() => console.error("Не удалось загрузить стандартную библиотеку"));
 
     // Параллельно загружается окно.
@@ -23,7 +16,7 @@
         const dropzoneStatusOrigText = dropzoneStatusElem.innerHTML;
         const optionsFastComputing = document.getElementById("options_fast_computing");
         const optionsNolib = document.getElementById("options_nolib");
-        const optionsNoResize = document.getElementById("options_noresize");
+        // const optionsNoResize = document.getElementById("options_noresize");
         const mainWindowContainerElem = document.getElementById("main_window_container");
 
         const playerPlayElem = document.getElementById("player_play");
@@ -45,8 +38,8 @@
             dropzoneContainerElem.hidden = currentProject.state !== "closed";
         };
         const updateOptions = () => {
-            currentProject.options.disableWindowResize = optionsNoResize.checked;
-            currentProject.computer = new stratum[optionsFastComputing.checked ? "FastestExecutor" : "SmoothExecutor"]();
+            // currentProject.options.disableWindowResize = optionsNoResize.checked;
+            currentProject.speed(optionsFastComputing.checked ? "fast" : "smooth", 4);
         };
         {
             const handleClick = ({ target }) => {
@@ -88,31 +81,36 @@
                 {
                     const projectFiles = [...fs.files(/.+\.(prj|spj)$/i)];
                     if (projectFiles.length !== 1) {
+                        let srch;
                         if (projectFiles.length > 0) {
-                            const matches = projectFiles.map((f) => f.pathDos).join("\n");
+                            const matches = projectFiles.map((f) => f.toString()).join("\n");
                             const msg = `Найдено несколько файлов проектов:\n${matches}\nВведите путь/часть пути к файлу проекта:`;
-                            path = prompt(msg, projectFiles[0].pathDos);
+                            srch = prompt(msg, projectFiles[0].toString());
                         } else {
-                            path = prompt("Не найдено файлов проектов. Введите путь/часть пути к файлу проекта:");
+                            srch = prompt("Не найдено файлов проектов. Введите путь/часть пути к файлу проекта:");
                         }
-                        dropzoneStatusElem.innerHTML = `Ищем что-нибудь похожее на ${path} ...`;
+
+                        // Файл: "C:\Projects\main.prj"
+                        // Ищем (srch): "s/MaIn"
+                        const norm = fs
+                            .path(srch) //Нормализуем путь { vol:C, parts:[s, MaIn] }
+                            .parts.join("\\") // s\MaIn
+                            .toUpperCase(); // [S\MAIN]
+                        path = projectFiles.find((f) => f.toString().toUpperCase().includes(norm)); //Ищем 1 файл, который попадает под условие.
                     } else {
-                        path = projectFiles[0].pathDos;
-                        dropzoneStatusElem.innerHTML = `Загружаем проект ${path} ...`;
+                        path = projectFiles[0];
                     }
                 }
                 if (!path) {
                     dropzoneStatusElem.innerHTML = dropzoneStatusOrigText;
                     return;
                 }
-
-                // Подзагружаем bmp и vdr
-                await preloadDynamicResources(fs);
+                dropzoneStatusElem.innerHTML = `Загружаем проект ${path} ...`;
 
                 // Приделываем стандартную библиотеку.
                 if (stdlib && !optionsNolib.checked) fs.merge(stdlib);
                 // Открываем проект
-                currentProject = await fs.project({ additionalClassPaths: ["L:"], path });
+                currentProject = await stratum.player(path, [{ type: "library", loadClasses: true, dir: fs.path("L:") }]);
                 updateOptions();
                 // Попытаемся запустить выполнение проекта прямо здесь.
                 // Таким образом перехватываем ошибку на старте.
