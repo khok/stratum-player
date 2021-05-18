@@ -1,5 +1,6 @@
 import { MemorySize, VarGraphNode } from "stratum/common/varGraphNode";
 import { VarType } from "stratum/common/varType";
+import { options } from "stratum/options";
 import { CodeGenerator, funcHeader, schemaHeader } from "./codeGenerator";
 import { memArg, modelArg, retCodeArg, schemaArg, TLBArg } from "./compilerConsts";
 import {
@@ -86,7 +87,7 @@ class JsModel implements InternalClassModel {
         // console.log(js);
 
         // 5) Вызываем eval.
-        console.log(`Компилируем ${objname}`);
+        options.log("Компилятор:", `Компилируем ${objname}${this.isFunction ? " как функцию " : ""}`);
         try {
             this._func = new Function(...computeFuncParams, js) as ComputeFunction;
         } catch (e) {
