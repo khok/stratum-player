@@ -1,132 +1,63 @@
-export interface FileSystemConstructor {
-    (): FileSystem;
-}
-export interface OpenZipOptions {
-    /**
-     * Каталог, в которую монтируется содержимое архива.
-     * Может начинаться с префикса диска, например, `C:/Projects`
-     * Если префикс не указан, то он автоматически устанавливается как `C:`
-     * @default "C:"
-     */
-    directory?: string;
-    /**
-     * Кодировка файловых путей.
-     * @default "cp866"
-     */
-    encoding?: string;
-}
-export declare type ZipSource = File | Blob | ArrayBuffer | Uint8Array;
-export interface ZipFSConstructor {
-    /**
-     * Создает новую файловую систему из указанных источников ZIP-архивов.
-     * @param source Источник ZIP-архива.
-     * @param options Опции распаковки ZIP-архива.
-     */
-    (source: ZipSource, options?: OpenZipOptions): Promise<FileSystem>;
-}
 /**
- * Файловая система.
+ * Общие операции над файлами и каталогами.
  */
+
+export interface PathInfo {
+    readonly fs: FileSystem;
+    readonly vol: string;
+    readonly parts: ReadonlyArray<string>;
+    resolve(path: string): PathInfo;
+    toString(): string;
+}
+
+export interface ReadWriteFile {
+    read(): Promise<ArrayBuffer | ArrayBufferView | null>;
+    /**
+     * Заполняет существуюший файл содержимым.
+     * @returns - удалось ли записать данные в файл?
+     */
+    write(data: ArrayBuffer): Promise<boolean>;
+}
+
 export interface FileSystem {
     /**
-     * Объединяет содержимое двух файловых систем.
+     * Возвращает информацию о `.cls` файлах в указанных каталогах.
+     * @param recursive - рекурсивный поиск (по умолчанию - да)
      */
-    merge(fs: FileSystem): this;
+    searchClsFiles(paths: PathInfo[], recursive: boolean): Promise<PathInfo[]>;
     /**
-     * Возвращает список файлов в системе.
-     * @param regexp - условия поиска файлов.
+     * Для каждого файла возвращает его содержимое или `null` если он не существует.
      */
-    files(regexp?: RegExp): IterableIterator<FileSystemFile>;
+    arraybuffers(paths: PathInfo[]): Promise<(ArrayBuffer | ArrayBufferView | null)[]>;
     /**
-     * Открывает проект.
+     * Создает каталог.
+     * @returns Был ли создан каталог?
      */
-    project(options?: OpenProjectOptions): Promise<Player>;
+    createDir(path: PathInfo): Promise<boolean>;
+
+    /**
+     * Файл существует?
+     */
+    fileExist(path: PathInfo): Promise<boolean>;
+
+    /**
+     * Возвращает содержимое файла или `null` если он не существует.
+     */
+    file(path: PathInfo): ReadWriteFile | null;
+
+    /**
+     * Возвращает содержимое файла или `null` если он не существует.
+     */
+    arraybuffer(path: PathInfo): Promise<ArrayBuffer | ArrayBufferView | null>;
+    /**
+     * Создает файл.
+     * @returns Был ли создан файл?
+     */
+    createFile(path: PathInfo): Promise<ReadWriteFile | null>;
 }
-export declare type FileSystemFileData = ArrayBuffer;
-/**
- * Представляет каталог в файловой системе.
- */
-export interface FileSystemDir {
-    readonly dir: true;
-    /**
-     * Родительский каталог.
-     * Корневой каталог (корень диска) является родительским самому себе.
-     */
-    readonly parent: FileSystemDir;
-    /**
-     * Абсолютный путь в DOS-формате, включая префикс диска.
-     */
-    readonly pathDos: string;
-    /**
-     * Пытается создать файл.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к создаваемому файлу.
-     * Если файл с указанным именем не удалось создать, возвращает undefined.
-     */
-    create(type: "file", path: string, data?: FileSystemFileData): FileSystemFile | undefined;
-    /**
-     * Пытается создать каталог.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к создаваемому каталогу.
-     * Если каталог с указанным именем не удалось создать, возвращает undefined.
-     */
-    create(type: "dir", path: string): FileSystemDir | undefined;
-    /**
-     * Возвращает файл или каталог относительно текущего каталога.
-     * @param path - нечувствительный к регистру относительный или абсолютный
-     * путь к искомому файлу или каталогу.
-     */
-    get(path: string): FileSystemDir | FileSystemFile | undefined;
-    /**
-     * Возвращает список файлов в каталоге и его подкаталогах.
-     * @param regexp - условия поиска файлов.
-     */
-    files(regexp?: RegExp): IterableIterator<FileSystemFile>;
-}
-/**
- * Представляет файл в файловой системе.
- */
-export interface FileSystemFile {
-    readonly dir: false;
-    /**
-     * Родительский каталог.
-     * Корневой каталог (корень диска) является родительским самому себе.
-     */
-    readonly parent: FileSystemDir;
-    /**
-     * Абсолютный путь в DOS-формате, включая префикс диска.
-     */
-    readonly pathDos: string;
-    /**
-     * Явно предзагружает содержимое файла.
-     * Только явно предзагруженные файлы могут быть прочитаны в процессе
-     * исполнения проекта.
-     * В противном случае будет создано исключение.
-     */
-    makeSync(): Promise<void>;
-    /**
-     * Возвращает содержимое файла.
-     * Не делает файл явно предзагруженным.
-     * Для этого явно используется @method makeSync.
-     */
-    arraybuffer(): Promise<ArrayBuffer>;
-}
-export interface PlayerOptions {
-    /**
-     * Запрещает проекту изменять размеры главного окна.
-     */
-    disableWindowResize?: boolean;
-}
-export interface OpenProjectOptions {
-    /**
-     * Часть пути к файлу проекта.
-     */
-    path?: string;
-    /**
-     * Дополнительные пути поиска файлов имиджей.
-     */
-    additionalClassPaths?: string[];
-}
+
+export interface PlayerOptions {}
+
 /**
  * Проект.
  */
@@ -138,18 +69,22 @@ export interface Player {
     /**
      * Диагностические данные.
      */
-    readonly diag: ProjectDiag;
+    readonly diag: PlayerDiag;
+
     /**
      * Проект запущен? / Проект приостановлен? / Проект закрыт? / Проект
      * свалился с ошибкой виртуальной машины?
      */
     readonly state: "playing" | "paused" | "closed" | "error";
+
     /**
      * Планировщик цикла выполнения вычислений виртуальной машины.
      */
-    computer: Executor;
+    // computer: Executor;
+    speed(speed: "fast" | "smooth", cycles?: number): this;
+
     /**
-     * Запускает выполнение проекта.
+     * Запускает выполнение п роекта.
      * @param container - HTML элемент, в котором будут размещаться
      * открываемые в проекте окна.
      * Если он не указан, окна будут всплывающими.
@@ -176,6 +111,7 @@ export interface Player {
      * Выполняет один шаг.
      */
     step(): this;
+
     /**
      * Регистрирует обработчик события закрытия проекта
      * (вызов функции CloseAll).
@@ -199,92 +135,164 @@ export interface Player {
      */
     off(event: "error", handler?: (err: string) => void): this;
 }
-/**
- * Планировщик цикличного выполнения функции.
- */
-export interface Executor {
-    /**
-     * Цикл выполнения запущен?
-     */
-    readonly running: boolean;
-    /**
-     * Планирует цикличный вызов функции.
-     * @param callback Функция, которая должна вызываться циклично.
-     * Если она возвращает false, цикл выполнения прерывается.
-     */
-    run(callback: () => boolean): void;
-    /**
-     * Прерывает цикл выполнения.
-     */
-    stop(): void;
-}
-export interface ProjectDiag {
+
+export interface PlayerDiag {
     readonly iterations: number;
-    readonly missingCommands: {
-        name: string;
-        classNames: string[];
-    }[];
 }
+
 export interface WindowOptions {
-    view: HTMLDivElement;
     /**
-     * Название открываемого окна.
+     * Окно является всплывающим?
+     */
+    popup: boolean;
+    /**
+     * Размеры окна.
+     */
+    position?: { x: number; y: number };
+    /**
+     * Заголовок открываемого окна.
      */
     title?: string;
+    /**
+     * Спрятать заголовок?
+     */
+    noCaption?: boolean;
+    /**
+     * Не отображать тень.
+     */
+    noShadow?: boolean;
 }
+
 /**
  * Хост оконной системы.
  */
 export interface WindowHost {
     /**
-     * Параметры рабочей области.
+     * Ширина рабочей области.
      */
-    readonly width: number;
-    readonly height: number;
-    window(options: WindowOptions): WindowHostWindow;
+    readonly width?: number;
+    /**
+     * Высота рабочей области.
+     */
+    readonly height?: number;
+    /**
+     * Создает новое окно с указанным элементом `view`.
+     */
+    window(view: HTMLDivElement, options: WindowOptions): WindowHostWindow;
 }
+
 export interface WindowHostWindow {
-    setTitle(title: string): void;
-    setSize(width: number, height: number): void;
+    setVisibility?(visible: boolean): void;
     /**
-     * Регистрирует обработчик события изменения размера окна пользователем.
+     * Закрывает окно.
+     * @remarks При этом не должно вызываться событие closed.
      */
+    close?(): void;
     /**
-     * Разрегистрирует обработчик события изменения размера окна пользователем.
-     * @param handler Если обработчик не указан, разрегистрируются все
-     * обработчики данного события.
+     * Изменяет заголовок окна.
+     * @param title
      */
+    setTitle?(title: string): void;
+    /**
+     * Устанавливает желаемое расположение окна.
+     */
+    moveTo?(x: number, y: number): void;
+    /**
+     * Устанавливает желаемые размеры окна.
+     */
+    resizeTo?(width: number, height: number): void;
     /**
      * Регистрирует обработчик события изменения закрытия окна пользователем.
      */
-    on(event: "closed", handler: () => void): void;
+    on?(event: "closed", handler: () => void): void;
     /**
      * Разрегистрирует обработчик события изменения закрытия окна пользователем.
      * @param handler Если обработчик не указан, разрегистрируются все
      * обработчики данного события.
      */
-    off(event: "closed", handler?: () => void): void;
-    toTop(): void;
+    off?(event: "closed", handler?: () => void): void;
+
     /**
-     * Закрывает окно.
+     * Перемещает окно наверх.
      */
-    close(): void;
+    toTop?(): void;
 }
-export declare const unzip: ZipFSConstructor;
-export declare const options: {
+
+export interface AddDirInfo {
+    /**
+     * Путь директории.
+     */
+    dir: PathInfo;
+    /**
+     * Тип директории ("library" - библиотека имиджей, "temp" - временная директория). По умолчанию - library.
+     */
+    type?: "library" | "temp";
+}
+
+export interface PlayerConstructor {
+    /**
+     * Создает новый проект из файла.
+     * @param dirInfo - настройки директорий проекта, дополнительные пути поиска имиджей.
+     */
+    (prjFile: PathInfo, dirInfo?: AddDirInfo[]): Promise<Player>;
+}
+
+export interface ZipFS extends FileSystem {
+    merge(fs: ZipFS): this;
+    files(regexp?: RegExp): IterableIterator<PathInfo>;
+    path(path: string): PathInfo;
+}
+
+export type ZipSource = File | Blob | ArrayBuffer | Uint8Array;
+export interface OpenZipOptions {
+    /**
+     * Каталог, в которую монтируется содержимое архива.
+     * Может начинаться с префикса диска, например, `C:/Projects`
+     * Если префикс не указан, то он автоматически устанавливается как `C:`
+     * @default "C:"
+     */
+    directory?: string;
+    /**
+     * Кодировка файловых путей.
+     * @default "cp866"
+     */
+    encoding?: string;
+}
+export interface ZipFSConstructor {
+    /**
+     * Создает файловую систему.
+     * @param source - Источник ZIP-архива.
+     */
+    (source: ZipSource, options?: OpenZipOptions): Promise<ZipFS>;
+}
+
+export interface GoldenWSConstructor {
+    /**
+     * Создает оконную систему.
+     * @param source - корневой элемент оконной системы.
+     */
+    (element?: HTMLElement): WindowHost;
+}
+
+export interface StratumOptions {
     /**
      * URL каталога иконок.
      */
     iconsLocation?: string;
-};
-export declare function setLogLevel(logLevel: "err" | "full"): void;
-export interface ExecutorConstructor {
-    new (args?: any): Executor;
+    log: (...data: any[]) => any;
 }
-export declare const SmoothExecutor: ExecutorConstructor;
-export declare const FastestExecutor: ExecutorConstructor;
-/**
- * Версия API.
- */
-export declare const version: string;
-export as namespace stratum;
+
+export interface Stratum {
+    player?: PlayerConstructor;
+    unzip?: ZipFSConstructor;
+    goldenws?: GoldenWSConstructor;
+    options?: StratumOptions;
+    /**
+     * Версия API.
+     */
+    version?: string;
+}
+
+declare global {
+    export var stratum: Stratum | undefined;
+}
