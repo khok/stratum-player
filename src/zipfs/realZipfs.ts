@@ -54,12 +54,12 @@ export class RealZipFS implements ZipFS {
         return this.disks.get(vol.toUpperCase());
     }
 
-    private get(path: PathInfo) {
-        return this.disk(path.vol)?.get(path.parts);
+    private getFileOrDir(path: PathInfo) {
+        return this.disk(path.vol)?.getFileOrDir(path.parts);
     }
 
     private getFileParent(path: PathInfo) {
-        return this.disk(path.vol)?.getFolder(path.parts);
+        return this.disk(path.vol)?.getDir(path.parts);
     }
 
     path(path: string): PathInfo {
@@ -71,7 +71,7 @@ export class RealZipFS implements ZipFS {
         // console.log(paths.join("\n"));
         const result: PathInfo[] = [];
         for (let i = 0; i < paths.length; ++i) {
-            const dir = this.get(paths[i]);
+            const dir = this.getFileOrDir(paths[i]);
             if (!dir?.isDir) continue;
             result.push(...dir.files(/.+\.cls$/i, recursive));
         }
@@ -81,7 +81,7 @@ export class RealZipFS implements ZipFS {
         // console.log(paths.join("\n"));
         const result: Promise<ArrayBuffer>[] = [];
         for (let i = 0; i < paths.length; ++i) {
-            const file = this.get(paths[i]);
+            const file = this.getFileOrDir(paths[i]);
             if (!file || file.isDir) continue;
             result.push(file.read());
         }
@@ -94,22 +94,22 @@ export class RealZipFS implements ZipFS {
         return Promise.resolve(true);
     }
     fileExist(path: PathInfo): Promise<boolean> {
-        const file = this.get(path);
+        const file = this.getFileOrDir(path);
         return Promise.resolve(!!(file && !file?.isDir));
     }
     arraybuffer(path: PathInfo): Promise<ArrayBuffer | ArrayBufferView | null> {
-        const file = this.get(path);
+        const file = this.getFileOrDir(path);
         if (!file || file.isDir) return Promise.resolve(null);
         return file.read();
     }
     createFile(path: PathInfo): Promise<ReadWriteFile | null> {
-        const folder = this.getFileParent(path);
-        if (!folder) return Promise.resolve(null);
-        const file = folder.createLocalFile(path.parts[path.parts.length - 1], new ArrayBuffer(0));
+        const dir = this.getFileParent(path);
+        if (!dir) return Promise.resolve(null);
+        const file = dir.createLocalFile(path.parts[path.parts.length - 1], new ArrayBuffer(0));
         return Promise.resolve(file);
     }
     file(path: PathInfo): ReadWriteFile | null {
-        const f = this.get(path);
+        const f = this.getFileOrDir(path);
         return f && !f.isDir ? f : null;
     }
 }

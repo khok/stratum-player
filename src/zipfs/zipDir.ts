@@ -27,7 +27,7 @@ export class ZipDir {
         }
     }
 
-    getFolder(path: ReadonlyArray<string>): ZipDir | null {
+    getDir(path: ReadonlyArray<string>): ZipDir | null {
         if (path.length === 0) return this;
         let dir: ZipDir = this;
         for (let i = 0; i < path.length - 1; ++i) {
@@ -38,8 +38,9 @@ export class ZipDir {
         return dir;
     }
 
-    get(path: ReadonlyArray<string>): ZipDir | ZipFile | null {
-        return this.getFolder(path)?.nodes.get(path[path.length - 1].toUpperCase()) ?? null;
+    getFileOrDir(path: ReadonlyArray<string>): ZipDir | ZipFile | null {
+        if (path.length === 0) return this;
+        return this.getDir(path)?.nodes.get(path[path.length - 1].toUpperCase()) ?? null;
     }
 
     // create(type: "file", path: string, data?: ArrayBuffer): VFSFile | undefined;
