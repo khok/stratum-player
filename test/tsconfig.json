@@ -9,6 +9,9 @@
             ],
             "zipfs/*": [
                 "../src/zipfs/*"
+            ],
+            "goldenws/*": [
+                "../src/goldenws/*"
             ]
         },
     }

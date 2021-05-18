@@ -1,5 +1,6 @@
 // Запуск одной строкой:
 
+import { GoldenWS, goldenws } from "goldenws/goldenws";
 import { options } from "stratum/options";
 import { RealPlayer } from "stratum/player";
 import { PathInfo, ZipFS } from "stratum/stratum";
@@ -7,6 +8,7 @@ import { RealZipFS } from "zipfs/realZipfs";
 
 // fetch("project.zip").then(r => r.blob()).then(unzip).then(fs => fs.project()).then(p => p.play(windows));
 export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth", path?: string) {
+    options.log = () => {};
     options.iconsLocation = "./data/icons";
     // setLogLevel("full");
     //prettier-ignore
@@ -15,14 +17,14 @@ export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth",
     const files = [...pr[0].files(/.+\.(prj|spj)$/i)];
     let first: PathInfo | undefined;
     if (path) {
-        const norm = pr[0].path(path).parts.join("\\").toString().toUpperCase();
+        const norm = pr[0].path(path).parts.join("\\").toUpperCase();
         first = files.find((f) => f.toString().toUpperCase().includes(norm));
     } else {
         first = files[0];
     }
     if (!first) throw Error();
     const fs = pr.reduce((a, b) => a.merge(b));
-    const project = await RealPlayer.create(first, [{ type: "library", loadClasses: true, dir: fs.path("C:/library") }]);
+    const project = await RealPlayer.create(first, [{ dir: fs.path("C:/library") }]);
 
     // const cl = (project as RealPlayer)["lib"]!.get("LGSpace")!;
     //     let code = `
@@ -57,7 +59,19 @@ export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth",
     // if (document.readyState !== "complete") await new Promise((res) => window.addEventListener("load", res));
     // return;
     // Поехали
-    project.speed(strat, 4).play(document.getElementById("main_window_container")!);
+
+    const elem = document.getElementById("main_window_container")!;
+    let ws: GoldenWS | null = null;
+    // elem.style.setProperty("overflow", "hidden");
+    const gws = goldenws;
+    // ws = gws(elem);
+    // const div = document.createElement("canvas");
+    // div.width = 1000;
+    // div.height = 1000;
+    // ws.window(div, {});
+    // return;
+
+    project.speed(strat, 4).play(ws ?? elem);
     console.log(project);
     {
         const rateElem = document.getElementById("rate") as HTMLInputElement;

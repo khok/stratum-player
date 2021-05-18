@@ -67,7 +67,7 @@ it("Тестирует правильность считывания и комп
 
     const f = find(a1);
     a1.merge(a2);
-    const res = await Enviroment.loadProject(f, [{ dir: a1.path("library"), loadClasses: true }]);
+    const res = await Enviroment.loadProject(f, [{ dir: a1.path("library") }]);
     const scheme = res.classes.get(res.prjInfo.rootClassName)!.scheme();
     const elements = toJson(scheme!.elements!);
     strictEqual(JSON.stringify(elements), test_result);

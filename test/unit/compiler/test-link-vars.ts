@@ -21,7 +21,7 @@ async function load(name: string) {
     );
     const f = find(a1);
     a1.merge(a2);
-    const res = await Enviroment.loadProject(f, [{ dir: a1.path("library"), loadClasses: true }]);
+    const res = await Enviroment.loadProject(f, [{ dir: a1.path("library") }]);
     return new Project({} as Enviroment, res);
 }
 
