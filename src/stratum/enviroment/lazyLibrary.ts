@@ -3,6 +3,7 @@ import { Clearable } from "stratum/common/types";
 import { ClassModel } from "stratum/compiler";
 import { readClsFile, readClsHeader } from "stratum/fileFormats/cls";
 import { BinaryReader } from "stratum/helpers/binaryReader";
+import { options } from "stratum/options";
 import { FileSystem, PathInfo } from "stratum/stratum";
 
 interface UnloadedClassInfo<T> {
@@ -78,12 +79,16 @@ export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
             clsTotalSize += buf.byteLength;
             ++clsCount;
         }
-        console.log(`Добавлено ${clsCount} имиджей объемом ${(clsTotalSize / 1024).toFixed()} КБ`);
+        if (clsCount > 0) {
+            options.log("Библиотека имиджей:", `Добавлено ${clsCount} имиджей объемом ${(clsTotalSize / 1024).toFixed()} КБ. Всего: ${this.lib.size}.`);
+        }
     }
 
     clear(id: T): void {
         const data = [...this.lib];
         const res = data.filter((d) => d[1].id !== id);
+        const diff = this.lib.size - res.length;
+        if (diff > 0) options.log("Библиотека имиджей:", `Удалено ${diff} имиджей.`);
         this.lib = new Map(res);
         const paths = res.map((r) => r[1].path);
         this.filenames = new Set(paths);
@@ -92,6 +97,8 @@ export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
     clearAll(): void {
         const data = [...this.lib];
         const res = data.filter((d) => d[1].id === null);
+        const diff = this.lib.size - res.length;
+        if (diff > 0) options.log("Библиотека имиджей:", `Удалено ${diff} имиджей.`);
         this.lib = new Map(res);
         const paths = res.map((r) => r[1].path);
         this.filenames = new Set(paths);

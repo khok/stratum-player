@@ -43,6 +43,7 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
     readonly proto: ClassProto;
 
     constructor(prj: Project, proto: ClassProto, children: Schema[], links: ClassLinkInfo[], placement?: ClassChildInfo) {
+        proto.model(); //Компиляция перед выполнением.
         this.proto = proto;
         this.prj = prj;
         {
@@ -469,14 +470,14 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
-        this.prj.env.setCapture(target, hspace);
+        this.prj.env.setCapture(target, hspace, flags);
     }
 
     stratum_registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number): void {
         if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
         const target = /*this.resolve(path)*/ this;
         if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
-        this.prj.env.subscribe(target, wnameOrHspace, obj2d, message);
+        this.prj.env.subscribe(target, wnameOrHspace, obj2d, message, flags);
     }
 
     stratum_unregisterObject(wnameOrHspace: number | string, path: string, message: number): void {

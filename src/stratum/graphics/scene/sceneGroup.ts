@@ -1,6 +1,7 @@
 import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Scene, SceneMember } from "./scene";
+import { Scene } from "./scene";
+import { SceneMember } from "./sceneMember";
 
 export interface GroupArgs {
     handle: number;

@@ -1,11 +1,12 @@
 import { ClassLibrary } from "stratum/classLibrary";
-import { HyperCallReceiver, NumBool } from "stratum/common/types";
+import { HyperCallHandler, NumBool } from "stratum/common/types";
 import { VarType } from "stratum/common/varType";
 import { installContextFunctions, ProjectContextFunctions, SchemaMemory } from "stratum/compiler";
 import { unreleasedFunctions } from "stratum/compiler/unreleasedFunctions";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { Point2D } from "stratum/helpers/types";
 import { PathInfo } from "stratum/stratum";
 import { EnviromentFunctions } from "./enviromentFunctions";
 import { Schema } from "./schema";
@@ -33,13 +34,14 @@ export interface ProjectArgs {
     stt?: VariableSet | null;
 }
 
-export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextFunctions {
-    private readonly dir: PathInfo;
+export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFunctions {
     private readonly olds: { [index: number]: Float64Array | Int32Array | string[] };
     private readonly news: { [index: number]: Float64Array | Int32Array | string[] };
 
     private level: number;
     private _shouldClose: boolean;
+
+    readonly dir: PathInfo;
 
     readonly root: Schema;
     readonly env: EnviromentFunctions;
@@ -69,7 +71,9 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
 
         unreleasedFunctions.clear();
         const schema = rootProto.schema<Schema>((...args) => new Schema(this, ...args));
-        if (unreleasedFunctions.size > 0) console.log(`Нереализованные функции:\n${[...unreleasedFunctions.values()].join("\n")}`);
+        if (unreleasedFunctions.size > 0) {
+            console.warn(`Нереализованные функции (${unreleasedFunctions.size}):\n${[...unreleasedFunctions.values()].join("\n")}`);
+        }
         const size = schema.createTLB(); // Инициализируем память
 
         this.oldFloats = new Float64Array(size.floatsCount);
@@ -124,8 +128,8 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
         return this._shouldClose;
     }
 
-    hyperCall(hyp: Hyperbase): void {
-        return this.env.hyperCall(this.dir, hyp);
+    click(hyp: Hyperbase | null, point: Point2D): void {
+        return this.env.hyperCall(this, hyp, point);
     }
 
     //#region Реализации функций.
@@ -138,7 +142,7 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
     }
 
     stratum_async_loadSpaceWindow(wname: string, fileName: string, attrib: string): number | Promise<number> {
-        return this.env.loadSpaceWindow(this, this.dir, wname, fileName, attrib);
+        return this.env.loadSpaceWindow(this, wname, fileName, attrib);
     }
 
     stratum_async_createWindowEx(
@@ -151,7 +155,7 @@ export class Project implements HyperCallReceiver, SchemaMemory, ProjectContextF
         h: number,
         attrib: string
     ): number | Promise<number> {
-        return this.env.createWindowEx(this, this.dir, wname, parentWname, source, x, y, w, h, attrib);
+        return this.env.createWindowEx(this, wname, parentWname, source, x, y, w, h, attrib);
     }
 
     stratum_async_createDIB2d(hspace: number, fileName: string): number | Promise<number> {

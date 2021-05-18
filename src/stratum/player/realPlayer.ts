@@ -1,4 +1,4 @@
-import { ExecutorCallback, FastestComputer, SmoothComputer } from "stratum/common/computers";
+import { ExecutorCallback, FastestExecutor, SmoothExecutor } from "stratum/common/computers";
 import { Enviroment } from "stratum/enviroment";
 import { ProjectResources } from "stratum/enviroment/enviroment";
 import { AddDirInfo, PathInfo, Player, PlayerOptions, WindowHost } from "stratum/stratum";
@@ -17,7 +17,7 @@ export class RealPlayer implements Player {
 
     private _state: Player["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
-    private computer: SmoothComputer | FastestComputer = new SmoothComputer();
+    private computer: SmoothExecutor | FastestExecutor = new SmoothExecutor();
     private readonly handlers = { closed: new Set<() => void>(), error: new Set<(msg: string) => void>() };
 
     private loop: ExecutorCallback | null;
@@ -39,7 +39,7 @@ export class RealPlayer implements Player {
     }
 
     speed(speed: "smooth" | "fast", cycles?: number): this {
-        const comp = speed === "smooth" ? new SmoothComputer() : new FastestComputer(cycles);
+        const comp = speed === "smooth" ? new SmoothExecutor() : new FastestExecutor(cycles);
         const curComp = this.computer;
         if (curComp.running) {
             curComp.stop();
@@ -59,7 +59,7 @@ export class RealPlayer implements Player {
 
     play(container?: HTMLElement): this;
     play(host: WindowHost): this;
-    play(newHost?: HTMLElement | null | WindowHost): this {
+    play(newHost?: HTMLElement | WindowHost): this {
         if (this.loop) return this;
         if (newHost) {
             this.host = newHost instanceof HTMLElement ? new SimpleWs(newHost) : newHost;
@@ -108,7 +108,7 @@ export class RealPlayer implements Player {
 
     close(): this {
         if (this._state === "error") {
-            this.env?.closeAllRes().then((s) => {
+            this.env?.closeAllRes().then(() => {
                 this.loop = null;
                 this._state = "closed";
             });
