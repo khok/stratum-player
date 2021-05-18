@@ -866,7 +866,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
 
         if (this.capture) {
             this.capture.receive(code, x, y, keys);
-            // return;
+            return;
         }
         for (const [sub, objHandle] of subs) {
             if (objHandle === 0 || objHandle === curObj) sub.receive(code, x, y, keys);
