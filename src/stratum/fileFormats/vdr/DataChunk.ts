@@ -108,10 +108,9 @@ export class DataChunk {
     readElementData(element: VectorDrawingElement) {
         switch (this.code) {
             case VdrEntry.otDATAITEMS:
+                // Искать SetObjectData2d
                 readSettingCollection(this.reader, function (id, size, reader) {
                     // HYPER.H
-                    // SetObjectData2d
-                    // SetSpaceParam2d
                     // UD_HYPERKEY   10
                     // UD_HYPERSPACE 11
                     // UD_ANIMATE    12
@@ -188,10 +187,37 @@ export class DataChunk {
                 res.elements = this.readElementCollection();
                 break;
             case VdrEntry.otDATAITEMS:
-                res.settings = readSettingCollection(this.reader, (id, size, reader) => ({
-                    id,
-                    data: reader.bytes(size),
-                }));
+                //Искать SetObjectData2d, где id объекта = 0.
+                readSettingCollection(this.reader, (id, size, reader) => {
+                    switch (id) {
+                        case 1: // #define UD_GRID;
+                            // CLASS.H:427
+                            res.grid = {
+                                offsetX: reader.float64(),
+                                offsetY: reader.float64(),
+                                stepX: reader.float64(),
+                                stepY: reader.float64(),
+                                visible: !!reader.byte(),
+                                use: !!reader.byte(),
+                            };
+                            break;
+                        case 11: // #define UD_HYPERSPACE
+                            // dialogs.cpp:4328, HYPER.H:49
+                            res.settings = {
+                                style: reader.uint32(), // HYPER.H:57 - стили окна.
+                                x: reader.uint16(),
+                                y: reader.uint16(),
+                            };
+                            break;
+                        case 13: // #define UD_PRINTPAGE
+                            reader.skip(size);
+                            break;
+                        default:
+                            console.warn(`${reader.name}: неизвестные данные в настройках пространства: id ${id}, ${size} байтов`);
+                            reader.skip(size);
+                            break;
+                    }
+                });
                 break;
 
             case VdrEntry.ctINFONAME:

@@ -1,9 +1,10 @@
 import { Point2D } from "stratum/helpers/types";
 
 export interface Hyperbase {
-    target?: string;
-    windowName?: string;
-    objectName?: string;
+    /**
+     * Гипербаза отключена
+     */
+    disabled?: boolean;
     /**
      * 0 - Открыть окно
      * 1 - Запустить exe
@@ -12,10 +13,24 @@ export interface Hyperbase {
      * 4 - системная команда
      */
     openMode?: number;
+    /**
+     * Имя VDR-файла или класса, файла проекта или запускаемого exe.
+     */
+    target?: string;
+    /**
+     * Имя объекта, которому посылается WM_HYPERJUMP.
+     */
+    objectName?: string;
+    /**
+     * Имя открываемого окна.
+     */
+    windowName?: string;
+    /**
+     * Параметры открытия проекта.
+     */
+    params?: string;
     effect?: string;
     time?: number;
-    params?: string;
-    disabled?: boolean;
 }
 
 export interface ElementBase {
