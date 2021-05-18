@@ -56,12 +56,7 @@ export interface FileSystem {
     createFile(path: PathInfo): Promise<ReadWriteFile | null>;
 }
 
-export interface PlayerOptions {
-    /**
-     * Запрещает проекту изменять размеры главного окна.
-     */
-    disableWindowResize?: boolean;
-}
+export interface PlayerOptions {}
 
 /**
  * Проект.
@@ -145,18 +140,15 @@ export interface PlayerDiag {
     readonly iterations: number;
 }
 
-export interface WindowRect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
 export interface WindowOptions {
+    /**
+     * Окно является всплывающим?
+     */
+    popup: boolean;
     /**
      * Размеры окна.
      */
-    rect?: WindowRect;
+    position?: { x: number; y: number };
     /**
      * Заголовок открываемого окна.
      */
@@ -165,6 +157,10 @@ export interface WindowOptions {
      * Спрятать заголовок?
      */
     noCaption?: boolean;
+    /**
+     * Не отображать тень.
+     */
+    noShadow?: boolean;
 }
 
 /**
@@ -186,26 +182,25 @@ export interface WindowHost {
 }
 
 export interface WindowHostWindow {
+    setVisibility?(visible: boolean): void;
     /**
      * Закрывает окно.
      * @remarks При этом не должно вызываться событие closed.
      */
-    close(): void;
-    /**
-     * Создает подокно.
-     */
-    subwindow(view: HTMLDivElement, options: WindowOptions): WindowHostWindow;
-
+    close?(): void;
     /**
      * Изменяет заголовок окна.
      * @param title
      */
     setTitle?(title: string): void;
     /**
-     * Устанавливает желаемые размеры окна.
-     * @param title
+     * Устанавливает желаемое расположение окна.
      */
-    setSize?(width: number, height: number): void;
+    moveTo?(x: number, y: number): void;
+    /**
+     * Устанавливает желаемые размеры окна.
+     */
+    resizeTo?(width: number, height: number): void;
     /**
      * Регистрирует обработчик события изменения закрытия окна пользователем.
      */
@@ -224,8 +219,13 @@ export interface WindowHostWindow {
 }
 
 export interface AddDirInfo {
+    /**
+     * Путь директории.
+     */
     dir: PathInfo;
-    loadClasses: boolean;
+    /**
+     * Тип директории ("library" - библиотека имиджей, "temp" - временная директория). По умолчанию - library.
+     */
     type?: "library" | "temp";
 }
 
@@ -266,16 +266,26 @@ export interface ZipFSConstructor {
     (source: ZipSource, options?: OpenZipOptions): Promise<ZipFS>;
 }
 
+export interface GoldenWSConstructor {
+    /**
+     * Создает оконную систему.
+     * @param source - корневой элемент оконной системы.
+     */
+    (element?: HTMLElement): WindowHost;
+}
+
 export interface StratumOptions {
     /**
      * URL каталога иконок.
      */
     iconsLocation?: string;
+    log: (...data: any[]) => any;
 }
 
 export interface Stratum {
     player?: PlayerConstructor;
     unzip?: ZipFSConstructor;
+    goldenws?: GoldenWSConstructor;
     options?: StratumOptions;
     /**
      * Версия API.
