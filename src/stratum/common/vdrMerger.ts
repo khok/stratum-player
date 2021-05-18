@@ -218,7 +218,38 @@ function schemeHasElements(scheme: VectorDrawing): scheme is Require<VectorDrawi
     return scheme.elements !== undefined && scheme.elements.length > 0;
 }
 
+export interface SchemeRect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
 export class VdrMerger {
+    static calcRect(elements: VectorDrawingElement[]): SchemeRect {
+        if (elements.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        elements.forEach((e) => {
+            if (e.type === "group") return;
+
+            if (e.originX < minX) minX = e.originX;
+            if (e.originX + e.width > maxX) maxX = e.originX + e.width;
+
+            if (e.originY < minY) minY = e.originY;
+            if (e.originY + e.height > maxY) maxY = e.originY + e.height;
+        });
+
+        return {
+            x: minX,
+            y: minY,
+            w: maxX - minX,
+            h: maxY - minY,
+        };
+    }
     private readonly scheme: Require<VectorDrawing, "elements">; //Сделаем свойство "elements" обязательным.
     /**
      * Создает вспомогательный класс для вставки изображений и иконок дочерних имиджей в схему родительского имиджа.

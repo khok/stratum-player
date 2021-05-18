@@ -1,4 +1,5 @@
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { Point2D } from "stratum/helpers/types";
 import { Constant } from "./constant";
 
 export type NumBool = 0 | 1;
@@ -11,6 +12,6 @@ export interface EventSubscriber {
     receive(code: Constant, ...args: (string | number)[]): Promise<void>;
 }
 
-export interface HyperCallReceiver {
-    hyperCall(hyper: Hyperbase): void;
+export interface HyperCallHandler {
+    click(hyper: Hyperbase | null, point: Point2D): void;
 }

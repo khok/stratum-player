@@ -27,7 +27,7 @@ export interface Executor {
     stop(): void;
 }
 
-export class SmoothComputer implements Executor {
+export class SmoothExecutor implements Executor {
     private frameId = 0;
 
     get running() {
@@ -55,7 +55,7 @@ export class SmoothComputer implements Executor {
     }
 }
 
-export class FastestComputer implements Executor {
+export class FastestExecutor implements Executor {
     private frameId = 0;
     // private timeout: number;
     constructor(private cycles: number = 1) {
