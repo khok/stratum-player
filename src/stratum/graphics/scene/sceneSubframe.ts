@@ -17,6 +17,10 @@ export class SceneSubframe implements WindowHostWindow {
         scene.view.appendChild(view);
     }
 
+    setVisibility(visible: boolean): void {
+        this.view.style.setProperty("display", visible ? "block" : "none");
+    }
+
     close(): void {
         this.view.remove();
     }
