@@ -19,6 +19,7 @@ import { Project } from "stratum/project";
 import { EnviromentFunctions } from "stratum/project/enviromentFunctions";
 import { ProjectArgs } from "stratum/project/project";
 import { AddDirInfo, PathInfo, WindowHost } from "stratum/stratum";
+import { EnvArray, EnvArraySortingAlgo } from "./envArray";
 import { EnvStream } from "./envStream";
 import { LazyLibrary } from "./lazyLibrary";
 import { NeoMatrix } from "./neoMatrix";
@@ -92,8 +93,9 @@ export class Enviroment implements EnviromentFunctions {
 
     private windows = new Map<string, SceneWindow<Project>>();
     private scenes = new Map<number, Scene>();
-    private matrices = new Map<number, NeoMatrix>();
     private streams = new Map<number, EnvStream>();
+    private matrices = new Map<number, NeoMatrix>();
+    private arrays = new Map<number, EnvArray>();
     private targetScene: Scene | null = null;
 
     private classes: LazyLibrary<number>;
@@ -155,6 +157,9 @@ export class Enviroment implements EnviromentFunctions {
             if (r instanceof Promise) p.push(r);
         }
         await Promise.all(p);
+        this.streams.clear();
+        this.matrices.clear();
+        this.arrays.clear();
         let prj: Project | undefined;
         while ((prj = this.projects.pop())) {
             options.log(`Закрывается проект ${prj.dir.toString()}`);
@@ -1345,6 +1350,90 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
 
     //#region ФУНКЦИИ УПРАВЛЕНИЯ МАССИВАМИ
+    stratum_new(): number {
+        const handle = HandleMap.getFreeHandle(this.arrays);
+        this.arrays.set(handle, new EnvArray());
+        return handle;
+    }
+    stratum_delete(handle: number): void {
+        this.arrays.delete(handle);
+    }
+
+    stratum_vGetCount(handle: number): number {
+        return this.arrays.get(handle)?.count() ?? 0;
+    }
+    stratum_vGetType(handle: number, idx: number): string {
+        return this.arrays.get(handle)?.type(idx) ?? "";
+    }
+
+    stratum_vInsert(handle: number, type: string): NumBool {
+        return this.arrays.get(handle)?.insert(type) ?? 0;
+    }
+    stratum_vDelete(handle: number, idx: number): NumBool {
+        return this.arrays.get(handle)?.remove(idx) ?? 0;
+    }
+    stratum_vClearAll(): NumBool {
+        this.arrays.clear();
+        return 1;
+    }
+
+    stratum_vGetS(handle: number, idx: number, field: string): string {
+        return this.arrays.get(handle)?.getString(idx, field) ?? "";
+    }
+    stratum_vGetH(handle: number, idx: number, field: string): number {
+        return this.arrays.get(handle)?.getHandle(idx, field) ?? 0;
+    }
+    stratum_vGetF(handle: number, idx: number, field: string): number {
+        return this.arrays.get(handle)?.getFloat(idx, field) ?? 0;
+    }
+
+    stratum_vSet(handle: number, idx: number, field: string, value: string | number): void {
+        this.arrays.get(handle)?.set(idx, field, value);
+    }
+
+    // FLOAT vSort(HANDLE HArray, [STRING FileldName])
+    // FLOAT vSort(HANDLE HArray, FLOAT Decr, [STRING FileldName])
+    // FLOAT vSort(HANDLE HArray, [STRING FileldName, FLOAT Decr])
+    stratum_vSort(handle: number, ...args: (number | string)[]): NumBool {
+        const arr = this.arrays.get(handle);
+        if (!arr) return 0;
+
+        if (args.length === 0) {
+            return arr.sort();
+        }
+
+        if (typeof args[0] === "number") {
+            const desc = !!args[0];
+            const field = args.length > 1 ? (args[1] as string) : "";
+            return arr.sort([{ desc, field }]);
+        }
+
+        const algo: EnvArraySortingAlgo[] = [];
+        for (let i = 0; i < args.length; i += 2) {
+            const field = args[i] as string;
+            const desc = !!(args[i + 1] as number);
+            algo.push({ desc, field });
+        }
+        return arr.sort(algo);
+    }
+
+    // FLOAT GetVarInfo(STRING ClassName, FLOAT Index, STRING NameVar, STRING TypeVar, STRING Default, STRING Note)
+    // FLOAT GetVarInfo(STRING ClassName, FLOAT Index, STRING NameVar, STRING TypeVar, STRING Default, STRING Note, FLOAT Flags)
+
+    // FLOAT GetVarCount(STRING ClassName)
+
+    //     vGetF
+    // vGetCount
+    // MessageBox
+    // SetModelText
+    // GetVarCount
+    // Delete
+    // new
+    // GetVarInfo
+    // vInsert
+    // vSet
+    // vSort
+    // vGetS
     //#endregion
 }
 installContextFunctions(Enviroment, "env");
