@@ -515,7 +515,13 @@ export class Enviroment implements EnviromentFunctions {
         return typeof scene !== "undefined" ? scene.fonts.get(htool) : undefined;
     }
 
-    //#region Реализации функций.
+    stratum_releaseCapture(): void {
+        if (this.targetScene === null) return;
+        this.targetScene.releaseCapture();
+        this.targetScene = null;
+    }
+
+    //#region ФУНКЦИИ ПРОЧИЕ
     stratum_isDlgButtonChecked2d(hspace: number, hobject: number): number {
         return 0;
     }
@@ -527,24 +533,25 @@ export class Enviroment implements EnviromentFunctions {
     stratum_setObjectAttribute2d(hspace: number, hobject: number, attr: number, flag: number): NumBool {
         return 1;
     }
-    stratum_new(): number {
-        throw Error("Функция New не реализована");
-    }
-    stratum_logMessage(msg: string): void {
-        options.log("Инфо: " + msg);
-    }
+    //#endregion
+
+    //#region ФУНКЦИИ СИСТЕМНЫЕ
     stratum_system(command: number, ...params: number[]): number {
         // console.warn(`Вызов System(${command}, ${params})`);
         return 0;
     }
-    //#region Сообщения
-    stratum_releaseCapture(): void {
-        if (this.targetScene === null) return;
-        this.targetScene.releaseCapture();
-        this.targetScene = null;
+
+    // Клавиатура
+    stratum_getAsyncKeyState(vkey: number): number {
+        return Scene.keyState[vkey] > 0 ? 1 : 0;
     }
-    //#endregion
-    //#region Гипербаза
+
+    // Время
+    stratum_getTickCount(): number {
+        return new Date().getTime() - Enviroment.startupTime;
+    }
+
+    // Гиперпереход
     stratum_setHyperJump2d(hspace: number, hobject: number, mode: number, ...args: string[]): NumBool {
         if (mode < -1 || mode > 4) return 0;
 
@@ -572,47 +579,37 @@ export class Enviroment implements EnviromentFunctions {
         // console.log(obj);
         // return 1;
     }
-
     stratum_stdHyperJump(hspace: number, x: number, y: number, hobject: number /*, flags: number*/): void {
         this.scenes.get(hspace)?.tryHyper(x, y, hobject);
     }
+
+    // Параметры экрана
+    stratum_getScreenWidth(): number {
+        return screen.width;
+    }
+    stratum_getScreenHeight(): number {
+        return screen.height;
+    }
+    stratum_getWorkAreaX(): number {
+        return 0;
+    }
+    stratum_getWorkAreaY(): number {
+        return 0;
+    }
+    stratum_getWorkAreaWidth(): number {
+        return this.host.width || window.innerWidth;
+    }
+    stratum_getWorkAreaHeight(): number {
+        return this.host.height || window.innerHeight;
+    }
+
+    // Лог
+    stratum_logMessage(msg: string): void {
+        options.log("Инфо: " + msg);
+    }
     //#endregion
 
-    stratum_ascii(str: string): number {
-        if (str.length === 0) return 0;
-        const idx = win1251Table.indexOf(str[0]);
-        return idx < 0 ? 0 : idx;
-    }
-
-    stratum_chr(n: number): string {
-        if (n < 0 || n > 255) return "";
-        return win1251Table[n];
-    }
-
-    stratum_getTickCount(): number {
-        return new Date().getTime() - Enviroment.startupTime;
-    }
-    stratum_addSlash(a: string): string {
-        return a.length === 0 || a[a.length - 1] === "\\" ? a : a + "\\";
-    }
-    stratum_MCISendString(): number {
-        return Constant.MCIERR_INVALID_DEVICE_NAME;
-    }
-
-    stratum_MCISendStringStr(): string {
-        return "";
-    }
-
-    stratum_getAsyncKeyState(vkey: number): number {
-        return Scene.keyState[vkey] > 0 ? 1 : 0;
-    }
-
-    stratum_quit(flag: number): void {
-        if (flag <= 0) return;
-        this._shouldQuit = true;
-    }
-
-    //#region Окна
+    //#region ФУНКЦИИ ОКОН
     stratum_getClientHeight(wname: string): number {
         const wnd = this.windows.get(wname);
         return typeof wnd !== "undefined" ? wnd.clientHeight() : 0;
@@ -709,7 +706,7 @@ export class Enviroment implements EnviromentFunctions {
     }
     //#endregion
 
-    //#region ГРАФИКА
+    //#region ФУНКЦИИ ГРАФИКИ
     // Пространства
     //
     stratum_getSpaceOrg2dx(hspace: number): number {
@@ -1228,7 +1225,18 @@ export class Enviroment implements EnviromentFunctions {
         return typeof obj !== "undefined" ? obj.setControlText(text) : 0;
     }
     //#endregion
+
+    //#region ФУНКЦИИ РАБОТЫ С ИМИДЖАМИ
+    stratum_quit(flag: number): void {
+        if (flag <= 0) return;
+        this._shouldQuit = true;
+    }
+    //#endregion
+
     //#region ФУНКЦИИ РАБОТЫ С ФАЙЛАМИ
+    stratum_addSlash(a: string): string {
+        return a.length === 0 || a[a.length - 1] === "\\" ? a : a + "\\";
+    }
     stratum_getClassDirectory(className: string): string {
         const path = this.classes.getPath(className);
         return path ? getDirectory(path) : "";
@@ -1238,61 +1246,29 @@ export class Enviroment implements EnviromentFunctions {
         return 1;
     }
     //#endregion
-    //#region СИСТЕМНЫЕ ФУНКЦИИ
-    stratum_getScreenWidth(): number {
-        return screen.width;
+
+    //#region ФУНКЦИИ МУЛЬТИМЕДИА
+    stratum_MCISendString(): number {
+        return Constant.MCIERR_INVALID_DEVICE_NAME;
     }
-    stratum_getScreenHeight(): number {
-        return screen.height;
-    }
-    stratum_getWorkAreaX(): number {
-        return 0;
-    }
-    stratum_getWorkAreaY(): number {
-        return 0;
-    }
-    stratum_getWorkAreaWidth(): number {
-        return this.host.width || window.innerWidth;
-    }
-    stratum_getWorkAreaHeight(): number {
-        return this.host.height || window.innerHeight;
+    stratum_MCISendStringStr(): string {
+        return "";
     }
     //#endregion
-    //#region МАТРИЦЫ
-    stratum_mCreate(q: number, minX: number, maxX: number, minY: number, maxY: number, flag: number): number {
-        if (flag <= 0) return 0;
 
-        const rows = maxX - minX + 1;
-        const cols = maxY - minY + 1;
-        if (rows <= 0 || cols <= 0) return 0;
-
-        const handle = q === 0 ? HandleMap.getFreeNegativeHandle(this.matrices) : q;
-        this.matrices.set(handle, new NeoMatrix({ rows, cols, minX, minY }));
-        return handle;
+    //#region ФУНКЦИИ РАБОТЫ СО СТРОКАМИ (незаинлайненная часть)
+    stratum_ascii(str: string): number {
+        if (str.length === 0) return 0;
+        const idx = win1251Table.indexOf(str[0]);
+        return idx < 0 ? 0 : idx;
     }
-    stratum_mDelete(q: number, flag: number): NumBool {
-        if (flag <= 0) return 0;
-        return this.matrices.delete(q) ? 1 : 0;
+    stratum_chr(n: number): string {
+        if (n < 0 || n > 255) return "";
+        return win1251Table[n];
     }
-    stratum_mFill(q: number, value: number, flag: number): number {
-        if (flag <= 0) return 0;
-        return this.matrices.get(q)?.fill(value) ?? 0;
-    }
-    stratum_mGet(q: number, i: number, j: number, flag: number): number {
-        if (flag <= 0) return 0;
-        return this.matrices.get(q)?.get(i, j) ?? 0;
-    }
-    stratum_mPut(q: number, i: number, j: number, value: number, flag: number): number {
-        if (flag <= 0) return 0;
-        return this.matrices.get(q)?.set(i, j, value) ?? 0;
-    }
-    stratum_async_mEditor(q: number, flag: number): NumBool | Promise<NumBool> {
-        if (flag <= 0) return 0;
-        throw Error("MEditor: редактор матриц не реализован");
-    }
-    // stratum_mDiag
     //#endregion
-    //#region ПОТОКИ
+
+    //#region ФУНКЦИИ УПРАВЛЕНИЯ ПОТОКАМИ
     stratum_async_closeStream(hstream: number): NumBool | Promise<NumBool> {
         const st = this.streams.get(hstream);
         if (!st) return 0;
@@ -1332,6 +1308,43 @@ export class Enviroment implements EnviromentFunctions {
         return this.streams.get(hstream)?.writeLine(val) ?? 0;
     }
     //#endregion
+
+    //#region ФУНКЦИИ УПРАВЛЕНИЯ МАТРИЦАМИ
+    stratum_mCreate(q: number, minX: number, maxX: number, minY: number, maxY: number, flag: number): number {
+        if (flag <= 0) return 0;
+
+        const rows = maxX - minX + 1;
+        const cols = maxY - minY + 1;
+        if (rows <= 0 || cols <= 0) return 0;
+
+        const handle = q === 0 ? HandleMap.getFreeNegativeHandle(this.matrices) : q;
+        this.matrices.set(handle, new NeoMatrix({ rows, cols, minX, minY }));
+        return handle;
+    }
+    stratum_mDelete(q: number, flag: number): NumBool {
+        if (flag <= 0) return 0;
+        return this.matrices.delete(q) ? 1 : 0;
+    }
+    stratum_mFill(q: number, value: number, flag: number): number {
+        if (flag <= 0) return 0;
+        return this.matrices.get(q)?.fill(value) ?? 0;
+    }
+    stratum_mGet(q: number, i: number, j: number, flag: number): number {
+        if (flag <= 0) return 0;
+        return this.matrices.get(q)?.get(i, j) ?? 0;
+    }
+    stratum_mPut(q: number, i: number, j: number, value: number, flag: number): number {
+        if (flag <= 0) return 0;
+        return this.matrices.get(q)?.set(i, j, value) ?? 0;
+    }
+    stratum_async_mEditor(q: number, flag: number): NumBool | Promise<NumBool> {
+        if (flag <= 0) return 0;
+        throw Error("MEditor: редактор матриц не реализован");
+    }
+    // stratum_mDiag
+    //#endregion
+
+    //#region ФУНКЦИИ УПРАВЛЕНИЯ МАССИВАМИ
     //#endregion
 }
 installContextFunctions(Enviroment, "env");
