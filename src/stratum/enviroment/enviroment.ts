@@ -548,6 +548,7 @@ export class Enviroment implements EnviromentFunctions {
 
     // Клавиатура
     stratum_getAsyncKeyState(vkey: number): number {
+        if (vkey < 0 || vkey > Scene.keyState.length - 1) return 0;
         return Scene.keyState[vkey] > 0 ? 1 : 0;
     }
 

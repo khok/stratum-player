@@ -128,6 +128,7 @@ export class SceneWindow<T = unknown> {
             this.parent?.childWindows.delete(this);
             SceneWindow.wins.delete(this);
             this.childWindows.forEach((w) => w.close());
+            this.scene.beforeRemove();
             if (args.onClosed) args.onClosed();
             this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
         };

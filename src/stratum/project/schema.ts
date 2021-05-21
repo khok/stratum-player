@@ -174,6 +174,13 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
                 this.setVarValue(vars.yposVarId, VarType.Float, args[1]);
                 this.setVarValue(vars.fwkeysVarId, VarType.Float, args[2]);
                 break;
+            case Constant.WM_KEYDOWN:
+            case Constant.WM_KEYUP:
+            case 258: //WM_CHAR, видимо, забыли добавить в константы
+                this.setVarValue(vars.wVkeyVarId, VarType.Float, args[0]);
+                this.setVarValue(vars.repeatVarId, VarType.Float, args[1]);
+                this.setVarValue(vars.scanCodeVarId, VarType.Float, args[2]);
+                break;
         }
 
         return this.compute(true);

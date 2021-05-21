@@ -3,6 +3,8 @@ import { EventSubscriber, HyperCallHandler, NumBool } from "stratum/common/types
 import { DibToolImage } from "stratum/fileFormats/bmp/dibToolImage";
 import { Hyperbase, VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
+import { eventCodeToWinDigit } from "stratum/helpers/keyboardEventKeyMap";
+import { win1251Table } from "stratum/helpers/win1251";
 import { WindowHostWindow } from "stratum/stratum";
 import { SceneWindow, WindowRect } from "../sceneWindow";
 import { NotResizable, Resizable } from "./resizable";
@@ -34,7 +36,26 @@ export interface SceneArgs {
 }
 
 export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
+    private static kbdTarget: Scene | null = null;
+    private static pointerTarget: Scene | null = null;
+    static handleKeyboard(evt: KeyboardEvent) {
+        const code = eventCodeToWinDigit.get(evt.code);
+        if (typeof code !== "undefined") {
+            Scene.keyState[code] = evt.type === "keydown" ? 1 : 0;
+        }
+        Scene.kbdTarget?.dispatchKeyboardEvent(evt, code ?? 0);
+    }
+    static handlePointer(evt: PointerEvent) {
+        Scene.keyState[1] = evt.buttons & 1 ? 1 : 0;
+        Scene.keyState[2] = evt.buttons & 2 ? 1 : 0;
+        Scene.keyState[4] = evt.buttons & 4 ? 1 : 0;
+        if (evt.type === "pointerup") {
+            Scene.pointerTarget?.handleEvent(evt);
+            Scene.pointerTarget = null;
+        }
+    }
     static readonly keyState = new Uint8Array(256);
+
     private static getInversedMatrix(matrix: number[]): number[] {
         const det =
             matrix[0] * (matrix[4] * matrix[8] - matrix[7] * matrix[5]) -
@@ -99,7 +120,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         cnv.style.setProperty("touch-action", "pinch-zoom"); //было: "pan-x pan-y". pinch-zoom работает лучше.
         cnv.addEventListener("pointerdown", this);
         cnv.addEventListener("pointerup", this);
-        cnv.addEventListener("pointerleave", this);
+        // cnv.addEventListener("pointerleave", this);
         cnv.addEventListener("pointermove", this);
         cnv.addEventListener("selectstart", this);
         view.appendChild(cnv);
@@ -682,6 +703,10 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
     private rightButtonDownSubs = new Map<EventSubscriber, number>();
     private middleButtonUpSubs = new Map<EventSubscriber, number>();
     private middleButtonDownSubs = new Map<EventSubscriber, number>();
+    private keyDownSubs = new Set<EventSubscriber>();
+    private keyUpSubs = new Set<EventSubscriber>();
+    private keyCharSubs = new Set<EventSubscriber>();
+
     on(sub: EventSubscriber, code: Constant, objectHandle: number): void {
         switch (code) {
             case Constant.WM_SIZE:
@@ -726,17 +751,32 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
                 this.middleButtonDownSubs.set(sub, objectHandle);
                 this.middleButtonUpSubs.set(sub, objectHandle);
                 break;
+            case Constant.WM_KEYDOWN:
+                this.keyDownSubs.add(sub);
+                break;
+            case Constant.WM_KEYUP:
+                this.keyUpSubs.add(sub);
+                break;
+            case 258: //WM_CHAR, видимо, забыли добавить в константы
+                this.keyCharSubs.add(sub);
+                break;
+            case Constant.WM_ALLKEYMESSAGE:
+                this.keyDownSubs.add(sub);
+                this.keyUpSubs.add(sub);
+                this.keyCharSubs.add(sub);
+                break;
             default:
-                this._unsub.add(Constant[code]);
-                if (this._unsub.size > this._unsubS) {
-                    this._unsubS = this._unsub.size;
-                    console.warn(`Подписка на ${Constant[code]} не реализована`);
-                }
+                console.warn(`Подписка на ${Constant[code]} не реализована (имидж: ${(sub as any).proto.name})`);
+                // this._unsub.add(Constant[code]);
+                // if (this._unsub.size > this._unsubS) {
+                //     this._unsubS = this._unsub.size;
+                //     console.warn(`Подписка на ${Constant[code]} не реализована (имидж: ${})`);
+                // }
                 break;
         }
     }
-    private _unsub = new Set<string>();
-    private _unsubS = 0;
+    // private _unsub = new Set<string>();
+    // private _unsubS = 0;
 
     off(sub: EventSubscriber, code: Constant): void {
         switch (code) {
@@ -782,6 +822,20 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
                 this.middleButtonDownSubs.delete(sub);
                 this.middleButtonUpSubs.delete(sub);
                 break;
+            case Constant.WM_KEYDOWN:
+                this.keyDownSubs.add(sub);
+                break;
+            case Constant.WM_KEYUP:
+                this.keyUpSubs.delete(sub);
+                break;
+            case 258: //WM_CHAR, видимо, забыли добавить в константы
+                this.keyCharSubs.delete(sub);
+                break;
+            case Constant.WM_ALLKEYMESSAGE:
+                this.keyDownSubs.delete(sub);
+                this.keyUpSubs.delete(sub);
+                this.keyCharSubs.delete(sub);
+                break;
         }
     }
 
@@ -791,7 +845,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
             evt.preventDefault();
             return;
         }
-        const rect = (evt.currentTarget as HTMLCanvasElement).getBoundingClientRect();
+        const rect = this.ctx.canvas.getBoundingClientRect();
         const clickX = evt.clientX - rect.left;
         const clickY = evt.clientY - rect.top;
         const x = clickX + this._originX;
@@ -814,6 +868,8 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         switch (evt.type) {
             // https://developer.mozilla.org/ru/docs/Web/API/MouseEvent/button
             case "pointerdown": {
+                Scene.kbdTarget = this;
+                Scene.pointerTarget = this;
                 this.blocked = true;
                 switch (evt.button) {
                     case 0: //Левая кнопка
@@ -830,6 +886,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
                 return;
             }
             case "pointerup": {
+                Scene.pointerTarget = null;
                 switch (evt.button) {
                     case 0:
                         this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, fwkeys);
@@ -843,10 +900,10 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
                 }
                 return;
             }
-            case "pointerleave": {
-                this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, 0);
-                return;
-            }
+            // case "pointerleave": {
+            //     this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, 0);
+            //     return;
+            // }
             case "pointermove":
                 if (this.blocked) {
                     this.blocked = false;
@@ -873,12 +930,31 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         }
     }
 
-    dispatchControlNotifyEvent(ctrlHandle: number, ev: Event): void {
+    private dispatchKeyboardEvent(evt: KeyboardEvent, rawKey: number): void {
+        const repeat = 1;
+        const scanCode = 0;
+        if (evt.type === "keydown") {
+            this.keyDownSubs.forEach((sub) => sub.receive(Constant.WM_KEYDOWN, rawKey, repeat, scanCode));
+            //стрелки, Delete не отправляют WM_CHAR, т.к. не проходят TranslateMessage... Хер пойми как она работает.
+            if ((rawKey > 36 && rawKey < 41) || rawKey === 46) return;
+
+            const idx = win1251Table.indexOf(evt.key);
+            const translatedKey = idx < 0 ? rawKey : idx;
+            this.keyCharSubs.forEach((sub) => sub.receive(258, translatedKey, repeat, scanCode)); //258 - WM_CHAR, нет в константах.
+        } else {
+            this.keyUpSubs.forEach((sub) => sub.receive(Constant.WM_KEYUP, rawKey, repeat, scanCode));
+        }
+    }
+
+    dispatchControlNotifyEvent(ctrlHandle: number, evt: Event): void {
         let notifyCode = 0;
-        switch (ev.type) {
+        switch (evt.type) {
             case "input":
                 notifyCode = 768;
                 break;
+            case "focus":
+                Scene.kbdTarget = null;
+                return;
             default:
                 return;
         }
@@ -886,4 +962,14 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
             if (objHandle === 0 || objHandle === ctrlHandle) sub.receive(Constant.WM_CONTROLNOTIFY, ctrlHandle, 0, notifyCode);
         }
     }
+
+    beforeRemove(): void {
+        if (Scene.kbdTarget === this) Scene.kbdTarget = null;
+        if (Scene.pointerTarget === this) Scene.pointerTarget = null;
+    }
 }
+
+window.addEventListener("pointerdown", Scene.handlePointer);
+window.addEventListener("pointerup", Scene.handlePointer);
+window.addEventListener("keydown", Scene.handleKeyboard);
+window.addEventListener("keyup", Scene.handleKeyboard);

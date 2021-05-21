@@ -29,6 +29,9 @@ export class ClassVars {
     readonly orgyVarId: number = -1;
     readonly _objnameVarId: number = -1;
     readonly _classnameVarId: number = -1;
+    readonly wVkeyVarId: number = -1;
+    readonly repeatVarId: number = -1;
+    readonly scanCodeVarId: number = -1;
 
     constructor(raw?: ClassVarInfo[] | null) {
         if (!raw) {
@@ -94,6 +97,12 @@ export class ClassVars {
                 this._objnameVarId = i;
             } else if (nameUC === "_CLASSNAME" && typ === VarType.String) {
                 this._classnameVarId = i;
+            } else if (nameUC === "WVKEY" && typ === VarType.Float) {
+                this.wVkeyVarId = i;
+            } else if (nameUC === "REPEAT" && typ === VarType.Float) {
+                this.repeatVarId = i;
+            } else if (nameUC === "SCANCODE" && typ === VarType.Float) {
+                this.scanCodeVarId = i;
             }
         }
     }

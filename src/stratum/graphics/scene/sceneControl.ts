@@ -90,6 +90,7 @@ export class SceneControl implements SceneVisualMember, EventListenerObject {
         elem.value = text;
         elem.hidden = this.lastHidden;
         elem.addEventListener("input", this);
+        elem.addEventListener("focus", this);
         scene.view.appendChild(elem);
     }
 
