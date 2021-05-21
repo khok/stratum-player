@@ -169,9 +169,10 @@ class ExprGenerator {
         // Функции нельзя инлайнить т.к. Short-circuit evaluation не работает.
         const data = funcTable.get(nameUC);
         if (data) {
-            if (data.inner) this.innerFuncs.add(data.f);
-            // Обычная функция
-            if (!data.tmpl) return { ...data, f: `${data.f}(${fargs})` };
+            if (data.inline !== "template") {
+                if (data.inline === "inner") this.innerFuncs.add(data.f);
+                return { ...data, f: `${data.f}(${fargs})` };
+            }
 
             // Шаблонная функция
             let result = data.f;

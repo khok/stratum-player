@@ -3,66 +3,68 @@ import { envVar, EXIT_CODE, prjVar, schemaArg } from "./compilerConsts";
 export interface FuncInfo {
     f: string;
     blocking?: boolean;
-    tmpl?: boolean;
-    inner?: boolean;
+    /**
+     * Функция инлайнится (template - прямо в код; inner - определение вверху модели).
+     */
+    inline?: "template" | "inner";
 }
 
 export const funcTable: Map<string, FuncInfo> = new Map([
-    ["EXIT", { f: `return ${EXIT_CODE}`, tmpl: true }],
+    ["EXIT", { f: `return ${EXIT_CODE}`, inline: "template" }],
     // Преобразования
-    ["FLOAT", { f: "parseFloat(#0)||0", tmpl: true }],
-    ["HANDLE", { f: "parseInt(#0)||0", tmpl: true }],
-    ["STRING", { f: "(Math.round((#0)*100000)/100000).toString()", tmpl: true }],
+    ["FLOAT", { f: "parseFloat(#0)||0", inline: "template" }],
+    ["HANDLE", { f: "parseInt(#0)||0", inline: "template" }],
+    ["STRING", { f: "(Math.round((#0)*100000)/100000).toString()", inline: "template" }],
     // Арифметика
-    ["ABS", { f: "Math.abs(#0)||0", tmpl: true }],
-    ["AVERAGE", { f: "(#0)/2+(#1)/2", tmpl: true }],
-    ["EXP", { f: "Math.exp(#0)||0", tmpl: true }],
-    ["LG", { f: "lg", inner: true }],
-    ["LN", { f: "ln", inner: true }],
-    ["LOG", { f: "log", inner: true }],
-    ["MAX", { f: "Math.max(#0, #1)||0", tmpl: true }],
-    ["MIN", { f: "Math.min(#0, #1)||0", tmpl: true }],
-    ["LIMIT", { f: "Math.max(#1, Math.min(#2, #0))||0", tmpl: true }], //порядок аргументов?
-    ["ROUND", { f: "round", inner: true }],
-    ["SQR", { f: "(#0)**2", tmpl: true }],
-    ["SQRT", { f: "Math.sqrt(#0)||0", tmpl: true }],
-    ["TRUNC", { f: "Math.trunc(#0)||0", tmpl: true }], //FIXME: нет в IE
-    ["RND", { f: "(#0)*Math.random()", tmpl: true }],
+    ["ABS", { f: "Math.abs(#0)||0", inline: "template" }],
+    ["AVERAGE", { f: "(#0)/2+(#1)/2", inline: "template" }],
+    ["EXP", { f: "Math.exp(#0)||0", inline: "template" }],
+    ["LG", { f: "lg", inline: "inner" }],
+    ["LN", { f: "ln", inline: "inner" }],
+    ["LOG", { f: "log", inline: "inner" }],
+    ["MAX", { f: "Math.max(#0, #1)||0", inline: "template" }],
+    ["MIN", { f: "Math.min(#0, #1)||0", inline: "template" }],
+    ["LIMIT", { f: "Math.max(#1, Math.min(#2, #0))||0", inline: "template" }], //порядок аргументов?
+    ["ROUND", { f: "round", inline: "inner" }],
+    ["SQR", { f: "(#0)**2", inline: "template" }],
+    ["SQRT", { f: "Math.sqrt(#0)||0", inline: "template" }],
+    ["TRUNC", { f: "Math.trunc(#0)||0", inline: "template" }], //FIXME: нет в IE
+    ["RND", { f: "(#0)*Math.random()", inline: "template" }],
     // Тригонометрия
-    ["ARCCOS", { f: "arccos", inner: true }],
-    ["ARCSIN", { f: "arcsin", inner: true }],
-    ["ARCTAN", { f: "Math.atan(#0)||0", tmpl: true }],
-    ["COS", { f: "Math.cos(#0)||0", tmpl: true }],
-    ["SIN", { f: "Math.sin(#0)||0", tmpl: true }],
-    ["TAN", { f: "Math.tan(#0)||0", tmpl: true }],
-    ["DEG", { f: "180*(#0)/Math.PI||0", tmpl: true }],
-    ["RAD", { f: "Math.PI*(#0)/180||0", tmpl: true }],
-    ["GETANGLEBYXY", { f: "getAngleByXY", inner: true }],
+    ["ARCCOS", { f: "arccos", inline: "inner" }],
+    ["ARCSIN", { f: "arcsin", inline: "inner" }],
+    ["ARCTAN", { f: "Math.atan(#0)||0", inline: "template" }],
+    ["COS", { f: "Math.cos(#0)||0", inline: "template" }],
+    ["SIN", { f: "Math.sin(#0)||0", inline: "template" }],
+    ["TAN", { f: "Math.tan(#0)||0", inline: "template" }],
+    ["DEG", { f: "180*(#0)/Math.PI||0", inline: "template" }],
+    ["RAD", { f: "Math.PI*(#0)/180||0", inline: "template" }],
+    ["GETANGLEBYXY", { f: "getAngleByXY", inline: "inner" }],
     // Логика
-    ["AND", { f: "(#0)&&(#1)", tmpl: true }],
-    ["DELTA", { f: "(#0)?0:1", tmpl: true }],
-    ["ED", { f: "(#0)>0?1:0", tmpl: true }],
-    ["NOT", { f: "!(#0)", tmpl: true }],
-    ["NOTBIN", { f: "#0", tmpl: true }], // NOTBIN возвращает то же число из-за бага
-    ["OR", { f: "(#0)||(#1)", tmpl: true }],
-    ["SGN", { f: "Math.sign(#0)||0", tmpl: true }], //FIXME: нет в IE
-    ["XOR", { f: "(#0)!==0^(#1)!==0", tmpl: true }],
-    ["XORBIN", { f: "(#0)^(#1)", tmpl: true }],
+    ["AND", { f: "(#0)&&(#1)", inline: "template" }],
+    ["DELTA", { f: "(#0)?0:1", inline: "template" }],
+    ["ED", { f: "(#0)>0?1:0", inline: "template" }],
+    ["NOT", { f: "!(#0)", inline: "template" }],
+    ["NOTBIN", { f: "#0", inline: "template" }], // NOTBIN возвращает то же число из-за бага
+    ["OR", { f: "(#0)||(#1)", inline: "template" }],
+    ["SGN", { f: "Math.sign(#0)||0", inline: "template" }], //FIXME: нет в IE
+    ["XOR", { f: "(#0)!==0^(#1)!==0", inline: "template" }],
+    ["XORBIN", { f: "(#0)^(#1)", inline: "template" }],
     // Строки
-    ["ALLTRIM", { f: "(#0).trim()", tmpl: true }],
-    ["CHANGE", { f: '(#0).replace(new RegExp(#1, "g"), #2)', tmpl: true }],
-    ["COMPARE", { f: "(#0)===(#1)", tmpl: true }],
-    ["COMPAREI", { f: "compareI", inner: true }],
-    ["LEFT", { f: "(#0).substring(0,#1)", tmpl: true }],
-    ["LENGTH", { f: "(#0).length", tmpl: true }],
-    ["LOWER", { f: "(#0).toLowerCase()", tmpl: true }],
-    ["LTRIM", { f: '(#0).replace(/^\\s+/,"")', tmpl: true }],
-    ["POS", { f: "pos", inner: true }],
-    ["REPLICATE", { f: "(#0).repeat(#1)", tmpl: true }], //FIXME: нет в IE
-    ["SUBSTR", { f: "(#0).substr(#1,#2)", tmpl: true }], //FIXME: substr лучше не использовать.
-    ["RIGHT", { f: "right", inner: true }],
-    ["RTRIM", { f: '(#0).replace(/\\s+$/,"")', tmpl: true }],
-    ["UPPER", { f: "(#0).toUpperCase()", tmpl: true }],
+    ["ALLTRIM", { f: "(#0).trim()", inline: "template" }],
+    ["CHANGE", { f: "change", inline: "inner" }],
+    ["COMPARE", { f: "(#0)===(#1)", inline: "template" }],
+    ["COMPAREI", { f: "compareI", inline: "inner" }],
+    ["LEFT", { f: "(#0).substring(0,#1)", inline: "template" }],
+    ["LENGTH", { f: "(#0).length", inline: "template" }],
+    ["LOWER", { f: "(#0).toLowerCase()", inline: "template" }],
+    ["LTRIM", { f: '(#0).replace(/^\\s+/,"")', inline: "template" }],
+    ["POS", { f: "pos", inline: "inner" }],
+    ["REPLICATE", { f: "(#0).repeat(#1)", inline: "template" }], //FIXME: нет в IE
+    ["SUBSTR", { f: "(#0).substr(#1,#2)", inline: "template" }], //FIXME: substr лучше не использовать.
+    ["RIGHT", { f: "right", inline: "inner" }],
+    ["RTRIM", { f: '(#0).replace(/\\s+$/,"")', inline: "template" }],
+    ["UPPER", { f: "(#0).toUpperCase()", inline: "template" }],
 ]);
 
 // Регекс для поиска ошибок: stratum_.*\)\s\{
