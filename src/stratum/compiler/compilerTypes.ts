@@ -32,6 +32,25 @@ export interface EnviromentContextFunctions {
     ): void;
     getDate(arr1: MutableArrayLike<number>, year: number, arr2: MutableArrayLike<number>, mon: number, arr3: MutableArrayLike<number>, day: number): void;
     getActualSize2d(hspace: number, hobject: number, xArr: MutableArrayLike<number>, xId: number, yArr: MutableArrayLike<number>, yId: number): NumBool;
+    getVarInfo(
+        classname: string,
+        varIdx: number,
+
+        varNameArr: MutableArrayLike<string>,
+        varNameId: number,
+
+        varTypeArr: MutableArrayLike<string>,
+        varTypeId: number,
+
+        varDefValueArr: MutableArrayLike<string>,
+        varDefValueId: number,
+
+        varDescrArr: MutableArrayLike<string>,
+        varDescrId: number,
+
+        varFlagsArr: MutableArrayLike<number>,
+        varFlagsId: number
+    ): NumBool;
 }
 
 /**

@@ -7,6 +7,7 @@ import {
     getActualSize2dFunc,
     getDateFunc,
     getTimeFunc,
+    getVarInfoFunc,
     getWaitResultFunc,
     loadContextFunc,
     memArg,
@@ -110,9 +111,9 @@ class ExprGenerator {
         const vname = e.first.name;
         const info = this.vars.get(vname);
         if (!info) throw Error(`Неизвестная переменная: ${vname}`);
-        if (info[0].type !== VarType.Float) throw Error(`Ожидалась переменная типа Float`);
-
-        return [`${e.first.isNew ? newPr : oldPr}${arrNames[VarType.Float]}`, `${TLBArg}[${info[1]}]`];
+        // if (info[0].type !== VarType.Float) throw Error(`Ожидалась переменная типа Float`);
+        // return [`${e.first.isNew ? newPr : oldPr}${arrNames[VarType.Float]}`, `${TLBArg}[${info[1]}]`];
+        return [`${e.first.isNew ? newPr : oldPr}${arrNames[info[0].type]}`, `${TLBArg}[${info[1]}]`];
     }
 
     private parseOperand(op: Operand): string {
@@ -209,8 +210,13 @@ class ExprGenerator {
         }
         if (nameUC === "GETACTUALSIZE2D") {
             const f1 = op.args.slice(0, 2).map((a) => this.parseExpr(a));
-            const f2 = op.args.slice(2, 4).map((a) => this.derefer(a));
+            const f2 = op.args.slice(2).map((a) => this.derefer(a));
             return { f: `${envVar}.${getActualSize2dFunc}(${f1},${f2})` };
+        }
+        if (nameUC === "GETVARINFO") {
+            const f1 = op.args.slice(0, 2).map((a) => this.parseExpr(a));
+            const f2 = op.args.slice(2).map((a) => this.derefer(a));
+            return { f: `${envVar}.${getVarInfoFunc}(${f1},${f2})` };
         }
 
         // Вызов функции.

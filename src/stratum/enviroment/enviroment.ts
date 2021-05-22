@@ -219,6 +219,36 @@ export class Enviroment implements EnviromentFunctions {
         return 1;
     }
 
+    getVarInfo(
+        classname: string,
+        varIdx: number,
+        varNameArr: MutableArrayLike<string>,
+        varNameId: number,
+        varTypeArr: MutableArrayLike<string>,
+        varTypeId: number,
+        varDefValueArr: MutableArrayLike<string>,
+        varDefValueId: number,
+        varDescrArr: MutableArrayLike<string>,
+        varDescrId: number,
+        varFlagsArr?: MutableArrayLike<number>,
+        varFlagsId?: number
+    ): NumBool {
+        if (varIdx < 0) return 0;
+        const vars = this.classes.get(classname)?.vars();
+        if (!vars) return 0;
+        if (varIdx > vars.count() - 1) return 0;
+        const data = vars.data(varIdx);
+
+        varNameArr[varNameId] = data.name;
+        varTypeArr[varTypeId] = data.typeString;
+        varDescrArr[varDescrId] = data.description;
+        varDefValueArr[varDefValueId] = data.rawDefaultValue;
+        if (typeof varFlagsArr !== "undefined" && typeof varFlagsId !== "undefined") {
+            varFlagsArr[varFlagsId] = data.rawFlags;
+        }
+        return 1;
+    }
+
     openSchemeWindow(prj: Project, wname: string, className: string, attrib: string): number {
         const wnd = this.windows.get(wname);
         if (typeof wnd !== "undefined") return wnd.sceneHandle;
