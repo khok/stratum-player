@@ -24,7 +24,7 @@ export interface SceneBitmapArgs {
 }
 
 export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
-    readonly type = "bitmap";
+    readonly type: 21 | 22;
     private scene: Scene;
 
     private dib: DIBTool | null;
@@ -64,6 +64,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         scene.dirty = true;
 
         this.isDouble = type === "doubleBitmap";
+        this.type = this.isDouble ? 22 : 21;
         const dib = (this.isDouble ? scene.doubleDibs : scene.dibs).get(dibHandle);
         dib?.subscribe(this);
         this.dib = dib || null;
@@ -310,6 +311,9 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     addItem(): NumBool {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

@@ -64,8 +64,13 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         }
         this.children = children;
         applyLinks(this, links);
-
         this.neighMapUC = new Map([["", this]]);
+
+        children.forEach((c) => {
+            this.neighMapUC.set("#" + c.handle, c);
+            if (c.schemeName) this.neighMapUC.set(c.schemeName, c);
+        });
+
         this.parent = null;
         children.forEach((c) => c.setParent(this));
         if (placement) {
@@ -91,7 +96,11 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         let root = path[0] === "\\" ? this.prj.root : this;
         for (let i = 0; i < filter.length; ++i) {
             const cl = root.neighMapUC.get(filter[i]);
-            if (typeof cl === "undefined") return undefined;
+            if (typeof cl === "undefined") {
+                console.log(this.prj.root);
+                if (filter[i] !== ".." && filter[i][0] !== "#") throw Error(`Не удалось разрешить путь ${path}`);
+                return undefined;
+            }
             root = cl;
         }
         return root;
@@ -121,6 +130,14 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         // this.prj.olds[type][realId] = value;
         // this.prj.news[type][realId] = value;
         return true;
+    }
+
+    private getVarValue(id: number, type: VarType.String): string;
+    private getVarValue(id: number, type: VarType.Float): number;
+    private getVarValue(id: number, type: VarType.Handle): number;
+    private getVarValue(id: number, type: VarType.ColorRef): number;
+    private getVarValue(id: number, type: VarType): string | number {
+        return this.prj.getNewValue(this.TLB[id], type);
     }
 
     private *computeSchema(): ComputeResult {
@@ -359,6 +376,39 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         const vars = target.proto.vars();
         const id = vars.id(varName);
         if (id !== null) target.setVarValue(id, vars.data(id).type, value);
+    }
+
+    stratum_getVarS(objectName: string, varName: string): string {
+        const target = this.resolve(objectName);
+        if (!target) return "";
+
+        const vars = target.proto.vars();
+        const id = vars.id(varName);
+        return id !== null ? target.getVarValue(id, VarType.String) : "";
+    }
+    stratum_getVarF(objectName: string, varName: string): number {
+        const target = this.resolve(objectName);
+        if (!target) return 0;
+
+        const vars = target.proto.vars();
+        const id = vars.id(varName);
+        return id !== null ? target.getVarValue(id, VarType.Float) : 0;
+    }
+    stratum_getVarH(objectName: string, varName: string): number {
+        const target = this.resolve(objectName);
+        if (!target) return 0;
+
+        const vars = target.proto.vars();
+        const id = vars.id(varName);
+        return id !== null ? target.getVarValue(id, VarType.Handle) : 0;
+    }
+    stratum_getVarC(objectName: string, varName: string): number {
+        const target = this.resolve(objectName);
+        if (!target) return 0;
+
+        const vars = target.proto.vars();
+        const id = vars.id(varName);
+        return id !== null ? target.getVarValue(id, VarType.ColorRef) : 0;
     }
 
     // private idTypes: number[] = [];

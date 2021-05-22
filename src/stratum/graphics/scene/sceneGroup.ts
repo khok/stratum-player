@@ -10,7 +10,7 @@ export interface GroupArgs {
 }
 
 export class SceneGroup implements SceneMember {
-    readonly type = "group";
+    readonly type: 3 = 3;
     private scene: Scene;
 
     private children: SceneMember[];
@@ -163,6 +163,9 @@ export class SceneGroup implements SceneMember {
     }
 
     // group methods
+    itemCount(): number {
+        return this.children.length;
+    }
     itemHandle(index: number): number {
         if (index < 0 || index >= this.children.length) return 0;
         return this.children[index].handle;

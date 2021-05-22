@@ -566,6 +566,7 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_setObjectAttribute2d(hspace: number, hobject: number, attr: number, flag: number): NumBool {
+        console.warn("stratum_setObjectAttribute2d не реализована");
         return 1;
     }
     //#endregion
@@ -1054,6 +1055,10 @@ export class Enviroment implements EnviromentFunctions {
         return typeof scene !== "undefined" ? scene.getObject2dByName(hgroup, name) : 0;
     }
 
+    stratum_getObjectType2d(hspace: number, hobject: number): number {
+        const obj = this.getObject(hspace, hobject);
+        return typeof obj !== "undefined" ? obj.type : 0;
+    }
     stratum_setObjectOrg2d(hspace: number, hobject: number, x: number, y: number): NumBool {
         const obj = this.getObject(hspace, hobject);
         return typeof obj !== "undefined" ? obj.setOrigin(x, y) : 0;
@@ -1222,7 +1227,10 @@ export class Enviroment implements EnviromentFunctions {
         return typeof obj !== "undefined" ? obj.deleteItem(hobject) : 0;
     }
 
-    // stratum_getGroupItemsNum2d(hspace: number, hgroup: number): number {}
+    stratum_getGroupItemsNum2d(hspace: number, hgroup: number): number {
+        const obj = this.getObject(hspace, hgroup);
+        return typeof obj !== "undefined" ? obj.itemCount() : 0;
+    }
     stratum_getGroupItem2d(hspace: number, hgroup: number, index: number): number {
         const obj = this.getObject(hspace, hgroup);
         return typeof obj !== "undefined" ? obj.itemHandle(index) : 0;
@@ -1263,6 +1271,21 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
 
     //#region ФУНКЦИИ РАБОТЫ С ИМИДЖАМИ
+    stratum_getObjectCount(classname: string): number {
+        return this.classes.get(classname)?.children.length ?? 0;
+    }
+
+    stratum_getVarCount(classname: string): number {
+        return this.classes.get(classname)?.vars().count() ?? 0;
+    }
+
+    stratum_getHObjectByNum(classname: string, index: number): number {
+        if (index < 0) return 0;
+        const children = this.classes.get(classname)?.children;
+        if (!children || index > children.length - 1) return 0;
+        return children[index].handle;
+    }
+
     stratum_quit(flag: number): void {
         if (flag <= 0) return;
         this._shouldQuit = true;

@@ -193,7 +193,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         this.primaryObjects = [];
         vdr.elementOrder?.forEach((handle) => {
             const obj = this.objects.get(handle);
-            if (!obj || obj.type === "group") return;
+            if (!obj || obj.type === 3) return;
             this.primaryObjects.push(obj);
         });
     }
@@ -433,7 +433,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         // Добавляем их на сцену
         vdr.elementOrder?.forEach((handle) => {
             const obj = this.objects.get(handle);
-            if (!obj || obj.type === "group") return;
+            if (!obj || obj.type === 3) return;
             this.primaryObjects.push(obj);
         });
 
@@ -524,7 +524,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
     }
     deleteGroup2d(hgroup: number): NumBool {
         const obj = this.objects.get(hgroup);
-        if (!obj || obj.type !== "group") return 0;
+        if (!obj || obj.type !== 3) return 0;
         obj.ungroup();
         this.objects.delete(hgroup);
         return 1;

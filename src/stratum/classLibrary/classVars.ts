@@ -5,8 +5,12 @@ import { ClassVarInfo } from "stratum/fileFormats/cls";
 
 export interface VariableData {
     readonly type: VarType;
+    readonly typeString: string;
+    readonly description: string;
     readonly name: string;
     readonly isReturnValue: boolean;
+    readonly rawFlags: number;
+    readonly rawDefaultValue: string;
     readonly defaultValue: string | number | null;
 }
 
@@ -39,25 +43,39 @@ export class ClassVars {
             this.vdata = [];
             return;
         }
-        this.vdata = raw.map((r) => {
+        this.vdata = raw.map((r): VariableData => {
             let type: VarType;
+            let typeString: string;
             switch (r.type) {
                 case "FLOAT":
                 case "INTEGER":
+                    typeString = "FLOAT";
                     type = VarType.Float;
                     break;
                 case "HANDLE":
+                    typeString = r.type;
                     type = VarType.Handle;
                     break;
                 case "STRING":
+                    typeString = r.type;
                     type = VarType.String;
                     break;
                 case "COLORREF":
+                    typeString = r.type;
                     type = VarType.ColorRef;
                     break;
             }
             const defaultValue = r.defaultValue.length > 0 ? parseVarValue(type, r.defaultValue) : null;
-            return { name: r.name, type, defaultValue, isReturnValue: !!(r.flags & Constant.VF_RETURN) };
+            return {
+                name: r.name,
+                type,
+                defaultValue,
+                isReturnValue: !!(r.flags & Constant.VF_RETURN),
+                typeString,
+                description: r.description,
+                rawFlags: r.flags,
+                rawDefaultValue: r.defaultValue,
+            };
         });
 
         const namesUC = raw.map((v) => v.name.toUpperCase());

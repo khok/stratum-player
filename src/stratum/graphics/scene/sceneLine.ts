@@ -18,7 +18,7 @@ export interface SceneLineArgs {
 }
 
 export class SceneLine implements SceneVisualMember, ToolSubscriber {
-    readonly type = "line";
+    readonly type: 20 = 20;
     private scene: Scene;
 
     private pen: PenTool | null;
@@ -465,6 +465,9 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     doubleDIBHandle(): number {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

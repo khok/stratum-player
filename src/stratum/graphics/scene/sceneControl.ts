@@ -23,7 +23,7 @@ export interface SceneControlArgs {
 }
 
 export class SceneControl implements SceneVisualMember, EventListenerObject {
-    readonly type = "control";
+    readonly type: 26 = 26;
     private scene: Scene;
 
     private readonly element: HTMLInputElement;
@@ -320,6 +320,9 @@ export class SceneControl implements SceneVisualMember, EventListenerObject {
         return 0;
     }
     doubleDIBHandle(): number {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

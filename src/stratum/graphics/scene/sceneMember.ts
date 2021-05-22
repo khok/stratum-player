@@ -4,7 +4,6 @@ import { SceneGroup } from "./sceneGroup";
 
 export interface SceneMember {
     hyperbase: Hyperbase | null;
-    readonly type: SceneVisualMember["type"] | "group";
     readonly markDeleted: boolean;
     handle: number;
     name: string;
@@ -25,7 +24,6 @@ export interface SceneMember {
 }
 
 export interface SceneVisualMember extends SceneMember {
-    type: "line" | "bitmap" | "text" | "control";
     render(ctx: CanvasRenderingContext2D, sceneX: number, sceneY: number, layers: number): void;
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined;
 }

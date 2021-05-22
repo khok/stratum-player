@@ -20,7 +20,7 @@ export interface SceneTextArgs {
 }
 
 export class SceneText implements SceneVisualMember, ToolSubscriber {
-    readonly type = "text";
+    readonly type: 23 = 23;
     private scene: Scene;
 
     private textTool: TextTool | null;
@@ -279,6 +279,9 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     pointCount(): number {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion
