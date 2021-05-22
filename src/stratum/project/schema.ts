@@ -470,8 +470,8 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
             const otherId = otherVars.id(varNames[i + 1]);
             if (otherId === null) continue;
 
-            const typ = myVars.data(i).type;
-            const otherTyp = otherVars.data(i).type;
+            const typ = myVars.data(myId).type;
+            const otherTyp = otherVars.data(otherId).type;
             if (typ !== otherTyp) continue;
 
             idTypes[idx + 0] = typ;
