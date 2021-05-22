@@ -1,0 +1,22 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="../stratum.min.js"></script>
+	<script src="../zipfs.min.js"></script>
+    <script src="./loader.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button style="width:50%;height:50%;" id = "starto">Запуск</button>
+</body>
+<script>
+window.addEventListener("load", () => {
+	var but = document.getElementById("starto");
+	but.addEventListener("click", () => {
+		new Audio("feduk_-_okolofutbola_stopmusic.net.mp3").play();
+		runProject(location.pathname.split("/").pop(), true);
+		but.remove();
+	});
+})
+</script>
+</html>
