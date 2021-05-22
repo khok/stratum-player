@@ -3,7 +3,7 @@ import { RealPlayer } from "./player";
 window.stratum = window.stratum ?? {};
 window.stratum.player = RealPlayer.create;
 window.stratum.options = options;
-window.stratum.version = "0.10.0";
+window.stratum.version = "0.10.2";
 
 // /**
 //  * Создает новый проект из файла.
