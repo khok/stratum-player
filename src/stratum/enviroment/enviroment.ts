@@ -884,6 +884,11 @@ export class Enviroment implements EnviromentFunctions {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.createFontTool(fontName, height, flags) : 0;
     }
+    //FIXME: эта функия работает иначе: см. доки.
+    stratum_createFont2Dpt(hspace: number, fontName: string, size: number, flags: number): number {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.createFontTool(fontName, size, flags) : 0;
+    }
 
     stratum_getFontName2d(hspace: number, hfont: number): string {
         const f = this.getTFont(hspace, hfont);
