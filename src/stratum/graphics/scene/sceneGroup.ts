@@ -1,6 +1,7 @@
-import { NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Scene, SceneMember } from "./scene";
+import { Scene } from "./scene";
+import { SceneMember } from "./sceneMember";
 
 export interface GroupArgs {
     handle: number;
@@ -9,7 +10,7 @@ export interface GroupArgs {
 }
 
 export class SceneGroup implements SceneMember {
-    readonly type = "group";
+    readonly type: 3 = 3;
     private scene: Scene;
 
     private children: SceneMember[];
@@ -162,6 +163,9 @@ export class SceneGroup implements SceneMember {
     }
 
     // group methods
+    itemCount(): number {
+        return this.children.length;
+    }
     itemHandle(index: number): number {
         if (index < 0 || index >= this.children.length) return 0;
         return this.children[index].handle;

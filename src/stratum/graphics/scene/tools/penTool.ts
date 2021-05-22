@@ -1,5 +1,6 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
-import { Constant, Env, NumBool } from "stratum/env";
+import { Constant } from "stratum/common/constant";
+import { NumBool } from "stratum/common/types";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface PenToolArgs {
@@ -10,7 +11,7 @@ export interface PenToolArgs {
     rop2: number;
 }
 
-export class PenTool implements Env.PenTool {
+export class PenTool {
     private subs: Set<ToolSubscriber>;
     private _color: number;
     private _width: number;

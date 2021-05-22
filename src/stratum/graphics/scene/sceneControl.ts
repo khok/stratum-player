@@ -1,9 +1,9 @@
-import { NumBool } from "stratum/env";
-import { Hyperbase } from "stratum/fileFormats/vdr";
+import { NumBool } from "stratum/common/types";
+import { ControlElement, Hyperbase } from "stratum/fileFormats/vdr";
 import { Point2D } from "stratum/helpers/types";
-import { InputWrapper } from ".";
-import { HTMLFactory, Scene, SceneVisualMember } from "./scene";
+import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
+import { SceneVisualMember } from "./sceneMember";
 
 export interface SceneControlArgs {
     handle: number;
@@ -14,7 +14,7 @@ export interface SceneControlArgs {
     originY: number;
     width: number;
     height: number;
-    className: string;
+    inputType: ControlElement["inputType"];
     text: string;
     dwStyle?: number;
     exStyle?: number;
@@ -22,11 +22,11 @@ export interface SceneControlArgs {
     controlSize?: Point2D;
 }
 
-export class SceneControl implements SceneVisualMember {
-    readonly type = "control";
+export class SceneControl implements SceneVisualMember, EventListenerObject {
+    readonly type: 26 = 26;
     private scene: Scene;
 
-    private readonly wrapper: InputWrapper;
+    private readonly element: HTMLInputElement;
 
     private lastX: number;
     private lastY: number;
@@ -48,9 +48,8 @@ export class SceneControl implements SceneVisualMember {
     markDeleted: boolean;
     hyperbase: Hyperbase | null;
 
-    constructor(scene: Scene, html: HTMLFactory, { hyperbase, handle, options, name, originX, originY, width, height, className, text }: SceneControlArgs) {
-        const nm = className.toUpperCase();
-        if (nm !== "EDIT") throw Error(`Элемент ввода ${className} не реализован.`);
+    constructor(scene: Scene, { hyperbase, handle, options, name, originX, originY, width, height, inputType, text }: SceneControlArgs) {
+        if (inputType !== "EDIT") throw Error(`Элемент ввода ${inputType} не реализован.`);
 
         this.hyperbase = hyperbase ?? null;
 
@@ -80,8 +79,23 @@ export class SceneControl implements SceneVisualMember {
         this.lastHeight = height;
         this.lastHidden = !this._visible;
 
-        this.wrapper = html.textInput({ x: this.lastX, y: this.lastY, width, height, text, hidden: this.lastHidden });
-        this.wrapper.onEdit((ev) => scene.dispatchControlNotifyEvent(this.handle, ev));
+        const elem = (this.element = document.createElement("input"));
+        elem.setAttribute("type", "text");
+        elem.setAttribute("class", "stratum-textbox");
+        elem.style.setProperty("position", "absolute");
+        elem.style.setProperty("left", this.lastX + "px");
+        elem.style.setProperty("top", this.lastY + "px");
+        elem.style.setProperty("width", width + "px");
+        elem.style.setProperty("height", height + "px");
+        elem.value = text;
+        elem.hidden = this.lastHidden;
+        elem.addEventListener("input", this);
+        elem.addEventListener("focus", this);
+        scene.view.appendChild(elem);
+    }
+
+    handleEvent(evt: Event): void {
+        this.scene.dispatchControlNotifyEvent(this.handle, evt);
     }
 
     parentHandle(): number {
@@ -157,16 +171,16 @@ export class SceneControl implements SceneVisualMember {
 
     // control methods
     controlText(): string {
-        return this.wrapper.text();
+        return this.element.value;
     }
     setControlText(text: string): NumBool {
-        this.wrapper.setText(text);
+        this.element.value = text;
         return 1;
     }
 
     // scene
     delete() {
-        this.wrapper.destroy();
+        this.element.remove();
         this._parent?.removeChild(this);
         this.markDeleted = true;
         this.scene.dirty = true;
@@ -231,7 +245,7 @@ export class SceneControl implements SceneVisualMember {
         const hidden = !this._visible || (this._layer & layers) !== 0;
         if (hidden !== this.lastHidden) {
             this.lastHidden = hidden;
-            this.wrapper.setHidden(hidden);
+            this.element.hidden = hidden;
         }
 
         const x = this._originX - sceneX;
@@ -239,7 +253,8 @@ export class SceneControl implements SceneVisualMember {
         if (x !== this.lastX || y !== this.lastY) {
             this.lastX = x;
             this.lastY = y;
-            this.wrapper.setOrigin(x, y);
+            this.element.style.setProperty("left", x + "px");
+            this.element.style.setProperty("top", y + "px");
         }
 
         const width = this._width;
@@ -247,7 +262,8 @@ export class SceneControl implements SceneVisualMember {
         if (width !== this.lastWidth || height !== this.lastHeight) {
             this.lastWidth = width;
             this.lastHeight = height;
-            this.wrapper.setSize(width, height);
+            this.element.style.setProperty("width", width + "px");
+            this.element.style.setProperty("height", height + "px");
         }
     }
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined {
@@ -304,6 +320,9 @@ export class SceneControl implements SceneVisualMember {
         return 0;
     }
     doubleDIBHandle(): number {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

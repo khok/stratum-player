@@ -34,11 +34,9 @@ function read2xFormat(reader: BinaryReader, version: number, start: number): Vec
     const mainpos = reader.int32() + start;
     const toolPos = reader.int32() + start;
 
-    const readPoint = () => (version < 0x200 ? reader.point2dInt() : reader.point2d());
-
-    const origin = readPoint();
-    const scaleDiv = readPoint();
-    const scaleMul = readPoint();
+    const origin = reader.point2d(version < 0x200);
+    const scaleDiv = reader.point2d(version < 0x200);
+    const scaleMul = reader.point2d(version < 0x200);
 
     reader.string(); //path
 
@@ -75,7 +73,7 @@ function read2xFormat(reader: BinaryReader, version: number, start: number): Vec
     reader.seek(toolPos);
     const cc = reader.uint16();
 
-    for (let i = 0; i < cc; i++) {
+    for (let i = 0; i < cc; ++i) {
         new DataChunk(reader, version, "").readObject(res);
     }
 

@@ -1,8 +1,8 @@
-import { NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Scene } from ".";
-import { SceneVisualMember } from "./scene";
+import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
+import { SceneVisualMember } from "./sceneMember";
 import { BrushTool } from "./tools/brushTool";
 import { PenTool } from "./tools/penTool";
 import { ToolSubscriber } from "./tools/toolSubscriber";
@@ -18,7 +18,7 @@ export interface SceneLineArgs {
 }
 
 export class SceneLine implements SceneVisualMember, ToolSubscriber {
-    readonly type = "line";
+    readonly type: 20 = 20;
     private scene: Scene;
 
     private pen: PenTool | null;
@@ -465,6 +465,9 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     doubleDIBHandle(): number {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

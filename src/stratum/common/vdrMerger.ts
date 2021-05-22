@@ -218,8 +218,39 @@ function schemeHasElements(scheme: VectorDrawing): scheme is Require<VectorDrawi
     return scheme.elements !== undefined && scheme.elements.length > 0;
 }
 
+export interface SchemeRect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
 export class VdrMerger {
-    scheme: Require<VectorDrawing, "elements">; //Сделаем свойство "elements" обязательным.
+    static calcRect(elements: VectorDrawingElement[]): SchemeRect {
+        if (elements.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        elements.forEach((e) => {
+            if (e.type === "group") return;
+
+            if (e.originX < minX) minX = e.originX;
+            if (e.originX + e.width > maxX) maxX = e.originX + e.width;
+
+            if (e.originY < minY) minY = e.originY;
+            if (e.originY + e.height > maxY) maxY = e.originY + e.height;
+        });
+
+        return {
+            x: minX,
+            y: minY,
+            w: maxX - minX,
+            h: maxY - minY,
+        };
+    }
+    private readonly scheme: Require<VectorDrawing, "elements">; //Сделаем свойство "elements" обязательным.
     /**
      * Создает вспомогательный класс для вставки изображений и иконок дочерних имиджей в схему родительского имиджа.
      * @param scheme - схема родительского имиджа.
@@ -230,7 +261,7 @@ export class VdrMerger {
         this.scheme = schemeCopy;
     }
 
-    get result() {
+    result(): VectorDrawing {
         return this.scheme;
     }
 
@@ -240,7 +271,7 @@ export class VdrMerger {
      * @param image - Изображение подимиджа.
      * @param offset - смещение изображения подимиджа.
      */
-    insertChildImage(rootGroupHandle: number, image: VectorDrawing) {
+    insertChildImage(rootGroupHandle: number, image: VectorDrawing): void {
         const { scheme } = this;
         const imageCopy = deepVdrCopy(image);
 
@@ -279,7 +310,7 @@ export class VdrMerger {
      * @param rootGroupHandle - Дескриптор подимиджа, совпадает с дескриптором группы, в которой находится иконка.
      * @param iconFile - Имя файла иконки.
      */
-    replaceIcon(rootGroupHandle: number, iconFile: string, iconIndex: number) {
+    replaceIcon(rootGroupHandle: number, iconFile: string, iconIndex: number): void {
         const { scheme } = this;
 
         const rootGroup = findRootGroup(scheme.elements, rootGroupHandle);
@@ -296,6 +327,7 @@ export class VdrMerger {
         }
         stubIcon.dibHandle = ddib.handle = freeHandle;
 
+        // Количество иконок по горизонтали
         let rowLen = 0;
         switch (iconFile.toUpperCase()) {
             case "SYSTEM.DBM":

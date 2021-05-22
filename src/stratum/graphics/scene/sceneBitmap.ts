@@ -1,8 +1,8 @@
-import { NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { BitmapElement, DoubleBitmapElement, Hyperbase } from "stratum/fileFormats/vdr";
-import { Scene } from ".";
-import { SceneVisualMember } from "./scene";
+import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
+import { SceneVisualMember } from "./sceneMember";
 import { DIBTool } from "./tools/dibTool";
 import { ToolSubscriber } from "./tools/toolSubscriber";
 
@@ -24,7 +24,7 @@ export interface SceneBitmapArgs {
 }
 
 export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
-    readonly type = "bitmap";
+    readonly type: 21 | 22;
     private scene: Scene;
 
     private dib: DIBTool | null;
@@ -64,6 +64,7 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         scene.dirty = true;
 
         this.isDouble = type === "doubleBitmap";
+        this.type = this.isDouble ? 22 : 21;
         const dib = (this.isDouble ? scene.doubleDibs : scene.dibs).get(dibHandle);
         dib?.subscribe(this);
         this.dib = dib || null;
@@ -310,6 +311,9 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     addItem(): NumBool {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

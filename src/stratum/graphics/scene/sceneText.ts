@@ -1,7 +1,8 @@
-import { NumBool } from "stratum/env";
+import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Scene, SceneVisualMember } from "./scene";
+import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
+import { SceneVisualMember } from "./sceneMember";
 import { TextTool } from "./tools/textTool";
 import { ToolSubscriber } from "./tools/toolSubscriber";
 
@@ -19,7 +20,7 @@ export interface SceneTextArgs {
 }
 
 export class SceneText implements SceneVisualMember, ToolSubscriber {
-    readonly type = "text";
+    readonly type: 23 = 23;
     private scene: Scene;
 
     private textTool: TextTool | null;
@@ -278,6 +279,9 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
         return 0;
     }
     pointCount(): number {
+        return 0;
+    }
+    itemCount(): number {
         return 0;
     }
     //#endregion

@@ -1,171 +1,184 @@
-import { WindowHost, WindowHostWindow } from "stratum/api";
-import { SmoothComputer } from "stratum/common/computers";
-import { Constant, Env, EventSubscriber, NumBool } from "stratum/env";
-import { HTMLFactory, InputWrapper, InputWrapperOptions, Scene } from "./scene";
+import { SmoothExecutor } from "stratum/common/computers";
+import { Constant } from "stratum/common/constant";
+import { EventSubscriber, NumBool } from "stratum/common/types";
+import { VdrMerger } from "stratum/common/vdrMerger";
+import { VDRSource, VectorDrawing, WindowStyle } from "stratum/fileFormats/vdr";
+import { WindowHostWindow, WindowOptions } from "stratum/stratum";
+import { Scene } from "./scene";
+import { NotResizable, Resizable } from "./scene/resizable";
+import { WindowAttribs } from "./windowAttribs";
 
-export class SceneWindow implements Env.Window, HTMLFactory {
-    private static updater = new SmoothComputer();
+export interface WindowRect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+export interface GetWindow {
+    (view: HTMLDivElement, options: WindowOptions): WindowHostWindow;
+}
+
+export interface WindowArgs {
+    handle: number;
+    wname: string;
+    attribs: WindowAttribs;
+    vdr?: VectorDrawing | null;
+    rect?: WindowRect;
+    onClosed?: Function;
+}
+
+export interface SubwindowArgs {
+    handle: number;
+    wname: string;
+    rect: WindowRect;
+    vdr?: VectorDrawing | null;
+    onClosed?: Function;
+}
+
+export class SceneWindow<T = unknown> {
+    private static updater = new SmoothExecutor();
     private static wins = new Set<SceneWindow>();
     private static redrawAll(): boolean {
         SceneWindow.wins.forEach((w) => w.redraw());
         return SceneWindow.wins.size > 0;
     }
 
-    private readonly classname: string = "";
-    private readonly filename: string = "";
-    private resizible: boolean;
-    private ignoreSetSize: boolean;
+    private parent: SceneWindow | null = null;
+    private childWindows = new Set<SceneWindow>();
 
-    private wnd: WindowHostWindow;
-
-    readonly scene: Scene;
-    readonly view: HTMLDivElement;
-    private readonly cnv: HTMLCanvasElement;
     private _title: string;
-    private ctx: CanvasRenderingContext2D;
 
-    private noCaption: boolean;
+    private readonly closeCallback: () => void;
 
-    constructor(host: WindowHost, args: Env.WindowArgs) {
-        this.ignoreSetSize = args.disableResize ?? false;
-        this.noCaption = !!args.noCaption;
+    // readonly popup: boolean;
 
-        if (args.vdr) {
-            this.resizible = !args.vdr.settings?.some((d) => d.id === 11);
-            const { name, origin } = args.vdr.source;
-            if (origin === "class") this.classname = name;
-            else if (origin === "file") this.filename = name;
-        } else {
-            this.resizible = true;
+    readonly host: WindowHostWindow;
+    readonly scene: Scene;
+    readonly sceneHandle: number;
+    readonly name: string;
+    readonly source: VDRSource | null;
+
+    projectID: T | null;
+    constructor(args: WindowArgs, getWindow: GetWindow) {
+        this.sceneHandle = args.handle;
+        this.name = this._title = args.wname;
+        this.source = args.vdr?.source ?? null;
+        this.projectID = null;
+
+        const attribs = args.attribs;
+
+        //Парсинг настроек
+        let width = 300;
+        let height = 200;
+        let popup = false;
+        let autoorg = false;
+        let bySpaceSize = false;
+        let noResize = false;
+
+        if (attribs.useVdrSettings && args.vdr?.settings) {
+            const settings = args.vdr.settings;
+            const style = settings.style;
+
+            if (settings.x) width = settings.x;
+            if (settings.y) height = settings.y;
+            if (style & WindowStyle.SWF_POPUP) popup = true;
+            if (style & WindowStyle.SWF_AUTOORG) autoorg = true;
+            if (style & WindowStyle.SWF_SPACESIZE) bySpaceSize = true;
+            if (style & WindowStyle.SWF_NORESIZE) noResize = true;
         }
 
-        // ширину нужно задавать в зависимости от attrib
-        // const attribs = attribute.split("|").map((c) => c.trim().toUpperCase());
+        if (attribs.popup) popup = true;
+        if (attribs.autoOrg) autoorg = true;
+        if (attribs.bySpaceSize) bySpaceSize = true;
+        if (popup || attribs.noResize) noResize = true;
 
-        const view = (this.view = document.createElement("div"));
-        view.style.setProperty("position", "relative");
-        view.style.setProperty("overflow", "hidden");
-        view.style.setProperty("width", "100%");
-        view.style.setProperty("height", "100%");
+        if (args.vdr?.elements && (autoorg || bySpaceSize)) {
+            const org = VdrMerger.calcRect(args.vdr.elements);
+            if (autoorg) {
+                args.vdr.origin.x = org.x;
+                args.vdr.origin.y = org.y;
+            }
+            if (bySpaceSize) {
+                width = org.w;
+                height = org.h;
+            }
+        }
+        if (args.rect?.w) width = args.rect.w;
+        if (args.rect?.h) height = args.rect.h;
+        //Конец парсинга
 
-        const cnv = (this.cnv = document.createElement("canvas"));
-        cnv.style.setProperty("top", "0px");
-        cnv.style.setProperty("left", "0px");
-        cnv.style.setProperty("position", "absolute");
-        // cnv.style.setProperty("touch-action", "pan-x pan-y");
-        cnv.style.setProperty("touch-action", "pinch-zoom");
-        view.appendChild(cnv);
+        // this.popup = popup;
 
-        this.wnd = host.window({ title: args.noCaption ? undefined : args.title, view });
-        cnv.width = this.width();
-        cnv.height = this.height();
-        this._title = args.title;
+        const sizeInfo: Resizable | NotResizable = noResize ? { resizable: false, width, height } : { resizable: true };
+        this.scene = new Scene({ wnd: this, vdr: args.vdr, sizeInfo });
 
-        const ctx = cnv.getContext("2d", { alpha: false });
-        if (!ctx) throw Error("Не удалось инициализировать контекст рендеринга");
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, this.cnv.width, this.cnv.height);
-        this.ctx = ctx;
+        // const view = document.createElement("div");
+        // view.appendChild(this.scene.view);
 
-        const scene = (this.scene = new Scene(this, args.vdr));
-        const handler = (evt: PointerEvent) => {
-            scene.pointerEventHandler(evt);
-            cnv.style.cursor = scene.cursor;
+        this.host = getWindow(this.scene.view, {
+            popup,
+            title: args.wname,
+            noCaption: attribs?.noCaption,
+            noShadow: attribs?.noShadow,
+            position: args.rect,
+        });
+
+        this.closeCallback = () => {
+            this.parent?.childWindows.delete(this);
+            SceneWindow.wins.delete(this);
+            this.childWindows.forEach((w) => w.close());
+            this.scene.beforeRemove();
+            if (args.onClosed) args.onClosed();
+            this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
         };
-        cnv.addEventListener("pointerdown", handler);
-        cnv.addEventListener("pointerup", handler);
-        cnv.addEventListener("pointerleave", handler);
-        cnv.addEventListener("pointermove", handler);
+        if (this.host.on) this.host.on("closed", this.closeCallback);
 
         SceneWindow.wins.add(this);
         SceneWindow.updater.run(SceneWindow.redrawAll);
-
-        const cl = args.onClosed;
-        this.wnd.on("closed", () => {
-            SceneWindow.wins.delete(this);
-            this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
-            cl && cl();
-        });
+        this.redraw();
     }
 
-    textInput(options: InputWrapperOptions) {
-        return new InputWrapper(this.view, options);
+    subwindow(args: SubwindowArgs): SceneWindow<T> {
+        const windowArgs: WindowArgs = { ...args, attribs: { noResize: true } };
+        const wnd = new SceneWindow<T>(windowArgs, (view) => this.scene.frame(view, args.rect));
+        wnd.parent = this;
+        this.childWindows.add(wnd);
+        return wnd;
     }
 
-    redraw() {
-        const nw = this.view.clientWidth;
-        const nh = this.view.clientHeight;
-
-        const sizeChanged = nw !== this.cnv.width || nh !== this.cnv.height;
-
-        if (sizeChanged) {
-            this.cnv.width = nw;
-            this.cnv.height = nh;
-            for (const c of this.sizeSubs) c.receive(Constant.WM_SIZE, nw, nh);
-        }
-
-        if (sizeChanged || this.scene.dirty) {
-            this.scene.render(this.ctx);
-            this.scene.dirty = false;
-        }
-    }
-
-    close(): void {
-        SceneWindow.wins.delete(this);
-        this.wnd.close();
-        this.spaceDoneSubs.forEach((c) => c.receive(Constant.WM_SPACEDONE));
-    }
-
-    getProp(prop: string): string {
-        const propUC = prop.toUpperCase();
-        if (propUC === "CLASSNAME") return this.classname;
-        if (propUC === "FILENAME") return this.filename;
-        return "";
-    }
-
-    width() {
-        const wd = this.view.clientWidth;
-        return wd > 0 ? wd : 300;
-    }
-
-    height() {
-        const wh = this.view.clientHeight;
-        return wh > 0 ? wh : 200;
-    }
-
-    setSize(width: number, height: number): NumBool {
-        if (this.ignoreSetSize === true) return 1;
-        this.wnd.setSize(width, height);
-        if (this.resizible === true) return 1;
-        this.view.style.setProperty("width", width + "px");
-        this.view.style.setProperty("height", height + "px");
+    close(): NumBool {
+        if (this.host.off) this.host.off("closed", this.closeCallback);
+        if (this.host.close) this.host.close();
+        this.closeCallback();
         return 1;
     }
 
-    toTop(): NumBool {
-        this.wnd.toTop();
-        return 1;
+    // private lastViewW = 0;
+    // private lastViewH = 0;
+    private redraw(): void {
+        this.scene.render();
     }
 
-    setAttrib(flag: number): NumBool {
-        switch (flag) {
-            case Constant.SW_HIDE:
-                this.view.style.setProperty("visibility", "hidden");
-                break;
-            case Constant.SW_SHOW:
-                this.view.style.removeProperty("visibility");
-                break;
-        }
-        return 1;
+    width(): number {
+        return this.scene.width();
     }
 
-    title(): string {
-        return this._title;
+    clientWidth(): number {
+        return this.scene.width();
     }
 
-    setTitle(title: string): NumBool {
-        this._title = title;
-        if (!this.noCaption) this.wnd.setTitle(title);
+    height(): number {
+        return this.scene.height();
+    }
+
+    clientHeight(): number {
+        return this.scene.height();
+    }
+
+    setClientSize(width: number, height: number): NumBool {
+        this.scene.setSize(width, height);
+        if (this.host.resizeTo) this.host.resizeTo(width, height);
         return 1;
     }
 
@@ -178,8 +191,39 @@ export class SceneWindow implements Env.Window, HTMLFactory {
         return this._originY;
     }
     setOrigin(x: number, y: number): NumBool {
+        // if (!this.parent && this.type !== "popup") return 1;
         this._originX = x;
         this._originY = y;
+        // this.moveSubs.forEach((c) => c.receive(Constant.WM_MOVE, x, y));
+        if (this.host.moveTo) this.host.moveTo(x, y);
+        return 1;
+    }
+
+    toTop(): NumBool {
+        if (this.host.toTop) this.host.toTop();
+        return 1;
+    }
+
+    setAttrib(flag: number): NumBool {
+        switch (flag) {
+            case Constant.SW_HIDE:
+                if (this.host.setVisibility) this.host.setVisibility(false);
+                break;
+            case Constant.SW_SHOW:
+            case Constant.SW_NORMAL:
+                if (this.host.setVisibility) this.host.setVisibility(true);
+                break;
+        }
+        return 1;
+    }
+
+    title(): string {
+        return this._title;
+    }
+
+    setTitle(title: string): NumBool {
+        this._title = title;
+        if (this.host.setTitle) this.host.setTitle(title);
         return 1;
     }
 
@@ -191,37 +235,39 @@ export class SceneWindow implements Env.Window, HTMLFactory {
     }
 
     private spaceDoneSubs = new Set<EventSubscriber>();
-    private closeSubs = new Set<EventSubscriber>();
-    private sizeSubs = new Set<EventSubscriber>();
+    // private closeSubs = new Set<EventSubscriber>();
+    private moveSubs = new Set<EventSubscriber>();
 
-    onSpaceDone(sub: EventSubscriber) {
-        this.spaceDoneSubs.add(sub);
+    on(sub: EventSubscriber, code: Constant, handle: number): void {
+        switch (code) {
+            case Constant.WM_MOVE:
+                this.moveSubs.add(sub);
+                break;
+            case Constant.WM_SPACEDONE:
+                this.spaceDoneSubs.add(sub);
+                break;
+            // case Constant.WM_DESTROY:
+            //     this.closeSubs.add(sub);
+            //     break;
+            default:
+                this.scene.on(sub, code, handle);
+        }
     }
-    offSpaceDone(sub: EventSubscriber) {
-        this.spaceDoneSubs.delete(sub);
-    }
-    onDestroy(sub: EventSubscriber): void {
-        this.closeSubs.add(sub);
-    }
-    offDestroy(sub: EventSubscriber): void {
-        this.closeSubs.delete(sub);
-    }
-    onResize(sub: EventSubscriber) {
-        this.sizeSubs.add(sub);
-    }
-    offResize(sub: EventSubscriber) {
-        this.sizeSubs.delete(sub);
-    }
-    onControlNotifty(sub: EventSubscriber, handle: number) {
-        this.scene.onControlNotify(sub, handle);
-    }
-    offControlNotify(sub: EventSubscriber) {
-        this.scene.offControlNotify(sub);
-    }
-    onMouse(sub: EventSubscriber, code: Constant, handle: number) {
-        this.scene.onMouse(sub, code, handle);
-    }
-    offMouse(sub: EventSubscriber, code: Constant) {
-        this.scene.offMouse(sub, code);
+
+    off(sub: EventSubscriber, code: Constant): void {
+        switch (code) {
+            case Constant.WM_MOVE:
+                this.moveSubs.delete(sub);
+                break;
+            case Constant.WM_SPACEDONE:
+                this.spaceDoneSubs.delete(sub);
+                break;
+            // case Constant.WM_DESTROY:
+            //     this.closeSubs.delete(sub);
+            //     break;
+            default:
+                this.scene.off(sub, code);
+                break;
+        }
     }
 }

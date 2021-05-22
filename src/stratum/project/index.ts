@@ -1,2 +1,2 @@
-export { Project, ProjectResources } from "./project";
+export { Project } from "./project";
 export { Schema } from "./schema";

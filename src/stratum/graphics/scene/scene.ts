@@ -1,12 +1,18 @@
-import { Constant, Env, Enviroment, EventSubscriber, NumBool } from "stratum/env";
+import { Constant } from "stratum/common/constant";
+import { EventSubscriber, HyperCallHandler, NumBool } from "stratum/common/types";
+import { DibToolImage } from "stratum/fileFormats/bmp/dibToolImage";
 import { Hyperbase, VectorDrawing, VectorDrawingElement } from "stratum/fileFormats/vdr";
 import { HandleMap } from "stratum/helpers/handleMap";
-import { DibToolImage } from "stratum/helpers/types";
-import { InputWrapper, InputWrapperOptions } from "./html/inputWrapper";
+import { eventCodeToWinDigit } from "stratum/helpers/keyboardEventKeyMap";
+import { win1251Table } from "stratum/helpers/win1251";
+import { WindowHostWindow } from "stratum/stratum";
+import { SceneWindow, WindowRect } from "../sceneWindow";
+import { NotResizable, Resizable } from "./resizable";
 import { SceneBitmap } from "./sceneBitmap";
 import { SceneControl } from "./sceneControl";
 import { SceneGroup } from "./sceneGroup";
 import { SceneLine } from "./sceneLine";
+import { SceneSubframe } from "./sceneSubframe";
 import { SceneText } from "./sceneText";
 import { BrushTool } from "./tools/brushTool";
 import { DIBTool } from "./tools/dibTool";
@@ -17,40 +23,39 @@ import { TextTool } from "./tools/textTool";
 import { ToolStorage } from "./tools/toolStorage";
 import { ToolSubscriber } from "./tools/toolSubscriber";
 
-export interface SceneMember extends Env.SceneObject {
-    hyperbase: Hyperbase | null;
-    readonly type: SceneVisualMember["type"] | "group";
-    readonly markDeleted: boolean;
-    handle: number;
-    name: string;
+type PrimaryObject = SceneLine | SceneBitmap | SceneText | SceneControl;
+type SceneObject = PrimaryObject | SceneGroup;
 
-    delete(): void;
-    getChildByName(name: string): number;
-
-    // groups
-    minX(): number;
-    minY(): number;
-    maxX(): number;
-    maxY(): number;
-    onParentChanged(parent: SceneGroup | null): void;
-    onParentMoved(dx: number, dy: number): void;
-    onParentResized(centerX: number, centerY: number, dx: number, dy: number): void;
-    onParentRotated(centerX: number, centerY: number, angle: number): void;
+export interface SceneArgs {
+    /**
+     * HTMLCanvasElement, на котором производится отрисовка и подписка на события мыши.
+     */
+    wnd: SceneWindow;
+    sizeInfo: Resizable | NotResizable;
+    vdr?: VectorDrawing | null;
 }
 
-export interface SceneVisualMember extends SceneMember {
-    type: "line" | "bitmap" | "text" | "control";
-    render(ctx: CanvasRenderingContext2D, sceneX: number, sceneY: number, layers: number): void;
-    tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined;
-}
+export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
+    private static kbdTarget: Scene | null = null;
+    private static pointerTarget: Scene | null = null;
+    static handleKeyboard(evt: KeyboardEvent) {
+        const code = eventCodeToWinDigit.get(evt.code);
+        if (typeof code !== "undefined") {
+            Scene.keyState[code] = evt.type === "keydown" ? 1 : 0;
+        }
+        Scene.kbdTarget?.dispatchKeyboardEvent(evt, code ?? 0);
+    }
+    static handlePointer(evt: PointerEvent) {
+        Scene.keyState[1] = evt.buttons & 1 ? 1 : 0;
+        Scene.keyState[2] = evt.buttons & 2 ? 1 : 0;
+        Scene.keyState[4] = evt.buttons & 4 ? 1 : 0;
+        if (evt.type === "pointerup") {
+            Scene.pointerTarget?.handleEvent(evt);
+            Scene.pointerTarget = null;
+        }
+    }
+    static readonly keyState = new Uint8Array(256);
 
-export interface HTMLFactory {
-    textInput(options: InputWrapperOptions): InputWrapper;
-}
-
-type SceneObj = SceneLine | SceneBitmap | SceneText | SceneControl | SceneGroup;
-
-export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     private static getInversedMatrix(matrix: number[]): number[] {
         const det =
             matrix[0] * (matrix[4] * matrix[8] - matrix[7] * matrix[5]) -
@@ -69,24 +74,22 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
             (matrix[0] * matrix[4] - matrix[3] * matrix[1]) / det,
         ];
     }
-
-    hyperTarget: Env.HyperTarget | null;
-
-    private readonly html: HTMLFactory;
-
+    private readonly ctx: CanvasRenderingContext2D;
     private _originX: number;
     private _originY: number;
     private _scale: number;
     private layers: number;
-
-    private primaryObjects: (SceneLine | SceneBitmap | SceneText | SceneControl)[];
-
     private brush: BrushTool | null;
+    private primaryObjects: PrimaryObject[];
+    private sizeInfo: Resizable | NotResizable;
 
+    readonly view: HTMLDivElement;
+    readonly wnd: SceneWindow;
     readonly matrix: number[];
     readonly invMatrix: number[];
 
-    objects: Map<number, SceneObj>;
+    hyperHandler: HyperCallHandler | null;
+    objects: Map<number, SceneObject>;
     pens: Map<number, PenTool>;
     brushes: Map<number, BrushTool>;
     dibs: Map<number, DIBTool>;
@@ -94,17 +97,37 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     strings: Map<number, StringTool>;
     fonts: Map<number, FontTool>;
     texts: Map<number, TextTool>;
-
     dirty: boolean;
 
-    cursor: "default" | "pointer";
+    constructor({ wnd, vdr, sizeInfo }: SceneArgs) {
+        this.wnd = wnd;
+        this.sizeInfo = sizeInfo;
+        this.dirty = true;
+        this.hyperHandler = null;
+        // Вьюха.
+        const view = (this.view = document.createElement("div"));
+        view.style.setProperty("overflow", "hidden"); //скрываем любые дочерние инпуты, которые вылазят за границу.
+        view.style.setProperty("position", "relative"); //нужно, т.к. дочерние input-ы позиционируются абсолютно.
+        if (sizeInfo.resizable) {
+            view.style.setProperty("width", "100%");
+            view.style.setProperty("height", "100%");
+        } else {
+            view.style.setProperty("width", sizeInfo.width + "px");
+            view.style.setProperty("height", sizeInfo.height + "px");
+        }
+        // Главный Canvas
+        const cnv = document.createElement("canvas");
+        cnv.style.setProperty("touch-action", "pinch-zoom"); //было: "pan-x pan-y". pinch-zoom работает лучше.
+        cnv.addEventListener("pointerdown", this);
+        cnv.addEventListener("pointerup", this);
+        // cnv.addEventListener("pointerleave", this);
+        cnv.addEventListener("pointermove", this);
+        cnv.addEventListener("selectstart", this);
+        view.appendChild(cnv);
 
-    constructor(html: HTMLFactory, vdr?: VectorDrawing) {
-        this.dirty = false;
-        this.html = html;
-        this.hyperTarget = null;
-        this.cursor = "default";
-
+        const ctx = cnv.getContext("2d");
+        if (!ctx) throw Error("Не удалось инициализировать контекст рендеринга");
+        this.ctx = ctx;
         if (!vdr) {
             this._originX = 0;
             this._originY = 0;
@@ -145,7 +168,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         this._scale = 1;
 
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
-        const mapFunc: (e: VectorDrawingElement) => [number, SceneObj] = (e) => {
+        const mapFunc: (e: VectorDrawingElement) => [number, SceneObject] = (e) => {
             switch (e.type) {
                 case "group":
                     const g = new SceneGroup(this, e);
@@ -156,10 +179,12 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 case "text":
                     return [e.handle, new SceneText(this, e)];
                 case "control":
-                    return [e.handle, new SceneControl(this, html, e)];
+                    return [e.handle, new SceneControl(this, e)];
                 case "bitmap":
                 case "doubleBitmap":
                     return [e.handle, new SceneBitmap(this, e)];
+                case "view3D":
+                    throw Error("3D проекции не поддерживаются");
             }
         };
         this.objects = new Map(vdr.elements?.map(mapFunc));
@@ -168,11 +193,21 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         this.primaryObjects = [];
         vdr.elementOrder?.forEach((handle) => {
             const obj = this.objects.get(handle);
-            if (!obj || obj.type === "group") return;
+            if (!obj || obj.type === 3) return;
             this.primaryObjects.push(obj);
         });
     }
-    setHyper(hobject: number, hyper: Hyperbase): NumBool {
+
+    // setSize(width: number, height: number): void {
+    //     const cnv = this.ctx.canvas;
+    //     cnv.style.setProperty("width", width + "px");
+    //     cnv.style.setProperty("height", height + "px");
+    //     cnv.width = width;
+    //     cnv.height = height;
+    //     this.dirty = true;
+    // }
+
+    setHyper(hobject: number, hyper: Hyperbase | null): NumBool {
         const obj = this.objects.get(hobject);
         if (!obj) return 0;
         obj.hyperbase = hyper;
@@ -180,18 +215,27 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     }
 
     tryHyper(x: number, y: number, hobject: number): void {
+        if (!this.hyperHandler) return;
         const h = hobject || this.getObjectFromPoint2d(x, y);
         const hyp = this.objects.get(h)?.hyperbase;
-        if (hyp) this.hyperTarget?.hyperCall(hyp);
+        if (!hyp) return;
+
+        const mat = this.matrix;
+
+        const w = x * mat[2] + y * mat[5] + mat[8];
+        const clickX = (x * mat[0] + y * mat[3] + mat[6]) / w - this._originX;
+        const clickY = (x * mat[1] + y * mat[4] + mat[7]) / w - this._originY;
+        this.hyperHandler.click(hyp, { x: clickX, y: clickY });
     }
 
     setBrush(hBrush: number): NumBool {
         this.brush?.unsubscribe(this);
         this.brush = this.brushes.get(hBrush) || null;
         this.brush?.subscribe(this);
+        this.dirty = true;
         return 1;
     }
-    brushHandle() {
+    brushHandle(): number {
         return this.brush?.handle || 0;
     }
     clear(): NumBool {
@@ -201,10 +245,50 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         this.dirty = true;
     }
 
-    render(ctx: CanvasRenderingContext2D) {
+    private lastViewW = 0;
+    private lastViewH = 0;
+    render(): void {
+        const nw = this.view.clientWidth;
+        const nh = this.view.clientHeight;
+        const ctx = this.ctx;
+
+        if (nw !== this.lastViewW || nh !== this.lastViewH) {
+            this.lastViewW = nw;
+            this.lastViewH = nh;
+            const cnv = ctx.canvas;
+            cnv.style.setProperty("width", nw + "px");
+            cnv.style.setProperty("height", nh + "px");
+            cnv.width = nw;
+            cnv.height = nh;
+            this.dirty = true;
+
+            if (this.sizeInfo.resizable) this.sizeSubs.forEach((c) => c.receive(Constant.WM_SIZE, nw, nh));
+        }
+
+        if (!this.dirty || nw < 1 || nh < 1) return;
+        this.dirty = false;
         ctx.fillStyle = this.brush?.fillStyle(ctx) || "white";
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        this.primaryObjects.forEach((c) => c.render(ctx, this._originX, this._originY, this.layers));
+        ctx.fillRect(0, 0, nw, nh);
+        this.primaryObjects.forEach((o) => o.render(ctx, this._originX, this._originY, this.layers));
+    }
+
+    width(): number {
+        const s = this.sizeInfo;
+        return s.resizable ? this.lastViewW : s.width;
+    }
+
+    height(): number {
+        const s = this.sizeInfo;
+        return s.resizable ? this.lastViewH : s.height;
+    }
+
+    setSize(width: number, height: number): void {
+        if (this.sizeInfo.resizable) return;
+        this.sizeInfo.width = width;
+        this.sizeInfo.height = height;
+        this.view.style.setProperty("width", width + "px");
+        this.view.style.setProperty("height", height + "px");
+        this.sizeSubs.forEach((c) => c.receive(Constant.WM_SIZE, width, height));
     }
 
     originX(): number {
@@ -271,8 +355,8 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         return handle;
     }
     createControl(x: number, y: number, width: number, height: number, className: string, text: string, style: number): number {
-        const nm = className.toUpperCase();
-        if (nm !== "EDIT" && nm !== "BUTTON" && nm !== "COMBOBOX") {
+        const inputType = className.toUpperCase();
+        if (inputType !== "EDIT" && inputType !== "BUTTON" && inputType !== "COMBOBOX") {
             return 0;
         }
 
@@ -282,7 +366,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
         const handle = HandleMap.getFreeHandle(this.objects);
-        const obj = new SceneControl(this, this.html, { handle, originX: realX, originY: realY, width, height, className, text });
+        const obj = new SceneControl(this, { handle, originX: realX, originY: realY, width, height, inputType, text });
         this.objects.set(handle, obj);
         this.primaryObjects.push(obj);
         return handle;
@@ -297,10 +381,10 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     insertVectorDrawing(x: number, y: number, flags: number, vdr: VectorDrawing): number {
         if (!vdr.elements) return 0;
 
-        const mat = this.matrix;
-        const w = x * mat[2] + y * mat[5] + mat[8];
-        const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
-        const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
+        // const mat = this.matrix;
+        // const w = x * mat[2] + y * mat[5] + mat[8];
+        // const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
+        // const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
         // Сохраняем текущие объекты/инструменты
         const pens = this.pens;
@@ -323,7 +407,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
 
         // Создаем новые объекты
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
-        const mapFunc: (e: VectorDrawingElement) => [number, SceneObj] = (e) => {
+        const mapFunc: (e: VectorDrawingElement) => [number, SceneObject] = (e) => {
             switch (e.type) {
                 case "group":
                     const g = new SceneGroup(this, e);
@@ -334,10 +418,12 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 case "text":
                     return [e.handle, new SceneText(this, e)];
                 case "control":
-                    return [e.handle, new SceneControl(this, this.html, e)];
+                    return [e.handle, new SceneControl(this, e)];
                 case "bitmap":
                 case "doubleBitmap":
                     return [e.handle, new SceneBitmap(this, e)];
+                case "view3D":
+                    throw Error("3D проекции не поддерживаются");
             }
         };
         const obs = vdr.elements.map(mapFunc);
@@ -347,7 +433,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         // Добавляем их на сцену
         vdr.elementOrder?.forEach((handle) => {
             const obj = this.objects.get(handle);
-            if (!obj || obj.type === "group") return;
+            if (!obj || obj.type === 3) return;
             this.primaryObjects.push(obj);
         });
 
@@ -356,7 +442,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
 
         if (topChildren.length === 0) throw Error("Ошибка вставки изображения");
 
-        let root: SceneObj;
+        let root: SceneObject;
         if (topChildren.length > 1) {
             const handle = HandleMap.getFreeHandle(this.objects);
             const obj = new SceneGroup(this, { handle }).addChildren(topChildren);
@@ -365,7 +451,9 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         } else {
             root = this.objects.values().next().value;
         }
-        root.setOrigin(realX, realY);
+        // FIXME: нужно проверить insertVDR с пространстве с другой координатной матрицей.
+        // root.setOrigin(realX, realY);
+        root.setOrigin(x, y);
 
         // Объединяем инструменты и объекты с имеющимися
         this.pens.forEach((e) => {
@@ -421,6 +509,11 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
 
         return root.handle;
     }
+
+    frame(view: HTMLDivElement, rect: WindowRect): WindowHostWindow {
+        return new SceneSubframe(view, this, rect);
+    }
+
     deleteObject(hobject: number): NumBool {
         const obj = this.objects.get(hobject);
         if (!obj) return 0;
@@ -431,7 +524,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     }
     deleteGroup2d(hgroup: number): NumBool {
         const obj = this.objects.get(hgroup);
-        if (!obj || obj.type !== "group") return 0;
+        if (!obj || obj.type !== 3) return 0;
         obj.ungroup();
         this.objects.delete(hgroup);
         return 1;
@@ -527,12 +620,12 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         return 0;
     }
 
-    private getObjectInRealCoords(x: number, y: number) {
+    private getObjectInRealCoords(x: number, y: number): SceneObject | null {
         for (let i = this.primaryObjects.length - 1; i >= 0; --i) {
             const res = this.primaryObjects[i].tryClick(x, y, this.layers);
             if (res) return res;
         }
-        return undefined;
+        return null;
     }
 
     getObjectFromPoint2d(x: number, y: number): number {
@@ -594,13 +687,15 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     }
 
     private capture: EventSubscriber | null = null;
-    setCapture(sub: EventSubscriber) {
+    setCapture(sub: EventSubscriber): void {
         this.capture = sub;
     }
-    releaseCapture() {
+    releaseCapture(): void {
         this.capture = null;
     }
 
+    private sizeSubs = new Set<EventSubscriber>();
+    private controlNotifySubs = new Map<EventSubscriber, number>();
     private moveSubs = new Map<EventSubscriber, number>();
     private leftButtonUpSubs = new Map<EventSubscriber, number>();
     private leftButtonDownSubs = new Map<EventSubscriber, number>();
@@ -608,8 +703,18 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
     private rightButtonDownSubs = new Map<EventSubscriber, number>();
     private middleButtonUpSubs = new Map<EventSubscriber, number>();
     private middleButtonDownSubs = new Map<EventSubscriber, number>();
-    onMouse(sub: EventSubscriber, code: Constant, objectHandle: number) {
+    private keyDownSubs = new Set<EventSubscriber>();
+    private keyUpSubs = new Set<EventSubscriber>();
+    private keyCharSubs = new Set<EventSubscriber>();
+
+    on(sub: EventSubscriber, code: Constant, objectHandle: number): void {
         switch (code) {
+            case Constant.WM_SIZE:
+                this.sizeSubs.add(sub);
+                break;
+            case Constant.WM_CONTROLNOTIFY:
+                this.controlNotifySubs.set(sub, objectHandle);
+                break;
             case Constant.WM_MOUSEMOVE:
                 this.moveSubs.set(sub, objectHandle);
                 break;
@@ -645,12 +750,42 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 this.rightButtonUpSubs.set(sub, objectHandle);
                 this.middleButtonDownSubs.set(sub, objectHandle);
                 this.middleButtonUpSubs.set(sub, objectHandle);
+                break;
+            case Constant.WM_KEYDOWN:
+                this.keyDownSubs.add(sub);
+                break;
+            case Constant.WM_KEYUP:
+                this.keyUpSubs.add(sub);
+                break;
+            case 258: //WM_CHAR, видимо, забыли добавить в константы
+                this.keyCharSubs.add(sub);
+                break;
+            case Constant.WM_ALLKEYMESSAGE:
+                this.keyDownSubs.add(sub);
+                this.keyUpSubs.add(sub);
+                this.keyCharSubs.add(sub);
+                break;
+            default:
+                console.warn(`Подписка на ${Constant[code]} не реализована (имидж: ${(sub as any).proto.name})`);
+                // this._unsub.add(Constant[code]);
+                // if (this._unsub.size > this._unsubS) {
+                //     this._unsubS = this._unsub.size;
+                //     console.warn(`Подписка на ${Constant[code]} не реализована (имидж: ${})`);
+                // }
                 break;
         }
     }
+    // private _unsub = new Set<string>();
+    // private _unsubS = 0;
 
-    offMouse(sub: EventSubscriber, code: Constant) {
+    off(sub: EventSubscriber, code: Constant): void {
         switch (code) {
+            case Constant.WM_SIZE:
+                this.sizeSubs.delete(sub);
+                break;
+            case Constant.WM_CONTROLNOTIFY:
+                this.controlNotifySubs.delete(sub);
+                break;
             case Constant.WM_MOUSEMOVE:
                 this.moveSubs.delete(sub);
                 break;
@@ -686,37 +821,59 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 this.rightButtonUpSubs.delete(sub);
                 this.middleButtonDownSubs.delete(sub);
                 this.middleButtonUpSubs.delete(sub);
+                break;
+            case Constant.WM_KEYDOWN:
+                this.keyDownSubs.add(sub);
+                break;
+            case Constant.WM_KEYUP:
+                this.keyUpSubs.delete(sub);
+                break;
+            case 258: //WM_CHAR, видимо, забыли добавить в константы
+                this.keyCharSubs.delete(sub);
+                break;
+            case Constant.WM_ALLKEYMESSAGE:
+                this.keyDownSubs.delete(sub);
+                this.keyUpSubs.delete(sub);
+                this.keyCharSubs.delete(sub);
                 break;
         }
     }
 
     private blocked = false;
-    pointerEventHandler(evt: PointerEvent): void {
-        const rect = (evt.target as HTMLCanvasElement).getBoundingClientRect();
-        const x = evt.clientX - rect.left + this.originX();
-        const y = evt.clientY - rect.top + this.originY();
+    handleEvent(evt: PointerEvent): void {
+        if (evt.type === "selectstart") {
+            evt.preventDefault();
+            return;
+        }
+        const rect = this.ctx.canvas.getBoundingClientRect();
+        const clickX = evt.clientX - rect.left;
+        const clickY = evt.clientY - rect.top;
+        const x = clickX + this._originX;
+        const y = clickY + this._originY;
 
         const lmb = evt.buttons & 1 ? 1 : 0;
         const rmb = evt.buttons & 2 ? 2 : 0;
         const wheel = evt.buttons & 4 ? 16 : 0;
         const fwkeys = lmb | rmb | wheel;
 
-        Enviroment.keyState[1] = lmb;
-        Enviroment.keyState[2] = rmb;
-        Enviroment.keyState[4] = wheel;
+        Scene.keyState[1] = lmb;
+        Scene.keyState[2] = rmb;
+        Scene.keyState[4] = wheel;
 
         const curObj = this.getObjectInRealCoords(x, y);
         const objHandle = curObj?.handle ?? 0;
         const hyp = curObj?.hyperbase;
-        this.cursor = hyp ? "pointer" : "default";
+        this.ctx.canvas.style.cursor = hyp ? "pointer" : "default";
 
         switch (evt.type) {
             // https://developer.mozilla.org/ru/docs/Web/API/MouseEvent/button
             case "pointerdown": {
+                Scene.kbdTarget = this;
+                Scene.pointerTarget = this;
                 this.blocked = true;
                 switch (evt.button) {
                     case 0: //Левая кнопка
-                        if (hyp) this.hyperTarget?.hyperCall(hyp);
+                        this.hyperHandler?.click(hyp ?? null, { x: clickX, y: clickY });
                         this.dispatchMouseEvent(this.leftButtonDownSubs, objHandle, Constant.WM_LBUTTONDOWN, x, y, fwkeys);
                         return;
                     case 1: //Колесико
@@ -729,6 +886,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 return;
             }
             case "pointerup": {
+                Scene.pointerTarget = null;
                 switch (evt.button) {
                     case 0:
                         this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, fwkeys);
@@ -742,10 +900,10 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
                 }
                 return;
             }
-            case "pointerleave": {
-                this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, 0);
-                return;
-            }
+            // case "pointerleave": {
+            //     this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, 0);
+            //     return;
+            // }
             case "pointermove":
                 if (this.blocked) {
                     this.blocked = false;
@@ -756,7 +914,7 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
         }
     }
 
-    private dispatchMouseEvent(subs: Map<EventSubscriber, number>, curObj: number, code: Constant, realX: number, realY: number, keys: number) {
+    private dispatchMouseEvent(subs: Map<EventSubscriber, number>, curObj: number, code: Constant, realX: number, realY: number, keys: number): void {
         const mat = this.invMatrix;
 
         const w = realX * mat[2] + realY * mat[5] + mat[8];
@@ -765,26 +923,38 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
 
         if (this.capture) {
             this.capture.receive(code, x, y, keys);
-            // return;
+            return;
         }
         for (const [sub, objHandle] of subs) {
             if (objHandle === 0 || objHandle === curObj) sub.receive(code, x, y, keys);
         }
     }
 
-    private controlNotifySubs = new Map<EventSubscriber, number>();
-    onControlNotify(sub: EventSubscriber, handle: number) {
-        this.controlNotifySubs.set(sub, handle);
+    private dispatchKeyboardEvent(evt: KeyboardEvent, rawKey: number): void {
+        const repeat = 1;
+        const scanCode = 0;
+        if (evt.type === "keydown") {
+            this.keyDownSubs.forEach((sub) => sub.receive(Constant.WM_KEYDOWN, rawKey, repeat, scanCode));
+            //стрелки, Delete не отправляют WM_CHAR, т.к. не проходят TranslateMessage... Хер пойми как она работает.
+            if ((rawKey > 36 && rawKey < 41) || rawKey === 46) return;
+
+            const idx = win1251Table.indexOf(evt.key);
+            const translatedKey = idx < 0 ? rawKey : idx;
+            this.keyCharSubs.forEach((sub) => sub.receive(258, translatedKey, repeat, scanCode)); //258 - WM_CHAR, нет в константах.
+        } else {
+            this.keyUpSubs.forEach((sub) => sub.receive(Constant.WM_KEYUP, rawKey, repeat, scanCode));
+        }
     }
-    offControlNotify(sub: EventSubscriber) {
-        this.controlNotifySubs.delete(sub);
-    }
-    dispatchControlNotifyEvent(ctrlHandle: number, ev: Event) {
+
+    dispatchControlNotifyEvent(ctrlHandle: number, evt: Event): void {
         let notifyCode = 0;
-        switch (ev.type) {
+        switch (evt.type) {
             case "input":
                 notifyCode = 768;
                 break;
+            case "focus":
+                Scene.kbdTarget = null;
+                return;
             default:
                 return;
         }
@@ -792,4 +962,14 @@ export class Scene implements Env.Scene, ToolStorage, ToolSubscriber {
             if (objHandle === 0 || objHandle === ctrlHandle) sub.receive(Constant.WM_CONTROLNOTIFY, ctrlHandle, 0, notifyCode);
         }
     }
+
+    beforeRemove(): void {
+        if (Scene.kbdTarget === this) Scene.kbdTarget = null;
+        if (Scene.pointerTarget === this) Scene.pointerTarget = null;
+    }
 }
+
+window.addEventListener("pointerdown", Scene.handlePointer);
+window.addEventListener("pointerup", Scene.handlePointer);
+window.addEventListener("keydown", Scene.handleKeyboard);
+window.addEventListener("keyup", Scene.handleKeyboard);

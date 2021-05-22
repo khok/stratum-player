@@ -6,6 +6,7 @@
     <meta name="description" content="Проигрыватель проектов Stratum 2000 в браузере">
     <meta name="keywords" content="Stratum 2000">
     <script src="stratum.min.js"></script>
+    <script src="zipfs.min.js"></script>
     <script src="player.js"></script>
     <link rel="stylesheet" href="player.css">
     <link rel="icon" type="image/png" href="favicon.ico" />
@@ -13,11 +14,12 @@
 
 <body>
     <div id="dropzone_container">
-        <a id="dropzone_status">
+        <div id="dropzone_status">
             <a>Вы можете перетащить или <a href="javascript:selectFile()">загрузить ZIP-архивы</a>
                 со Stratum-проектами на эту страницу, или <a href="./examples">попробовать онлайн-примеры</a>.
-            </a></p>
-        </a>
+            </a>
+        </div>
+        <p></p>
         <details>
             <summary>Дополнительные опции запуска</summary>
             <p>
@@ -28,10 +30,10 @@
                 <input type="checkbox" id="options_nolib" />
                 <label for="options_nolib">Не использовать стандартную библиотеку имиджей</label>
             </p>
-            <p>
+            <!-- <p>
                 <input type="checkbox" id="options_noresize" />
                 <label for="options_noresize">Запретить проекту изменять размеры окна</label>
-            </p>
+            </p> -->
         </details>
         </p>
         <input type="file" id="zipdrop" accept=".zip" multiple hidden />
