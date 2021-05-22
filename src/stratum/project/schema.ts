@@ -53,11 +53,11 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
 
             const enableId = vars._enableVarId;
             const disableId = vars._disableVarId;
-            if (enableId > 0 && (disableId < 0 || enableId < disableId)) {
+            if (enableId > -1 && (disableId < 0 || enableId < disableId)) {
                 this.isDisabled = Schema.disabledByEnable;
                 this.disOrEnVarId = enableId;
             }
-            if (disableId > 0 && (enableId < 0 || disableId < enableId)) {
+            if (disableId > -1 && (enableId < 0 || disableId < enableId)) {
                 this.isDisabled = Schema.disabledByDisable;
                 this.disOrEnVarId = disableId;
             }
