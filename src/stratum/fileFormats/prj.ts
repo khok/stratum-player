@@ -13,6 +13,8 @@ const settingEntryNameMap: { [index: string]: keyof ProjectSettings } = {
     user_addr: "userAddress",
     user_org: "userOrganization",
     user_phone: "userPhone",
+    lib_norecurse: "notRecursive",
+    preload_file: "preloadFile",
 };
 
 export interface ProjectSettings {
@@ -26,6 +28,8 @@ export interface ProjectSettings {
     userAddress?: string;
     userOrganization?: string;
     userPhone?: string;
+    notRecursive?: number;
+    preloadFile?: string;
 }
 
 export interface WatchedVariable {

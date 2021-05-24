@@ -49,12 +49,17 @@ export class Enviroment implements EnviromentFunctions {
     private static async loadProjectResources(prjFile: PathInfo, args: LoadArgs<number>, addDirs?: PathInfo[]): Promise<ProjectResources> {
         const workDir = prjFile.resolve("..");
         const sttFile = workDir.resolve("_preload.stt");
-        const [prjBuf, sttBuf] = await workDir.fs.arraybuffers([prjFile, sttFile]);
+        let [prjBuf, sttBuf] = await workDir.fs.arraybuffers([prjFile, sttFile]);
         if (!prjBuf) throw Error(`Файл проекта ${prjFile} не найден`);
         options.log(`Открываем проект ${prjFile.toString()}`);
 
         // Файл проекта.
         const prjInfo = readPrjFile(new BinaryReader(prjBuf, prjFile.toString()));
+
+        let newPreloadFile = prjInfo.settings?.preloadFile;
+        if (newPreloadFile) {
+            sttBuf = await workDir.fs.arraybuffer(workDir.resolve(newPreloadFile));
+        }
 
         // Файл состояния.
         let stt: VariableSet | null = null;
@@ -81,7 +86,7 @@ export class Enviroment implements EnviromentFunctions {
         // Имиджи.
         const classes = args.lib;
         // await new Promise((res) => setTimeout(res, 2000));
-        await classes.add(workDir.fs, dirs, true, args.id);
+        await classes.add(workDir.fs, dirs, /*!prjInfo.settings?.notRecursive*/ true, args.id);
         return { classes: classes, dir: workDir, prjInfo, stt };
     }
 
