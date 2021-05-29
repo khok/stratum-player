@@ -1,4 +1,5 @@
 import { NumBool } from "stratum/common/types";
+import { VarType } from "stratum/common/varType";
 
 export interface EnvArraySortingAlgo {
     desc: boolean;
@@ -20,31 +21,60 @@ interface EnvArrayStringElement {
     value: string;
 }
 
+type EnvArrayPrimitive = EnvArrayFloatElement | EnvArrayHandleElement | EnvArrayStringElement;
+
+interface EnvArrayStructElement {
+    type: "STRUCT";
+    value: Map<string, EnvArrayPrimitive>;
+}
+
 export class EnvArray {
-    // private fields : Map<string, EnvArrayFloatElement | EnvArrayHandleElement | EnvArrayStringElement>[];
-    private fields: (EnvArrayFloatElement | EnvArrayHandleElement | EnvArrayStringElement)[];
+    private fields: (EnvArrayPrimitive | EnvArrayStructElement)[];
     constructor() {
         this.fields = [];
     }
-    insert(type: string): NumBool {
-        const typeUC = type.toUpperCase();
-        if (typeUC === "FLOAT") {
-            this.fields.push({ type: typeUC, value: 0 });
+
+    insert(type: "FLOAT" | "HANDLE" | "STRING"): NumBool {
+        if (type === "FLOAT") {
+            this.fields.push({ type: type, value: 0 });
             return 1;
         }
-        if (typeUC === "HANDLE") {
-            this.fields.push({ type: typeUC, value: 0 });
+        if (type === "HANDLE") {
+            this.fields.push({ type: type, value: 0 });
             return 1;
         }
-        if (typeUC === "STRING") {
-            this.fields.push({ type: typeUC, value: "" });
+        if (type === "STRING") {
+            this.fields.push({ type: type, value: "" });
             return 1;
         }
-        throw Error(`Вставка имиджа ${typeUC} в массив не реализована`);
+        throw Error(`Неизвестный тип элемента: ${type}`);
     }
-    set(idx: number, _: /*field*/ string, value: string | number): void {
+
+    insertClass(data: [string, VarType][]): NumBool {
+        const entries = data.map<[string, EnvArrayPrimitive]>((d) => {
+            const name = d[0].toUpperCase();
+            switch (d[1]) {
+                case VarType.Float:
+                    return [name, { type: "FLOAT", value: 0 }];
+                case VarType.String:
+                    return [name, { type: "STRING", value: "" }];
+                default:
+                    return [name, { type: "HANDLE", value: 0 }];
+            }
+        });
+
+        this.fields.push({ type: "STRUCT", value: new Map(entries) });
+        return 1;
+    }
+
+    set(idx: number, field: string, value: string | number): void {
         if (idx < 0 || idx > this.fields.length - 1) return;
-        const elem = this.fields[idx];
+        let elem = this.fields[idx];
+        if (elem.type === "STRUCT") {
+            const subfield = elem.value.get(field.toUpperCase());
+            if (!subfield) return;
+            elem = subfield;
+        }
         // if (field !== "" && field.toLowerCase() !== elem.type) return;
         if (typeof value === "string") {
             if (elem.type !== "STRING") return;
@@ -66,20 +96,35 @@ export class EnvArray {
         return this.fields[idx].type;
     }
 
-    getFloat(idx: number, _: /*field*/ string): number {
+    getFloat(idx: number, field: string): number {
         if (idx < 0 || idx > this.fields.length - 1) return 0;
-        const elem = this.fields[idx];
+        let elem = this.fields[idx];
+        if (elem.type === "STRUCT") {
+            const subfield = elem.value.get(field.toUpperCase());
+            if (!subfield) return 0;
+            elem = subfield;
+        }
         // (заметка: В стратум есть баг при попытке получить элемента строку через vGetF). Тут его нет.
         return elem.type === "FLOAT" ? elem.value : 0;
     }
-    getHandle(idx: number, _: /*field*/ string): number {
+    getHandle(idx: number, field: string): number {
         if (idx < 0 || idx > this.fields.length - 1) return 0;
-        const elem = this.fields[idx];
+        let elem = this.fields[idx];
+        if (elem.type === "STRUCT") {
+            const subfield = elem.value.get(field.toUpperCase());
+            if (!subfield) return 0;
+            elem = subfield;
+        }
         return elem.type === "HANDLE" ? elem.value : 0;
     }
-    getString(idx: number, _: /*field*/ string): string {
+    getString(idx: number, field: string): string {
         if (idx < 0 || idx > this.fields.length - 1) return "";
-        const elem = this.fields[idx];
+        let elem = this.fields[idx];
+        if (elem.type === "STRUCT") {
+            const subfield = elem.value.get(field.toUpperCase());
+            if (!subfield) return "";
+            elem = subfield;
+        }
         return elem.type === "STRING" ? elem.value : "";
     }
 

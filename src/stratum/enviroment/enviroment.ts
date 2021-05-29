@@ -1,6 +1,7 @@
 import { crefToB, crefToG, crefToR, rgbToCref } from "stratum/common/colorrefParsers";
 import { Constant } from "stratum/common/constant";
 import { EventSubscriber, NumBool } from "stratum/common/types";
+import { VarType } from "stratum/common/varType";
 import { installContextFunctions } from "stratum/compiler";
 import { readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
@@ -1483,7 +1484,22 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_vInsert(handle: number, type: string): NumBool {
-        return this.arrays.get(handle)?.insert(type) ?? 0;
+        const arr = this.arrays.get(handle);
+        if (!arr) return 0;
+
+        const typeUC = type.toUpperCase();
+
+        if (typeUC === "STRING" || typeUC === "FLOAT" || typeUC === "HANDLE") {
+            return arr.insert(typeUC);
+        }
+        const cl = this.classes.get(type);
+        if (!cl?.isStruct) return 0;
+
+        const vdata = cl
+            .vars()
+            .toArray()
+            .map<[string, VarType]>((v) => [v.name, v.type]);
+        return arr.insertClass(vdata);
     }
     stratum_vDelete(handle: number, idx: number): NumBool {
         return this.arrays.get(handle)?.remove(idx) ?? 0;
