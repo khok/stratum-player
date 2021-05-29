@@ -95,14 +95,13 @@ export class BinaryReader {
      * Нуль-терминированная строка.
      * Максимальный размер строки будет составлять `limit - 1` байт.
      */
-    nulltString(limit?: number): string {
-        const l = limit ?? this.size() - this.p;
+    nulltString(limit: number): string {
         const strStart = this.p;
         let size = 0;
-        while (size < l - 1 && this.v.getUint8(strStart + ++size) !== 0);
+        while (size < limit - 1 && this.v.getUint8(strStart + ++size) !== 0);
 
         const value = this.fixedString(size);
-        this.p += 1; //нуль-терминатор
+        this.p = strStart + limit;
         return value;
     }
 

@@ -108,7 +108,7 @@ export function readTFont(code: number, reader: BinaryReader, version: number): 
         pitchAndFamily: reader.byte(),
         fontName: reader.nulltString(32),
     };
-    reader.seek(pos + 52);
+    // reader.seek(pos + 52);
 
     if (version >= 0x0203) {
         res.size = reader.int32();
