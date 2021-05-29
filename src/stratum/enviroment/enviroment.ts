@@ -570,15 +570,27 @@ export class Enviroment implements EnviromentFunctions {
         return 1;
     }
 
+    private setObjectAttribute2dShowed = false;
     stratum_setObjectAttribute2d(hspace: number, hobject: number, attr: number, flag: number): NumBool {
-        console.warn("stratum_setObjectAttribute2d не реализована");
+        if (!this.setObjectAttribute2dShowed) {
+            console.warn("stratum_setObjectAttribute2d не реализована");
+            this.setObjectAttribute2dShowed = true;
+        }
         return 1;
     }
+    stratum_setScrollRange(wname: string, type: number, min: number, max: number): NumBool {
+        return 1;
+    }
+
     //#endregion
 
     //#region ФУНКЦИИ СИСТЕМНЫЕ
+    private systemShowed = false;
     stratum_system(command: number, ...params: number[]): number {
-        // console.warn(`Вызов System(${command}, ${params})`);
+        if (!this.systemShowed) {
+            console.warn(`Вызов System(${command}, ${params}) игнорируется`);
+            this.systemShowed = true;
+        }
         return 0;
     }
 
@@ -645,6 +657,26 @@ export class Enviroment implements EnviromentFunctions {
         return this.host.height || window.innerHeight;
     }
 
+    // Параметры окна.
+    stratum_getTitleHeight(): number {
+        return 0;
+    }
+    stratum_getSmallTitleHeight(): number {
+        return 0;
+    }
+    stratum_getFixedFrameWidth(): number {
+        return 0;
+    }
+    stratum_getFixedFrameHeight(): number {
+        return 0;
+    }
+    stratum_getSizeFrameWidth(): number {
+        return 0;
+    }
+    stratum_getSizeFrameHeight(): number {
+        return 0;
+    }
+
     // Лог
     stratum_logMessage(msg: string): void {
         options.log("Инфо: " + msg);
@@ -652,6 +684,16 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
 
     //#region ФУНКЦИИ ОКОН
+    // FLOAT SetWindowRegion(STRING WindowName, HANDLE RegionMatrix)
+    // FLOAT SetWindowRegion(HANDLE HSpace, HANDLE RegionMatrix
+    private setWindowRegionShowed = false;
+    stratum_setWindowRegion(hspaceOrWname: string | number, pointsArray: number): NumBool {
+        if (!this.setWindowRegionShowed) {
+            console.warn("SetWindowRegion не реализована");
+            this.setWindowRegionShowed = true;
+        }
+        return 1;
+    }
     stratum_getClientHeight(wname: string): number {
         const wnd = this.windows.get(wname);
         return typeof wnd !== "undefined" ? wnd.clientHeight() : 0;
@@ -692,6 +734,10 @@ export class Enviroment implements EnviromentFunctions {
     stratum_setClientSize(wname: string, width: number, height: number): NumBool {
         const wnd = this.windows.get(wname);
         return typeof wnd !== "undefined" ? wnd.setClientSize(width, height) : 0;
+    }
+    stratum_setWindowSize(wname: string, width: number, height: number): NumBool {
+        const wnd = this.windows.get(wname);
+        return typeof wnd !== "undefined" ? wnd.setSize(width, height) : 0;
     }
     stratum_setWindowOrg(wname: string, orgX: number, orgY: number): NumBool {
         const wnd = this.windows.get(wname);
@@ -1281,6 +1327,12 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
 
     //#region ФУНКЦИИ РАБОТЫ С ИМИДЖАМИ
+    stratum_getLink(classname: string, hobject1: number, hobject2: number): number {
+        const cl = this.classes.get(classname);
+        if (!cl) return 0;
+        const link = cl.links.find((c) => (c.handle1 === hobject1 && c.handle2 === hobject2) || (c.handle1 === hobject2 && c.handle2 === hobject1));
+        return link?.handle ?? 0;
+    }
     stratum_getObjectCount(classname: string): number {
         return this.classes.get(classname)?.children.length ?? 0;
     }
