@@ -182,6 +182,12 @@ export class SceneWindow<T = unknown> {
         return 1;
     }
 
+    setSize(width: number, height: number): NumBool {
+        this.scene.setSize(width, height);
+        if (this.host.resizeTo) this.host.resizeTo(width, height);
+        return 1;
+    }
+
     private _originX = 0;
     private _originY = 0;
     originX(): number {
