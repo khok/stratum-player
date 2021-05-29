@@ -25,10 +25,11 @@ export class ClassProto {
     readonly sourceCode: string | null;
     private readonly _vars: ClassVars;
 
-    readonly alwaysUseIcon;
     // readonly isFunction;
 
     readonly lib: ClassLibrary;
+    readonly alwaysUseIcon: boolean;
+    readonly isStruct: boolean;
 
     constructor(info: ClassInfo, lib: ClassLibrary) {
         this.name = info.name;
@@ -45,6 +46,7 @@ export class ClassProto {
 
         const flags = info.flags ?? 0;
         this.alwaysUseIcon = !!(flags & EntryCode.CF_USEDEFICON);
+        this.isStruct = !!(flags & EntryCode.CF_STRUCTURE);
         // this.isFunction = !!(flags & EntryCode.CF_PROCEDURE);
         this.lib = lib;
     }
