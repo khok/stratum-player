@@ -20,7 +20,7 @@ export interface ClassLinkInfo {
     handle1: number;
     handle2: number;
     contactPadHandle: number;
-    linkHandle: number;
+    handle: number;
     connectedVars: ConnectionInfo[];
     flags: number;
 }
@@ -89,7 +89,7 @@ function readLinks(reader: BinaryReader): ClassLinkInfo[] {
             const name2 = reader.string();
             connectedVars[j] = { name1, name2 };
         }
-        links[i] = { handle1, handle2, linkHandle, flags, connectedVars, contactPadHandle };
+        links[i] = { handle1, handle2, handle: linkHandle, flags, connectedVars, contactPadHandle };
     }
     return links;
 }
