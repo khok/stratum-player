@@ -119,7 +119,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         const cnv = document.createElement("canvas");
         cnv.style.setProperty("touch-action", "pinch-zoom"); //было: "pan-x pan-y". pinch-zoom работает лучше.
         cnv.addEventListener("pointerdown", this);
-        cnv.addEventListener("pointerup", this);
+        // cnv.addEventListener("pointerup", this);
         // cnv.addEventListener("pointerleave", this);
         cnv.addEventListener("pointermove", this);
         cnv.addEventListener("selectstart", this);
@@ -921,12 +921,8 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         const x = (realX * mat[0] + realY * mat[3] + mat[6]) / w;
         const y = (realX * mat[1] + realY * mat[4] + mat[7]) / w;
 
-        if (this.capture) {
-            this.capture.receive(code, x, y, keys);
-            return;
-        }
         for (const [sub, objHandle] of subs) {
-            if (objHandle === 0 || objHandle === curObj) sub.receive(code, x, y, keys);
+            if (objHandle === 0 || objHandle === curObj || sub === this.capture) sub.receive(code, x, y, keys);
         }
     }
 
