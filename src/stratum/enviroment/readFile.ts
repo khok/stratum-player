@@ -20,18 +20,24 @@ export async function readFile(
     const buf = await file.fs.arraybuffer(file);
     if (!buf) throw Error(`Файл ${file.toString()} не существует.`);
     const r = new BinaryReader(buf, file.toString());
-    switch (type) {
-        case "prj":
-            return readPrjFile(r);
-        case "stt":
-            return readSttFile(r);
-        case "vdr":
-            return readVdrFile(r, { origin: "file", name: file.toString() });
-        case "mat":
-            return readMatFile(r);
-        case "bmp":
-            return readBmpFile(r);
-        case "dbm":
-            return readDbmFile(r);
+    try {
+        switch (type) {
+            case "prj":
+                return readPrjFile(r);
+            case "stt":
+                return readSttFile(r);
+            case "vdr":
+                return readVdrFile(r, { origin: "file", name: file.toString() });
+            case "mat":
+                return readMatFile(r);
+            case "bmp":
+                return readBmpFile(r);
+            case "dbm":
+                return readDbmFile(r);
+        }
+    } catch (err) {
+        console.warn(`Ошибка чтения файла ${file.toString()}`);
+        console.error(err);
+        throw err;
     }
 }
