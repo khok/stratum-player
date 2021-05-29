@@ -29,6 +29,10 @@ export interface ProjectArgs {
      */
     classes: ClassLibrary;
     /**
+     * Путь к файлу проекта.
+     */
+    filepath: string;
+    /**
      * Содержимое stt-файла.
      */
     stt?: VariableSet | null;
@@ -55,6 +59,8 @@ export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFu
     readonly oldStrings: string[];
     readonly newStrings: string[];
 
+    readonly filepath: string;
+
     /**
      * Создает новый экземпляр проекта.
      * @param env - окружение, в котором работает проект.
@@ -65,6 +71,7 @@ export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFu
         this._shouldClose = false;
         this.env = env;
         this.dir = args.dir;
+        this.filepath = args.filepath;
 
         const rootProto = args.classes.get(args.prjInfo.rootClassName);
         if (!rootProto) throw Error(`Корневой имидж ${args.prjInfo.rootClassName} не найден`);

@@ -56,7 +56,7 @@ export class Enviroment implements EnviromentFunctions {
         // Файл проекта.
         const prjInfo = readPrjFile(new BinaryReader(prjBuf, prjFile.toString()));
 
-        let newPreloadFile = prjInfo.settings?.preloadFile;
+        const newPreloadFile = prjInfo.settings?.preloadFile;
         if (newPreloadFile) {
             sttBuf = await workDir.fs.arraybuffer(workDir.resolve(newPreloadFile));
         }
@@ -87,7 +87,7 @@ export class Enviroment implements EnviromentFunctions {
         const classes = args.lib;
         // await new Promise((res) => setTimeout(res, 2000));
         await classes.add(workDir.fs, dirs, /*!prjInfo.settings?.notRecursive*/ true, args.id);
-        return { classes: classes, dir: workDir, prjInfo, stt };
+        return { classes: classes, dir: workDir, prjInfo, stt, filepath: prjFile.toString() };
     }
 
     private readonly projects: Project[];
@@ -132,7 +132,7 @@ export class Enviroment implements EnviromentFunctions {
 
         // Проект не работает и при этом нет ожидающего проекта.
         if (prj.shouldClose() === true /*&& !this.loading*/) {
-            options.log(`Закрывается проект ${prj.dir.toString()}`);
+            options.log(`Закрывается проект ${prj.filepath}`);
             this.classes.clear(this.sessionId());
             this.closeProjectWindows(prj);
             this.projects.pop();
@@ -167,7 +167,7 @@ export class Enviroment implements EnviromentFunctions {
         this.arrays.clear();
         let prj: Project | undefined;
         while ((prj = this.projects.pop())) {
-            options.log(`Закрывается проект ${prj.dir.toString()}`);
+            options.log(`Закрывается проект ${prj.filepath}`);
         }
         // FIXME: разобраться с этой проблемой
         if (this.loading) {
