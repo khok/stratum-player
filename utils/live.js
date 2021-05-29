@@ -4,6 +4,12 @@ const http = require("http");
 const handler = require("serve-handler");
 const { exec, execSync } = require("child_process");
 const WebSocketServer = require("websocket").server;
+const readline = require("readline");
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
 
 const target = process.argv[2];
 if (target !== "live" && target !== "unit") process.exit(0);
@@ -42,6 +48,13 @@ wserver.on("connect", (c) =>
         if (d.utf8Data === "rebuild") build();
     })
 );
+
+rl.on("line", (input) => {
+    if (input.startsWith("b")) {
+        hasChanges = true;
+        build();
+    }
+});
 
 //watch & rebuild
 let hasChanges = true;
