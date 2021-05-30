@@ -34,7 +34,7 @@ export class DIBTool {
             img.src = url;
         });
 
-        this.promises.set(url, p);
+        DIBTool.promises.set(url, p);
         return p;
     }
 
