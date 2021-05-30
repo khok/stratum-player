@@ -37,7 +37,7 @@ export interface SceneArgs {
 
 export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
     private static kbdTarget: Scene | null = null;
-    private static pointerTarget: Scene | null = null;
+    private static captureTarget: Scene | null = null;
     static handleKeyboard(evt: KeyboardEvent) {
         const code = eventCodeToWinDigit.get(evt.code);
         if (typeof code !== "undefined") {
@@ -49,10 +49,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         Scene.keyState[1] = evt.buttons & 1 ? 1 : 0;
         Scene.keyState[2] = evt.buttons & 2 ? 1 : 0;
         Scene.keyState[4] = evt.buttons & 4 ? 1 : 0;
-        if (evt.type === "pointerup") {
-            Scene.pointerTarget?.handleEvent(evt);
-            Scene.pointerTarget = null;
-        }
+        Scene.captureTarget?.handleEvent(evt);
     }
     static readonly keyState = new Uint8Array(256);
 
@@ -119,13 +116,13 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         const cnv = document.createElement("canvas");
         cnv.style.setProperty("touch-action", "pinch-zoom"); //было: "pan-x pan-y". pinch-zoom работает лучше.
         cnv.addEventListener("pointerdown", this);
-        // cnv.addEventListener("pointerup", this);
+        cnv.addEventListener("pointerup", this);
         // cnv.addEventListener("pointerleave", this);
         cnv.addEventListener("pointermove", this);
         cnv.addEventListener("selectstart", this);
         view.appendChild(cnv);
 
-        const ctx = cnv.getContext("2d");
+        const ctx = cnv.getContext("2d", { alpha: false });
         if (!ctx) throw Error("Не удалось инициализировать контекст рендеринга");
         this.ctx = ctx;
         if (!vdr) {
@@ -689,9 +686,11 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
     private capture: EventSubscriber | null = null;
     setCapture(sub: EventSubscriber): void {
         this.capture = sub;
+        Scene.captureTarget = this;
     }
     releaseCapture(): void {
         this.capture = null;
+        Scene.captureTarget = null;
     }
 
     private sizeSubs = new Set<EventSubscriber>();
@@ -845,6 +844,9 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
             evt.preventDefault();
             return;
         }
+        // Защита от дублирования сообщения.
+        if (Scene.captureTarget === this && evt.currentTarget !== window) return;
+
         const rect = this.ctx.canvas.getBoundingClientRect();
         const clickX = evt.clientX - rect.left;
         const clickY = evt.clientY - rect.top;
@@ -869,7 +871,6 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
             // https://developer.mozilla.org/ru/docs/Web/API/MouseEvent/button
             case "pointerdown": {
                 Scene.kbdTarget = this;
-                Scene.pointerTarget = this;
                 this.blocked = true;
                 switch (evt.button) {
                     case 0: //Левая кнопка
@@ -886,7 +887,6 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
                 return;
             }
             case "pointerup": {
-                Scene.pointerTarget = null;
                 switch (evt.button) {
                     case 0:
                         this.dispatchMouseEvent(this.leftButtonUpSubs, objHandle, Constant.WM_LBUTTONUP, x, y, fwkeys);
@@ -961,11 +961,12 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
 
     beforeRemove(): void {
         if (Scene.kbdTarget === this) Scene.kbdTarget = null;
-        if (Scene.pointerTarget === this) Scene.pointerTarget = null;
+        if (Scene.captureTarget === this) Scene.captureTarget = null;
     }
 }
 
 window.addEventListener("pointerdown", Scene.handlePointer);
+window.addEventListener("pointermove", Scene.handlePointer);
 window.addEventListener("pointerup", Scene.handlePointer);
 window.addEventListener("keydown", Scene.handleKeyboard);
 window.addEventListener("keyup", Scene.handleKeyboard);
