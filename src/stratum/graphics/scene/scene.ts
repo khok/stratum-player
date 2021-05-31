@@ -163,6 +163,10 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         this._originY = vdr.origin.y;
         this.layers = vdr.layers;
         this._scale = 1;
+        if (this._scale !== 1) {
+            view.style.setProperty("transform-origin", `top left`);
+            view.style.setProperty("transform", `scale(${this._scale})`);
+        }
 
         const groups = new Set<{ g: SceneGroup; h: number[] }>();
         const mapFunc: (e: VectorDrawingElement) => [number, SceneObject] = (e) => {
@@ -305,7 +309,15 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         return this._scale;
     }
     setScale(ms: number): NumBool {
+        if (ms === 0) return 0;
         this._scale = ms;
+        if (ms !== 1) {
+            this.view.style.setProperty("transform-origin", `top left`);
+            this.view.style.setProperty("transform", `scale(${ms})`);
+        } else {
+            this.view.style.removeProperty("transform-origin");
+            this.view.style.removeProperty("transform");
+        }
         return 1;
     }
 
@@ -848,8 +860,8 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         if (Scene.captureTarget === this && evt.currentTarget !== window) return;
 
         const rect = this.ctx.canvas.getBoundingClientRect();
-        const clickX = evt.clientX - rect.left;
-        const clickY = evt.clientY - rect.top;
+        const clickX = (evt.clientX - rect.left) / this._scale;
+        const clickY = (evt.clientY - rect.top) / this._scale;
         const x = clickX + this._originX;
         const y = clickY + this._originY;
 
