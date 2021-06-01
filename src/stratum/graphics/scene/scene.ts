@@ -875,7 +875,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
                 this.middleButtonUpSubs.delete(sub);
                 break;
             case Constant.WM_KEYDOWN:
-                this.keyDownSubs.add(sub);
+                this.keyDownSubs.delete(sub);
                 break;
             case Constant.WM_KEYUP:
                 this.keyUpSubs.delete(sub);
