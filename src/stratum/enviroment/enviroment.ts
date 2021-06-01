@@ -1130,6 +1130,12 @@ export class Enviroment implements EnviromentFunctions {
 
     // Функции для работы с графическими объектами
     //
+    // HANDLE GetNextObject2d(HANDLE HSpace, HANDLE HObject)
+    stratum_getNextObject2d(hspace: number, hobject: number): number {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.next(hobject) : 0;
+    }
+
     stratum_deleteObject2d(hspace: number, hobject: number): NumBool {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.deleteObject(hobject) : 0;

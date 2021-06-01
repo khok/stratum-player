@@ -210,6 +210,36 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         });
     }
 
+    // private prev : {
+    //     obj : Map<number, SceneObject>,
+    //     iter : IterableIterator<SceneObject>
+    // } | null = null;
+    // next(hobject: number): number {
+    //     const obj = this.objects.get(hobject);
+    //     if (!obj) return 0;
+
+    //     if(this.prev?.obj !== this.objects) {
+    //         this.prev = {
+    //             obj: this.objects,
+    //             iter : this.objects.values(),
+    //         }
+    //     }
+    //     const next = this.prev.iter.next();
+    //     return next.done ? 0 : next.value.handle;
+    // }
+    // private prev : {
+    //     obj : Map<number, SceneObject>,
+    //     iter : IterableIterator<SceneObject>
+    // } | null = null;
+    next(hobject: number): number {
+        let found = false;
+        for (const [k] of this.objects) {
+            if (found) return k;
+            if (k === hobject) found = true;
+        }
+        return 0;
+    }
+
     // setSize(width: number, height: number): void {
     //     const cnv = this.ctx.canvas;
     //     cnv.style.setProperty("width", width + "px");
