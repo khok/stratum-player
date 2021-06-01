@@ -225,6 +225,9 @@ class ExprGenerator {
             const a3 = this.derefer(op.args[2]);
             return { f: `${envVar}.${getMousePosFunc}(${a1},${a2},${a3})` };
         }
+        if (nameUC === "RANDOMIZE") {
+            return { f: "" };
+        }
 
         // Вызов функции.
         const r = this.lib.getModel(op.name);
