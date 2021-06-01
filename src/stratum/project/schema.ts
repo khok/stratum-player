@@ -557,23 +557,20 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
     }
 
     stratum_setCapture(hspace: number, path: string, flags: number): void {
-        if (path !== "") throw Error(`Вызов setCapture с path=${path} не реализован`);
-        const target = /*this.resolve(path)*/ this;
-        if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
+        const target = this.resolve(path);
+        if (!target || target.proto.vars().msgVarId < 0) return;
         this.prj.env.setCapture(target, hspace, flags);
     }
 
     stratum_registerObject(wnameOrHspace: number | string, obj2d: number, path: string, message: number, flags: number): void {
-        if (path !== "") throw Error(`Вызов RegisterObject с path=${path} не реализован`);
-        const target = /*this.resolve(path)*/ this;
-        if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
+        const target = this.resolve(path);
+        if (!target || target.proto.vars().msgVarId < 0) return;
         this.prj.env.subscribe(target, wnameOrHspace, obj2d, message, flags);
     }
 
     stratum_unregisterObject(wnameOrHspace: number | string, path: string, message: number): void {
-        if (path !== "") throw Error(`Вызов UnRegisterObject с path=${path} не реализован`);
-        const target = /*this.resolve(path)*/ this;
-        if (typeof target === "undefined" || target.proto.vars().msgVarId < 0) return;
+        const target = this.resolve(path);
+        if (!target || target.proto.vars().msgVarId < 0) return;
         this.prj.env.unsubscribe(target, wnameOrHspace, message);
     }
     //#endregion
