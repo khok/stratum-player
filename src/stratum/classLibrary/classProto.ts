@@ -120,6 +120,9 @@ export class ClassProto {
 
     private _model: ClassModel | null = null;
     private _compiled = false;
+    hasModel(): boolean {
+        return !!this.sourceCode;
+    }
     model(): ClassModel | null {
         if (this._compiled) return this._model;
         // Позволяет защититься от рекурсивной компиляции.

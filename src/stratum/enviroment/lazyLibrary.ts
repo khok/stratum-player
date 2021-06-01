@@ -118,6 +118,9 @@ export class LazyLibrary<T> implements ClassLibrary, Clearable<T> {
         this.lib.set(keyUC, { type: "loaded", id: res.id, path: res.path, proto });
         return proto;
     }
+    hasModel(className: string): boolean {
+        return this.get(className)?.hasModel() ?? false;
+    }
     getModel(className: string): ClassModel | null {
         return this.get(className)?.model() ?? null;
     }

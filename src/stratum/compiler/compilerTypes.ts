@@ -115,6 +115,11 @@ export interface ClassModel {
  */
 export interface ModelLibrary {
     /**
+     * Имет ли имидж `classname` модель.
+     * Отличие в том, что getModel запускает рекурсивную компиляцию.
+     */
+    hasModel(className: string): boolean;
+    /**
      * Возвращает модель имиджа `classname`.
      */
     getModel(className: string): ClassModel | null;

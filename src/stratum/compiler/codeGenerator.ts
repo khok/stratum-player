@@ -230,14 +230,14 @@ class ExprGenerator {
         }
 
         // Вызов функции.
-        const r = this.lib.getModel(op.name);
+        const r = this.lib.hasModel(op.name);
         if (!r) {
             // имидж, скорее всего, не существует, однако, он может быть загружен позже.
             // Либо же это нереализованная функция.
             this.missingFuncs.set(nameUC, op.name);
-        } else if (!r.isFunction) {
-            // throw Error(`Имидж ${op.name} не является функцией`);
-        }
+        } /* else if (!r.isFunction) {
+            throw Error(`Имидж ${op.name} не является функцией`);
+        }*/
         return { f: `${modelArg}.${callFunc}(${schemaArg}, "${op.name}"${fargs.length > 0 ? "," + fargs : ""})`, blocking: true };
     }
 

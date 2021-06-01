@@ -48,6 +48,9 @@ export class SimpleLibrary implements ClassLibrary {
     get(className: string): ClassProto | null {
         return this.lib.get(className.toUpperCase()) ?? null;
     }
+    hasModel(className: string): boolean {
+        return this.get(className)?.hasModel() ?? false;
+    }
     getModel(className: string): ClassModel | null {
         return this.get(className)?.model() ?? null;
     }
