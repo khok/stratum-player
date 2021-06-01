@@ -1429,6 +1429,13 @@ export class Enviroment implements EnviromentFunctions {
     stratum_writeLn(hstream: number, val: string): number {
         return this.streams.get(hstream)?.writeLine(val) ?? 0;
     }
+    stratum_copyBlock(hstream1: number, hstream2: number, from: number, length: number): NumBool {
+        const first = this.streams.get(hstream1);
+        if (!first) return 0;
+        const second = this.streams.get(hstream2);
+        if (!second) return 0;
+        return first.copyTo(second, from, length);
+    }
     //#endregion
 
     //#region ФУНКЦИИ УПРАВЛЕНИЯ МАТРИЦАМИ

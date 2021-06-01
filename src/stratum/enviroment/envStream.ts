@@ -25,7 +25,7 @@ export class EnvStream {
     private p: number;
 
     private onflush: ReadWriteFile | null;
-    width: number;
+    private width: number;
 
     constructor(args: EnvStreamArgs = {}) {
         const b = args.data;
@@ -39,6 +39,17 @@ export class EnvStream {
         this.p = 0;
         this.width = 8;
         this.onflush = args.file ?? null;
+    }
+
+    copyTo(target: EnvStream, from: number, length: number): NumBool {
+        if (from < 0 || from + length > this.v.byteLength) return 0;
+
+        if (target.v.byteLength < length) {
+            target.v = new DataView(this.v.buffer.slice(from, length));
+        } else {
+            new Uint8Array(target.v.buffer).set(new Uint8Array(this.v.buffer, from, length));
+        }
+        return 1;
     }
 
     seek(pos: number): number {
