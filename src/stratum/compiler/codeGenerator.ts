@@ -6,6 +6,7 @@ import {
     EXIT_CODE,
     getActualSize2dFunc,
     getDateFunc,
+    getMousePosFunc,
     getTimeFunc,
     getVarInfoFunc,
     getWaitResultFunc,
@@ -217,6 +218,12 @@ class ExprGenerator {
             const f1 = op.args.slice(0, 2).map((a) => this.parseExpr(a));
             const f2 = op.args.slice(2).map((a) => this.derefer(a));
             return { f: `${envVar}.${getVarInfoFunc}(${f1},${f2})` };
+        }
+        if (nameUC === "GETMOUSEPOS") {
+            const a1 = this.parseExpr(op.args[0]);
+            const a2 = this.derefer(op.args[1]);
+            const a3 = this.derefer(op.args[2]);
+            return { f: `${envVar}.${getMousePosFunc}(${a1},${a2},${a3})` };
         }
 
         // Вызов функции.

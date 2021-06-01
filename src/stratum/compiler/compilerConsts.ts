@@ -28,3 +28,4 @@ export const getTimeFunc: keyof EnviromentContextFunctions = "getTime";
 export const getDateFunc: keyof EnviromentContextFunctions = "getDate";
 export const getActualSize2dFunc: keyof EnviromentContextFunctions = "getActualSize2d";
 export const getVarInfoFunc: keyof EnviromentContextFunctions = "getVarInfo";
+export const getMousePosFunc: keyof EnviromentContextFunctions = "getMousePos";

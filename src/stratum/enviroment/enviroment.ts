@@ -245,6 +245,7 @@ export class Enviroment implements EnviromentFunctions {
         if (varIdx > vars.count() - 1) return 0;
         const data = vars.data(varIdx);
 
+        // FIXME: если переменная не найдена, значения должны обнулиться.
         varNameArr[varNameId] = data.name;
         varTypeArr[varTypeId] = data.typeString;
         varDescrArr[varDescrId] = data.description;
@@ -252,6 +253,19 @@ export class Enviroment implements EnviromentFunctions {
         if (typeof varFlagsArr !== "undefined" && typeof varFlagsId !== "undefined") {
             varFlagsArr[varFlagsId] = data.rawFlags;
         }
+        return 1;
+    }
+
+    getMousePos(wname: string, xArr: MutableArrayLike<number>, xId: number, yArr: MutableArrayLike<number>, yId: number): NumBool {
+        const wnd = this.windows.get(wname);
+        if (!wnd) {
+            xArr[xId] = 0;
+            yArr[yId] = 0;
+            return 0;
+        }
+        const [x, y] = Scene.mouseCoords(wnd.scene);
+        xArr[xId] = x + wnd.scene.originX();
+        yArr[yId] = y + wnd.scene.originY();
         return 1;
     }
 
@@ -743,6 +757,14 @@ export class Enviroment implements EnviromentFunctions {
     stratum_setWindowOrg(wname: string, orgX: number, orgY: number): NumBool {
         const wnd = this.windows.get(wname);
         return typeof wnd !== "undefined" ? wnd.setOrigin(orgX, orgY) : 0;
+    }
+    stratum_setWindowPos(wname: string, orgX: number, orgY: number, width: number, height: number): NumBool {
+        const wnd = this.windows.get(wname);
+        if (typeof wnd === "undefined") return 0;
+
+        wnd.setOrigin(orgX, orgY);
+        wnd.setSize(width, height);
+        return 1;
     }
     stratum_setWindowTitle(wname: string, title: string): NumBool {
         const wnd = this.windows.get(wname);

@@ -51,6 +51,7 @@ export interface EnviromentContextFunctions {
         varFlagsArr: MutableArrayLike<number>,
         varFlagsId: number
     ): NumBool;
+    getMousePos(wname: string, xArr: MutableArrayLike<number>, xId: number, yArr: MutableArrayLike<number>, yId: number): NumBool;
 }
 
 /**

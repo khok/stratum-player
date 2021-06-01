@@ -45,13 +45,24 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         }
         Scene.kbdTarget?.dispatchKeyboardEvent(evt, code ?? 0);
     }
+    private static _mouseX: number = 0;
+    private static _mouseY: number = 0;
     static handlePointer(evt: PointerEvent) {
         Scene.keyState[1] = evt.buttons & 1 ? 1 : 0;
         Scene.keyState[2] = evt.buttons & 2 ? 1 : 0;
         Scene.keyState[4] = evt.buttons & 4 ? 1 : 0;
+        Scene._mouseX = evt.clientX;
+        Scene._mouseY = evt.clientY;
         Scene.captureTarget?.handleEvent(evt);
     }
     static readonly keyState = new Uint8Array(256);
+
+    static mouseCoords(scene: Scene): [number, number] {
+        const rect = scene.ctx.canvas.getBoundingClientRect();
+        const clickX = (Scene._mouseX - rect.left) / scene._scale;
+        const clickY = (Scene._mouseY - rect.top) / scene._scale;
+        return [clickX, clickY];
+    }
 
     private static getInversedMatrix(matrix: number[]): number[] {
         const det =
@@ -859,6 +870,8 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         // Защита от дублирования сообщения.
         if (Scene.captureTarget === this && evt.currentTarget !== window) return;
 
+        // Здесь можно было бы вызывать Scene.mouseCoords,
+        // но там будут старые позиции - такая очередность событий.
         const rect = this.ctx.canvas.getBoundingClientRect();
         const clickX = (evt.clientX - rect.left) / this._scale;
         const clickY = (evt.clientY - rect.top) / this._scale;
