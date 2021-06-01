@@ -156,6 +156,10 @@ export class EnvStream {
         }
     }
 
+    text(): string {
+        return decode(new Uint8Array(this.v.buffer));
+    }
+
     line(): string {
         const pos = this.p;
         const maxLen = this.size() - pos;

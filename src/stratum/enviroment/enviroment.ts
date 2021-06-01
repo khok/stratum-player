@@ -1374,6 +1374,15 @@ export class Enviroment implements EnviromentFunctions {
         return this.classes.get(classname)?.children.length ?? 0;
     }
 
+    stratum_setModelText(classname: string, hstream: number, showError?: number): NumBool {
+        const stream = this.streams.get(hstream);
+        if (!stream) return 0;
+        const cl = this.classes.get(classname);
+        if (!cl) return 0;
+        cl.setCode(stream.text());
+        return 1;
+    }
+
     stratum_getVarCount(classname: string): number {
         return this.classes.get(classname)?.vars().count() ?? 0;
     }

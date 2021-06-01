@@ -22,7 +22,7 @@ export class ClassProto {
     private _image: VectorDrawing | null;
     readonly iconFile: string | null;
     readonly iconIndex: number;
-    readonly sourceCode: string | null;
+    private sourceCode: string | null;
     private readonly _vars: ClassVars;
 
     // readonly isFunction;
@@ -110,6 +110,12 @@ export class ClassProto {
 
         const reader = new BinaryReader(bytes, descr);
         return (this._image = readVdrFile(reader, { origin: "class", name: this.name }));
+    }
+
+    setCode(code: string): void {
+        if (this.sourceCode === code) return;
+        this._model = translate(code, this.lib, this.name, this._vars.toArray());
+        this.sourceCode = code;
     }
 
     private _model: ClassModel | null = null;
