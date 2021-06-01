@@ -1403,6 +1403,12 @@ export class Enviroment implements EnviromentFunctions {
     //#endregion
 
     //#region ФУНКЦИИ РАБОТЫ С ИМИДЖАМИ
+    stratum_getObjectClass(classname: string, hobject: number): string {
+        const cl = this.classes.get(classname);
+        if (!cl) return "";
+        const child = cl.children.find((c) => c.handle === hobject);
+        return child ? child.classname : "";
+    }
     stratum_getLink(classname: string, hobject1: number, hobject2: number): number {
         const cl = this.classes.get(classname);
         if (!cl) return 0;
