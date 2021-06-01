@@ -44,7 +44,7 @@ export class FontTool {
     setName(fontName: string): NumBool {
         this._name = fontName;
         this._cssName = fontName.endsWith(" CYR") ? fontName.slice(0, fontName.length - 4) : fontName;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     size(): number {
@@ -52,7 +52,7 @@ export class FontTool {
     }
     setSize(size: number): NumBool {
         this._size = size;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     style(): number {
@@ -60,7 +60,7 @@ export class FontTool {
     }
     setStyle(flags: number): NumBool {
         this._style = flags;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
 

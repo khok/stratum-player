@@ -27,7 +27,7 @@ export class StringTool {
     }
     setText(value: string): NumBool {
         this._text = value;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
 }

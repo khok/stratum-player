@@ -82,7 +82,7 @@ export class DIBTool {
 
             load(url).then((ctx) => {
                 this.img = ctx;
-                this.subs.forEach((s) => s.toolChanged());
+                this.subs.forEach((s) => s.toolChanged(this));
             });
         }
     }
@@ -110,7 +110,7 @@ export class DIBTool {
         d[3] = 255;
 
         this.img.putImageData(imgData, x, y);
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
 

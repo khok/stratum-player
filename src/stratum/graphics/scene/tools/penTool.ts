@@ -41,7 +41,7 @@ export class PenTool {
     setColor(color: number): NumBool {
         this._color = color;
         this._cssColor = colorrefToCSSColor(color);
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     width(): number {
@@ -49,7 +49,7 @@ export class PenTool {
     }
     setWidth(width: number): NumBool {
         this._width = width;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     style(): number {
@@ -57,7 +57,7 @@ export class PenTool {
     }
     setStyle(style: number): NumBool {
         this._style = style;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     rop(): number {

@@ -38,7 +38,7 @@ export class BrushTool implements ToolSubscriber {
         this.scene = scene;
     }
     toolChanged(): void {
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
     }
 
     subscribe(sub: ToolSubscriber) {
@@ -56,7 +56,7 @@ export class BrushTool implements ToolSubscriber {
         this._dibTool?.unsubscribe(this);
         this._dibTool = this.scene.dibs.get(hdib) || null;
         this._dibTool?.subscribe(this);
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     dibHandle(): number {
@@ -69,7 +69,7 @@ export class BrushTool implements ToolSubscriber {
     setColor(color: number): NumBool {
         this._color = color;
         this._cssColor = colorrefToCSSColor(color);
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     style(): number {
@@ -77,7 +77,7 @@ export class BrushTool implements ToolSubscriber {
     }
     setStyle(style: number): NumBool {
         this._style = style;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     hatch(): number {

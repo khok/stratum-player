@@ -86,7 +86,7 @@ export class TextTool {
     toolChanged() {
         this.needRedraw = true;
         this.needUpdatePrepared = true;
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
     }
     textCount(): number {
         return this.textCollection.length;
@@ -250,7 +250,7 @@ export class TextTool {
         this.needUpdatePrepared = true;
         this.needRedraw = true;
 
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
 
@@ -263,7 +263,7 @@ export class TextTool {
         this.needUpdatePrepared = true;
         this.needRedraw = true;
 
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     setBgColor(index: number, bgColor: number): NumBool {
@@ -275,7 +275,7 @@ export class TextTool {
         this.needUpdatePrepared = true;
         this.needRedraw = true;
 
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     setFont(index: number, fontHandle: number): NumBool {
@@ -288,7 +288,7 @@ export class TextTool {
         this.needUpdatePrepared = true;
         this.needRedraw = true;
 
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
     setString(index: number, stringHandle: number): NumBool {
@@ -301,7 +301,7 @@ export class TextTool {
         this.needUpdatePrepared = true;
         this.needRedraw = true;
 
-        this.subs.forEach((s) => s.toolChanged());
+        this.subs.forEach((s) => s.toolChanged(this));
         return 1;
     }
 }
