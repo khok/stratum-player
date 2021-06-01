@@ -418,7 +418,14 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
             SceneLine.drawFigure(this.ctx2, 0, 0, this.coords, brush, pen, pw);
             this.needRedraw = false;
         }
-        ctx.drawImage(this.cnv, ox, oy);
+        const oper = this.brush?.compositeOperation() ?? "source-over";
+        if (oper === "source-over") {
+            ctx.drawImage(this.cnv, ox, oy);
+        } else {
+            ctx.globalCompositeOperation = oper;
+            ctx.drawImage(this.cnv, ox, oy);
+            ctx.globalCompositeOperation = "source-over";
+        }
     }
 
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined {

@@ -95,6 +95,17 @@ export class BrushTool implements ToolSubscriber {
         return 1;
     }
 
+    compositeOperation(): string {
+        switch (this._rop) {
+            case Constant.R2_MASKPEN:
+                return "multiply";
+            case Constant.R2_NOTXORPEN:
+                return "multiply";
+            default:
+                return "source-over";
+        }
+    }
+
     fillStyle(ctx: CanvasRenderingContext2D): string | CanvasPattern | null {
         switch (this._style) {
             case Constant.BS_SOLID:
