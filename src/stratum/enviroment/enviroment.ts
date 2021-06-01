@@ -1072,6 +1072,23 @@ export class Enviroment implements EnviromentFunctions {
         return t.setValues(index, hfont, hstring, fgColor, bgColor);
     }
 
+    stratum_setTextFgColor2d(hspace: number, htext: number, index: number, fgColor: number): NumBool {
+        const t = this.getTText(hspace, htext);
+        return typeof t !== "undefined" ? t.setFgColor(index, fgColor) : 0;
+    }
+    stratum_setTextBkColor2d(hspace: number, htext: number, index: number, bgColor: number): NumBool {
+        const t = this.getTText(hspace, htext);
+        return typeof t !== "undefined" ? t.setBgColor(index, bgColor) : 0;
+    }
+    stratum_setTextFont2d(hspace: number, htext: number, index: number, hfont: number): NumBool {
+        const t = this.getTText(hspace, htext);
+        return typeof t !== "undefined" ? t.setFont(index, hfont) : 0;
+    }
+    stratum_setTextString2d(hspace: number, htext: number, index: number, hstring: number): NumBool {
+        const t = this.getTText(hspace, htext);
+        return typeof t !== "undefined" ? t.setString(index, hstring) : 0;
+    }
+
     // Инструмент Битовая карта
     //
 

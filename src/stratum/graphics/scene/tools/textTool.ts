@@ -219,24 +219,84 @@ export class TextTool {
         this.updatePrepared();
         return this._height;
     }
+
+    private replaceFont(frag: InternalTextFragment, fontHandle: number): void {
+        frag.font?.unsubscribe(this);
+        const f = this.scene.fonts.get(fontHandle) ?? null;
+        f?.subscribe(this);
+        frag.font = f;
+    }
+
+    private replaceString(frag: InternalTextFragment, stringHandle: number): void {
+        frag.string?.unsubscribe(this);
+        const s = this.scene.strings.get(stringHandle) ?? null;
+        s?.subscribe(this);
+        frag.string = s;
+    }
+
     setValues(index: number, fontHandle: number, stringHandle: number, fgColor: number, bgColor: number): NumBool {
         if (index < 0 || index >= this.textCollection.length) return 0;
         const frag = this.textCollection[index];
-        if (fontHandle > 0 && frag.font?.handle !== fontHandle) {
-            frag.font?.unsubscribe(this);
-            const f = this.scene.fonts.get(fontHandle) || null;
-            f?.subscribe(this);
-            frag.font = f;
-        }
 
+        if (fontHandle > 0 && frag.font?.handle !== fontHandle) {
+            this.replaceFont(frag, fontHandle);
+        }
         if (stringHandle > 0 && frag.string?.handle !== stringHandle) {
-            frag.string?.unsubscribe(this);
-            const s = this.scene.strings.get(stringHandle) || null;
-            s?.subscribe(this);
-            frag.string = s;
+            this.replaceString(frag, stringHandle);
         }
         frag.fgColor = fgColor;
         frag.bgColor = bgColor;
+
+        this.needUpdatePrepared = true;
+        this.needRedraw = true;
+
+        this.subs.forEach((s) => s.toolChanged());
+        return 1;
+    }
+
+    setFgColor(index: number, fgColor: number): NumBool {
+        if (index < 0 || index >= this.textCollection.length) return 0;
+        const frag = this.textCollection[index];
+
+        frag.fgColor = fgColor;
+
+        this.needUpdatePrepared = true;
+        this.needRedraw = true;
+
+        this.subs.forEach((s) => s.toolChanged());
+        return 1;
+    }
+    setBgColor(index: number, bgColor: number): NumBool {
+        if (index < 0 || index >= this.textCollection.length) return 0;
+        const frag = this.textCollection[index];
+
+        frag.bgColor = bgColor;
+
+        this.needUpdatePrepared = true;
+        this.needRedraw = true;
+
+        this.subs.forEach((s) => s.toolChanged());
+        return 1;
+    }
+    setFont(index: number, fontHandle: number): NumBool {
+        if (index < 0 || index >= this.textCollection.length) return 0;
+        const frag = this.textCollection[index];
+
+        if (fontHandle < 1 || frag.font?.handle === fontHandle) return 0;
+        this.replaceFont(frag, fontHandle);
+
+        this.needUpdatePrepared = true;
+        this.needRedraw = true;
+
+        this.subs.forEach((s) => s.toolChanged());
+        return 1;
+    }
+    setString(index: number, stringHandle: number): NumBool {
+        if (index < 0 || index >= this.textCollection.length) return 0;
+        const frag = this.textCollection[index];
+
+        if (stringHandle < 1 || frag.string?.handle === stringHandle) return 0;
+        this.replaceString(frag, stringHandle);
 
         this.needUpdatePrepared = true;
         this.needRedraw = true;
