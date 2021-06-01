@@ -258,7 +258,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
 
     tryHyper(x: number, y: number, hobject: number): void {
         if (!this.hyperHandler) return;
-        const h = hobject || this.getObjectFromPoint2d(x, y);
+        const h = hobject || this.getObjectFromPoint2d(x, y, false);
         const hyp = this.objects.get(h)?.hyperbase;
         if (!hyp) return;
 
@@ -683,22 +683,32 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         return 0;
     }
 
-    private getObjectInRealCoords(x: number, y: number): SceneObject | null {
+    private static _lastPrimary: number = 0;
+    private getObjectInRealCoords(x: number, y: number, savePrimary = false): SceneObject | null {
         for (let i = this.primaryObjects.length - 1; i >= 0; --i) {
-            const res = this.primaryObjects[i].tryClick(x, y, this.layers);
-            if (res) return res;
+            const p = this.primaryObjects[i];
+            const res = p.tryClick(x, y, this.layers);
+            if (res) {
+                if (savePrimary) Scene._lastPrimary = p.handle;
+                return res;
+            }
         }
+        if (savePrimary) Scene._lastPrimary = 0;
         return null;
     }
 
-    getObjectFromPoint2d(x: number, y: number): number {
+    getObjectFromPoint2d(x: number, y: number, savePrimary = false): number {
         const mat = this.matrix;
 
         const w = x * mat[2] + y * mat[5] + mat[8];
         const realX = (x * mat[0] + y * mat[3] + mat[6]) / w;
         const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
-        return this.getObjectInRealCoords(realX, realY)?.handle ?? 0;
+        return this.getObjectInRealCoords(realX, realY, savePrimary)?.handle ?? 0;
+    }
+
+    static lastPrimary(): number {
+        return Scene._lastPrimary;
     }
 
     isIntersect(hobj1: number, hobj2: number): NumBool {

@@ -1245,7 +1245,10 @@ export class Enviroment implements EnviromentFunctions {
 
     stratum_getObjectFromPoint2d(hspace: number, x: number, y: number): number {
         const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.getObjectFromPoint2d(x, y) : 0;
+        return typeof scene !== "undefined" ? scene.getObjectFromPoint2d(x, y, true) : 0;
+    }
+    stratum_getLastPrimary2d(): number {
+        return Scene.lastPrimary();
     }
 
     // Функции для управления Z-порядком графических объектов
