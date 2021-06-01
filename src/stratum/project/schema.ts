@@ -26,7 +26,7 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
     }
 
     private readonly handle: number;
-    private readonly neighMapUC: Map<string, Schema>;
+    private readonly resolveMap: Map<string, Schema>;
 
     private parent: Schema | null;
     private children: Schema[] = [];
@@ -64,11 +64,11 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         }
         this.children = children;
         applyLinks(this, links);
-        this.neighMapUC = new Map([["", this]]);
+        this.resolveMap = new Map([["", this]]);
 
         children.forEach((c) => {
-            this.neighMapUC.set("#" + c.handle, c);
-            if (c.schemeName) this.neighMapUC.set(c.schemeName, c);
+            this.resolveMap.set("#" + c.handle, c);
+            if (c.schemeName) this.resolveMap.set(c.schemeName.toUpperCase(), c);
         });
 
         this.parent = null;
@@ -87,18 +87,47 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
     private setParent(parent: Schema): void {
         if (parent === this || this.parent !== null) throw Error("Невозможно изменить родительский имидж");
         this.parent = parent;
-        this.neighMapUC.set("..", parent);
+        this.resolveMap.set("..", parent);
     }
 
     private resolve(path: string): Schema | undefined {
         if (path === "") return this;
-        const filter = path.split("\\");
+        const filter = path.toUpperCase().split("\\"); //.map((c) => c.trim());
         let root = path[0] === "\\" ? this.prj.root : this;
+
+        // for (let i = 0; i < filter.length; ++i) {
+        //     const f = filter[i];
+        //     if (f.length === 0) continue;
+
+        //     if (f === "..") {
+        //         const p = root.parent;
+        //         if (!p) return undefined;
+        //         root = p;
+        //         continue;
+        //     }
+
+        //     if (f.startsWith("#")) {
+        //         const h = parseInt(f.substring(1));
+        //         if (isNaN(h)) return undefined;
+        //         const child = root.children.find((c) => c.handle === h);
+        //         if (!child) return undefined;
+        //         root = child;
+        //         continue;
+        //     }
+
+        //     const child = root.children.find((c) => c.schemeName === f);
+        //     if (!child) return undefined;
+        //     root = child;
+        // }
+
         for (let i = 0; i < filter.length; ++i) {
-            const cl = root.neighMapUC.get(filter[i]);
+            const cl = root.resolveMap.get(filter[i]);
             if (typeof cl === "undefined") {
-                console.log(this.prj.root);
-                if (filter[i] !== ".." && filter[i][0] !== "#") throw Error(`Не удалось разрешить путь ${path}`);
+                // console.log(this);
+                // console.log(this.prj.root);
+                // console.log(this.prj.root.children.map((c) => c.schemeName));
+                // console.log(this.children.map((c) => c.schemeName));
+                // if (filter[i] !== ".." && filter[i][0] !== "#") throw Error(`Не удалось разрешить путь ${path}`);
                 return undefined;
             }
             root = cl;
