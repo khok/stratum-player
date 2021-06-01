@@ -36,7 +36,7 @@ export async function readFile(
                 return readDbmFile(r);
         }
     } catch (err) {
-        console.warn(`Ошибка чтения файла ${file.toString()}`);
+        console.warn(`Ошибка чтения ${file.toString()} как .${type.toUpperCase()}`);
         console.error(err);
         throw err;
     }
