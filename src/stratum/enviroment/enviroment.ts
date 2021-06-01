@@ -839,6 +839,22 @@ export class Enviroment implements EnviromentFunctions {
     //#region ФУНКЦИИ ГРАФИКИ
     // Пространства
     //
+    stratum_saveRectArea2d(hspace: number, filename: string, /*bits*/ _: number, x: number, y: number, width: number, height: number): NumBool {
+        const scene = this.scenes.get(hspace);
+        if (!scene) return 0;
+
+        const url = scene.toDataURL(x, y, width, height);
+        if (!url) return 0;
+
+        const element = document.createElement("a");
+        element.setAttribute("href", url);
+        element.setAttribute("download", filename);
+        element.style.display = "none";
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        return 1;
+    }
     stratum_getSpaceOrg2dx(hspace: number): number {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.originX() : 0;

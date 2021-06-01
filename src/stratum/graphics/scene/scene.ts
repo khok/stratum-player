@@ -210,6 +210,22 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         });
     }
 
+    toDataURL(x: number, y: number, width: number, height: number): string | null {
+        const sx = Math.max(x, 0);
+        const sy = Math.max(y, 0);
+        const sw = Math.min(width, this.ctx.canvas.width);
+        const sh = Math.min(height, this.ctx.canvas.height);
+
+        const data = this.ctx.getImageData(sx, sy, sw, sh);
+        const cnv = document.createElement("canvas");
+        cnv.width = sw;
+        cnv.height = sh;
+        const ctx = cnv.getContext("2d", { alpha: false });
+        if (!ctx) return null;
+        ctx.putImageData(data, 0, 0);
+        return cnv.toDataURL();
+    }
+
     // private prev : {
     //     obj : Map<number, SceneObject>,
     //     iter : IterableIterator<SceneObject>
