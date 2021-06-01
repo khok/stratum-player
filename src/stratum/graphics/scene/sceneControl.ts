@@ -4,6 +4,8 @@ import { Point2D } from "stratum/helpers/types";
 import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { SceneVisualMember } from "./sceneMember";
+import { FontTool } from "./tools/fontTool";
+import { ToolSubscriber } from "./tools/toolSubscriber";
 
 export interface SceneControlArgs {
     handle: number;
@@ -22,7 +24,7 @@ export interface SceneControlArgs {
     controlSize?: Point2D;
 }
 
-export class SceneControl implements SceneVisualMember, EventListenerObject {
+export class SceneControl implements SceneVisualMember, EventListenerObject, ToolSubscriber {
     readonly type: 26 = 26;
     private scene: Scene;
 
@@ -42,6 +44,8 @@ export class SceneControl implements SceneVisualMember, EventListenerObject {
     private _selectable: number;
     private _layer: number;
     private _parent: SceneGroup | null;
+
+    private fontTool: FontTool | null = null;
 
     handle: number;
     name: string;
@@ -93,6 +97,7 @@ export class SceneControl implements SceneVisualMember, EventListenerObject {
         elem.addEventListener("focus", this);
         scene.view.appendChild(elem);
     }
+    toolChanged(): void {}
 
     handleEvent(evt: Event): void {
         this.scene.dispatchControlNotifyEvent(this.handle, evt);
@@ -170,6 +175,15 @@ export class SceneControl implements SceneVisualMember, EventListenerObject {
     }
 
     // control methods
+    setControlFont(fontHandle: number): NumBool {
+        const font = this.scene.fonts.get(fontHandle);
+        if (!font) return 0;
+
+        this.fontTool?.unsubscribe(this);
+        this.fontTool = font;
+        font.subscribe(this);
+        return 1;
+    }
     controlText(): string {
         return this.element.value;
     }
@@ -181,6 +195,7 @@ export class SceneControl implements SceneVisualMember, EventListenerObject {
     // scene
     delete() {
         this.element.remove();
+        this.fontTool?.unsubscribe(this);
         this._parent?.removeChild(this);
         this.markDeleted = true;
         this.scene.dirty = true;

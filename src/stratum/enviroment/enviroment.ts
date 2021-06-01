@@ -1361,6 +1361,10 @@ export class Enviroment implements EnviromentFunctions {
         return typeof scene !== "undefined" ? scene.createControl(x, y, width, height, className, text, style) : 0;
     }
 
+    stratum_setControlFont2d(hspace: number, hobject: number, hfont: number): NumBool {
+        return this.getObject(hspace, hobject)?.setControlFont(hfont) ?? 0;
+    }
+
     stratum_getControlText2d(hspace: number, hcontrol: number, begin?: number, length?: number): string {
         const obj = this.getObject(hspace, hcontrol);
         if (typeof obj === "undefined") return "";

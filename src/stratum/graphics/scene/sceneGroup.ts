@@ -307,5 +307,8 @@ export class SceneGroup implements SceneMember {
     pointCount(): number {
         return 0;
     }
+    setControlFont(): NumBool {
+        return 0;
+    }
     //#endregion
 }
