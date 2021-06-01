@@ -615,6 +615,20 @@ export class Enviroment implements EnviromentFunctions {
         return Scene.keyState[vkey] > 0 ? 1 : 0;
     }
 
+    // Мышь
+    // LoadCursor(HANDLE HSpace, STRING Filename)
+    // LoadCursor(STRING WindowName, STRING Filename)
+    private stratum_loadCursorShowed = false;
+    stratum_loadCursor(wnameOrHspace: string | number, filename: string): void {
+        if (!this.stratum_loadCursorShowed) {
+            console.warn("loadCursor не реализована");
+            this.stratum_loadCursorShowed = true;
+        }
+        return;
+        // const scene = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace) : this.windows.get(wnameOrHspace)?.scene;
+        // if(!scene) return;
+    }
+
     // Время
     stratum_getTickCount(): number {
         return new Date().getTime() - Enviroment.startupTime;
