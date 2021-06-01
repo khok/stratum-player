@@ -428,6 +428,19 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         this.objects.set(handle, obj);
         return handle;
     }
+    private copyed: SceneObject | null = null;
+    copy(hobject: number): NumBool {
+        const obj = this.objects.get(hobject);
+        if (!obj) return 0;
+        this.copyed = obj;
+        return 1;
+    }
+    paste(x: number, y: number, flags: number): number {
+        const copyed = this.copyed;
+        if (!copyed) return 0;
+        console.log(copyed);
+        throw new Error("pasteFromClipboard2d не реализована.");
+    }
     insertVectorDrawing(x: number, y: number, flags: number, vdr: VectorDrawing): number {
         if (!vdr.elements) return 0;
 

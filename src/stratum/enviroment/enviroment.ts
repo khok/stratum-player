@@ -1147,7 +1147,14 @@ export class Enviroment implements EnviromentFunctions {
 
     // Функции для работы с графическими объектами
     //
-    // HANDLE GetNextObject2d(HANDLE HSpace, HANDLE HObject)
+    stratum_copyToClipboard2d(hspace: number, hobject: number): NumBool {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.copy(hobject) : 0;
+    }
+    stratum_pasteFromClipboard2d(hspace: number, x: number, y: number, flags: number): number {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.paste(x, y, flags) : 0;
+    }
     stratum_getNextObject2d(hspace: number, hobject: number): number {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.next(hobject) : 0;
