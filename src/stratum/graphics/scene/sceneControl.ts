@@ -24,7 +24,7 @@ export interface SceneControlArgs {
     controlSize?: Point2D;
 }
 
-export class SceneControl implements SceneVisualMember, EventListenerObject, ToolSubscriber {
+export class SceneControl implements SceneVisualMember, EventListenerObject, ToolSubscriber<FontTool> {
     readonly type: 26 = 26;
     private scene: Scene;
 
@@ -97,7 +97,9 @@ export class SceneControl implements SceneVisualMember, EventListenerObject, Too
         elem.addEventListener("focus", this);
         scene.view.appendChild(elem);
     }
-    toolChanged(): void {}
+    toolChanged(tool: FontTool): void {
+        this.element.style.setProperty("font", tool.toCSSString());
+    }
 
     handleEvent(evt: Event): void {
         this.scene.dispatchControlNotifyEvent(this.handle, evt);
@@ -182,6 +184,7 @@ export class SceneControl implements SceneVisualMember, EventListenerObject, Too
         this.fontTool?.unsubscribe(this);
         this.fontTool = font;
         font.subscribe(this);
+        this.element.style.setProperty("font", font.toCSSString());
         return 1;
     }
     controlText(): string {
