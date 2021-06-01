@@ -609,6 +609,11 @@ export class Enviroment implements EnviromentFunctions {
         return 0;
     }
 
+    stratum_shell(path: string, args: string, directory: string, flag: number): NumBool {
+        console.warn(`Вызов shell("${path}", "${args}", "${directory}", "${flag}")`);
+        return 1;
+    }
+
     // Клавиатура
     stratum_getAsyncKeyState(vkey: number): number {
         if (vkey < 0 || vkey > Scene.keyState.length - 1) return 0;
@@ -1456,6 +1461,9 @@ export class Enviroment implements EnviromentFunctions {
 
     stratum_closeClassScheme(/*className: string*/): NumBool {
         return 1;
+    }
+    stratum_getWindowsDirectory(): string {
+        return "C:\\Windows";
     }
     //#endregion
 
