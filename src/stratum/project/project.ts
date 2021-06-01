@@ -79,7 +79,7 @@ export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFu
         unreleasedFunctions.clear();
         const schema = rootProto.schema<Schema>((...args) => new Schema(this, ...args));
         if (unreleasedFunctions.size > 0) {
-            console.warn(`Нереализованные функции (${unreleasedFunctions.size}):\n${[...unreleasedFunctions.values()].join("\n")}`);
+            console.warn(`Нереализованные или необнаруженные функции (${unreleasedFunctions.size}):\n${[...unreleasedFunctions.values()].join("\n")}`);
         }
         const size = schema.createTLB(); // Инициализируем память
 
