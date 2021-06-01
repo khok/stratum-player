@@ -363,6 +363,10 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         return this.handle;
     }
 
+    stratum_getHObjectByName(path: string): number {
+        return this.resolve(path)?.handle ?? 0;
+    }
+
     stratum_getClassName(path: string): string {
         const resolved = this.resolve(path);
         if (typeof resolved === "undefined") return "";
