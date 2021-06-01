@@ -1356,6 +1356,11 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     // Объект Контрол
+    stratum_createControlObject2d(hspace: number, className: string, text: string, style: number, x: number, y: number, width: number, height: number): number {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.createControl(x, y, width, height, className, text, style) : 0;
+    }
+
     stratum_getControlText2d(hspace: number, hcontrol: number, begin?: number, length?: number): string {
         const obj = this.getObject(hspace, hcontrol);
         if (typeof obj === "undefined") return "";
