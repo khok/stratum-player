@@ -341,15 +341,18 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
         return this;
     }
 
-    stubCall(name: string, args: (string | number)[]): never {
+    private path(): string {
         let root: Schema = this;
         let path = "";
         while (root.parent) {
             path = ` -> ${root.proto.name} #${root.handle}${path}`;
             root = root.parent;
         }
-        path = this.prj.root.proto.name + path;
-        throw Error(`Вызов нереализованной функции ${name}(${args.map((a) => typeof a).join(",")})\nв ${path}`);
+        return this.prj.root.proto.name + path;
+    }
+
+    stubCall(name: string, args: (string | number)[]): never {
+        throw Error(`Вызов нереализованной функции ${name}(${args.map((a) => typeof a).join(",")})\nв ${this.path()}`);
     }
 
     copyNewValuesToOld(): void {
