@@ -49,7 +49,7 @@ const right = `function right(a, n) {
 }`;
 const round = `function round(a, b) {
     var pw = Math.ceil(10 ** b);
-    return Math.round(a * pw + Number.EPSILON) / pw || 0;
+    return Math.round(a * pw - Number.EPSILON) / pw || 0;
 }`;
 
 export const moreFunctions = new Map<string, string>([
