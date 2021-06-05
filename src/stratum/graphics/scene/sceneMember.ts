@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 
 export interface SceneMember {
@@ -11,6 +12,7 @@ export interface SceneMember {
     delete(): void;
     getChildByName(name: string): number;
     setVisibility(visible: boolean): NumBool;
+    copy(scene: Scene, attribs: number): SceneMember;
 
     // groups
     minX(): number;

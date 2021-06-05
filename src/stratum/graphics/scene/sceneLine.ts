@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { SceneVisualMember } from "./sceneMember";
@@ -165,6 +166,35 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
+    }
+
+    copy(scene: Scene, attribs: number): SceneLine {
+        const brushHandle = this.brush?.copy(scene).handle ?? 0;
+        const penHandle = this.pen?.copy(scene).handle ?? 0;
+
+        const coords = this.coords.slice();
+        for (let i = 0; i < coords.length; i += 2) {
+            coords[i + 0] += this._originX;
+            coords[i + 1] += this._originY;
+        }
+
+        const handle = HandleMap.getFreeHandle(scene.objects);
+        const copy = new SceneLine(scene, {
+            handle,
+            name: this.name,
+            coords,
+            brushHandle,
+            penHandle,
+        });
+
+        copy.hyperbase = this.hyperbase;
+        copy._selectable = this._selectable;
+        copy._layer = this._layer;
+        copy._visible = this._visible;
+
+        scene.objects.set(handle, copy);
+        scene.primaryObjects.push(copy);
+        return copy;
     }
 
     // line methods

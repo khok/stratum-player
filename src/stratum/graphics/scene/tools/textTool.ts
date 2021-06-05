@@ -1,6 +1,8 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
 import { NumBool } from "stratum/common/types";
 import { TextToolFragment } from "stratum/fileFormats/vdr";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Scene } from "../scene";
 import { FontTool } from "./fontTool";
 import { StringTool } from "./stringTool";
 import { ToolStorage } from "./toolStorage";
@@ -82,6 +84,18 @@ export class TextTool {
     }
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
+    }
+    copy(scene: Scene): TextTool {
+        const handle = HandleMap.getFreeHandle(scene.texts);
+        const textCollection = this.textCollection.map<TextToolFragment>((c) => ({
+            bgColor: c.bgColor,
+            fgColor: c.fgColor,
+            fontHandle: c.font?.copy(scene).handle ?? 0,
+            stringHandle: c.string?.copy(scene).handle ?? 0,
+        }));
+        const tool = new TextTool(scene, { handle, textCollection });
+        scene.texts.set(handle, tool);
+        return tool;
     }
     toolChanged() {
         this.needRedraw = true;

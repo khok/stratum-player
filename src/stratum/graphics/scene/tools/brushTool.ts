@@ -1,6 +1,8 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
 import { Constant } from "stratum/common/constant";
 import { NumBool } from "stratum/common/types";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Scene } from "../scene";
 import { DIBTool } from "./dibTool";
 import { ToolStorage } from "./toolStorage";
 import { ToolSubscriber } from "./toolSubscriber";
@@ -46,6 +48,21 @@ export class BrushTool implements ToolSubscriber {
     }
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
+    }
+
+    copy(scene: Scene): BrushTool {
+        const dibHandle = this._dibTool?.copy(scene, false).handle ?? 0;
+        const handle = HandleMap.getFreeHandle(scene.brushes);
+        const tool = new BrushTool(scene, {
+            handle,
+            color: this._color,
+            dibHandle,
+            hatch: this._hatch,
+            rop2: this._rop,
+            style: this._style,
+        });
+        scene.brushes.set(handle, tool);
+        return tool;
     }
 
     dibTool(): DIBTool | null {

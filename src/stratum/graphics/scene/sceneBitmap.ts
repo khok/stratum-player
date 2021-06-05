@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { BitmapElement, DoubleBitmapElement, Hyperbase } from "stratum/fileFormats/vdr";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { SceneVisualMember } from "./sceneMember";
@@ -164,6 +165,35 @@ export class SceneBitmap implements SceneVisualMember, ToolSubscriber {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
+    }
+
+    copy(scene: Scene, attribs: number): SceneBitmap {
+        const dibHandle = this.dib?.copy(scene, this.isDouble).handle ?? 0;
+
+        const handle = HandleMap.getFreeHandle(scene.objects);
+        const copy = new SceneBitmap(scene, {
+            handle,
+            name: this.name,
+            originX: this._originX,
+            originY: this._originY,
+            height: this._height,
+            width: this._width,
+            cropH: this.cropH,
+            cropW: this.cropW,
+            cropX: this.cropX,
+            cropY: this.cropY,
+            type: this.isDouble ? "doubleBitmap" : "bitmap",
+            dibHandle,
+        });
+
+        copy.hyperbase = this.hyperbase;
+        copy._selectable = this._selectable;
+        copy._layer = this._layer;
+        copy._visible = this._visible;
+
+        scene.objects.set(handle, copy);
+        scene.primaryObjects.push(copy);
+        return copy;
     }
 
     // bitmap methods

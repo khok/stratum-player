@@ -1,4 +1,6 @@
 import { NumBool } from "stratum/common/types";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Scene } from "../scene";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface FontToolArgs {
@@ -37,6 +39,17 @@ export class FontTool {
     }
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
+    }
+    copy(scene: Scene): FontTool {
+        const handle = HandleMap.getFreeHandle(scene.fonts);
+        const tool = new FontTool({
+            handle,
+            fontName: this._name,
+            height: this._size,
+        });
+        tool._style = this._style;
+        scene.fonts.set(handle, tool);
+        return tool;
     }
     name(): string {
         return this._name;

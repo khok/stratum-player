@@ -1,6 +1,8 @@
 import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
 import { Constant } from "stratum/common/constant";
 import { NumBool } from "stratum/common/types";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Scene } from "../scene";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface PenToolArgs {
@@ -35,6 +37,20 @@ export class PenTool {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
+
+    copy(scene: Scene): PenTool {
+        const handle = HandleMap.getFreeHandle(scene.pens);
+        const tool = new PenTool({
+            handle,
+            color: this._color,
+            rop2: this._rop,
+            style: this._style,
+            width: this._width,
+        });
+        scene.pens.set(handle, tool);
+        return tool;
+    }
+
     color(): number {
         return this._color;
     }

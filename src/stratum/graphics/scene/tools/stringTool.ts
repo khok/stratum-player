@@ -1,4 +1,6 @@
 import { NumBool } from "stratum/common/types";
+import { HandleMap } from "stratum/helpers/handleMap";
+import { Scene } from "../scene";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export interface StringToolArgs {
@@ -21,6 +23,15 @@ export class StringTool {
     }
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
+    }
+    copy(scene: Scene): StringTool {
+        const handle = HandleMap.getFreeHandle(scene.strings);
+        const tool = new StringTool({
+            handle,
+            text: this._text,
+        });
+        scene.strings.set(handle, tool);
+        return tool;
     }
     text(): string {
         return this._text;

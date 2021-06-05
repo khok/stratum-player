@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { Scene } from "./scene";
 import { SceneMember } from "./sceneMember";
 
@@ -160,6 +161,19 @@ export class SceneGroup implements SceneMember {
     setVisibility(visible: boolean): NumBool {
         for (const c of this.children.values()) c.setVisibility(visible);
         return 1;
+    }
+
+    copy(scene: Scene, attribs: number): SceneMember {
+        const childHandles = this.children.map((c) => c.copy(scene, attribs).handle);
+        const handle = HandleMap.getFreeHandle(scene.objects);
+        const copy = new SceneGroup(scene, {
+            handle,
+            name: this.name,
+        }).addChildren(childHandles);
+
+        copy.hyperbase = this.hyperbase;
+        scene.objects.set(handle, copy);
+        return copy;
     }
 
     // group methods

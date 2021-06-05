@@ -4,7 +4,9 @@ import { readDbmFile } from "stratum/fileFormats/bmp";
 import { DibToolImage } from "stratum/fileFormats/bmp/dibToolImage";
 import { ImageToolParams } from "stratum/fileFormats/vdr";
 import { BinaryReader } from "stratum/helpers/binaryReader";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { options } from "stratum/options";
+import { Scene } from "..";
 import { ToolSubscriber } from "./toolSubscriber";
 
 export class DIBTool {
@@ -91,6 +93,19 @@ export class DIBTool {
     }
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
+    }
+
+    copy(scene: Scene, isDouble: boolean): DIBTool {
+        const map = isDouble ? scene.doubleDibs : scene.dibs;
+        const handle = HandleMap.getFreeHandle(map);
+        const args: ImageToolParams = {
+            type: "image",
+            handle,
+            img: this.img,
+        };
+        const tool = new DIBTool(args);
+        map.set(handle, tool);
+        return tool;
     }
 
     getPixel(x: number, y: number): number {

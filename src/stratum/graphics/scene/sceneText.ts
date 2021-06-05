@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { Hyperbase } from "stratum/fileFormats/vdr";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
 import { SceneVisualMember } from "./sceneMember";
@@ -139,6 +140,31 @@ export class SceneText implements SceneVisualMember, ToolSubscriber {
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
+    }
+
+    copy(scene: Scene, attribs: number): SceneText {
+        const textToolHandle = this.textTool?.copy(scene).handle ?? 0;
+
+        const handle = HandleMap.getFreeHandle(scene.objects);
+        const copy = new SceneText(scene, {
+            handle,
+            name: this.name,
+            originX: this._originX,
+            originY: this._originY,
+            height: this._height,
+            width: this._width,
+            angle: this._angle,
+            textToolHandle,
+        });
+
+        copy.hyperbase = this.hyperbase;
+        copy._selectable = this._selectable;
+        copy._layer = this._layer;
+        copy._visible = this._visible;
+
+        scene.objects.set(handle, copy);
+        scene.primaryObjects.push(copy);
+        return copy;
     }
 
     // text methods

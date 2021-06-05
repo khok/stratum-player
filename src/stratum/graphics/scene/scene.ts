@@ -88,7 +88,7 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
     private _scale: number;
     private layers: number;
     private brush: BrushTool | null;
-    private primaryObjects: PrimaryObject[];
+    primaryObjects: PrimaryObject[];
     private sizeInfo: Resizable | NotResizable;
 
     readonly view: HTMLDivElement;
@@ -444,18 +444,20 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         this.objects.set(handle, obj);
         return handle;
     }
-    private copyed: SceneObject | null = null;
+    private static copyed: SceneObject | null = null;
     copy(hobject: number): NumBool {
         const obj = this.objects.get(hobject);
         if (!obj) return 0;
-        this.copyed = obj;
+        Scene.copyed = obj;
         return 1;
     }
     paste(x: number, y: number, flags: number): number {
-        const copyed = this.copyed;
+        const copyed = Scene.copyed;
         if (!copyed) return 0;
-        console.log(copyed);
-        throw new Error("pasteFromClipboard2d не реализована.");
+        const cp = copyed.copy(this, flags) as SceneObject;
+        cp.setOrigin(x, y);
+        this.dirty = true;
+        return cp.handle;
     }
     insertVectorDrawing(x: number, y: number, flags: number, vdr: VectorDrawing): number {
         if (!vdr.elements) return 0;

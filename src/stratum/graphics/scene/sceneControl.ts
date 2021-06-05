@@ -1,5 +1,6 @@
 import { NumBool } from "stratum/common/types";
 import { ControlElement, Hyperbase } from "stratum/fileFormats/vdr";
+import { HandleMap } from "stratum/helpers/handleMap";
 import { Point2D } from "stratum/helpers/types";
 import { Scene } from "./scene";
 import { SceneGroup } from "./sceneGroup";
@@ -46,6 +47,7 @@ export class SceneControl implements SceneVisualMember, EventListenerObject, Too
     private _parent: SceneGroup | null;
 
     private fontTool: FontTool | null = null;
+    private inputType: ControlElement["inputType"];
 
     handle: number;
     name: string;
@@ -54,6 +56,7 @@ export class SceneControl implements SceneVisualMember, EventListenerObject, Too
 
     constructor(scene: Scene, { hyperbase, handle, options, name, originX, originY, width, height, inputType, text }: SceneControlArgs) {
         if (inputType !== "EDIT") throw Error(`Элемент ввода ${inputType} не реализован.`);
+        this.inputType = inputType;
 
         this.hyperbase = hyperbase ?? null;
 
@@ -174,6 +177,30 @@ export class SceneControl implements SceneVisualMember, EventListenerObject, Too
         this._visible = visible;
         this.scene.dirty = true;
         return 1;
+    }
+
+    copy(scene: Scene, attribs: number): SceneControl {
+        const handle = HandleMap.getFreeHandle(scene.objects);
+
+        const copy = new SceneControl(scene, {
+            handle,
+            name: this.name,
+            originX: this._originX,
+            originY: this._originY,
+            height: this._height,
+            width: this._width,
+            inputType: this.inputType,
+            text: this.element.value,
+        });
+
+        copy.hyperbase = this.hyperbase;
+        copy._selectable = this._selectable;
+        copy._layer = this._layer;
+        copy._visible = this._visible;
+
+        scene.objects.set(handle, copy);
+        scene.primaryObjects.push(copy);
+        return copy;
     }
 
     // control methods
