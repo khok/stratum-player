@@ -31,6 +31,7 @@ export interface WindowArgs {
 export interface SubwindowArgs {
     handle: number;
     wname: string;
+    attribs: WindowAttribs;
     rect: WindowRect;
     vdr?: VectorDrawing | null;
     onClosed?: Function;
@@ -75,6 +76,8 @@ export class SceneWindow<T = unknown> {
         let autoorg = false;
         let bySpaceSize = false;
         let noResize = false;
+        let vscroll = false;
+        let hscroll = false;
 
         if (attribs.useVdrSettings && args.vdr?.settings) {
             const settings = args.vdr.settings;
@@ -86,12 +89,16 @@ export class SceneWindow<T = unknown> {
             if (style & WindowStyle.SWF_AUTOORG) autoorg = true;
             if (style & WindowStyle.SWF_SPACESIZE) bySpaceSize = true;
             if (style & WindowStyle.SWF_NORESIZE) noResize = true;
+            if (style & WindowStyle.SWF_VSCROLL) vscroll = true;
+            if (style & WindowStyle.SWF_HSCROLL) hscroll = true;
         }
 
         if (attribs.popup) popup = true;
         if (attribs.autoOrg) autoorg = true;
         if (attribs.bySpaceSize) bySpaceSize = true;
         if (popup || attribs.noResize) noResize = true;
+        if (attribs.vscroll) vscroll = true;
+        if (attribs.hscroll) hscroll = true;
 
         if (args.vdr?.elements && (autoorg || bySpaceSize)) {
             const org = VdrMerger.calcRect(args.vdr.elements);
@@ -112,6 +119,13 @@ export class SceneWindow<T = unknown> {
 
         const sizeInfo: Resizable | NotResizable = noResize ? { resizable: false, width, height } : { resizable: true };
         this.scene = new Scene({ wnd: this, vdr: args.vdr, sizeInfo });
+
+        if (vscroll) {
+            this.scene.view.style.setProperty("overflow-y", "scroll");
+        }
+        if (hscroll) {
+            this.scene.view.style.setProperty("overflow-x", "scroll");
+        }
 
         // const view = document.createElement("div");
         // view.appendChild(this.scene.view);
@@ -140,7 +154,8 @@ export class SceneWindow<T = unknown> {
     }
 
     subwindow(args: SubwindowArgs): SceneWindow<T> {
-        const windowArgs: WindowArgs = { ...args, attribs: { noResize: true } };
+        const attribs: WindowAttribs = { ...args.attribs, noResize: true };
+        const windowArgs: WindowArgs = { ...args, attribs };
         const wnd = new SceneWindow<T>(windowArgs, (view) => this.scene.frame(view, args.rect));
         wnd.parent = this;
         this.childWindows.add(wnd);

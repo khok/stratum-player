@@ -310,7 +310,7 @@ export class Enviroment implements EnviromentFunctions {
             if (!parent || !attribs.child) {
                 return this.openWindow(prj, wname, attribs, vdr, rect);
             }
-            return this.openSubwindow(parent, prj, wname, rect, vdr);
+            return this.openSubwindow(parent, prj, wname, attribs, rect, vdr);
         };
 
         const vdr = this.classes.get(source)?.scheme();
@@ -496,13 +496,21 @@ export class Enviroment implements EnviromentFunctions {
         return handle;
     }
 
-    private openSubwindow(parent: SceneWindow<Project>, prj: Project, wname: string, rect: WindowRect, vdr?: VectorDrawing | null): number {
+    private openSubwindow(
+        parent: SceneWindow<Project>,
+        prj: Project,
+        wname: string,
+        attribs: WindowAttribs,
+        rect: WindowRect,
+        vdr?: VectorDrawing | null
+    ): number {
         const handle = HandleMap.getFreeHandle(this.scenes);
         const wnd = parent.subwindow({
             handle,
             wname,
             vdr,
             rect,
+            attribs,
             onClosed: () => this.removeWindow(wname),
         });
 

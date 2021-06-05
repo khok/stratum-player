@@ -7,6 +7,8 @@ export interface WindowAttribs {
     bySpaceSize?: boolean;
     noCaption?: boolean;
     noShadow?: boolean;
+    vscroll?: boolean;
+    hscroll?: boolean;
 }
 
 export function parseWindowAttribs(attrib: string): WindowAttribs {
@@ -20,5 +22,7 @@ export function parseWindowAttribs(attrib: string): WindowAttribs {
         bySpaceSize: a.includes("WS_SPACESIZE"),
         noCaption: a.includes("WS_NOCAPTION"),
         noShadow: a.includes("WS_NOSHADOW"),
+        vscroll: a.includes("WS_VSCROLL"),
+        hscroll: a.includes("WS_HSCROLL"),
     };
 }
