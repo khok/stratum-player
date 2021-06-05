@@ -24,6 +24,9 @@ export class StringTool {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
+    subCount(): number {
+        return this.subs.size;
+    }
     copy(scene: Scene): StringTool {
         const handle = HandleMap.getFreeHandle(scene.strings);
         const tool = new StringTool({

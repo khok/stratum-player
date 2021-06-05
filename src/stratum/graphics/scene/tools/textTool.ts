@@ -85,6 +85,9 @@ export class TextTool {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
+    subCount(): number {
+        return this.subs.size;
+    }
     copy(scene: Scene): TextTool {
         const handle = HandleMap.getFreeHandle(scene.texts);
         const textCollection = this.textCollection.map<TextToolFragment>((c) => ({

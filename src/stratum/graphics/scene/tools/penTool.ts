@@ -37,7 +37,9 @@ export class PenTool {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
-
+    subCount(): number {
+        return this.subs.size;
+    }
     copy(scene: Scene): PenTool {
         const handle = HandleMap.getFreeHandle(scene.pens);
         const tool = new PenTool({

@@ -94,7 +94,9 @@ export class DIBTool {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
-
+    subCount(): number {
+        return this.subs.size;
+    }
     copy(scene: Scene, isDouble: boolean): DIBTool {
         const map = isDouble ? scene.doubleDibs : scene.dibs;
         const handle = HandleMap.getFreeHandle(map);

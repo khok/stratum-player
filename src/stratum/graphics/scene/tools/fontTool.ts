@@ -40,6 +40,9 @@ export class FontTool {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
+    subCount(): number {
+        return this.subs.size;
+    }
     copy(scene: Scene): FontTool {
         const handle = HandleMap.getFreeHandle(scene.fonts);
         const tool = new FontTool({

@@ -565,6 +565,10 @@ export class Enviroment implements EnviromentFunctions {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.dibs.get(htool) : undefined;
     }
+    private getTDDoubleDIB(hspace: number, htool: number) {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.doubleDibs.get(htool) : undefined;
+    }
     private getTText(hspace: number, htool: number) {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.texts.get(htool) : undefined;
@@ -901,6 +905,58 @@ export class Enviroment implements EnviromentFunctions {
         if (!this.lockSpace2dWarnShowed) {
             console.warn(`LockSpace2d(${hspace}, ${lock}) игнорируется`);
             this.lockSpace2dWarnShowed = true;
+        }
+        return 0;
+    }
+
+    // Инструменты
+    //
+    stratum_getToolRef2d(hspace: number, type: number, toolHandle: number): number {
+        const scene = this.scenes.get(hspace);
+        if (!scene) return 0;
+
+        switch (type) {
+            case Constant.PEN2D:
+                return this.getTPen(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.BRUSH2D:
+                return this.getTBrush(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.DIB2D:
+                return this.getTDIB(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.DOUBLEDIB2D:
+                return this.getTDDoubleDIB(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.TEXT2D:
+                return this.getTText(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.STRING2D:
+                return this.getTString(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.FONT2D:
+                return this.getTFont(hspace, toolHandle)?.subCount() ?? 0;
+            case Constant.SPACE3D:
+                throw Error("Не реализовано");
+        }
+        return 0;
+    }
+
+    stratum_deleteTool2d(hspace: number, type: number, toolHandle: number): number {
+        const scene = this.scenes.get(hspace);
+        if (!scene) return 0;
+
+        switch (type) {
+            case Constant.PEN2D:
+                return scene.pens.delete(toolHandle) ? 1 : 0;
+            case Constant.BRUSH2D:
+                return scene.brushes.delete(toolHandle) ? 1 : 0;
+            case Constant.DIB2D:
+                return scene.dibs.delete(toolHandle) ? 1 : 0;
+            case Constant.DOUBLEDIB2D:
+                return scene.doubleDibs.delete(toolHandle) ? 1 : 0;
+            case Constant.TEXT2D:
+                return scene.texts.delete(toolHandle) ? 1 : 0;
+            case Constant.STRING2D:
+                return scene.strings.delete(toolHandle) ? 1 : 0;
+            case Constant.FONT2D:
+                return scene.fonts.delete(toolHandle) ? 1 : 0;
+            case Constant.SPACE3D:
+                throw Error("Не реализовано");
         }
         return 0;
     }

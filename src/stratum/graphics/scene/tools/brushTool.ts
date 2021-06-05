@@ -49,7 +49,9 @@ export class BrushTool implements ToolSubscriber {
     unsubscribe(sub: ToolSubscriber) {
         this.subs.delete(sub);
     }
-
+    subCount(): number {
+        return this.subs.size;
+    }
     copy(scene: Scene): BrushTool {
         const dibHandle = this._dibTool?.copy(scene, false).handle ?? 0;
         const handle = HandleMap.getFreeHandle(scene.brushes);
