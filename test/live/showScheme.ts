@@ -1,35 +1,37 @@
-import { options, setLogLevel, unzip } from "stratum/api";
-import { ClassLibrary } from "stratum/common/classLibrary";
+import { SimpleLibrary } from "stratum/classLibrary/simpleLibrary";
+import { readClsFile } from "stratum/fileFormats/cls";
+import { readPrjFile } from "stratum/fileFormats/prj";
 import { SceneWindow } from "stratum/graphics/sceneWindow";
+import { BinaryReader } from "stratum/helpers/binaryReader";
+import { options } from "stratum/options";
 import { SimpleWs } from "stratum/player/ws";
-import { VFSFile } from "stratum/vfs";
+import { ZipFS } from "stratum/stratum";
+import { RealZipFS } from "zipfs/realZipfs";
 
 // Просмотр схемы или изображения имиджа.
 export async function showScheme(name: string, { className, image }: { className?: string; image?: boolean } = {}) {
-    setLogLevel("full");
     options.iconsLocation = "./data/icons";
 
-    const [a1, a2] = await Promise.all(
+    const [a1, a2]: ZipFS[] = await Promise.all(
         [`/projects/${name}.zip`, "/data/library.zip"].map((s) =>
             fetch(s)
                 .then((r) => r.blob())
-                .then(unzip)
+                .then(RealZipFS.create)
         )
     );
 
-    const prjFile = a1.files(/.+\.(prj|spj)$/i).next().value as VFSFile;
-    const prjInfo = await prjFile.readAs("prj");
+    const prjs = [...a1.files(/.+\.(prj|spj)$/i)];
+    const prj = await a1.arraybuffer(prjs[0]);
+    const prjInfo = readPrjFile(new BinaryReader(prj!));
+    const fs = a1.merge(a2);
 
-    const clsFiles = [...a1.merge(a2).files(/.+\.cls$/i)];
-    const pr = await Promise.all(clsFiles.map((f) => (f as VFSFile).readAs("cls")));
-    const classes = new ClassLibrary(pr);
+    const files = await fs.searchClsFiles([fs.path("C:")], true).then((c) => fs.arraybuffers(c));
+    const lib = new SimpleLibrary(files.map((c) => readClsFile(new BinaryReader(c!))));
 
     const target = className || prjInfo.rootClassName;
-    const vdr = image ? classes.get(target)?.image : classes.getComposedScheme(target);
+    const cl = lib.get(target);
+    const vdr = image ? cl && cl["image"]() : cl?.scheme();
     console.dir(vdr);
-    const wnd = new SceneWindow({ handle: 0, attribute: "", wname: "", vdr, host: new SimpleWs(document.getElementById("main_window_container")!) });
-    (function cb() {
-        wnd.redraw();
-        requestAnimationFrame(cb);
-    })();
+    const host = new SimpleWs(document.getElementById("main_window_container")!);
+    new SceneWindow({ handle: 1, wname: "test", attribs: {}, vdr }, host.window.bind(host));
 }
