@@ -58,6 +58,14 @@ export interface FileSystem {
 
 export interface PlayerOptions {}
 
+export interface ErrorHandler {
+    (err: string): void;
+}
+
+export interface ShellHandler {
+    (path: string, args: string, directory: string, flag: number): void;
+}
+
 /**
  * Проект.
  */
@@ -127,13 +135,23 @@ export interface Player {
     /**
      * Регистрирует обработчик события ошибки виртуальной машины.
      */
-    on(event: "error", handler: (err: string) => void): this;
+    on(event: "error", handler: ErrorHandler): this;
     /**
      * Разрегистрирует обработчик события ошибки виртуальной машины.
      * @param handler Если обработчик не указан, разрегистрируются все
      * обработчики данного события.
      */
-    off(event: "error", handler?: (err: string) => void): this;
+    off(event: "error", handler?: ErrorHandler): this;
+    /**
+     * Регистрирует обработчик события shell.
+     */
+    on(event: "shell", handler: ShellHandler): this;
+    /**
+     * Разрегистрирует обработчик события shell.
+     * @param handler Если обработчик не указан, разрегистрируются все
+     * обработчики данного события.
+     */
+    off(event: "shell", handler?: ShellHandler): this;
 }
 
 export interface PlayerDiag {

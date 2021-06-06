@@ -19,7 +19,7 @@ import { options } from "stratum/options";
 import { Project } from "stratum/project";
 import { EnviromentFunctions } from "stratum/project/enviromentFunctions";
 import { ProjectArgs } from "stratum/project/project";
-import { AddDirInfo, PathInfo, WindowHost } from "stratum/stratum";
+import { AddDirInfo, PathInfo, ShellHandler, WindowHost } from "stratum/stratum";
 import { EnvArray, EnvArraySortingAlgo } from "./envArray";
 import { EnvStream } from "./envStream";
 import { LazyLibrary } from "./lazyLibrary";
@@ -33,6 +33,10 @@ export interface ProjectResources extends ProjectArgs {
 interface LoadArgs<T> {
     lib: LazyLibrary<T>;
     id?: T;
+}
+
+export interface Handlers {
+    shell?: Set<ShellHandler>;
 }
 
 export class Enviroment implements EnviromentFunctions {
@@ -107,7 +111,7 @@ export class Enviroment implements EnviromentFunctions {
     private classes: LazyLibrary<number>;
     private host: WindowHost;
 
-    constructor(args: ProjectResources, host: WindowHost) {
+    constructor(args: ProjectResources, host: WindowHost, private handlers: Handlers = {}) {
         this.projects = [new Project(this, args)];
         this.classes = args.classes;
         this.host = host;
@@ -622,7 +626,7 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_shell(path: string, args: string, directory: string, flag: number): NumBool {
-        console.warn(`Вызов shell("${path}", "${args}", "${directory}", "${flag}")`);
+        this.handlers.shell?.forEach((c) => c(path, args, directory, flag));
         return 1;
     }
 
