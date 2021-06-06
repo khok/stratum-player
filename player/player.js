@@ -131,6 +131,11 @@
                 })
                 .on("closed", () => {
                     updateControls();
+                })
+                .on("shell", (path, args, directory, flag) => {
+                    if (path === "calc") {
+                        window.open("https://zxcodes.github.io/Calculator/", "popup", "width=300,height=500");
+                    }
                 });
 
             updateControls();
