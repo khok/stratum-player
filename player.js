@@ -90,8 +90,13 @@
                             srch = prompt("Не найдено файлов проектов. Введите путь/часть пути к файлу проекта:");
                         }
 
-                        const norm = fs.path(srch).parts.join("\\").toString().toUpperCase();
-                        path = projectFiles.find((f) => f.toString().toUpperCase().includes(norm));
+                        // Файл: "C:\Projects\main.prj"
+                        // Ищем (srch): "s/MaIn"
+                        const norm = fs
+                            .path(srch) //Нормализуем путь { vol:C, parts:[s, MaIn] }
+                            .parts.join("\\") // s\MaIn
+                            .toUpperCase(); // [S\MAIN]
+                        path = projectFiles.find((f) => f.toString().toUpperCase().includes(norm)); //Ищем 1 файл, который попадает под условие.
                     } else {
                         path = projectFiles[0];
                     }
@@ -126,6 +131,11 @@
                 })
                 .on("closed", () => {
                     updateControls();
+                })
+                .on("shell", (path, args, directory, flag) => {
+                    if (path === "calc") {
+                        window.open("https://zxcodes.github.io/Calculator/", "popup", "width=300,height=500");
+                    }
                 });
 
             updateControls();
