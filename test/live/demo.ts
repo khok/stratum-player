@@ -121,7 +121,12 @@ export async function runDemo(name: string, strat: "smooth" | "fast" = "smooth",
             playerPauseElem.addEventListener("click", handleClick);
             playerStepElem.addEventListener("click", handleClick);
 
-            project.on("closed", updateControls);
+            project.on("closed", updateControls).on("shell", (path, args, directory, flag) => {
+                if (path === "calc") {
+                    window.open("https://zxcodes.github.io/Calculator/", "popup", "width=300,height=500");
+                }
+            });
+
             updateControls();
             playerPlayElem.disabled = false;
             playerStepElem.disabled = false;
