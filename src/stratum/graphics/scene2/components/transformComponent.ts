@@ -1,18 +1,26 @@
-import { Entity } from "../entity";
 import { BoundingBoxComponent } from "./boundingBoxComponent";
 import { HierarchyComponent } from "./hierarchyComponent";
 import { MatrixComponent } from "./matrixComponent";
+
+export interface TransformComponentArgs {
+    hier: HierarchyComponent;
+    matrix: MatrixComponent;
+    bbox: BoundingBoxComponent;
+}
 
 export class TransformComponent {
     private hier: HierarchyComponent;
     private matrix: MatrixComponent;
     private bbox: BoundingBoxComponent;
-    constructor(readonly entity: Entity) {
-        this.matrix = entity.matrix();
-        this.hier = entity.hier();
-        this.bbox = entity.bbox();
+    constructor({ hier, matrix, bbox }: TransformComponentArgs) {
+        this.matrix = matrix;
+        this.hier = hier;
+        this.bbox = bbox;
     }
 
+    /**
+     * Позиция по X с учетом матриции преобразования.
+     */
     x(): number {
         const realX = this.bbox.minX();
         const realY = this.bbox.minY();
@@ -22,6 +30,9 @@ export class TransformComponent {
         return (realX * mat[0] + realY * mat[3] + mat[6]) / w;
     }
 
+    /**
+     * Позиция по Y с учетом матриции преобразования.
+     */
     y(): number {
         const realX = this.bbox.minX();
         const realY = this.bbox.minY();
@@ -31,6 +42,9 @@ export class TransformComponent {
         return (realX * mat[1] + realY * mat[4] + mat[7]) / w;
     }
 
+    /**
+     * Устанавливает новые координаты объекта с учетом матрицы преобразования.
+     */
     move(x: number, y: number): void {
         const mat = this.matrix.data();
         const w = x * mat[2] + y * mat[5] + mat[8];
@@ -38,9 +52,12 @@ export class TransformComponent {
         const realY = (x * mat[1] + y * mat[4] + mat[7]) / w;
 
         this.bbox.onTransformMoved(realX - this.bbox.minX(), realY - this.bbox.minY());
-        this.hier.onTransformChanged();
+        this.hier.parent()?.onChildrenChanged();
     }
 
+    /**
+     * Поворачивает объект вокруг точки на заданный угол с учетом матрицы преобразования.
+     */
     rotate(ox: number, oy: number, angle: number): void {
         if (angle === 0) return;
 
@@ -50,9 +67,12 @@ export class TransformComponent {
         const realY = (ox * mat[1] + oy * mat[4] + mat[7]) / w;
 
         this.bbox.onTransformRotated(realX, realY, angle);
-        this.hier.onTransformChanged();
+        this.hier.parent()?.onChildrenChanged();
     }
 
+    /**
+     * Устанавливает размеры объекта.
+     */
     scale(width: number, height: number): void {
         if (width < 0 || height < 0) return;
 
@@ -62,6 +82,6 @@ export class TransformComponent {
         if (w === 0 || h === 0) return;
 
         bbox.onTransformScaled(bbox.minX(), bbox.minY(), width / w, height / h);
-        this.hier.onTransformChanged();
+        this.hier.parent()?.onChildrenChanged();
     }
 }

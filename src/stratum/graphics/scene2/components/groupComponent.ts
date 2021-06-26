@@ -1,6 +1,9 @@
-import { Entity } from "../entity";
 import { BoundingBoxComponent } from "./boundingBoxComponent";
 import { HierarchyComponent } from "./hierarchyComponent";
+
+export interface GroupComponentArgs {
+    hier: HierarchyComponent;
+}
 
 export class GroupComponent implements BoundingBoxComponent {
     private _minX: number = 0;
@@ -8,9 +11,9 @@ export class GroupComponent implements BoundingBoxComponent {
     private _minY: number = 0;
     private _maxY: number = 0;
     private _children = new Set<BoundingBoxComponent>();
-    private hier: HierarchyComponent;
-    constructor(readonly entity: Entity) {
-        this.hier = this.entity.hier();
+    readonly hier: HierarchyComponent;
+    constructor() {
+        this.hier = new HierarchyComponent({ bbox: this });
     }
 
     children(): Set<BoundingBoxComponent> {
@@ -40,6 +43,9 @@ export class GroupComponent implements BoundingBoxComponent {
     }
     actualHeight(): number {
         return this._maxY - this._minY;
+    }
+    angle(): number {
+        return 0;
     }
     onTransformMoved(dx: number, dy: number): void {
         if (this._children.size === 0) return;
@@ -79,7 +85,7 @@ export class GroupComponent implements BoundingBoxComponent {
         });
     }
 
-    recalcBorders(): void {
+    onChildrenChanged(): void {
         if (this._children.size === 0) return;
         this._minX = Infinity;
         this._maxX = -Infinity;
@@ -91,6 +97,6 @@ export class GroupComponent implements BoundingBoxComponent {
             this._maxX = Math.max(this._maxX, c.maxX());
             this._maxY = Math.max(this._maxY, c.maxY());
         });
-        this.hier.onTransformChanged();
+        this.hier.parent()?.onChildrenChanged();
     }
 }

@@ -1,6 +1,10 @@
-import { Entity } from "../entity";
 import { BoundingBoxComponent } from "./boundingBoxComponent";
 import { MatrixComponent } from "./matrixComponent";
+
+export interface LineComponentArgs {
+    coords: number[];
+    matrix: MatrixComponent;
+}
 
 export class LineComponent implements BoundingBoxComponent {
     private _coords: number[];
@@ -12,8 +16,8 @@ export class LineComponent implements BoundingBoxComponent {
     private _shapeChanged: boolean = true;
     private matrix: MatrixComponent;
 
-    constructor(readonly entity: Entity, coords: number[]) {
-        this.matrix = entity.matrix();
+    constructor({ coords, matrix }: LineComponentArgs) {
+        this.matrix = matrix;
         if (coords.length < 2) throw Error("Линия не имеет точек");
 
         let minX = coords[0];
@@ -88,6 +92,10 @@ export class LineComponent implements BoundingBoxComponent {
 
     actualHeight(): number {
         return this._height;
+    }
+
+    angle(): number {
+        return 0;
     }
 
     /**

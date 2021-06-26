@@ -6,8 +6,9 @@ import { installContextFunctions } from "stratum/compiler";
 import { readPrjFile } from "stratum/fileFormats/prj";
 import { readSttFile, VariableSet } from "stratum/fileFormats/stt";
 import { Hyperbase, VectorDrawing, WindowStyle } from "stratum/fileFormats/vdr";
-import { Scene } from "stratum/graphics/scene";
-import { SceneWindow, WindowArgs, WindowRect } from "stratum/graphics/sceneWindow";
+import { Scene } from "stratum/graphics/scene2/env/scene";
+import { Wnd } from "stratum/graphics/scene2/env/wnd";
+import { WindowRect } from "stratum/graphics/sceneWindow";
 import { parseWindowAttribs, WindowAttribs } from "stratum/graphics/windowAttribs";
 import { BinaryReader } from "stratum/helpers/binaryReader";
 import { HandleMap } from "stratum/helpers/handleMap";
@@ -101,7 +102,7 @@ export class Enviroment implements EnviromentFunctions {
     private _isWaiting: boolean = false;
     private loading: Promise<void> | null = null;
 
-    private windows = new Map<string, SceneWindow<Project>>();
+    private windows = new Map<string, Wnd>();
     private scenes = new Map<number, Scene>();
     private streams = new Map<number, EnvStream>();
     private matrices = new Map<number, NeoMatrix>();
@@ -218,15 +219,16 @@ export class Enviroment implements EnviromentFunctions {
         arr3[day] = time.getDate();
     }
     getActualSize2d(hspace: number, hobject: number, xArr: MutableArrayLike<number>, xId: number, yArr: MutableArrayLike<number>, yId: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        if (typeof obj === "undefined") {
-            xArr[xId] = 0;
-            yArr[yId] = 0;
-            return 0;
-        }
-        xArr[xId] = obj.actualWidth();
-        yArr[yId] = obj.actualHeight();
+        const scene = this.scenes.get(hspace);
+        if (typeof scene === "undefined") return 0;
+
+        const { x, y } = scene.objectActualSize(hobject);
+        xArr[xId] = x;
+        yArr[yId] = y;
         return 1;
+    }
+    getObject(hspace: number, hobject: number) {
+        throw new Error("Method not implemented.");
     }
 
     getVarInfo(
@@ -275,14 +277,14 @@ export class Enviroment implements EnviromentFunctions {
 
     openSchemeWindow(prj: Project, wname: string, className: string, attrib: string): number {
         const wnd = this.windows.get(wname);
-        if (typeof wnd !== "undefined") return wnd.sceneHandle;
+        if (typeof wnd !== "undefined") return wnd.scene().handle();
 
         const vdr = this.classes.get(className)?.scheme();
         return this.openWindow(prj, wname, parseWindowAttribs(attrib), vdr);
     }
     loadSpaceWindow(prj: Project, wname: string, fileName: string, attrib: string): number | Promise<number> {
         const wnd = this.windows.get(wname);
-        if (typeof wnd !== "undefined") return wnd.sceneHandle;
+        if (typeof wnd !== "undefined") return wnd.scene().handle();
 
         const attribs = parseWindowAttribs(attrib);
         if (fileName === "") {
@@ -500,14 +502,7 @@ export class Enviroment implements EnviromentFunctions {
         return handle;
     }
 
-    private openSubwindow(
-        parent: SceneWindow<Project>,
-        prj: Project,
-        wname: string,
-        attribs: WindowAttribs,
-        rect: WindowRect,
-        vdr?: VectorDrawing | null
-    ): number {
+    private openSubwindow(parent: Wnd<Project>, prj: Project, wname: string, attribs: WindowAttribs, rect: WindowRect, vdr?: VectorDrawing | null): number {
         const handle = HandleMap.getFreeHandle(this.scenes);
         const wnd = parent.subwindow({
             handle,
@@ -536,8 +531,8 @@ export class Enviroment implements EnviromentFunctions {
         if (!wnd) return;
 
         this.windows.delete(wname);
-        this.scenes.delete(wnd.sceneHandle);
-        if (wnd.scene === this.targetScene) {
+        this.scenes.delete(wnd.scene().handle());
+        if (wnd.scene() === this.targetScene) {
             this.targetScene?.releaseCapture();
             this.targetScene = null;
         }
@@ -553,38 +548,38 @@ export class Enviroment implements EnviromentFunctions {
     //     }
     // }
 
-    private getObject(hspace: number, hobject: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.objects.get(hobject) : undefined;
-    }
-    private getTPen(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.pens.get(htool) : undefined;
-    }
-    private getTBrush(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.brushes.get(htool) : undefined;
-    }
-    private getTDIB(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.dibs.get(htool) : undefined;
-    }
-    private getTDDoubleDIB(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.doubleDibs.get(htool) : undefined;
-    }
-    private getTText(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.texts.get(htool) : undefined;
-    }
-    private getTString(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.strings.get(htool) : undefined;
-    }
-    private getTFont(hspace: number, htool: number) {
-        const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.fonts.get(htool) : undefined;
-    }
+    // private getObject(hspace: number, hobject: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.objects.get(hobject) : undefined;
+    // }
+    // private getTPen(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.pens.get(htool) : undefined;
+    // }
+    // private getTBrush(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.brushes.get(htool) : undefined;
+    // }
+    // private getTDIB(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.dibs.get(htool) : undefined;
+    // }
+    // private getTDDoubleDIB(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.doubleDibs.get(htool) : undefined;
+    // }
+    // private getTText(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.texts.get(htool) : undefined;
+    // }
+    // private getTString(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.strings.get(htool) : undefined;
+    // }
+    // private getTFont(hspace: number, htool: number) {
+    //     const scene = this.scenes.get(hspace);
+    //     return typeof scene !== "undefined" ? scene.fonts.get(htool) : undefined;
+    // }
 
     stratum_releaseCapture(): void {
         if (this.targetScene === null) return;
@@ -684,7 +679,7 @@ export class Enviroment implements EnviromentFunctions {
         // return 1;
     }
     stratum_stdHyperJump(hspace: number, x: number, y: number, hobject: number /*, flags: number*/): void {
-        this.scenes.get(hspace)?.tryHyper(x, y, hobject);
+        this.scenes.get(hspace)?.simulateHyperClick(x, y, hobject);
     }
 
     // Параметры экрана
@@ -766,7 +761,7 @@ export class Enviroment implements EnviromentFunctions {
     }
     stratum_getWindowSpace(wname: string): number {
         const wnd = this.windows.get(wname);
-        return typeof wnd !== "undefined" ? wnd.sceneHandle : 0;
+        return typeof wnd !== "undefined" ? wnd.scene().handle() : 0;
     }
     stratum_getWindowWidth(wname: string): number {
         const wnd = this.windows.get(wname);
@@ -807,7 +802,7 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_getWindowProp(wname: string, prop: string): string {
-        const src = this.windows.get(wname)?.source;
+        const src = this.windows.get(wname)?.source();
         if (!src) return "";
 
         const propUC = prop.toUpperCase();
@@ -833,13 +828,13 @@ export class Enviroment implements EnviromentFunctions {
     stratum_setWindowTransparent(wname: string, level: number): NumBool;
     stratum_setWindowTransparent(hspace: number, level: number): NumBool;
     stratum_setWindowTransparent(wnameOrHspace: number | string, level: number): NumBool {
-        const wnd = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace)?.wnd : this.windows.get(wnameOrHspace);
+        const wnd = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace)?.wnd() : this.windows.get(wnameOrHspace);
         return wnd?.setTransparent(level) ?? 0;
     }
     stratum_setWindowTransparentColor(wname: string, cref: number): NumBool;
     stratum_setWindowTransparentColor(hspace: number, cref: number): NumBool;
     stratum_setWindowTransparentColor(wnameOrHspace: number | string, cref: number): NumBool {
-        const wnd = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace)?.wnd : this.windows.get(wnameOrHspace);
+        const wnd = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace)?.wnd() : this.windows.get(wnameOrHspace);
         return wnd?.setTransparentColor(cref) ?? 0;
     }
     private setWindowOwnerwarnShowed = false;
@@ -859,17 +854,19 @@ export class Enviroment implements EnviromentFunctions {
         const scene = this.scenes.get(hspace);
         if (!scene) return 0;
 
-        const url = scene.toDataURL(x, y, width, height);
-        if (!url) return 0;
-
-        const element = document.createElement("a");
-        element.setAttribute("href", url);
-        element.setAttribute("download", filename);
-        element.style.display = "none";
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
         return 1;
+
+        // const url = scene.toDataURL(x, y, width, height);
+        // if (!url) return 0;
+
+        // const element = document.createElement("a");
+        // element.setAttribute("href", url);
+        // element.setAttribute("download", filename);
+        // element.style.display = "none";
+        // document.body.appendChild(element);
+        // element.click();
+        // document.body.removeChild(element);
+        // return 1;
     }
     stratum_getSpaceOrg2dx(hspace: number): number {
         const scene = this.scenes.get(hspace);
@@ -917,52 +914,12 @@ export class Enviroment implements EnviromentFunctions {
     //
     stratum_getToolRef2d(hspace: number, type: number, toolHandle: number): number {
         const scene = this.scenes.get(hspace);
-        if (!scene) return 0;
-
-        switch (type) {
-            case Constant.PEN2D:
-                return this.getTPen(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.BRUSH2D:
-                return this.getTBrush(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.DIB2D:
-                return this.getTDIB(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.DOUBLEDIB2D:
-                return this.getTDDoubleDIB(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.TEXT2D:
-                return this.getTText(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.STRING2D:
-                return this.getTString(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.FONT2D:
-                return this.getTFont(hspace, toolHandle)?.subCount() ?? 0;
-            case Constant.SPACE3D:
-                throw Error("Не реализовано");
-        }
-        return 0;
+        return typeof scene !== "undefined" ? scene.toolRefCount(type, toolHandle) : 0;
     }
 
     stratum_deleteTool2d(hspace: number, type: number, toolHandle: number): number {
         const scene = this.scenes.get(hspace);
-        if (!scene) return 0;
-
-        switch (type) {
-            case Constant.PEN2D:
-                return scene.pens.delete(toolHandle) ? 1 : 0;
-            case Constant.BRUSH2D:
-                return scene.brushes.delete(toolHandle) ? 1 : 0;
-            case Constant.DIB2D:
-                return scene.dibs.delete(toolHandle) ? 1 : 0;
-            case Constant.DOUBLEDIB2D:
-                return scene.doubleDibs.delete(toolHandle) ? 1 : 0;
-            case Constant.TEXT2D:
-                return scene.texts.delete(toolHandle) ? 1 : 0;
-            case Constant.STRING2D:
-                return scene.strings.delete(toolHandle) ? 1 : 0;
-            case Constant.FONT2D:
-                return scene.fonts.delete(toolHandle) ? 1 : 0;
-            case Constant.SPACE3D:
-                throw Error("Не реализовано");
-        }
-        return 0;
+        return typeof scene !== "undefined" ? scene.deleteTool(type, toolHandle) : 0;
     }
 
     // Инструмент Карандаш
@@ -973,37 +930,37 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_getPenColor2d(hspace: number, hpen: number): number {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.color() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.penColor(hpen) : 0;
     }
     stratum_getPenRop2d(hspace: number, hpen: number): number {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.rop() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.penRop(hpen) : 0;
     }
     stratum_getPenStyle2d(hspace: number, hpen: number): number {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.style() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.penStyle(hpen) : 0;
     }
     stratum_getPenWidth2d(hspace: number, hpen: number): number {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.width() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.penWidth(hpen) : 0;
     }
 
     stratum_setPenColor2d(hspace: number, hpen: number, color: number): NumBool {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.setColor(color) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setPenColor(hpen, color) : 0;
     }
     stratum_setPenRop2d(hspace: number, hpen: number, rop: number): NumBool {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.setRop(rop) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setPenRop(hpen, rop) : 0;
     }
     stratum_setPenStyle2d(hspace: number, hpen: number, style: number): NumBool {
-        const o = this.getTPen(hspace, hpen);
-        return typeof o !== "undefined" ? o.setStyle(style) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setPenStyle(hpen, style) : 0;
     }
     stratum_setPenWidth2d(hspace: number, hpen: number, width: number): NumBool {
-        const p = this.getTPen(hspace, hpen);
-        return typeof p !== "undefined" ? p.setWidth(width) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setPenWidth(hpen, width) : 0;
     }
 
     // Инструмент Кисть
@@ -1014,45 +971,48 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_getBrushColor2d(hspace: number, hbrush: number): number {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.color() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.brushColor(hbrush) : 0;
+    }
+    getTBrush(hspace: number, hbrush: number) {
+        throw new Error("Method not implemented.");
     }
     stratum_getBrushRop2d(hspace: number, hbrush: number): number {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.rop() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.brushRop(hbrush) : 0;
     }
     stratum_getBrushStyle2d(hspace: number, hbrush: number): number {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.style() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.brushStyle(hbrush) : 0;
     }
     stratum_getBrushHatch2d(hspace: number, hbrush: number): number {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.hatch() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.brushHatch(hbrush) : 0;
     }
     stratum_getBrushDib2d(hspace: number, hbrush: number): number {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.dibHandle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.brushDibHandle(hbrush) : 0;
     }
 
     stratum_setBrushColor2d(hspace: number, hbrush: number, color: number): NumBool {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.setColor(color) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setBrushColor(hbrush, color) : 0;
     }
     stratum_setBrushRop2d(hspace: number, hbrush: number, rop: number): NumBool {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.setRop(rop) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setBrushRop(hbrush, rop) : 0;
     }
     stratum_setBrushStyle2d(hspace: number, hbrush: number, style: number): NumBool {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.setStyle(style) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setBrushStyle(hbrush, style) : 0;
     }
     stratum_setBrushHatch2d(hspace: number, hbrush: number, hatch: number): NumBool {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.setHatch(hatch) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setBrushHatch(hbrush, hatch) : 0;
     }
     stratum_setBrushDib2d(hspace: number, hbrush: number, hdib: number): NumBool {
-        const b = this.getTBrush(hspace, hbrush);
-        return typeof b !== "undefined" ? b.setDIB(hdib) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setBrushDIB(hbrush, hdib) : 0;
     }
 
     // Инструмент Шрифт
@@ -1068,30 +1028,30 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_getFontName2d(hspace: number, hfont: number): string {
-        const f = this.getTFont(hspace, hfont);
-        return typeof f !== "undefined" ? f.name() : "";
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.fontName(hfont) : "";
     }
     stratum_getFontSize2d(hspace: number, hfont: number): number {
-        const f = this.getTFont(hspace, hfont);
         // FIXME: возвращает 0 в некоторых случаях.
-        return typeof f !== "undefined" ? f.size() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.fontSize(hfont) : 0;
     }
     stratum_getFontStyle2d(hspace: number, hfont: number): number {
-        const f = this.getTFont(hspace, hfont);
-        return typeof f !== "undefined" ? f.style() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.fontStyle(hfont) : 0;
     }
 
     stratum_setFontName2d(hspace: number, hfont: number, fontName: string): NumBool {
-        const f = this.getTFont(hspace, hfont);
-        return typeof f !== "undefined" ? f.setName(fontName) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setFontName(hfont, fontName) : 0;
     }
     stratum_setFontSize2d(hspace: number, hfont: number, size: number): NumBool {
-        const f = this.getTFont(hspace, hfont);
-        return typeof f !== "undefined" ? f.setSize(size) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setFontSize(hfont, size) : 0;
     }
     stratum_setFontStyle2d(hspace: number, hfont: number, flags: number): NumBool {
-        const f = this.getTFont(hspace, hfont);
-        return typeof f !== "undefined" ? f.setStyle(flags) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setFontStyle(hfont, flags) : 0;
     }
 
     // Инструмент Строка
@@ -1101,12 +1061,12 @@ export class Enviroment implements EnviromentFunctions {
         return typeof scene !== "undefined" ? scene.createStringTool(value) : 0;
     }
     stratum_getstring2d(hspace: number, hstring: number): string {
-        const s = this.getTString(hspace, hstring);
-        return typeof s !== "undefined" ? s.text() : "";
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.stringText(hstring) : "";
     }
     stratum_setString2d(hspace: number, hstring: number, value: string): NumBool {
-        const s = this.getTString(hspace, hstring);
-        return typeof s !== "undefined" ? s.setText(value) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setStringText(hstring, value) : 0;
     }
 
     // Инструмент Текст
@@ -1120,74 +1080,71 @@ export class Enviroment implements EnviromentFunctions {
         return typeof scene !== "undefined" ? scene.createText(x, y, angle, htext) : 0;
     }
 
-    stratum_getTextObject2d(hspace: number, hojbect: number): number {
-        const obj = this.getObject(hspace, hojbect);
-        return typeof obj !== "undefined" ? obj.textToolHandle() : 0;
+    stratum_getTextObject2d(hspace: number, hobject: number): number {
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectTextToolHandle(hobject) : 0;
     }
     stratum_getTextCount2d(hspace: number, htext: number): number {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.textCount() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.textToolTextCount(htext) : 0;
     }
 
     stratum_getTextFont2d(hspace: number, htext: number, index: number = 0): number {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.fontHandle(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.textToolFontHandle(htext, index) : 0;
     }
     stratum_getTextString2d(hspace: number, htext: number, index: number = 0): number {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.stringHandle(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.textToolStringHandle(htext, index) : 0;
     }
     stratum_getTextFgColor2d(hspace: number, htext: number, index: number = 0): number {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.fgColor(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.textToolFgColor(htext, index) : 0;
     }
     stratum_getTextBkColor2d(hspace: number, htext: number, index: number = 0): number {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.bgColor(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.textToolBgColor(htext, index) : 0;
     }
 
     stratum_setText2D(hspace: number, htext: number, /*          */ hfont: number, hstring: number, fgColor: number, bgColor: number): NumBool;
     stratum_setText2D(hspace: number, htext: number, index: number, hfont: number, hstring: number, fgColor: number, bgColor: number): NumBool;
     stratum_setText2D(hspace: number, htext: number, a1: number, a2: number, a3: number, a4: number, a5?: number): NumBool {
-        const t = this.getTText(hspace, htext);
-        if (typeof t === "undefined") return 0;
-
         const index = typeof a5 !== "undefined" ? a1 : 0;
         const hfont = typeof a5 !== "undefined" ? a2 : a1;
         const hstring = typeof a5 !== "undefined" ? a3 : a2;
         const fgColor = typeof a5 !== "undefined" ? a4 : a3;
         const bgColor = typeof a5 !== "undefined" ? a5 : a4;
 
-        return t.setValues(index, hfont, hstring, fgColor, bgColor);
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setTextToolValues(htext, index, hfont, hstring, fgColor, bgColor) : 0;
     }
 
     stratum_setTextFgColor2d(hspace: number, htext: number, index: number, fgColor: number): NumBool {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.setFgColor(index, fgColor) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setTextToolFgColor(htext, index, fgColor) : 0;
     }
     stratum_setTextBkColor2d(hspace: number, htext: number, index: number, bgColor: number): NumBool {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.setBgColor(index, bgColor) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setTextToolBgColor(htext, index, bgColor) : 0;
     }
     stratum_setTextFont2d(hspace: number, htext: number, index: number, hfont: number): NumBool {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.setFont(index, hfont) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setTextToolFont(htext, index, hfont) : 0;
     }
     stratum_setTextString2d(hspace: number, htext: number, index: number, hstring: number): NumBool {
-        const t = this.getTText(hspace, htext);
-        return typeof t !== "undefined" ? t.setString(index, hstring) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setTextToolString(htext, index, hstring) : 0;
     }
 
     // Инструмент Битовая карта
     //
-
     stratum_getDibPixel2D(hspace: number, hdib: number, x: number, y: number): number {
-        const d = this.getTDIB(hspace, hdib);
-        return typeof d !== "undefined" ? d.getPixel(x, y) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.dibPixel2d(hdib, x, y) : 0;
     }
     stratum_setDibPixel2D(hspace: number, hdib: number, x: number, y: number, colorref: number): number {
-        const d = this.getTDIB(hspace, hdib);
-        return typeof d !== "undefined" ? d.setPixel(x, y, colorref) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setDibPixel2d(hdib, x, y, colorref) : 0;
     }
 
     // Двойная битовая карта
@@ -1205,17 +1162,17 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_setBitmapSrcRect2d(hspace: number, hobject: number, x: number, y: number, width: number, height: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.setBitmapRect(x, y, width, height) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setBmpRect(hobject, x, y, width, height) : 0;
     }
 
     stratum_getDibObject2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.dibHandle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.bmpDibHandle(hobject) : 0;
     }
     stratum_getDDibObject2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.doubleDIBHandle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.bmpDoubleDIBHandle(hobject) : 0;
     }
 
     stratum_rgbEx(r: number, g: number, b: number, type: number): number {
@@ -1268,68 +1225,68 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_getObjectType2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.type : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectType(hobject) : 0;
     }
     stratum_setObjectOrg2d(hspace: number, hobject: number, x: number, y: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.setOrigin(x, y) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setObjectXY(hobject, x, y) : 0;
     }
     stratum_getObjectOrg2dx(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.originX() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectX(hobject) : 0;
     }
     stratum_getObjectOrg2dy(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.originY() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectY(hobject) : 0;
     }
 
     stratum_setObjectSize2d(hspace: number, hobject: number, sizeX: number, sizeY: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.setSize(sizeX, sizeY) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setObjectSize(hobject, sizeX, sizeY) : 0;
     }
     stratum_getObjectWidth2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.width() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectWidth(hobject) : 0;
     }
     stratum_getObjectHeight2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.height() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectHeight(hobject) : 0;
     }
     stratum_getActualHeight2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.actualHeight() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectActualHeight(hobject) : 0;
     }
     stratum_getActualWidth2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.actualWidth() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectActualWidth(hobject) : 0;
     }
 
     stratum_getObjectAngle2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.angle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectAngle(hobject) : 0;
     }
     stratum_rotateObject2d(hspace: number, hobject: number, centerX: number, centerY: number, angle: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.rotate(centerX, centerY, angle) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.rotateObject(hobject, centerX, centerY, angle) : 0;
     }
 
     stratum_setShowObject2d(hspace: number, hobject: number, visible: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.setVisibility(visible !== 0) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setObjectVisibility(hobject, visible !== 0) : 0;
     }
     stratum_showObject2d(hspace: number, hobject: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.setVisibility(true) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setObjectVisibility(hobject, true) : 0;
     }
     stratum_hideObject2d(hspace: number, hobject: number): NumBool {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.setVisibility(false) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setObjectVisibility(hobject, false) : 0;
     }
 
     stratum_getObjectFromPoint2d(hspace: number, x: number, y: number): number {
         const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.getObjectFromPoint2d(x, y, true) : 0;
+        return typeof scene !== "undefined" ? scene.getObjectFromPoint2d(x, y) : 0;
     }
     stratum_getLastPrimary2d(): number {
         return Scene.lastPrimary();
@@ -1373,9 +1330,9 @@ export class Enviroment implements EnviromentFunctions {
         const scene = this.scenes.get(hspace);
         return typeof scene !== "undefined" ? scene.setObjectZOrder(hobject, zOrder) : 0;
     }
-    stratum_swapObject2d(hspace: number, hojb1: number, hojb2: number): NumBool {
+    stratum_swapObject2d(hspace: number, hobj1: number, hobj2: number): NumBool {
         const scene = this.scenes.get(hspace);
-        return typeof scene !== "undefined" ? scene.swapObjects(hojb1, hojb2) : 0;
+        return typeof scene !== "undefined" ? scene.swapObjects(hobj1, hobj2) : 0;
     }
 
     // Функции для работы с полилиниями
@@ -1389,38 +1346,38 @@ export class Enviroment implements EnviromentFunctions {
         return typeof scene !== "undefined" ? scene.createLine([x, y], hpen, hbrush) : 0;
     }
     stratum_addPoint2d(hspace: number, hline: number, index: number, x: number, y: number): NumBool {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.addPoint(index, x, y) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.addLinePoint(hline, index, x, y) : 0;
     }
     stratum_delpoint2d(hspace: number, hline: number, index: number): NumBool {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.deletePoint(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.deleteLinePoint(hline) : 0;
     }
     stratum_getPenObject2d(hspace: number, hline: number): number {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.penHandle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.linePenHandle(hline) : 0;
     }
     stratum_getBrushObject2d(hspace: number, hline: number): number {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.brushHandle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.lineBrushHandle(hline) : 0;
     }
     stratum_getVectorNumPoints2d(hspace: number, hline: number): number {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.pointCount() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.linePointCount(hline) : 0;
     }
     stratum_getVectorPoint2dx(hspace: number, hline: number, index: number): number {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.pointOriginX(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.linePointOriginX(hline, index) : 0;
     }
     stratum_getVectorPoint2dy(hspace: number, hline: number, index: number): number {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.pointOriginY(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.linePointOriginY(hline, index) : 0;
     }
     // stratum_setBrushObject2d(hspace : number, hline : number, hbrush : number) : NumBool {}
     // stratum_setPenObject2d(hspace : number, hline : number, hpen : number) : NumBool {}
     stratum_setVectorPoint2d(hspace: number, hline: number, index: number, x: number, y: number): NumBool {
-        const obj = this.getObject(hspace, hline);
-        return typeof obj !== "undefined" ? obj.setPointOrigin(index, x, y) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setLinePointOrigin(hline, index, x, y) : 0;
     }
 
     // Функции для работы с группами
@@ -1434,21 +1391,21 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_addGroupItem2d(hspace: number, hgroup: number, hobject: number): NumBool {
-        const obj = this.getObject(hspace, hgroup);
-        return typeof obj !== "undefined" ? obj.addItem(hobject) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.addItemToGroup(hgroup, hobject) : 0;
     }
     stratum_delGroupItem2d(hspace: number, hgroup: number, hobject: number): NumBool {
-        const obj = this.getObject(hspace, hgroup);
-        return typeof obj !== "undefined" ? obj.deleteItem(hobject) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.deleteGroupItem(hgroup, hobject) : 0;
     }
 
     stratum_getGroupItemsNum2d(hspace: number, hgroup: number): number {
-        const obj = this.getObject(hspace, hgroup);
-        return typeof obj !== "undefined" ? obj.itemCount() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.groupItemCount(hgroup) : 0;
     }
     stratum_getGroupItem2d(hspace: number, hgroup: number, index: number): number {
-        const obj = this.getObject(hspace, hgroup);
-        return typeof obj !== "undefined" ? obj.itemHandle(index) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.groupItemHandle(hgroup, index) : 0;
     }
     // stratum_setGroupItem2d(hspace: number, hgroup: number, index: number, hobject : number): NumBool {
     //     const obj = this.getObject(hspace, hgroup);
@@ -1459,8 +1416,8 @@ export class Enviroment implements EnviromentFunctions {
     //     return typeof obj !== "undefined" ? obj.itemHandle(index) : 0;
     // }
     stratum_getObjectParent2d(hspace: number, hobject: number): number {
-        const obj = this.getObject(hspace, hobject);
-        return typeof obj !== "undefined" ? obj.parentHandle() : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.objectParentHandle(hobject) : 0;
     }
     // FLOAT IsGroupContainObject2d(HANDLE HSpace, HANDLE HGroup, HANDLE HObject)
 
@@ -1478,19 +1435,20 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_setControlFont2d(hspace: number, hobject: number, hfont: number): NumBool {
-        return this.getObject(hspace, hobject)?.setControlFont(hfont) ?? 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setControlFont(hobject, hfont) : 0;
     }
 
     stratum_getControlText2d(hspace: number, hcontrol: number, begin?: number, length?: number): string {
-        const obj = this.getObject(hspace, hcontrol);
-        if (typeof obj === "undefined") return "";
-
-        if (typeof begin === "undefined" || typeof length === "undefined") return obj.controlText();
-        return obj.controlText().slice(begin, begin + length);
+        const scene = this.scenes.get(hspace);
+        if (typeof scene === "undefined") return "";
+        const text = scene.controlText(hcontrol);
+        if (typeof begin === "undefined" || typeof length === "undefined") return text;
+        return text.slice(begin, begin + length);
     }
     stratum_setControlText2d(hspace: number, hcontrol: number, text: string): NumBool {
-        const obj = this.getObject(hspace, hcontrol);
-        return typeof obj !== "undefined" ? obj.setControlText(text) : 0;
+        const scene = this.scenes.get(hspace);
+        return typeof scene !== "undefined" ? scene.setControlText(hcontrol, text) : 0;
     }
     //#endregion
 

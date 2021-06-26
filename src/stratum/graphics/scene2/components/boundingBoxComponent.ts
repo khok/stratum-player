@@ -32,6 +32,11 @@ export interface BoundingBoxComponent {
      */
     actualHeight(): number;
 
+    /**
+     * Угол поворота объекта.
+     */
+    angle(): number;
+
     onTransformMoved(dx: number, dy: number): void;
     onTransformScaled(ox: number, oy: number, dx: number, dy: number): void;
     onTransformRotated(ox: number, oy: number, angle: number): void;

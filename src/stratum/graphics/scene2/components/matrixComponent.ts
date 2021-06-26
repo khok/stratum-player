@@ -19,10 +19,14 @@ export class MatrixComponent {
     }
     private _data: number[];
     private _inv: number[];
-    constructor(data: number[]) {
-        if (data.length !== 9) throw Error("Матрица должна иметь 9 элементов");
-        this._data = data;
-        this._inv = MatrixComponent.getInversedMatrix(data);
+    constructor(data?: number[]) {
+        if (data) {
+            if (data.length !== 9) throw Error("Матрица должна иметь 9 элементов");
+            this._data = data;
+            this._inv = MatrixComponent.getInversedMatrix(data);
+        } else {
+            this._data = this._inv = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+        }
     }
 
     data(): readonly number[] {

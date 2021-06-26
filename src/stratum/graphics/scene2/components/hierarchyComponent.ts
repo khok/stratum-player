@@ -1,26 +1,30 @@
-import { Entity } from "../entity";
+import { BoundingBoxComponent } from "./boundingBoxComponent";
 import { GroupComponent } from "./groupComponent";
+
+export interface HierarchyComponentArgs {
+    bbox: BoundingBoxComponent;
+}
 
 export class HierarchyComponent {
     private _parent: GroupComponent | null = null;
-    constructor(readonly entity: Entity) {}
+    private bbox: BoundingBoxComponent;
+    constructor({ bbox }: HierarchyComponentArgs) {
+        this.bbox = bbox;
+    }
+
+    parent(): GroupComponent | null {
+        return this._parent;
+    }
 
     setParent(parent: GroupComponent | null): void {
         if (this._parent === parent) return;
 
-        const bbox = this.entity.bbox();
         if (this._parent) {
-            this._parent.children().delete(bbox);
-            this._parent.recalcBorders();
+            this._parent.children().delete(this.bbox);
         }
         this._parent = parent;
         if (parent) {
-            parent.children().add(bbox);
-            parent.recalcBorders();
+            parent.children().add(this.bbox);
         }
-    }
-
-    onTransformChanged(): void {
-        this._parent?.recalcBorders();
     }
 }
