@@ -612,10 +612,10 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
     }
 
     topObjectHandle(): number {
-        return this.primaryObjects.length > 0 ? this.primaryObjects[0].handle : 0;
+        return this.primaryObjects.length > 0 ? this.primaryObjects[this.primaryObjects.length - 1].handle : 0;
     }
     bottomObjectHandle(): number {
-        return this.primaryObjects.length > 0 ? this.primaryObjects[this.primaryObjects.length - 1].handle : 0;
+        return this.primaryObjects.length > 0 ? this.primaryObjects[0].handle : 0;
     }
     objectFromZOrder(zOrder: number): number {
         const realZ = zOrder - 1;
