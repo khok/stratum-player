@@ -459,6 +459,22 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         }
     }
 
+    private pointOnLine(ox: number, oy: number, pw: number): boolean {
+        for (let i = 0; i < this.coords.length - 2; i += 2) {
+            const x1 = this.coords[i];
+            const y1 = this.coords[i + 1];
+            const x2 = this.coords[i + 2];
+            const y2 = this.coords[i + 3];
+            const len = Math.hypot(x2 - x1, y2 - y1);
+            const d1 = Math.hypot(ox - x1, oy - y1);
+            const d2 = Math.hypot(ox - x2, oy - y2);
+
+            const diff = d1 + d2 - len;
+            if (diff <= pw) return true;
+        }
+        return false;
+    }
+
     tryClick(x: number, y: number, layers: number): this | SceneGroup | undefined {
         if (!this._visible || (this._layer & layers) !== 0 || this._selectable === 0) return undefined;
 
@@ -467,7 +483,9 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         const oy = y - this._originY;
         if (ox < -pw || oy < -pw || ox > this._width + pw || oy > this._height + pw) return undefined;
 
-        if (this.ctx2.getImageData(ox, oy, 1, 1).data[3] === 0) return undefined;
+        if (!this.brush) {
+            if (!this.pointOnLine(ox, oy, pw)) return undefined;
+        } else if (this.ctx2.getImageData(ox, oy, 1, 1).data[3] === 0) return undefined;
 
         return this._parent ? this._parent.root() : this;
     }
