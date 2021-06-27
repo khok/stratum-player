@@ -420,6 +420,7 @@ export class SceneLine implements SceneVisualMember, ToolSubscriber {
         }
         if (pen) {
             ctx.lineWidth = penWidth;
+            ctx.lineCap = "round";
             ctx.strokeStyle = pen;
             ctx.stroke();
         }
