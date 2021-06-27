@@ -136,6 +136,12 @@
                     if (path === "calc") {
                         window.open("https://zxcodes.github.io/Calculator/", "popup", "width=300,height=500");
                     }
+                })
+                .on("cursorRequest", (path) => {
+                    if (path.endsWith("a.cur")) return "default";
+                    if (path.endsWith("b.cur")) return "grab";
+                    if (path.endsWith("c.cur")) return "grabbing";
+                    return "";
                 });
 
             updateControls();
