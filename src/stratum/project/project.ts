@@ -173,6 +173,10 @@ export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFu
         return this.env.createDoubleDib2D(this.dir, hspace, fileName);
     }
 
+    stratum_loadCursor(wnameOrHspace: string | number, filename: string): void {
+        this.env.loadCursor(this.dir, wnameOrHspace, filename);
+    }
+
     stratum_async_createObjectFromFile2D(hspace: number, fileName: string, x: number, y: number, flags: number): number | Promise<number> {
         return this.env.createObjectFromFile2D(this.dir, hspace, fileName, x, y, flags);
     }

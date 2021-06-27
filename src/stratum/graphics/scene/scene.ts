@@ -932,7 +932,12 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         }
     }
 
+    setCursor(cursor: string): void {
+        this.ctx.canvas.style.cursor = cursor;
+    }
+
     private blocked = false;
+    private overHyp = false;
     handleEvent(evt: PointerEvent): void {
         if (evt.type === "selectstart") {
             evt.preventDefault();
@@ -961,7 +966,13 @@ export class Scene implements ToolStorage, ToolSubscriber, EventListenerObject {
         const curObj = this.getObjectInRealCoords(x, y);
         const objHandle = curObj?.handle ?? 0;
         const hyp = curObj?.hyperbase;
-        this.ctx.canvas.style.cursor = hyp ? "pointer" : "default";
+        if (hyp) {
+            this.setCursor("pointer");
+            this.overHyp = true;
+        } else if (this.overHyp) {
+            this.setCursor("default");
+            this.overHyp = false;
+        }
 
         switch (evt.type) {
             // https://developer.mozilla.org/ru/docs/Web/API/MouseEvent/button

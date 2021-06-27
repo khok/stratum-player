@@ -1,7 +1,7 @@
 import { ExecutorCallback, FastestExecutor, SmoothExecutor } from "stratum/common/computers";
 import { Enviroment } from "stratum/enviroment";
-import { ProjectResources } from "stratum/enviroment/enviroment";
-import { AddDirInfo, ErrorHandler, PathInfo, Player, PlayerOptions, ShellHandler, WindowHost } from "stratum/stratum";
+import { EnviromentHandlers, ProjectResources } from "stratum/enviroment/enviroment";
+import { AddDirInfo, PathInfo, Player, PlayerOptions, WindowHost } from "stratum/stratum";
 import { SimpleWs } from "./ws";
 
 export class RealPlayer implements Player {
@@ -18,7 +18,7 @@ export class RealPlayer implements Player {
     private _state: Player["state"] = "closed";
     private readonly _diag = { iterations: 0, missingCommands: [] };
     private computer: SmoothExecutor | FastestExecutor = new SmoothExecutor();
-    private readonly handlers = { closed: new Set<() => void>(), error: new Set<ErrorHandler>(), shell: new Set<ShellHandler>() };
+    private readonly handlers: EnviromentHandlers = { closed: new Set(), error: new Set(), shell: new Set(), cursorRequest: null };
 
     private loop: ExecutorCallback | null;
 
@@ -140,11 +140,19 @@ export class RealPlayer implements Player {
         return this;
     }
 
-    on(event: "closed" | "error" | "shell", handler: any): this {
+    on(event: "closed" | "error" | "shell" | "cursorRequest", handler: any): this {
+        if (event === "cursorRequest") {
+            this.handlers.cursorRequest = handler;
+            return this;
+        }
         this.handlers[event].add(handler);
         return this;
     }
-    off(event: "closed" | "error" | "shell", handler?: any): this {
+    off(event: "closed" | "error" | "shell" | "cursorRequest", handler?: any): this {
+        if (event === "cursorRequest") {
+            this.handlers.cursorRequest = null;
+            return this;
+        }
         if (handler) this.handlers[event].delete(handler);
         else this.handlers[event].clear();
         return this;

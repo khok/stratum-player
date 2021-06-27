@@ -66,6 +66,10 @@ export interface ShellHandler {
     (path: string, args: string, directory: string, flag: number): void;
 }
 
+export interface CursorRequestHandler {
+    (path: string): string;
+}
+
 /**
  * Проект.
  */
@@ -124,7 +128,7 @@ export interface Player {
      * Регистрирует обработчик события закрытия проекта
      * (вызов функции CloseAll).
      */
-    on(event: "closed", handler: () => void): this;
+    on(event: "closed", handler: Function): this;
     /**
      * Разрегистрирует обработчик события закрытия проекта
      * (вызов функции CloseAll).
@@ -152,6 +156,14 @@ export interface Player {
      * обработчики данного события.
      */
     off(event: "shell", handler?: ShellHandler): this;
+    /**
+     * Регистрирует резовер типа курсора.
+     */
+    on(event: "cursorRequest", handler: CursorRequestHandler): this;
+    /**
+     * Регистрирует резовер типа курсора.
+     */
+    off(event: "cursorRequest"): this;
 }
 
 export interface PlayerDiag {

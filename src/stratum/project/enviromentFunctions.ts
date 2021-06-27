@@ -50,6 +50,7 @@ export interface EnviromentFunctions extends EnviromentContextFunctions {
     ): number | Promise<number>;
     createDIB2d(dir: PathInfo, hspace: number, fileName: string): number | Promise<number>;
     createDoubleDib2D(dir: PathInfo, hspace: number, fileName: string): number | Promise<number>;
+    loadCursor(dir: PathInfo, wnameOrHspace: string | number, filename: string): void;
     createObjectFromFile2D(dir: PathInfo, hspace: number, fileName: string, x: number, y: number, flags: number): number | Promise<number>;
     createStream(dir: PathInfo, type: string, name: string, flags: string): number | Promise<number>;
     mSaveAs(dir: PathInfo, q: number, fileName: string, flag: number): NumBool | Promise<NumBool>;

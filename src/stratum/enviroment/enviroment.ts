@@ -19,7 +19,7 @@ import { options } from "stratum/options";
 import { Project } from "stratum/project";
 import { EnviromentFunctions } from "stratum/project/enviromentFunctions";
 import { ProjectArgs } from "stratum/project/project";
-import { AddDirInfo, PathInfo, ShellHandler, WindowHost } from "stratum/stratum";
+import { AddDirInfo, CursorRequestHandler, ErrorHandler, PathInfo, ShellHandler, WindowHost } from "stratum/stratum";
 import { EnvArray, EnvArraySortingAlgo } from "./envArray";
 import { EnvStream } from "./envStream";
 import { LazyLibrary } from "./lazyLibrary";
@@ -35,8 +35,11 @@ interface LoadArgs<T> {
     id?: T;
 }
 
-export interface Handlers {
-    shell?: Set<ShellHandler>;
+export interface EnviromentHandlers {
+    closed: Set<Function>;
+    error: Set<ErrorHandler>;
+    shell: Set<ShellHandler>;
+    cursorRequest: CursorRequestHandler | null;
 }
 
 export class Enviroment implements EnviromentFunctions {
@@ -111,7 +114,7 @@ export class Enviroment implements EnviromentFunctions {
     private classes: LazyLibrary<number>;
     private host: WindowHost;
 
-    constructor(args: ProjectResources, host: WindowHost, private handlers: Handlers = {}) {
+    constructor(args: ProjectResources, host: WindowHost, private handlers: EnviromentHandlers) {
         this.projects = [new Project(this, args)];
         this.classes = args.classes;
         this.host = host;
@@ -345,6 +348,17 @@ export class Enviroment implements EnviromentFunctions {
         return readFile(dir.resolve(fileName), "dbm")
             .then((img) => scene.createDoubleDIBTool(img))
             .catch(() => 0);
+    }
+    // Мышь
+    // LoadCursor(HANDLE HSpace, STRING Filename)
+    // LoadCursor(STRING WindowName, STRING Filename)
+    loadCursor(dir: PathInfo, wnameOrHspace: string | number, filename: string): void {
+        const req = this.handlers.cursorRequest;
+        if (!req) return;
+        const scene = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace) : this.windows.get(wnameOrHspace)?.scene;
+        if (!scene) return;
+        const cursor = req(dir.resolve(filename).toString());
+        scene.setCursor(cursor || "default");
     }
     createObjectFromFile2D(dir: PathInfo, hspace: number, fileName: string, x: number, y: number, flags: number): number | Promise<number> {
         const scene = this.scenes.get(hspace);
@@ -614,7 +628,6 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     //#endregion
-
     //#region ФУНКЦИИ СИСТЕМНЫЕ
     private systemShowed = false;
     stratum_system(command: number, ...params: number[]): number {
@@ -626,7 +639,7 @@ export class Enviroment implements EnviromentFunctions {
     }
 
     stratum_shell(path: string, args: string, directory: string, flag: number): NumBool {
-        this.handlers.shell?.forEach((c) => c(path, args, directory, flag));
+        this.handlers.shell.forEach((c) => c(path, args, directory, flag));
         return 1;
     }
 
@@ -634,20 +647,6 @@ export class Enviroment implements EnviromentFunctions {
     stratum_getAsyncKeyState(vkey: number): number {
         if (vkey < 0 || vkey > Scene.keyState.length - 1) return 0;
         return Scene.keyState[vkey] > 0 ? 1 : 0;
-    }
-
-    // Мышь
-    // LoadCursor(HANDLE HSpace, STRING Filename)
-    // LoadCursor(STRING WindowName, STRING Filename)
-    private stratum_loadCursorShowed = false;
-    stratum_loadCursor(wnameOrHspace: string | number, filename: string): void {
-        if (!this.stratum_loadCursorShowed) {
-            console.warn("loadCursor не реализована");
-            this.stratum_loadCursorShowed = true;
-        }
-        return;
-        // const scene = typeof wnameOrHspace === "number" ? this.scenes.get(wnameOrHspace) : this.windows.get(wnameOrHspace)?.scene;
-        // if(!scene) return;
     }
 
     // Время
