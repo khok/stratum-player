@@ -1,92 +1,66 @@
-import { colorrefToCSSColor } from "stratum/common/colorrefParsers";
-import { Constant } from "stratum/common/constant";
-import { NumBool } from "stratum/common/types";
-import { HandleMap } from "stratum/helpers/handleMap";
 import { Scene } from "../scene";
-import { ToolSubscriber } from "./toolSubscriber";
+import { SceneTool } from "./sceneTool";
 
 export interface PenToolArgs {
-    handle: number;
-    color: number;
-    style: number;
-    width: number;
-    rop2: number;
+    handle?: number;
+    color?: number;
+    width?: number;
+    style?: number;
+    rop?: number;
 }
 
-export class PenTool {
-    private subs: Set<ToolSubscriber>;
-    private _color: number;
-    private _width: number;
-    private _style: number;
-    private _rop: number;
-    private _cssColor: string;
+export class PenTool extends SceneTool<PenTool> {
+    _color: number;
+    _colorVer = 0;
+    _width: number;
+    _widthVer = 0;
+    _style: number;
+    _styleVer = 0;
+    _rop: number;
+    _ropVer = 0;
 
-    handle: number;
-    constructor({ handle, color, rop2, style, width }: PenToolArgs) {
-        this.handle = handle;
-        this.subs = new Set();
-        this._color = color;
-        this._cssColor = colorrefToCSSColor(color);
-        this._width = width;
-        this._style = style;
-        this._rop = rop2;
-    }
-    subscribe(sub: ToolSubscriber) {
-        this.subs.add(sub);
-    }
-    unsubscribe(sub: ToolSubscriber) {
-        this.subs.delete(sub);
-    }
-    subCount(): number {
-        return this.subs.size;
-    }
-    copy(scene: Scene): PenTool {
-        const handle = HandleMap.getFreeHandle(scene.pens);
-        const tool = new PenTool({
-            handle,
-            color: this._color,
-            rop2: this._rop,
-            style: this._style,
-            width: this._width,
-        });
-        scene.pens.set(handle, tool);
-        return tool;
+    constructor(scene: Scene, { handle, color, width, style, rop }: PenToolArgs = {}) {
+        super(scene, handle);
+        this._color = color ?? 0;
+        this._width = width ?? 1;
+        this._style = style ?? 0;
+        this._rop = rop ?? 0;
     }
 
     color(): number {
         return this._color;
     }
-    setColor(color: number): NumBool {
+    setColor(color: number): this {
         this._color = color;
-        this._cssColor = colorrefToCSSColor(color);
-        this.subs.forEach((s) => s.toolChanged(this));
-        return 1;
+        ++this._colorVer;
+        this.dispatchChanges();
+        return this;
     }
     width(): number {
         return this._width;
     }
-    setWidth(width: number): NumBool {
+    setWidth(width: number): this {
         this._width = width;
-        this.subs.forEach((s) => s.toolChanged(this));
-        return 1;
+        ++this._widthVer;
+        this.dispatchChanges();
+        return this;
     }
     style(): number {
         return this._style;
     }
-    setStyle(style: number): NumBool {
+    setStyle(style: number): this {
         this._style = style;
-        this.subs.forEach((s) => s.toolChanged(this));
-        return 1;
+        ++this._styleVer;
+        this.dispatchChanges();
+        return this;
     }
     rop(): number {
         return this._rop;
     }
-    setRop(rop: number): NumBool {
+    setRop(rop: number): this {
         this._rop = rop;
-        return 1;
-    }
-
-    strokeStyle(): string | null {
-        return this._style === Constant.PS_NULL ? null : this._cssColor;
+        ++this._ropVer;
+        this.dispatchChanges();
+        return this;
     }
 }

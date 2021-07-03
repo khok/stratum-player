@@ -70,6 +70,10 @@ export interface CursorRequestHandler {
     (path: string): string;
 }
 
+export interface PlayerDiag {
+    readonly iterations: number;
+}
+
 /**
  * Проект.
  */
@@ -135,7 +139,7 @@ export interface Player {
      * @param handler Если обработчик не указан, разрегистрируются все
      * обработчики данного события.
      */
-    off(event: "closed", handler?: () => void): this;
+    off(event: "closed", handler?: Function): this;
     /**
      * Регистрирует обработчик события ошибки виртуальной машины.
      */
@@ -166,31 +170,160 @@ export interface Player {
     off(event: "cursorRequest"): this;
 }
 
-export interface PlayerDiag {
-    readonly iterations: number;
+export interface ViewContainerPosition {
+    /**
+     * Позиция по X.
+     */
+    x: number;
+    /**
+     * Позиция по Y.
+     */
+    y: number;
 }
 
-export interface WindowOptions {
+export interface ViewContainerSize {
     /**
-     * Окно является всплывающим?
+     * Ширина клиентской части окна.
      */
-    popup: boolean;
+    width: number;
     /**
-     * Размеры окна.
+     * Высота клиентской части окна.
      */
-    position?: { x: number; y: number };
+    height: number;
+}
+
+export interface ViewContainerOptions {
     /**
-     * Заголовок открываемого окна.
+     * Начальное расположение окна.
      */
-    title?: string;
+    position: ViewContainerPosition | null;
+    /**
+     * Начальные клиентские размеры окна.
+     */
+    size: ViewContainerSize | null;
+    /**
+     * Заголовок.
+     */
+    title: string | null;
     /**
      * Спрятать заголовок?
      */
-    noCaption?: boolean;
+    noCaption: boolean;
     /**
-     * Не отображать тень.
+     * Окно является всплывающим?
      */
-    noShadow?: boolean;
+    isPopup: boolean;
+    /**
+     * Окно нельзя менять?
+     */
+    noResize: boolean;
+    /**
+     * Показывать вертикальную прокрутку?
+     */
+    vScroll: boolean;
+    /**
+     * Показывать горизонтальную прокрутку?
+     */
+    hScroll: boolean;
+}
+
+export interface ViewContainerMoveCallback {
+    (x: number, y: number): void;
+}
+
+export interface ViewContainerResizedCallback {
+    (w: number, h: number): void;
+}
+
+export interface ViewContainerController {
+    /**
+     * Позиция окна по X.
+     */
+    originX?(): number;
+    /**
+     * Позиция окна по Y.
+     */
+    originY?(): number;
+    /**
+     * Устанавливает новое расположение окна.
+     */
+    setOrigin?(x: number, y: number): void;
+
+    /**
+     * Ширина окна.
+     */
+    width?(): number;
+    /**
+     * Высота окна.
+     */
+    height?(): number;
+    /**
+     * Устанавливает новые размеры окна.
+     */
+    setSize?(width: number, height: number): void;
+
+    /**
+     * Ширина клиентской области окна.
+     */
+    clientWidth?(): number;
+    /**
+     * Высота клиентской области окна.
+     */
+    clientHeight?(): number;
+    /**
+     * Устанавливает новые размеры клиентской области окна.
+     */
+    setClientSize?(width: number, height: number): void;
+
+    /**
+     * Закрывает окно.
+     */
+    close?(): void;
+
+    /**
+     * Устанавливает видимость окна.
+     */
+    setVisibility?(visible: boolean): void;
+
+    /**
+     * Перемещает окно поверх остальных.
+     */
+    toTop?(): void;
+    /**
+     * Устанавливает цвет и прозрачность окна.
+     */
+    setBackground?(r: number, g: number, b: number): void;
+    setTransparent?(level: number): void;
+    /**
+     * Устанавливает заголовок окна.
+     */
+    setTitle?(title: string): void;
+
+    /**
+     * Регистрирует обработчик перемещения окна.
+     */
+    on?(event: "moved", callback: ViewContainerMoveCallback): void;
+    /**
+     * Регистрирует обработчик изменения размеров окна.
+     */
+    on?(event: "resized", callback: ViewContainerResizedCallback): void;
+    /**
+     * Регистрирует обработчик закрытия окна.
+     */
+    on?(event: "closed", callback: Function): void;
+
+    /**
+     * Разрегистрирует обработчик(и) перемещения окна.
+     */
+    off?(event: "moved", callback?: ViewContainerMoveCallback): void;
+    /**
+     * Разрегистрирует обработчик(и) изменения размеров окна.
+     */
+    off?(event: "resized", callback?: ViewContainerResizedCallback): void;
+    /**
+     * Разрегистрирует обработчик(и) закрытия окна.
+     */
+    off?(event: "closed", callback?: Function): void;
 }
 
 /**
@@ -208,44 +341,7 @@ export interface WindowHost {
     /**
      * Создает новое окно с указанным элементом `view`.
      */
-    window(view: HTMLDivElement, options: WindowOptions): WindowHostWindow;
-}
-
-export interface WindowHostWindow {
-    setVisibility?(visible: boolean): void;
-    /**
-     * Закрывает окно.
-     * @remarks При этом не должно вызываться событие closed.
-     */
-    close?(): void;
-    /**
-     * Изменяет заголовок окна.
-     * @param title
-     */
-    setTitle?(title: string): void;
-    /**
-     * Устанавливает желаемое расположение окна.
-     */
-    moveTo?(x: number, y: number): void;
-    /**
-     * Устанавливает желаемые размеры окна.
-     */
-    resizeTo?(width: number, height: number): void;
-    /**
-     * Регистрирует обработчик события изменения закрытия окна пользователем.
-     */
-    on?(event: "closed", handler: () => void): void;
-    /**
-     * Разрегистрирует обработчик события изменения закрытия окна пользователем.
-     * @param handler Если обработчик не указан, разрегистрируются все
-     * обработчики данного события.
-     */
-    off?(event: "closed", handler?: () => void): void;
-
-    /**
-     * Перемещает окно наверх.
-     */
-    toTop?(): void;
+    append(view: Element, options: ViewContainerOptions): ViewContainerController;
 }
 
 export interface AddDirInfo {

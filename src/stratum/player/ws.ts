@@ -1,19 +1,43 @@
-import { WindowHost, WindowHostWindow, WindowOptions } from "stratum/stratum";
+import { ViewContainerController, ViewContainerOptions, WindowHost } from "stratum/stratum";
 
-export class SimpleWindow implements WindowHostWindow {
+export class SimpleWindow implements ViewContainerController {
     private origTitle: string;
     private popup: boolean;
-    constructor(private root: HTMLElement, private view: HTMLDivElement, { title, popup }: WindowOptions) {
+    constructor(private root: HTMLElement, private view: HTMLElement, { title, isPopup }: ViewContainerOptions) {
         this.origTitle = document.title;
-        if (!popup && title) document.title = this.origTitle ? `${this.origTitle} - ${title}` : title;
-        this.popup = popup;
+        if (!isPopup && title) document.title = this.origTitle ? `${this.origTitle} - ${title}` : title;
+        this.popup = isPopup;
         root.appendChild(view);
     }
 
-    moveTo(x: number, y: number): void {
+    setOrigin(x: number, y: number): void {
         if (!this.popup) return;
         this.view.style.setProperty("left", x + "px");
         this.view.style.setProperty("top", y + "px");
+    }
+
+    width(): number {
+        return this.view.clientWidth;
+    }
+
+    height(): number {
+        return this.view.clientHeight;
+    }
+
+    setSize(x: number, y: number): void {
+        console.log("size", x, y);
+    }
+
+    clientWidth(): number {
+        return this.view.clientWidth;
+    }
+
+    clientHeight(): number {
+        return this.view.clientHeight;
+    }
+
+    setClientSize(x: number, y: number): void {
+        console.log("client", x, y);
     }
 
     setTitle(title: string) {
@@ -41,31 +65,31 @@ export class SimpleWindow implements WindowHostWindow {
     }
 }
 
-export class PopupWrapper implements WindowHostWindow {
-    constructor(private wnd: Window, { title }: WindowOptions) {
+export class PopupWrapper implements ViewContainerController {
+    constructor(private wnd: Window, { title }: ViewContainerOptions) {
         if (title) wnd.document.title = title;
     }
 
-    subwindow(view: HTMLDivElement, options: WindowOptions): WindowHostWindow {
-        const wnd = window.open("about:blank", undefined, `width=${window.innerWidth / 1.5},height=${window.innerHeight / 1.5}`);
-        if (!wnd) throw Error(`Не удалось открыть окно ${options.title}`);
-        wnd.document.body.appendChild(view);
-        return new PopupWrapper(wnd, options);
-    }
+    // subwindow(view: HTMLElement, options: ViewContainerOptions): ViewContainerController {
+    //     const wnd = window.open("about:blank", undefined, `width=${window.innerWidth / 1.5},height=${window.innerHeight / 1.5}`);
+    //     if (!wnd) throw Error(`Не удалось открыть окно ${options.title}`);
+    //     wnd.document.body.appendChild(view);
+    //     return new PopupWrapper(wnd, options);
+    // }
 
-    private handlers = new Set<() => void>();
-    on(event: "closed", handler: () => void) {
+    private handlers = new Set<Function>();
+    on(event: "moved" | "resized" | "closed", callback: Function) {
         if (event !== "closed") return;
-        this.wnd.addEventListener("beforeunload", handler);
-        this.handlers.add(handler);
+        this.wnd.addEventListener("beforeunload", callback as () => void);
+        this.handlers.add(callback);
     }
-    off(event: "closed", handler?: () => void) {
+    off(event: "moved" | "resized" | "closed", callback?: Function) {
         if (event !== "closed") return;
-        if (handler) {
-            this.wnd.removeEventListener("beforeunload", handler);
-            this.handlers.delete(handler);
+        if (callback) {
+            this.wnd.removeEventListener("beforeunload", callback as () => void);
+            this.handlers.delete(callback);
         } else {
-            this.handlers.forEach((h) => this.wnd.removeEventListener("beforeunload", h));
+            this.handlers.forEach((h) => this.wnd.removeEventListener("beforeunload", h as () => void));
             this.handlers.clear();
         }
     }
@@ -99,33 +123,33 @@ export class SimpleWs implements WindowHost {
     get height() {
         return window.innerHeight;
     }
-    window(view: HTMLDivElement, options: WindowOptions): WindowHostWindow {
-        if (options.popup) {
+    append(view: Element, options: ViewContainerOptions): ViewContainerController {
+        const container = document.createElement("div");
+        if (options.isPopup) {
             const x = Math.max(options.position?.x ?? 0, 0);
             const y = Math.max(options.position?.y ?? 0, 0);
-            view.style.setProperty("position", "absolute");
-            view.style.setProperty("left", x + "px");
-            view.style.setProperty("top", y + "px");
-            view.style.setProperty("box-shadow", "13px 11px 6px 0px rgb(0 0 0 / 50%)");
+            container.style.setProperty("position", "absolute");
+            container.style.setProperty("left", x + "px");
+            container.style.setProperty("top", y + "px");
+            container.style.setProperty("box-shadow", "13px 11px 6px 0px rgb(0 0 0 / 50%)");
             //
-            view.style.setProperty("opacity", "0");
-            view.style.setProperty("transition", "opacity 250ms linear");
-            setTimeout(() => view.style.setProperty("opacity", "1"));
         } else {
-            //
-            view.style.setProperty("opacity", "0");
-            view.style.setProperty("transition", "opacity 250ms linear");
-            setTimeout(() => view.style.setProperty("opacity", "1"));
-
-            view.setAttribute("class", "stratum-window");
+            container.setAttribute("class", "stratum-window");
         }
+        container.style.setProperty("opacity", "0");
+        container.style.setProperty("transition", "opacity 250ms linear");
+        setTimeout(() => container.style.setProperty("opacity", "1"));
+        container.style.setProperty("width", options.size ? options.size.width + "px" : "100%");
+        container.style.setProperty("height", options.size ? options.size.height + "px" : "100%");
+        container.appendChild(view);
+
         if (this.root) {
-            return new SimpleWindow(this.root, view, options);
+            return new SimpleWindow(this.root, container, options);
         }
         const wnd = window.open("about:blank", undefined, `width=${this.width / 1.5},height=${this.height / 1.5}`);
         if (!wnd) throw Error(`Не удалось открыть окно ${options.title}`);
         wnd.document.body.style.setProperty("margin", "0px");
-        wnd.document.body.appendChild(view);
+        wnd.document.body.appendChild(container);
         return new PopupWrapper(wnd, options);
     }
 }
