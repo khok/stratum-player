@@ -6,8 +6,7 @@ import { PenTool } from "../tools/penTool";
 import { Element2D, Element2DArgs } from "./element2d";
 
 export interface LineElement2DArgs extends Element2DArgs {
-    visible?: boolean;
-    layer?: number;
+    visib?: VisibilityComponent;
     pen?: PenTool;
     brush?: BrushTool;
 }
@@ -18,8 +17,8 @@ export class LineElement2D extends Element2D {
     _shapeVer: number = 0;
 
     readonly visib: VisibilityComponent;
-    readonly pen: ToolKeeperComponent<PenTool>;
-    readonly brush: ToolKeeperComponent<BrushTool>;
+    readonly pen: ToolKeeperComponent<PenTool | null>;
+    readonly brush: ToolKeeperComponent<BrushTool | null>;
 
     constructor(scene: Scene, coords: readonly number[], args: LineElement2DArgs = {}) {
         super(scene, args);
@@ -50,9 +49,9 @@ export class LineElement2D extends Element2D {
         this._updateBBox(minX, minY, width, height);
         this._parent?._recalcBorders();
 
-        this.visib = new VisibilityComponent(this, args.visible ?? true, args.layer ?? 0);
-        this.pen = new ToolKeeperComponent(scene, args.pen);
-        this.brush = new ToolKeeperComponent(scene, args.brush);
+        this.visib = args.visib ?? new VisibilityComponent(scene, true, 0);
+        this.pen = new ToolKeeperComponent(scene, args.pen ?? null);
+        this.brush = new ToolKeeperComponent(scene, args.brush ?? null);
     }
 
     // copy(scene: Scene, attribs: number): SceneLine {

@@ -3,6 +3,10 @@ import { GroupElement2D } from "./groupElement2d";
 
 export interface Element2DArgs {
     handle?: number;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
     name?: string;
     meta?: Object | null;
 }
@@ -10,18 +14,22 @@ export interface Element2DArgs {
 export class Element2D {
     handle: number;
     name: string;
+    meta: Object | null;
 
-    _x: number = 0;
-    _y: number = 0;
-    _width: number = 0;
-    _height: number = 0;
+    _x: number;
+    _y: number;
+    _width: number;
+    _height: number;
     _parent: GroupElement2D | null = null;
-    _meta: Object | null;
 
     constructor(readonly scene: Scene, args: Element2DArgs) {
         this.handle = args.handle ?? 0;
         this.name = args.name ?? "";
-        this._meta = args.meta ?? null;
+        this.meta = args.meta ?? null;
+        this._x = args.x ?? 0;
+        this._y = args.y ?? 0;
+        this._width = args.width ?? 0;
+        this._height = args.height ?? 0;
     }
 
     _moved(dx: number, dy: number): void {
@@ -111,7 +119,10 @@ export class Element2D {
         const ch = this._height;
         if (cw === 0 || ch === 0) return this;
 
-        this._resized(this._x, this._y, w / cw, h / ch);
+        const dx = w / cw;
+        const dy = h / ch;
+        if (dx === 1 && dy === 1) return this;
+        this._resized(this._x, this._y, dx, dy);
         this._parent?._recalcBorders();
         this.scene._dirty = true;
         return this;

@@ -225,6 +225,10 @@ export interface ViewContainerOptions {
      * Показывать горизонтальную прокрутку?
      */
     hScroll: boolean;
+    /**
+     * Окно не имеет тени?
+     */
+    noShadow: boolean;
 }
 
 export interface ViewContainerMoveCallback {

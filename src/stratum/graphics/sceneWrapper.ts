@@ -55,18 +55,29 @@
 //     }
 // }
 
+import { EventSubscriber } from "stratum/common/types";
 import { VDRSource } from "stratum/fileFormats/vdr";
+import { SuperMap } from "stratum/helpers/superMap";
 import { Project } from "stratum/project";
 import { ViewContainerController } from "stratum/stratum";
 import { Scene, SceneElement } from "./scene/scene";
 import { BrushTool } from "./scene/tools/brushTool";
+import { FontTool } from "./scene/tools/fontTool";
+import { ImageTool } from "./scene/tools/imageTool";
 import { PenTool } from "./scene/tools/penTool";
+import { StringTool } from "./scene/tools/stringTool";
+import { TextTool } from "./scene/tools/textTool";
 
 export interface SceneWrapper {
     prj: Project;
     objects: Map<number, SceneElement>;
     pens: Map<number, PenTool>;
     brushes: Map<number, BrushTool>;
+    dibs: Map<number, ImageTool>;
+    doubleDibs: Map<number, ImageTool>;
+    fonts: Map<number, FontTool>;
+    strings: Map<number, StringTool>;
+    texts: Map<number, TextTool>;
     matrix: readonly number[] | null;
     invMatrix: readonly number[] | null;
     scene: Scene;
@@ -76,4 +87,20 @@ export interface SceneWrapper {
     handle: number;
     title: string;
     source: VDRSource | null;
+
+    windowMoveSubs: Set<EventSubscriber>;
+    spaceDoneSubs: Set<EventSubscriber>;
+    sizeSubs: Set<EventSubscriber>;
+
+    controlNotifySubs: SuperMap<EventSubscriber, SceneElement | null>;
+    mouseMoveSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    leftButtonUpSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    leftButtonDownSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    rightButtonUpSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    rightButtonDownSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    middleButtonUpSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    middleButtonDownSubs: SuperMap<EventSubscriber, SceneElement | null>;
+    keyDownSubs: Set<EventSubscriber>;
+    keyUpSubs: Set<EventSubscriber>;
+    keyCharSubs: Set<EventSubscriber>;
 }

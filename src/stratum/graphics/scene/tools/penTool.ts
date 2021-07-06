@@ -10,14 +10,10 @@ export interface PenToolArgs {
 }
 
 export class PenTool extends SceneTool<PenTool> {
-    _color: number;
-    _colorVer = 0;
-    _width: number;
-    _widthVer = 0;
-    _style: number;
-    _styleVer = 0;
-    _rop: number;
-    _ropVer = 0;
+    protected _color: number;
+    protected _width: number;
+    protected _style: number;
+    protected _rop: number;
 
     constructor(scene: Scene, { handle, color, width, style, rop }: PenToolArgs = {}) {
         super(scene, handle);
@@ -32,7 +28,6 @@ export class PenTool extends SceneTool<PenTool> {
     }
     setColor(color: number): this {
         this._color = color;
-        ++this._colorVer;
         this.dispatchChanges();
         return this;
     }
@@ -41,7 +36,6 @@ export class PenTool extends SceneTool<PenTool> {
     }
     setWidth(width: number): this {
         this._width = width;
-        ++this._widthVer;
         this.dispatchChanges();
         return this;
     }
@@ -50,7 +44,6 @@ export class PenTool extends SceneTool<PenTool> {
     }
     setStyle(style: number): this {
         this._style = style;
-        ++this._styleVer;
         this.dispatchChanges();
         return this;
     }
@@ -59,7 +52,6 @@ export class PenTool extends SceneTool<PenTool> {
     }
     setRop(rop: number): this {
         this._rop = rop;
-        ++this._ropVer;
         this.dispatchChanges();
         return this;
     }

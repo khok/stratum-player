@@ -1,12 +1,10 @@
 import { ClassLibrary } from "stratum/classLibrary";
-import { HyperCallHandler, NumBool } from "stratum/common/types";
+import { NumBool } from "stratum/common/types";
 import { VarType } from "stratum/common/varType";
 import { installContextFunctions, ProjectContextFunctions, SchemaMemory } from "stratum/compiler";
 import { unreleasedFunctions } from "stratum/compiler/unreleasedFunctions";
 import { ProjectInfo } from "stratum/fileFormats/prj";
 import { VariableSet } from "stratum/fileFormats/stt";
-import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Point2D } from "stratum/helpers/types";
 import { PathInfo } from "stratum/stratum";
 import { EnviromentFunctions } from "./enviromentFunctions";
 import { Schema } from "./schema";
@@ -38,7 +36,7 @@ export interface ProjectArgs {
     stt?: VariableSet | null;
 }
 
-export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFunctions {
+export class Project implements SchemaMemory, ProjectContextFunctions {
     private readonly olds: { [index: number]: Float64Array | Int32Array | string[] };
     private readonly news: { [index: number]: Float64Array | Int32Array | string[] };
 
@@ -133,10 +131,6 @@ export class Project implements HyperCallHandler, SchemaMemory, ProjectContextFu
 
     shouldClose(): boolean {
         return this._shouldClose;
-    }
-
-    click(hyp: Hyperbase | null, point: Point2D): void {
-        return this.env.hyperCall(this, hyp, point);
     }
 
     //#region Реализации функций.

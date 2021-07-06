@@ -1,7 +1,5 @@
 import { EventSubscriber, NumBool } from "stratum/common/types";
 import { EnviromentContextFunctions } from "stratum/compiler";
-import { Hyperbase } from "stratum/fileFormats/vdr";
-import { Point2D } from "stratum/helpers/types";
 import { PathInfo } from "stratum/stratum";
 import { Project } from "./project";
 
@@ -26,14 +24,6 @@ export interface EnviromentFunctions extends EnviromentContextFunctions {
      * Флаг сбрасывается после получения результата промиза.
      */
     resetWaiting(): void;
-
-    /**
-     * Создает гипервызов.
-     * @param prj - проект, создавший гипервызов.
-     * @param hyp - параметры гипервызова.
-     * @param point - точка создания гипервызова.
-     */
-    hyperCall(prj: Project, hyp: Hyperbase | null, point: Point2D): void;
 
     openSchemeWindow(prj: Project, wname: string, className: string, attrib: string): number;
     loadSpaceWindow(prj: Project, wname: string, fileName: string, attrib: string): number | Promise<number>;

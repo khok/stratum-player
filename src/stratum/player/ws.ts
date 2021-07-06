@@ -3,41 +3,59 @@ import { ViewContainerController, ViewContainerOptions, WindowHost } from "strat
 export class SimpleWindow implements ViewContainerController {
     private origTitle: string;
     private popup: boolean;
-    constructor(private root: HTMLElement, private view: HTMLElement, { title, isPopup }: ViewContainerOptions) {
+
+    private lastW: number;
+    private lastH: number;
+
+    constructor(private root: HTMLElement, private view: HTMLElement, { title, isPopup, size }: ViewContainerOptions) {
         this.origTitle = document.title;
         if (!isPopup && title) document.title = this.origTitle ? `${this.origTitle} - ${title}` : title;
         this.popup = isPopup;
         root.appendChild(view);
-    }
-
-    setOrigin(x: number, y: number): void {
-        if (!this.popup) return;
-        this.view.style.setProperty("left", x + "px");
-        this.view.style.setProperty("top", y + "px");
+        this.lastW = size?.width ?? view.clientWidth;
+        this.lastH = size?.height ?? view.clientHeight;
     }
 
     width(): number {
         return this.view.clientWidth;
     }
-
+    clientWidth(): number {
+        return this.view.clientWidth;
+    }
     height(): number {
         return this.view.clientHeight;
+    }
+    clientHeight(): number {
+        return this.view.clientHeight;
+    }
+
+    private ox: number = 0;
+    private oy: number = 0;
+
+    originX(): number {
+        return this.ox;
+    }
+
+    originY(): number {
+        return this.oy;
+    }
+
+    setOrigin(x: number, y: number): void {
+        this.ox = x;
+        this.oy = y;
+        if (!this.popup) return;
+        this.view.style.setProperty("left", x + "px");
+        this.view.style.setProperty("top", y + "px");
     }
 
     setSize(x: number, y: number): void {
         console.log("size", x, y);
     }
 
-    clientWidth(): number {
-        return this.view.clientWidth;
-    }
-
-    clientHeight(): number {
-        return this.view.clientHeight;
-    }
-
     setClientSize(x: number, y: number): void {
-        console.log("client", x, y);
+        // console.log("client", x, y);
+        this.view.style.setProperty("width", x.toString());
+        this.view.style.setProperty("height", y.toString());
     }
 
     setTitle(title: string) {
