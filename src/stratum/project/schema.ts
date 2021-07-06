@@ -1,5 +1,5 @@
 import { ClassProto } from "stratum/classLibrary";
-import { Constant } from "stratum/common/constant";
+import { Constant, WM_CHAR } from "stratum/common/constant";
 import { parseVarValue } from "stratum/common/parseVarValue";
 import { EventSubscriber } from "stratum/common/types";
 import { MemorySize, VarGraphNode } from "stratum/common/varGraphNode";
@@ -222,7 +222,7 @@ export class Schema implements EventSubscriber, SchemaContextFunctions {
                 break;
             case Constant.WM_KEYDOWN:
             case Constant.WM_KEYUP:
-            case 258: //WM_CHAR, видимо, забыли добавить в константы
+            case WM_CHAR:
                 this.setVarValue(vars.wVkeyVarId, VarType.Float, args[0]);
                 this.setVarValue(vars.repeatVarId, VarType.Float, args[1]);
                 this.setVarValue(vars.scanCodeVarId, VarType.Float, args[2]);

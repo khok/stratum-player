@@ -555,3 +555,7 @@ export enum Constant {
     WM_CONTROLNOTIFY = 1544,
     WM_HYPERJUMP = 1546,
 }
+
+// В стратуме ее забыли добавить в константы.
+// Здесь же добавлять в Constant ее нельзя, поскольку имена ключей Constant влияют на компиляцию.
+export const WM_CHAR = 258;
